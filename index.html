@@ -29,6 +29,7 @@
   html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); touch-action: manipulation;
+    overflow-x: hidden; width: 100%;
     font-family: 'Nanum Gothic', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
   .wrap { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; }
   .hidden { display: none !important; }
@@ -177,10 +178,12 @@
   .month-nav button svg { width: 13px; height: 13px; }
   .month-nav .label { font-weight: 800; font-size: 15px; }
 
-  .mini-cal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  /* 월간 2열: minmax(0,1fr) 필수 — 그냥 1fr은 min-width:auto 때문에 내용(긴 제목 등)이 길면 한쪽 열이 좁아짐 */
+  .mini-cal-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .mini-cal-card { min-width: 0; }
   .mini-cal-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
   .mini-cal-title { font-size: 12.5px; font-weight: 800; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mini-cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .mini-cal-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 3px; }
   .mini-cal-cell { aspect-ratio: 1; border-radius: 4px; background: var(--ring-track); font-size: 8px;
     display: flex; align-items: center; justify-content: center; color: var(--ink-dim); }
   .mini-cal-cell.done { background: var(--sage); color: var(--card); font-weight: 700; }
@@ -1455,8 +1458,12 @@
   function startRun(catId) {
     var cat = getCat(catId);
     if (!cat) return;
-    var items = catItemsDueOn(cat, todayKey());
-    if (items.length === 0) { toast("오늘 예정된 항목이 없어요"); return; }
+    var tk = todayKey();
+    var dueItems = catItemsDueOn(cat, tk);
+    if (dueItems.length === 0) { toast("오늘 예정된 항목이 없어요"); return; }
+    // 이미 완료한 항목은 건너뛰고, 아직 안 한 항목만 카운트다운에 올린다
+    var items = dueItems.filter(function (it) { return !isDone(tk, it.id); });
+    if (items.length === 0) { toast("이 카테고리는 오늘 모두 완료했어요"); return; }
     unlockAudioCtx(); // ▶ 탭은 확실한 사용자 제스처 — 여기서 오디오 컨텍스트를 미리 풀어둔다
     stopTimerInterval();
     runState = { catId: catId, items: items, idx: 0, itemStart: Date.now(), pausedAt: null, pausedAccumMs: 0, paused: false, alarmFired: false };
