@@ -426,8 +426,8 @@
     <div class="day-toggle-row" id="dayToggleRow"></div>
     <div class="section-label">쉬는 날 처리</div>
     <div class="theme-option" id="keepOnRestToggle" data-action="toggle-keep-on-rest"><span>쉬는 날로 표시된 날에도 유지</span><span class="dot"></span></div>
-    <div class="section-label">완료 시</div>
-    <div class="theme-option" id="alarmToggle" data-action="toggle-alarm"><span>완료하면 알림음 재생</span><span class="dot"></span></div>
+    <div class="section-label">타이머 종료음</div>
+    <div class="theme-option" id="alarmToggle" data-action="toggle-alarm"><span>이 항목은 무음 (타이머 종료 시 소리 안 남)</span><span class="dot"></span></div>
     <div class="tp-actions">
       <div class="btn" data-action="day-cancel">취소</div>
       <div class="btn primary" data-action="day-confirm">확인</div>
@@ -1050,7 +1050,7 @@
         base = order.filter(function (d) { return set.indexOf(d) !== -1; }).map(function (d) { return letters[d]; }).join("");
       }
     }
-    return base + (item.keepOnRest ? " · 쉬는날도" : "") + (item.alarmOnComplete ? " 🔔" : "");
+    return base + (item.keepOnRest ? " · 쉬는날도" : "") + (item.muted ? " 🔕 무음" : "");
   }
 
   function catTotalSecondsOn(cat, dk) { return catItemsDueOn(cat, dk).reduce(function (a, it) { return a + (it.seconds || 0); }, 0); }
@@ -1079,17 +1079,21 @@
     if (state.restDays.some(function (e) { return restDayDate(e) === dateKey; })) return true;
     return state.recurringHolidays.indexOf(dateKey.slice(5)) !== -1;
   }
-  function catMeetsThreshold(cat, dateKey, thresholdPct) {
-    var due = catItemsDueOn(cat, dateKey);
-    if (due.length === 0) return null;
-    var pct = catDoneCount(cat, dateKey) / due.length * 100;
-    return pct >= thresholdPct;
-  }
+  // "성공" 기준: 카테고리별로 개별 충족을 요구하지 않고, 오늘 예정된 전체 항목을 하나의
+  // 풀로 모아 합산 달성률(완료/예정)이 인정 기준(%) 이상이면 성공으로 잡는다.
+  // 이렇게 하면 항목 수가 적은 카테고리 하나 때문에(그 카테고리만 기준 미달) 다른
+  // 카테고리를 다 채웠는데도 그날 전체가 실패 처리되는 문제가 없다.
   function overallStreakStatus(k) {
     var withDue = state.categories.filter(function (c) { return catItemsDueOn(c, k).length > 0; });
     if (withDue.length === 0) return null;
     var threshold = state.streakThreshold || 100;
-    return withDue.every(function (c) { return catMeetsThreshold(c, k, threshold) === true; });
+    var totalDue = 0, totalDone = 0;
+    withDue.forEach(function (c) {
+      totalDue += catItemsDueOn(c, k).length;
+      totalDone += catDoneCount(c, k);
+    });
+    if (totalDue === 0) return null;
+    return (totalDone / totalDue * 100) >= threshold;
   }
   function computeStreakGeneric(statusFn) {
     var streak = 0, d = new Date(), first = true;
@@ -1327,7 +1331,7 @@
     var items = catItemsDueOn(cat, todayKey());
     if (items.length === 0) { toast("오늘 예정된 항목이 없어요"); return; }
     stopTimerInterval();
-    runState = { catId: catId, items: items, idx: 0, itemStart: Date.now(), pausedAt: null, pausedAccumMs: 0, paused: false };
+    runState = { catId: catId, items: items, idx: 0, itemStart: Date.now(), pausedAt: null, pausedAccumMs: 0, paused: false, alarmFired: false };
     showView("view-run");
     renderRun();
     tickStart();
@@ -1337,8 +1341,23 @@
     stopTimerInterval();
     timer = setInterval(function () {
       if (!runState || runState.paused) return;
+      checkRunAlarm();
       updateRunTimerDOM();
     }, 1000);
+  }
+  // Rings once, automatically, the moment the current item's countdown hits 0:00 —
+  // only while actually running via the play button (run mode), never on a manual
+  // home-screen tap. Purpose: know a timed session (reading, etc.) ended without
+  // having to watch the clock. Items default to sound ON; "무음" mutes per item.
+  function checkRunAlarm() {
+    if (!runState || runState.alarmFired) return;
+    var item = currentItem();
+    if (!item || !item.seconds) return;
+    var remaining = item.seconds - elapsedSeconds();
+    if (remaining <= 0) {
+      runState.alarmFired = true;
+      if (!item.muted) playCompleteAlarm();
+    }
   }
   function currentItem() { return runState ? runState.items[runState.idx] : null; }
   function elapsedSeconds() {
@@ -1350,7 +1369,6 @@
     var item = currentItem();
     if (item) {
       markDone(item.id, true);
-      if (item.alarmOnComplete) playCompleteAlarm();
     }
     advance();
   }
@@ -1362,6 +1380,7 @@
       runState.pausedAt = null;
       runState.pausedAccumMs = 0;
       runState.paused = false;
+      runState.alarmFired = false;
       renderRun();
     } else { stopTimerInterval(); renderRunFinish(); }
   }
@@ -1383,7 +1402,7 @@
     ring.classList.toggle("overtime", overtime);
   }
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible" && runState && !runState.paused) updateRunTimerDOM();
+    if (document.visibilityState === "visible" && runState && !runState.paused) { checkRunAlarm(); updateRunTimerDOM(); }
   });
   function renderRun() {
     var cat = getCat(runState.catId);
@@ -1573,12 +1592,12 @@
   }
 
   // ---- day picker ----
-  var dpItemId = null, dpSel = [], dpKeepOnRest = false, dpAlarm = false;
+  var dpItemId = null, dpSel = [], dpKeepOnRest = false, dpMuted = false;
   function updateKeepOnRestToggleUI() {
     document.getElementById("keepOnRestToggle").classList.toggle("active", dpKeepOnRest);
   }
   function updateAlarmToggleUI() {
-    document.getElementById("alarmToggle").classList.toggle("active", dpAlarm);
+    document.getElementById("alarmToggle").classList.toggle("active", dpMuted);
   }
   function renderDayToggles() {
     var el = document.getElementById("dayToggleRow");
@@ -1600,7 +1619,7 @@
     dpItemId = itemId;
     dpSel = (it.days && it.days.length) ? it.days.slice() : [0,1,2,3,4,5,6];
     dpKeepOnRest = !!it.keepOnRest;
-    dpAlarm = !!it.alarmOnComplete;
+    dpMuted = !!it.muted;
     renderDayToggles();
     updateKeepOnRestToggleUI();
     updateAlarmToggleUI();
@@ -1609,7 +1628,7 @@
   function closeDayPicker() { document.getElementById("dayOverlay").classList.add("hidden"); dpItemId = null; }
   function confirmDayPicker() {
     var it = findItem(dpItemId);
-    if (it) { it.days = dpSel.length >= 7 ? null : dpSel.slice().sort(); it.keepOnRest = dpKeepOnRest; it.alarmOnComplete = dpAlarm; saveState(); }
+    if (it) { it.days = dpSel.length >= 7 ? null : dpSel.slice().sort(); it.keepOnRest = dpKeepOnRest; it.muted = dpMuted; saveState(); }
     closeDayPicker(); renderEditItems();
   }
 
@@ -1876,7 +1895,8 @@
           seconds: (typeof it.seconds === "number" && it.seconds >= 1) ? it.seconds : 15,
           days: (Array.isArray(it.days) && it.days.length < 7) ? it.days : null,
           tags: Array.isArray(it.tags) ? it.tags : [],
-          keepOnRest: !!it.keepOnRest
+          keepOnRest: !!it.keepOnRest,
+          muted: !!it.muted
         };
       }) : [];
       return { id: c.id || uid(), name: typeof c.name === "string" ? c.name : "", items: items };
@@ -1994,10 +2014,6 @@
         var wasDone = isDone(todayKey(), tItemId);
         var wasFull = catFullyDone(tCat);
         markDone(tItemId, !wasDone);
-        if (!wasDone) {
-          var tItem = findItem(tItemId);
-          if (tItem && tItem.alarmOnComplete) playCompleteAlarm();
-        }
         renderHome();
         if (!wasFull && catFullyDone(tCat)) {
           var cardEl = document.querySelector('[data-cat-card="' + tCat.id + '"]');
@@ -2068,7 +2084,7 @@
     else if (action === "day-cancel") { closeDayPicker(); }
     else if (action === "day-confirm") { confirmDayPicker(); }
     else if (action === "toggle-keep-on-rest") { dpKeepOnRest = !dpKeepOnRest; updateKeepOnRestToggleUI(); }
-    else if (action === "toggle-alarm") { dpAlarm = !dpAlarm; updateAlarmToggleUI(); }
+    else if (action === "toggle-alarm") { dpMuted = !dpMuted; updateAlarmToggleUI(); }
     else if (action === "day-toggle") {
       var dv = parseInt(id, 10);
       var i2 = dpSel.indexOf(dv);
