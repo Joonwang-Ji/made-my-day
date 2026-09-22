@@ -905,6 +905,20 @@
     if (!p || typeof p !== "object") return defaultState();
     if (!p.categories || !Array.isArray(p.categories)) p.categories = [];
     p.history = migrateHistory(p.history || {});
+    // 기존 항목에는 createdAt(생성일)이 없다 — "이 항목이 언제부터 실제로 있었는지" 알 수 없어
+    // 놓친 항목 배너가 최근 막 추가한 항목까지 예전부터 놓친 것처럼 셌다. 1회성 보정: 그 항목이
+    // 실제로 완료된 가장 이른 날짜를 createdAt으로 채운다(완료 기록이 그 항목이 "존재했다"는
+    // 가장 확실한 증거이므로). 완료 기록이 아예 없는 항목은 오늘부터 시작한 것으로 본다.
+    (p.categories || []).forEach(function (cat) {
+      (cat.items || []).forEach(function (it) {
+        if (it.createdAt) return;
+        var completionDates = Object.keys(p.history).filter(function (dk) {
+          var e = p.history[dk];
+          return e && Array.isArray(e.completed) && e.completed.indexOf(it.id) !== -1;
+        }).sort();
+        it.createdAt = completionDates.length ? completionDates[0] : todayKey();
+      });
+    });
     if (!p.restDays || !Array.isArray(p.restDays)) p.restDays = [];
     if (!p.recurringHolidays || !Array.isArray(p.recurringHolidays)) p.recurringHolidays = [];
     if (!p.streakThreshold) p.streakThreshold = 100;
@@ -1030,8 +1044,9 @@
       if (hasPendingWrites) return; // this tab's own write echoing back; local state is already current
       if (data) {
         var rawHistoryJson = JSON.stringify(data.history || {});
+        var rawCategoriesJson = JSON.stringify(data.categories || []);
         state = normalizeLoaded(data);
-        if (firstLoad && JSON.stringify(state.history) !== rawHistoryJson) {
+        if (firstLoad && (JSON.stringify(state.history) !== rawHistoryJson || JSON.stringify(state.categories) !== rawCategoriesJson)) {
           window.__fb.saveState(uid, JSON.parse(JSON.stringify(state))).catch(function (err) { console.error("migration save failed", err); });
         }
       } else if (firstLoad) {
@@ -1127,6 +1142,12 @@
     if (isRestDay(dk) && !item.keepOnRest) return false;
     return true;
   }
+  // item.createdAt(생성일, "YYYY-MM-DD")이 있는 항목은 그 날짜 이전에는 "존재하지 않았던 것"으로
+  // 본다 — 놓친 항목 배너가 어제/최근 막 추가한 항목을 예전부터 놓친 것처럼 잘못 세지 않도록.
+  // createdAt이 없는(마이그레이션 이전) 예전 항목은 항상 존재했던 것으로 간주해 그대로 둔다.
+  function itemExistedOn(item, dk) {
+    return !item.createdAt || dk >= item.createdAt;
+  }
   function catItemsDueOn(cat, dk) { return cat.items.filter(function (it) { return isDueForDate(it, dk); }); }
   function dayLabel(item) {
     var days = item.days;
@@ -1192,6 +1213,7 @@
     var out = [];
     state.categories.forEach(function (cat) {
       catItemsDueOn(cat, dateKey).forEach(function (it) {
+        if (!itemExistedOn(it, dateKey)) return;
         if (!isDone(dateKey, it.id)) out.push({ item: it, cat: cat });
       });
     });
@@ -1210,6 +1232,7 @@
         var d = new Date(base); d.setDate(d.getDate() - i);
         var dk = keyFor(d);
         if (!isDueForDate(pair.item, dk)) continue;
+        if (!itemExistedOn(pair.item, dk)) continue;
         due++;
         if (!isDone(dk, pair.item.id)) missed++;
       }
@@ -1743,7 +1766,8 @@
       seconds: src.seconds,
       days: src.days ? src.days.slice() : null,
       tags: src.tags ? src.tags.slice() : [],
-      keepOnRest: !!src.keepOnRest
+      keepOnRest: !!src.keepOnRest,
+      createdAt: todayKey()
     };
     cat.items.splice(idx + 1, 0, clone);
     saveState();
@@ -2156,7 +2180,8 @@
           days: (Array.isArray(it.days) && it.days.length < 7) ? it.days : null,
           tags: Array.isArray(it.tags) ? it.tags : [],
           keepOnRest: !!it.keepOnRest,
-          muted: !!it.muted
+          muted: !!it.muted,
+          createdAt: (typeof it.createdAt === "string" && it.createdAt) ? it.createdAt : undefined
         };
       }) : [];
       return { id: c.id || uid(), name: typeof c.name === "string" ? c.name : "", items: items };
@@ -2329,7 +2354,7 @@
     else if (action === "edit-items") { editingCatId = id; showView("view-editItems"); renderEditItems(); }
     else if (action === "add-item") {
       var cat = getCat(editingCatId);
-      cat.items.push({ id: uid(), name: "", seconds: 15, days: null, tags: [] });
+      cat.items.push({ id: uid(), name: "", seconds: 15, days: null, tags: [], createdAt: todayKey() });
       saveState(); renderEditItems();
       var inputs2 = document.querySelectorAll("#editItemsList input[data-item-name]");
       if (inputs2.length) inputs2[inputs2.length-1].focus();
