@@ -284,6 +284,16 @@
   .badge-cell.unlocked { opacity: 1; }
   .badge-cell .emoji { font-size: 22px; }
   .badge-cell .label { font-size: 10px; color: var(--ink-dim); text-align: center; }
+  .reward-ideas { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .reward-idea-chip { font-size: 11px; padding: 5px 9px; border-radius: 999px; background: var(--sage-soft); color: var(--ink); }
+  .reward-note-input { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg-soft); color: var(--ink); font-size: 13px; font-family: inherit; margin-bottom: 12px; }
+  .reward-note-input:focus { outline: none; border-color: var(--gold); }
+  .reward-log-item { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .reward-log-item:last-child { border-bottom: none; }
+  .reward-log-date { font-size: 10.5px; color: var(--ink-dim); }
+  .reward-log-note { font-size: 12.5px; margin-top: 2px; }
+  .reward-log-empty { font-size: 11.5px; color: var(--ink-dim); text-align: center; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -552,7 +562,22 @@
     </div>
     <div class="section-label">배지 (최장 연속일 기준)</div>
     <div class="badge-grid" id="badgeGrid"></div>
+    <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
+    <div id="rewardLogList"></div>
     <div class="btn primary" data-action="achieve-close" style="margin-top:16px;">닫기</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="rewardOverlay">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title" id="rewardTitle">레벨 업!</div>
+    <div id="rewardBody" style="font-size:12.5px;color:var(--ink-dim);text-align:center;margin-bottom:12px;"></div>
+    <div class="reward-ideas" id="rewardIdeas"></div>
+    <input type="text" class="reward-note-input" id="rewardNoteInput" placeholder="이번엔 뭘로 나에게 선물할까요? (선택)" maxlength="60">
+    <div class="tp-actions">
+      <div class="btn" data-action="reward-close">괜찮아요</div>
+      <div class="btn primary" data-action="reward-save">기록하고 닫기</div>
+    </div>
   </div>
 </div>
 
@@ -658,6 +683,12 @@
       var unlocked = longest >= b.days;
       return '<div class="badge-cell' + (unlocked ? ' unlocked' : '') + '"><span class="emoji">' + b.emoji + '</span><span class="label">' + b.label + '</span></div>';
     }).join("");
+    var logEl = document.getElementById("rewardLogList");
+    var rewards = (state.rewards || []).slice(0, 10);
+    logEl.innerHTML = rewards.length ? rewards.map(function (r) {
+      var tag = r.type === "badge" ? (r.badgeDays + "일 연속") : ("Lv." + r.level);
+      return '<div class="reward-log-item"><div class="reward-log-date">' + r.date + ' · ' + tag + '</div><div class="reward-log-note">' + escapeHtml(r.note) + '</div></div>';
+    }).join("") : '<div class="reward-log-empty">아직 기록한 선물이 없어요</div>';
     document.getElementById("achieveOverlay").classList.remove("hidden");
   }
   function closeAchievements() { document.getElementById("achieveOverlay").classList.add("hidden"); }
@@ -814,7 +845,10 @@
       history: {},
       restDays: [],
       recurringHolidays: [],
-      streakThreshold: 100
+      streakThreshold: 100,
+      rewards: [],
+      lastSeenLevel: 1,
+      celebratedBadgeDays: []
     };
   }
   function migrateHistory(history) {
@@ -845,6 +879,17 @@
     if (!p.restDays || !Array.isArray(p.restDays)) p.restDays = [];
     if (!p.recurringHolidays || !Array.isArray(p.recurringHolidays)) p.recurringHolidays = [];
     if (!p.streakThreshold) p.streakThreshold = 100;
+    if (!Array.isArray(p.rewards)) p.rewards = [];
+    // 레벨업/배지 보상 팝업 도입 시점 마이그레이션: 기존에 이미 쌓아온 레벨·배지에 대해
+    // 뒤늦게 축하 팝업이 뜨지 않도록, 처음 보는 상태라면 "지금까지"를 기준선으로 맞춰둔다.
+    if (typeof p.lastSeenLevel !== "number" || !Array.isArray(p.celebratedBadgeDays)) {
+      state = p; // computeGamification/computeLongestStreak는 전역 state를 읽는다 — 어차피 호출 직후 state에 p가 대입되므로 안전
+      if (typeof p.lastSeenLevel !== "number") p.lastSeenLevel = computeGamification().level;
+      if (!Array.isArray(p.celebratedBadgeDays)) {
+        var longestSoFar = computeLongestStreak();
+        p.celebratedBadgeDays = BADGE_THRESHOLDS.filter(function (b) { return longestSoFar >= b.days; }).map(function (b) { return b.days; });
+      }
+    }
     return p;
   }
   function loadFromLocalStorage() {
@@ -1155,6 +1200,76 @@
     return { points: points, level: level, ptsIntoLevel: ptsIntoLevel, ptsForNext: 50 };
   }
 
+  // ---- self-reward events (레벨업 = 잦은 보상, 스트릭 배지 = 드문 보상) ----
+  var REWARD_IDEAS = [
+    "☕ 좋아하는 음료 한 잔", "📖 읽고 싶던 책 사기", "🍫 작은 간식 사 먹기",
+    "🛍️ 고민하던 물건 사기", "🎧 좋아하는 음악 들으며 산책", "🛌 낮잠 30분 자기", "✨ 오늘은 일찍 쉬기"
+  ];
+  var rewardQueue = [];
+  function checkRewardEvents() {
+    var gam = computeGamification();
+    if (gam.level > (state.lastSeenLevel || 1)) {
+      state.lastSeenLevel = gam.level;
+      queueReward({ type: "level", level: gam.level });
+    }
+    var longest = computeLongestStreak();
+    if (!Array.isArray(state.celebratedBadgeDays)) state.celebratedBadgeDays = [];
+    BADGE_THRESHOLDS.forEach(function (b) {
+      if (longest >= b.days && state.celebratedBadgeDays.indexOf(b.days) === -1) {
+        state.celebratedBadgeDays.push(b.days);
+        queueReward({ type: "badge", badge: b });
+      }
+    });
+    saveState();
+  }
+  function queueReward(ev) {
+    rewardQueue.push(ev);
+    if (rewardQueue.length === 1) showRewardOverlay();
+  }
+  function showRewardOverlay() {
+    var ev = rewardQueue[0];
+    if (!ev) return;
+    var title, body;
+    if (ev.type === "badge") {
+      title = ev.badge.emoji + " " + ev.badge.days + "일 연속 달성!";
+      body = "정말 대단해요 — 이번엔 좀 더 특별한 걸로 자신에게 선물해보는 거 어때요?";
+    } else {
+      title = "레벨 " + ev.level + " 달성! 🎉";
+      body = "차곡차곡 쌓이고 있어요. 오늘은 스스로에게 작은 걸 선물해보는 거 어때요?";
+    }
+    document.getElementById("rewardTitle").textContent = title;
+    document.getElementById("rewardBody").textContent = body;
+    document.getElementById("rewardIdeas").innerHTML = REWARD_IDEAS.map(function (t) {
+      return '<span class="reward-idea-chip">' + t + '</span>';
+    }).join("");
+    document.getElementById("rewardNoteInput").value = "";
+    document.getElementById("rewardOverlay").classList.remove("hidden");
+  }
+  function closeRewardOverlay() {
+    document.getElementById("rewardOverlay").classList.add("hidden");
+    rewardQueue.shift();
+    if (rewardQueue.length) setTimeout(showRewardOverlay, 300);
+  }
+  function saveRewardOverlay() {
+    var ev = rewardQueue[0];
+    var note = document.getElementById("rewardNoteInput").value.trim();
+    if (ev && note) {
+      if (!Array.isArray(state.rewards)) state.rewards = [];
+      state.rewards.unshift({
+        id: uid(),
+        type: ev.type,
+        level: ev.type === "level" ? ev.level : null,
+        badgeDays: ev.type === "badge" ? ev.badge.days : null,
+        date: todayKey(),
+        note: note
+      });
+      if (state.rewards.length > 200) state.rewards.length = 200;
+      saveState();
+      toast("기록했어요 🎁");
+    }
+    closeRewardOverlay();
+  }
+
   // ---- weekly summary + consistency ----
   function dayCompletionRatio(dk) {
     var due = 0, done = 0;
@@ -1381,6 +1496,7 @@
     var item = currentItem();
     if (item) {
       markDone(item.id, true);
+      checkRewardEvents();
     }
     advance();
   }
@@ -1895,7 +2011,8 @@
       history: state.history,
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
-      streakThreshold: state.streakThreshold
+      streakThreshold: state.streakThreshold,
+      rewards: state.rewards
     };
     document.getElementById("exportText").value = JSON.stringify(data, null, 2);
   }
@@ -1937,6 +2054,12 @@
     if (Array.isArray(parsed.restDays)) state.restDays = parsed.restDays;
     if (Array.isArray(parsed.recurringHolidays)) state.recurringHolidays = parsed.recurringHolidays;
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
+    if (Array.isArray(parsed.rewards)) state.rewards = parsed.rewards;
+    // 가져온 기록 기준으로 레벨/배지 기준선을 다시 맞춰서, 가져오자마자 예전 레벨업/배지
+    // 축하 팝업이 뒤늦게 쏟아지지 않게 한다.
+    state.lastSeenLevel = computeGamification().level;
+    var importedLongest = computeLongestStreak();
+    state.celebratedBadgeDays = BADGE_THRESHOLDS.filter(function (b) { return importedLongest >= b.days; }).map(function (b) { return b.days; });
     saveState();
     toast((sourceLabel || "") + "가져왔어요");
     showView("view-home"); renderHome();
@@ -1995,7 +2118,8 @@
       history: state.history,
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
-      streakThreshold: state.streakThreshold
+      streakThreshold: state.streakThreshold,
+      rewards: state.rewards
     };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
@@ -2042,6 +2166,7 @@
         var wasDone = isDone(todayKey(), tItemId);
         var wasFull = catFullyDone(tCat);
         markDone(tItemId, !wasDone);
+        if (!wasDone) checkRewardEvents();
         renderHome();
         if (!wasFull && catFullyDone(tCat)) {
           var cardEl = document.querySelector('[data-cat-card="' + tCat.id + '"]');
@@ -2142,6 +2267,8 @@
     }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
+    else if (action === "reward-close") { closeRewardOverlay(); }
+    else if (action === "reward-save") { saveRewardOverlay(); }
     else if (action === "settings-close") { document.getElementById("settingsOverlay").classList.add("hidden"); }
     else if (action === "theme-select") { currentTheme = id; applyTheme(id); updateSettingsModalUI(); }
     else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
@@ -2160,6 +2287,7 @@
     else if (action === "toggle-backfill-item") {
       var wasD = isDone(backfillDate, id);
       markDone(id, !wasD, backfillDate);
+      if (!wasD) checkRewardEvents();
       renderBackfill();
     }
     else if (action === "stats-view") { statsView = id; renderStats(); }
