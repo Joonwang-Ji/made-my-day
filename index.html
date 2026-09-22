@@ -52,8 +52,16 @@
   .streak svg { width: 15px; height: 15px; flex: none; }
 
   .nudge-banner { display: flex; align-items: center; gap: 8px; background: var(--gold-soft); color: var(--gold);
-    border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px; line-height: 1.5; }
+    border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px; line-height: 1.5;
+    cursor: pointer; }
   .nudge-banner svg { width: 16px; height: 16px; flex: none; }
+  .nudge-banner .nb-chev { margin-left: auto; opacity: .6; }
+  .missed-list { display: flex; flex-direction: column; gap: 2px; }
+  .missed-row { display: flex; align-items: center; gap: 8px; padding: 8px 2px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .missed-row:last-child { border-bottom: none; }
+  .missed-cat { color: var(--ink-dim); font-size: 11px; flex: none; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .missed-name { flex: 1; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .missed-rate { color: var(--gold); font-weight: 700; font-size: 11px; flex: none; }
 
   .weekly-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px;
     margin-bottom: 14px; font-size: 12.5px; color: var(--ink-dim); line-height: 1.7; }
@@ -93,6 +101,7 @@
   .run-finish .check-badge svg { width: 26px; height: 26px; }
   .mini-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ring-track); flex: none; }
   .mini-dot.done { background: var(--sage); }
+  .mini-dot.done.overtime { background: var(--gold); }
   .mini-dot.na { background: transparent; border: 1px dashed var(--ink-dim); }
   .mini-dot.optional { background: transparent; border: 1px dashed var(--gold); }
   .mini-dot.optional.done { background: var(--gold); border: none; }
@@ -187,6 +196,7 @@
   .mini-cal-cell { aspect-ratio: 1; border-radius: 4px; background: var(--ring-track); font-size: 8px;
     display: flex; align-items: center; justify-content: center; color: var(--ink-dim); }
   .mini-cal-cell.done { background: var(--sage); color: var(--card); font-weight: 700; }
+  .mini-cal-cell.done.overtime { background: var(--gold); }
   .mini-cal-cell.future { visibility: hidden; }
   .mini-cal-cell.na { opacity: 0.25; }
   .mini-cal-foot { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--ink-dim); }
@@ -214,6 +224,7 @@
   .week-row .wr-name { font-size: 12.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; }
   .week-cell { width: 20px; height: 20px; border-radius: 6px; background: var(--ring-track); margin: 0 auto; }
   .week-cell.done { background: var(--sage); }
+  .week-cell.done.overtime { background: var(--gold); }
   .week-cell.future { background: transparent; }
   .week-cell.na { background: transparent; border: 1px dashed var(--line); }
 
@@ -345,7 +356,7 @@
     </div>
   </header>
 
-  <div id="nudgeBanner" class="nudge-banner hidden"></div>
+  <div id="nudgeBanner" class="nudge-banner hidden" data-action="open-missed-overlay"></div>
   <div id="weeklyCard" class="weekly-card hidden"></div>
 
   <div id="catList"></div>
@@ -568,6 +579,14 @@
     <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
     <div id="rewardLogList"></div>
     <div class="btn primary" data-action="achieve-close" style="margin-top:16px;">닫기</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="missedOverlay">
+  <div class="tp-card" style="max-width:320px;">
+    <div class="tp-title">놓친 항목</div>
+    <div id="missedOverlayBody"></div>
+    <div class="btn primary" data-action="missed-close" style="margin-top:16px;">닫기</div>
   </div>
 </div>
 
@@ -859,19 +878,26 @@
     Object.keys(history || {}).forEach(function (dateKey) {
       var dayObj = history[dateKey];
       var union = {};
+      var overtimeUnion = {};
       if (dayObj && typeof dayObj === "object") {
         if (Array.isArray(dayObj.completed)) {
           dayObj.completed.forEach(function (id) { union[id] = true; });
         }
+        if (Array.isArray(dayObj.overtime)) {
+          dayObj.overtime.forEach(function (id) { overtimeUnion[id] = true; });
+        }
         Object.keys(dayObj).forEach(function (k) {
-          if (k === "completed") return;
+          if (k === "completed" || k === "overtime") return;
           var v = dayObj[k];
           if (v && typeof v === "object" && Array.isArray(v.completed)) {
             v.completed.forEach(function (id) { union[id] = true; });
           }
         });
       }
-      out[dateKey] = { completed: Object.keys(union) };
+      // overtime 표시는 completed의 부분집합이어야 한다(체크 취소 시 함께 해제되므로 정상적으로는
+      // 항상 그렇지만, 방어적으로 한 번 더 걸러준다)
+      var overtimeIds = Object.keys(overtimeUnion).filter(function (id) { return union[id]; });
+      out[dateKey] = { completed: Object.keys(union), overtime: overtimeIds };
     });
     return out;
   }
@@ -1048,19 +1074,32 @@
   }
 
   function dayEntry(dateKey) {
-    if (!state.history[dateKey]) state.history[dateKey] = { completed: [] };
+    if (!state.history[dateKey]) state.history[dateKey] = { completed: [], overtime: [] };
     if (!Array.isArray(state.history[dateKey].completed)) state.history[dateKey].completed = [];
+    if (!Array.isArray(state.history[dateKey].overtime)) state.history[dateKey].overtime = [];
     return state.history[dateKey];
   }
   function isDone(dateKey, itemId) {
     var d = state.history[dateKey];
     return !!d && Array.isArray(d.completed) && d.completed.indexOf(itemId) !== -1;
   }
-  function markDone(itemId, done, dateKey) {
+  // 카운트다운을 초과한 뒤(런모드에서 +MM:SS 상태일 때) 완료 버튼을 눌러 마친 항목인지.
+  // 홈 화면 탭이나 기록(backfill) 탭으로는 절대 켜지지 않고, 오직 런모드 초과완료에서만 켜진다.
+  function isOvertimeDone(dateKey, itemId) {
+    var d = state.history[dateKey];
+    return !!d && Array.isArray(d.overtime) && d.overtime.indexOf(itemId) !== -1;
+  }
+  function markDone(itemId, done, dateKey, overtime) {
     var entry = dayEntry(dateKey || todayKey());
     var idx = entry.completed.indexOf(itemId);
     if (done && idx === -1) entry.completed.push(itemId);
     if (!done && idx !== -1) entry.completed.splice(idx, 1);
+    // overtime 플래그는 done===true && overtime===true일 때만 세팅된다. 체크 취소(done=false) 시
+    // 항상 해제되고, overtime 없이(예: 홈 화면 탭, 기록 화면, 정상 시간 내 완료) 재완료하면 다시
+    // 정상완료로 돌아온다 — "체크취소 후 재완료 시 정상완료로" 요구사항.
+    var oidx = entry.overtime.indexOf(itemId);
+    if (done && overtime && oidx === -1) entry.overtime.push(itemId);
+    if ((!done || !overtime) && oidx !== -1) entry.overtime.splice(oidx, 1);
     saveState();
   }
   function getCat(id) { return state.categories.filter(function (c) { return c.id === id; })[0]; }
@@ -1148,6 +1187,61 @@
     if (totalDue === 0) return null;
     return (totalDone / totalDue * 100) >= threshold;
   }
+  // ---- 놓친 항목 배너 ----
+  function missedItemsFor(dateKey) {
+    var out = [];
+    state.categories.forEach(function (cat) {
+      catItemsDueOn(cat, dateKey).forEach(function (it) {
+        if (!isDone(dateKey, it.id)) out.push({ item: it, cat: cat });
+      });
+    });
+    return out;
+  }
+  // 최근 windowDays일(오늘 제외, 어제부터 거슬러) 동안 예정 대비 놓친 비율이 높은 항목 상위 몇 개.
+  // 최소 표본(예정 3회 이상, 놓침 2회 이상)을 넘는 항목만 다뤄 우연한 하루 결석을 "자주 놓침"으로
+  // 과대 해석하지 않도록 한다.
+  function frequentlyMissedItems(windowDays) {
+    windowDays = windowDays || 14;
+    var base = new Date(); base.setHours(0, 0, 0, 0);
+    var flat = allItemsFlat();
+    var stats = flat.map(function (pair) {
+      var due = 0, missed = 0;
+      for (var i = 1; i <= windowDays; i++) {
+        var d = new Date(base); d.setDate(d.getDate() - i);
+        var dk = keyFor(d);
+        if (!isDueForDate(pair.item, dk)) continue;
+        due++;
+        if (!isDone(dk, pair.item.id)) missed++;
+      }
+      return { item: pair.item, cat: pair.cat, due: due, missed: missed, rate: due > 0 ? missed / due : 0 };
+    });
+    return stats.filter(function (s) { return s.due >= 3 && s.missed >= 2; })
+      .sort(function (a, b) { return b.rate - a.rate || b.missed - a.missed; })
+      .slice(0, 5);
+  }
+  function renderMissedOverlay() {
+    var yKey = keyFor(new Date(Date.now() - 86400000));
+    var missed = missedItemsFor(yKey);
+    var freq = frequentlyMissedItems(14);
+    var html = '<div class="section-label">어제 놓친 항목</div>';
+    html += missed.length
+      ? '<div class="missed-list">' + missed.map(function (m) {
+          return '<div class="missed-row"><span class="missed-cat">' + escapeHtml(m.cat.name || "") + '</span>' +
+            '<span class="missed-name">' + escapeHtml(m.item.name || "이름 없음") + '</span></div>';
+        }).join("") + '</div>'
+      : '<div class="empty" style="padding:8px 0;">어제는 놓친 항목이 없었어요.</div>';
+    html += '<div class="section-label" style="margin-top:16px;">자주 놓치는 항목 (최근 14일)</div>';
+    html += freq.length
+      ? '<div class="missed-list">' + freq.map(function (f) {
+          return '<div class="missed-row"><span class="missed-cat">' + escapeHtml(f.cat.name || "") + '</span>' +
+            '<span class="missed-name">' + escapeHtml(f.item.name || "이름 없음") + '</span>' +
+            '<span class="missed-rate">' + f.missed + '/' + f.due + '회 놓침</span></div>';
+        }).join("") + '</div>'
+      : '<div class="empty" style="padding:8px 0;">아직 자주 놓치는 항목은 없어요.</div>';
+    document.getElementById("missedOverlayBody").innerHTML = html;
+  }
+  function openMissedOverlay() { renderMissedOverlay(); document.getElementById("missedOverlay").classList.remove("hidden"); }
+  function closeMissedOverlay() { document.getElementById("missedOverlay").classList.add("hidden"); }
   function computeStreakGeneric(statusFn) {
     var streak = 0, d = new Date(), first = true;
     while (true) {
@@ -1392,13 +1486,14 @@
         // 스트릭에 영향을 주지 않고, 성공 달력에서 별도 표시로만 남는다.
         var optional = !due && todayIsRest;
         var checked = isDone(todayK, it.id);
+        var overtimeDone = checked && isOvertimeDone(todayK, it.id);
         var itemCls = checked ? ' done' : (due ? '' : (optional ? ' optional' : ' not-due'));
-        var dotCls = checked ? ' done' : (due ? '' : (optional ? ' optional' : ' na'));
+        var dotCls = (checked ? ' done' : (due ? '' : (optional ? ' optional' : ' na'))) + (overtimeDone ? ' overtime' : '');
         return '<div class="mini-item' + itemCls + '"' +
           ((due || optional) ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + dotCls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          '<span class="mini-dur">' + (due ? fmtDur(it.seconds) : (optional ? "쉬는 날 · 선택" : dayLabel(it))) + '</span></div>';
+          '<span class="mini-dur">' + (overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (optional ? "쉬는 날 · 선택" : dayLabel(it)))) + '</span></div>';
       }).join("");
       card.setAttribute("data-cat-card", cat.id);
       card.innerHTML =
@@ -1503,7 +1598,8 @@
   function completeCurrent() {
     var item = currentItem();
     if (item) {
-      markDone(item.id, true);
+      var overtime = !!(item.seconds && elapsedSeconds() >= item.seconds);
+      markDone(item.id, true, null, overtime);
       checkRewardEvents();
     }
     advance();
@@ -1942,7 +2038,8 @@
         dueDaysCount++;
         var done = isDone(dk, it.id);
         if (done) doneCount++;
-        cellsHtml += '<div class="mini-cal-cell' + (done ? ' done' : '') + '">' + day + '</div>';
+        var otCls = (done && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
+        cellsHtml += '<div class="mini-cal-cell' + (done ? ' done' : '') + otCls + '">' + day + '</div>';
       }
       var rate = dueDaysCount > 0 ? Math.round(doneCount / dueDaysCount * 100) : 0;
       html += '<div class="mini-cal-card"><div class="mini-cal-title">' + escapeHtml(it.name || "이름 없음") + '</div>' +
@@ -1971,7 +2068,8 @@
         if (isFuture) return '<div class="week-cell future"></div>';
         if (!isDueForDate(it, dk)) return '<div class="week-cell na"></div>';
         var done = isDone(dk, it.id);
-        return '<div class="week-cell' + (done ? ' done' : '') + '"></div>';
+        var otCls = (done && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
+        return '<div class="week-cell' + (done ? ' done' : '') + otCls + '"></div>';
       }).join("");
       html += '<div class="week-row"><div class="wr-name">' + escapeHtml(it.name || "이름 없음") + '</div>' + cells + '</div>';
     });
@@ -2289,6 +2387,8 @@
       if (lb) lb.textContent = "로그아웃";
       document.getElementById("settingsOverlay").classList.remove("hidden"); updateSettingsModalUI();
     }
+    else if (action === "open-missed-overlay") { openMissedOverlay(); }
+    else if (action === "missed-close") { closeMissedOverlay(); }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
     else if (action === "reward-close") { closeRewardOverlay(); }
