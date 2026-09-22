@@ -29,7 +29,6 @@
   html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); touch-action: manipulation;
-    overflow-x: hidden; width: 100%;
     font-family: 'Nanum Gothic', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
   .wrap { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; }
   .hidden { display: none !important; }
@@ -178,7 +177,7 @@
   .month-nav button svg { width: 13px; height: 13px; }
   .month-nav .label { font-weight: 800; font-size: 15px; }
 
-  .mini-cal-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .mini-cal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .mini-cal-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
   .mini-cal-title { font-size: 12.5px; font-weight: 800; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mini-cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
@@ -1458,6 +1457,7 @@
     if (!cat) return;
     var items = catItemsDueOn(cat, todayKey());
     if (items.length === 0) { toast("오늘 예정된 항목이 없어요"); return; }
+    unlockAudioCtx(); // ▶ 탭은 확실한 사용자 제스처 — 여기서 오디오 컨텍스트를 미리 풀어둔다
     stopTimerInterval();
     runState = { catId: catId, items: items, idx: 0, itemStart: Date.now(), pausedAt: null, pausedAccumMs: 0, paused: false, alarmFired: false };
     showView("view-run");
@@ -1762,11 +1762,27 @@
   }
 
   // ---- completion alarm ----
-  function playCompleteAlarm() {
+  // iOS Safari(그 외 대부분 모바일 브라우저)는 사용자 탭(제스처) 안에서 만들어지거나
+  // resume()된 AudioContext가 아니면 소리를 그냥 무음 처리한다. 예전엔 알람을 울릴 때마다
+  // new AudioContext()를 새로 만들었는데, 이 호출이 (실행 타이머의) setInterval 콜백
+  // 안에서 일어나면 그건 "사용자 제스처"가 아니라서 컨텍스트가 suspended 상태로 남고
+  // 아무 소리도 안 났다. 그래서 ▶ 실행 시작처럼 확실한 탭 이벤트 안에서 컨텍스트를 한 번
+  // 만들어 두고(unlockAudioCtx), 이후엔 그 컨텍스트를 계속 재사용한다(닫지 않는다).
+  var audioCtx = null;
+  function unlockAudioCtx() {
     try {
       var Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return;
-      var ctx = new Ctx();
+      if (!audioCtx) audioCtx = new Ctx();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) { /* audio unavailable, ignore */ }
+  }
+  function playCompleteAlarm() {
+    try {
+      if (!audioCtx) unlockAudioCtx();
+      if (!audioCtx) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      var ctx = audioCtx;
       var o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "sine"; o.frequency.value = 880;
       g.gain.setValueAtTime(0.0001, ctx.currentTime);
@@ -1774,7 +1790,6 @@
       g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
       o.connect(g); g.connect(ctx.destination);
       o.start(); o.stop(ctx.currentTime + 0.45);
-      o.onended = function () { ctx.close(); };
     } catch (e) { /* audio unavailable, ignore */ }
     try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) {}
   }
@@ -2182,6 +2197,7 @@
     else if (action === "run-category") { startRun(id); }
     else if (action === "close-run") { stopTimerInterval(); runState = null; showView("view-home"); renderHome(); }
     else if (action === "run-toggle-pause") {
+      unlockAudioCtx(); // 화면 잠금 등으로 컨텍스트가 다시 suspended 됐을 수 있어 탭할 때마다 한 번 더 풀어준다
       if (runState.paused) { runState.pausedAccumMs += Date.now() - runState.pausedAt; runState.pausedAt = null; runState.paused = false; }
       else { runState.pausedAt = Date.now(); runState.paused = true; }
       renderRun();
