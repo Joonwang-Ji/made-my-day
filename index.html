@@ -433,6 +433,14 @@
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="moveCatOverlay">
+  <div class="tp-card">
+    <div class="tp-title">카테고리 이동</div>
+    <div class="theme-option-row" id="moveCatList"></div>
+    <div class="btn" data-action="movecat-cancel" style="margin-top:12px;">취소</div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="tagOverlay">
   <div class="tp-card">
     <div class="tp-title">태그</div>
@@ -948,17 +956,17 @@
     });
   }
 
-  function dayEntry(dateKey, catId) {
-    if (!state.history[dateKey]) state.history[dateKey] = {};
-    if (!state.history[dateKey][catId]) state.history[dateKey][catId] = { completed: [] };
-    return state.history[dateKey][catId];
+  function dayEntry(dateKey) {
+    if (!state.history[dateKey]) state.history[dateKey] = { completed: [] };
+    if (!Array.isArray(state.history[dateKey].completed)) state.history[dateKey].completed = [];
+    return state.history[dateKey];
   }
-  function isDone(dateKey, catId, itemId) {
-    var d = state.history[dateKey] && state.history[dateKey][catId];
-    return !!d && d.completed.indexOf(itemId) !== -1;
+  function isDone(dateKey, itemId) {
+    var d = state.history[dateKey];
+    return !!d && Array.isArray(d.completed) && d.completed.indexOf(itemId) !== -1;
   }
-  function markDone(catId, itemId, done) {
-    var entry = dayEntry(todayKey(), catId);
+  function markDone(itemId, done) {
+    var entry = dayEntry(todayKey());
     var idx = entry.completed.indexOf(itemId);
     if (done && idx === -1) entry.completed.push(itemId);
     if (!done && idx !== -1) entry.completed.splice(idx, 1);
@@ -1010,8 +1018,8 @@
   function catTotalSecondsOn(cat, dk) { return catItemsDueOn(cat, dk).reduce(function (a, it) { return a + (it.seconds || 0); }, 0); }
   function catDoneCount(cat, dateKey) {
     dateKey = dateKey || todayKey();
-    var entry = state.history[dateKey] && state.history[dateKey][cat.id];
-    if (!entry) return 0;
+    var entry = state.history[dateKey];
+    if (!entry || !Array.isArray(entry.completed)) return 0;
     var due = catItemsDueOn(cat, dateKey);
     return due.filter(function (it) { return entry.completed.indexOf(it.id) !== -1; }).length;
   }
@@ -1087,16 +1095,12 @@
   function computeGamification() {
     var points = 0;
     Object.keys(state.history).forEach(function (dateKey) {
-      var dayObj = state.history[dateKey];
-      Object.keys(dayObj).forEach(function (catId) {
-        var entry = dayObj[catId];
-        var n = entry.completed ? entry.completed.length : 0;
-        points += n;
-        var cat = getCat(catId);
-        if (cat) {
-          var dueItems = cat.items.filter(function (it) { return isDueForDate(it, dateKey); });
-          if (dueItems.length > 0 && n === dueItems.length) points += 5;
-        }
+      var entry = state.history[dateKey];
+      var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
+      points += completed.length;
+      state.categories.forEach(function (cat) {
+        var due = catItemsDueOn(cat, dateKey);
+        if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) points += 5;
       });
     });
     var level = Math.floor(points / 50) + 1;
@@ -1217,7 +1221,7 @@
       card.className = "cat-card";
       var itemsHtml = cat.items.map(function (it) {
         var due = isDueForDate(it, todayK);
-        var d2 = due && isDone(todayK, cat.id, it.id);
+        var d2 = due && isDone(todayK, it.id);
         return '<div class="mini-item' + (d2 ? ' done' : '') + (due ? '' : ' not-due') + '"' +
           (due ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + (d2 ? ' done' : (due ? '' : ' na')) + '"></span>' +
@@ -1417,6 +1421,8 @@
             '<button class="icon-btn" data-action="item-down" data-id="' + it.id + '" style="opacity:' + (idx===cat.items.length-1?0.25:1) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
           '</div>' +
           '<input type="text" data-item-name="' + it.id + '" value="' + escapeHtml(it.name) + '" placeholder="항목 이름">' +
+          '<button class="icon-btn" data-action="duplicate-item" data-id="' + it.id + '" title="복제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>' +
+          '<button class="icon-btn" data-action="open-move-category" data-id="' + it.id + '" title="카테고리 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></button>' +
           '<button class="icon-btn" data-action="delete-item" data-id="' + it.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
         '</div>' +
         '<div class="row-bottom">' +
@@ -1434,7 +1440,58 @@
     });
   }
 
-  // ---- time picker ----
+  function duplicateItem(itemId) {
+    var cat = getCat(editingCatId);
+    if (!cat) return;
+    var idx = cat.items.findIndex(function (it) { return it.id === itemId; });
+    if (idx === -1) return;
+    var src = cat.items[idx];
+    var clone = {
+      id: uid(),
+      name: src.name + " 사본",
+      seconds: src.seconds,
+      days: src.days ? src.days.slice() : null,
+      tags: src.tags ? src.tags.slice() : [],
+      keepOnRest: !!src.keepOnRest
+    };
+    cat.items.splice(idx + 1, 0, clone);
+    saveState();
+    renderEditItems();
+  }
+
+  var moveCatItemId = null;
+  function renderMoveCatList() {
+    var el = document.getElementById("moveCatList");
+    var others = state.categories.filter(function (c) { return c.id !== editingCatId; });
+    if (others.length === 0) {
+      el.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);">이동할 다른 카테고리가 없어요.</div>';
+      return;
+    }
+    el.innerHTML = others.map(function (c) {
+      return '<div class="theme-option" data-action="movecat-select" data-id="' + c.id + '"><span>' + escapeHtml(c.name || "이름 없음") + '</span></div>';
+    }).join("");
+  }
+  function openMoveCategory(itemId) {
+    moveCatItemId = itemId;
+    renderMoveCatList();
+    document.getElementById("moveCatOverlay").classList.remove("hidden");
+  }
+  function closeMoveCategory() { document.getElementById("moveCatOverlay").classList.add("hidden"); moveCatItemId = null; }
+  function doMoveCategory(targetCatId) {
+    var fromCat = getCat(editingCatId);
+    var toCat = getCat(targetCatId);
+    if (!fromCat || !toCat) { closeMoveCategory(); return; }
+    var idx = fromCat.items.findIndex(function (it) { return it.id === moveCatItemId; });
+    if (idx === -1) { closeMoveCategory(); return; }
+    var item = fromCat.items.splice(idx, 1)[0];
+    toCat.items.push(item);
+    saveState();
+    toast('"' + (toCat.name || "이름 없음") + '"으로 이동했어요');
+    closeMoveCategory();
+    renderEditItems();
+  }
+
+
   var tpItemId = null, tpMinVal = 0, tpSecVal = 0;
   function buildWheel(container, max, current, onSettle) {
     container.innerHTML = "";
@@ -1889,6 +1946,10 @@
       cat2.items = cat2.items.filter(function (it) { return it.id !== id; });
       saveState(); renderEditItems();
     }
+    else if (action === "duplicate-item") { duplicateItem(id); }
+    else if (action === "open-move-category") { openMoveCategory(id); }
+    else if (action === "movecat-cancel") { closeMoveCategory(); }
+    else if (action === "movecat-select") { doMoveCategory(id); }
     else if (action === "item-up" || action === "item-down") {
       var cat3 = getCat(editingCatId);
       var idx2 = cat3.items.findIndex(function (it) { return it.id === id; });
