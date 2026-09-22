@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Made My Day</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +28,7 @@
   }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink);
+  body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); touch-action: manipulation;
     font-family: 'Nanum Gothic', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
   .wrap { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; }
   .hidden { display: none !important; }
@@ -283,7 +283,13 @@
 </head>
 <body>
 
-<div class="wrap" id="view-login">
+<div class="wrap" id="view-checking">
+  <div style="min-height:80vh;display:flex;align-items:center;justify-content:center;">
+    <div class="sub">확인 중…</div>
+  </div>
+</div>
+
+<div class="wrap hidden" id="view-login">
   <div style="min-height:80vh;display:flex;flex-direction:column;justify-content:center;">
     <div style="text-align:center;margin-bottom:28px;">
       <div class="day" style="font-size:26px;">Made My Day</div>
@@ -296,6 +302,7 @@
       <div class="btn primary" data-action="auth-signin">로그인</div>
       <div class="btn" data-action="auth-signup">처음이에요 (가입)</div>
     </div>
+    <div data-action="auth-forgot" style="text-align:center;margin-top:16px;font-size:12.5px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">비밀번호를 잊으셨나요?</div>
   </div>
 </div>
 
@@ -450,8 +457,22 @@
       <div class="theme-option" data-action="threshold-select" data-id="70"><span>느슨하게 (70% 이상)</span><span class="dot"></span></div>
     </div>
     <div class="btn" data-action="open-rest-modal" style="margin-top:16px;">쉬는 날 관리</div>
+    <div class="btn" data-action="open-changepw-modal" style="margin-top:10px;">비밀번호 변경</div>
     <div class="btn" data-action="auth-logout" style="margin-top:10px;color:var(--danger);">로그아웃</div>
     <div class="btn primary" data-action="settings-close" style="margin-top:10px;">닫기</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="changePwOverlay">
+  <div class="tp-card">
+    <div class="tp-title">비밀번호 변경</div>
+    <input type="password" id="changePwCurrent" class="cat-name-input" placeholder="현재 비밀번호" autocomplete="current-password" style="margin-bottom:10px;">
+    <input type="password" id="changePwNew" class="cat-name-input" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password" style="margin-bottom:10px;">
+    <div id="changePwError" style="color:var(--danger);font-size:12.5px;margin-bottom:6px;display:none;"></div>
+    <div class="tp-actions">
+      <div class="btn" data-action="changepw-cancel">취소</div>
+      <div class="btn primary" data-action="changepw-confirm">변경</div>
+    </div>
   </div>
 </div>
 
@@ -507,10 +528,11 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-    createUserWithEmailAndPassword, signOut
+    createUserWithEmailAndPassword, signOut, sendPasswordResetEmail,
+    updatePassword, reauthenticateWithCredential, EmailAuthProvider
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
-    getFirestore, doc, getDoc, setDoc,
+    getFirestore, doc, getDoc, setDoc, onSnapshot,
     enableIndexedDbPersistence
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -533,6 +555,15 @@
     signIn: function (email, pw) { return signInWithEmailAndPassword(auth, email, pw); },
     signUp: function (email, pw) { return createUserWithEmailAndPassword(auth, email, pw); },
     signOutUser: function () { return signOut(auth); },
+    resetPassword: function (email) { return sendPasswordResetEmail(auth, email); },
+    changePassword: function (currentPw, newPw) {
+      var user = auth.currentUser;
+      if (!user) return Promise.reject({ code: "auth/no-user" });
+      var cred = EmailAuthProvider.credential(user.email, currentPw);
+      return reauthenticateWithCredential(user, cred).then(function () {
+        return updatePassword(user, newPw);
+      });
+    },
     loadState: function (uid) {
       return getDoc(doc(db, "users", uid)).then(function (snap) {
         return snap.exists() ? snap.data() : null;
@@ -540,6 +571,11 @@
     },
     saveState: function (uid, data) {
       return setDoc(doc(db, "users", uid), data);
+    },
+    subscribeState: function (uid, onData, onError) {
+      return onSnapshot(doc(db, "users", uid), function (snap) {
+        onData(snap.exists() ? snap.data() : null, snap.metadata.hasPendingWrites);
+      }, onError);
     }
   };
   window.dispatchEvent(new Event("fb-ready"));
@@ -796,11 +832,13 @@
     };
     return map[code] || ("로그인에 실패했어요 (" + code + ")");
   }
+  var ALLOWED_EMAIL = "god@yonsei.ac.kr";
   function doSignIn() {
     var email = document.getElementById("authEmail").value.trim();
     var pw = document.getElementById("authPassword").value;
     authError("");
     if (!email || !pw) { authError("이메일과 비밀번호를 입력해주세요"); return; }
+    if (email.toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) { authError("이 앱은 지정된 계정만 사용할 수 있어요"); return; }
     window.__fb.signIn(email, pw).catch(function (err) { authError(translateAuthError(err.code)); });
   }
   function doSignUp() {
@@ -808,40 +846,95 @@
     var pw = document.getElementById("authPassword").value;
     authError("");
     if (!email || !pw) { authError("이메일과 비밀번호를 입력해주세요"); return; }
+    if (email.toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) { authError("이 앱은 지정된 계정만 사용할 수 있어요"); return; }
     if (pw.length < 6) { authError("비밀번호는 6자 이상이어야 해요"); return; }
     window.__fb.signUp(email, pw).catch(function (err) { authError(translateAuthError(err.code)); });
   }
-  function doSignOut() {
+  function doForgotPassword() {
+    authError("");
+    window.__fb.resetPassword(ALLOWED_EMAIL).then(function () {
+      authError("");
+      toast(ALLOWED_EMAIL + "로 재설정 메일을 보냈어요");
+    }).catch(function (err) { authError(translateAuthError(err.code)); });
+  }
+  function changePwError(msg) {
+    var el = document.getElementById("changePwError");
+    el.textContent = msg; el.style.display = msg ? "block" : "none";
+  }
+  function openChangePwModal() {
+    document.getElementById("changePwCurrent").value = "";
+    document.getElementById("changePwNew").value = "";
+    changePwError("");
+    document.getElementById("settingsOverlay").classList.add("hidden");
+    document.getElementById("changePwOverlay").classList.remove("hidden");
+  }
+  function closeChangePwModal() { document.getElementById("changePwOverlay").classList.add("hidden"); }
+  function doChangePassword() {
+    var cur = document.getElementById("changePwCurrent").value;
+    var next = document.getElementById("changePwNew").value;
+    changePwError("");
+    if (!cur || !next) { changePwError("두 칸 다 입력해주세요"); return; }
+    if (next.length < 6) { changePwError("새 비밀번호는 6자 이상이어야 해요"); return; }
+    window.__fb.changePassword(cur, next).then(function () {
+      closeChangePwModal();
+      toast("비밀번호를 변경했어요");
+    }).catch(function (err) { changePwError(translateAuthError(err.code)); });
+  }
+  var logoutArmed = false;
+  function doSignOutRequest() {
+    if (!logoutArmed) {
+      logoutArmed = true;
+      var b = document.querySelector('[data-action="auth-logout"]');
+      if (b) b.textContent = "정말 로그아웃할까요?";
+      return;
+    }
+    logoutArmed = false;
+    if (stateUnsub) { stateUnsub(); stateUnsub = null; }
     window.__fb.signOutUser();
   }
 
+  var stateUnsub = null;
   function onUserLoaded(uid) {
     currentUid = uid;
-    window.__fb.loadState(uid).then(function (data) {
+    var firstLoad = true;
+    stateUnsub = window.__fb.subscribeState(uid, function (data, hasPendingWrites) {
+      if (hasPendingWrites) return; // this tab's own write echoing back; local state is already current
       if (data) {
         state = normalizeLoaded(data);
-      } else {
+      } else if (firstLoad) {
         state = loadFromLocalStorage() || defaultState();
         window.__fb.saveState(uid, JSON.parse(JSON.stringify(state))).catch(function (err) { console.error("seed failed", err); });
       }
-      showView("view-home");
+      if (firstLoad) { firstLoad = false; showView("view-home"); }
       renderHome();
-    }).catch(function (err) {
-      console.error("load failed", err);
-      state = defaultState();
-      showView("view-home");
-      renderHome();
-      toast("기록을 불러오지 못했어요. 새로고침해보세요");
+    }, function (err) {
+      console.error("subscribe failed", err);
+      if (firstLoad) {
+        firstLoad = false;
+        state = defaultState();
+        showView("view-home");
+        renderHome();
+        toast("기록을 불러오지 못했어요. 새로고침해보세요");
+      }
     });
   }
 
   function initAuth() {
     if (!window.__fb) { window.addEventListener("fb-ready", initAuth, { once: true }); return; }
     window.__fb.onAuthStateChanged(function (user) {
+      logoutArmed = false;
       if (user) {
+        if ((user.email || "").toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) {
+          window.__fb.signOutUser();
+          currentUid = null;
+          showView("view-login");
+          authError("이 앱은 지정된 계정만 사용할 수 있어요");
+          return;
+        }
         onUserLoaded(user.uid);
       } else {
         currentUid = null;
+        if (stateUnsub) { stateUnsub(); stateUnsub = null; }
         showView("view-login");
       }
     });
@@ -1058,7 +1151,7 @@
 
   // ---------------- views ----------------
   function showView(id) {
-    ["view-login","view-home","view-run","view-editItems","view-stats","view-export"].forEach(function (v) {
+    ["view-checking","view-login","view-home","view-run","view-editItems","view-stats","view-export"].forEach(function (v) {
       document.getElementById(v).classList.toggle("hidden", v !== id);
     });
   }
@@ -1690,7 +1783,11 @@
     if (action === "go-home") { stopTimerInterval(); runState = null; showView("view-home"); renderHome(); }
     else if (action === "auth-signin") { doSignIn(); }
     else if (action === "auth-signup") { doSignUp(); }
-    else if (action === "auth-logout") { doSignOut(); }
+    else if (action === "auth-forgot") { doForgotPassword(); }
+    else if (action === "open-changepw-modal") { openChangePwModal(); }
+    else if (action === "changepw-cancel") { closeChangePwModal(); }
+    else if (action === "changepw-confirm") { doChangePassword(); }
+    else if (action === "auth-logout") { doSignOutRequest(); }
     else if (action === "toggle-item") {
       var tCat = getCat(el.getAttribute("data-cat"));
       var tItemId = id;
@@ -1785,7 +1882,12 @@
       if (ti === -1) tgSel.push(id); else tgSel.splice(ti, 1);
       renderTagToggles();
     }
-    else if (action === "open-settings-modal") { document.getElementById("settingsOverlay").classList.remove("hidden"); updateSettingsModalUI(); }
+    else if (action === "open-settings-modal") {
+      logoutArmed = false;
+      var lb = document.querySelector('[data-action="auth-logout"]');
+      if (lb) lb.textContent = "로그아웃";
+      document.getElementById("settingsOverlay").classList.remove("hidden"); updateSettingsModalUI();
+    }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
     else if (action === "settings-close") { document.getElementById("settingsOverlay").classList.add("hidden"); }
