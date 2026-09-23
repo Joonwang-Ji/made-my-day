@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-23-8";
+  var BUILD_VERSION = "2026-09-23-9";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -69,7 +69,7 @@
   .date-block .sub { margin-top: 4px; font-size: 13px; color: var(--ink-dim); }
   .streak { display: flex; align-items: center; gap: 6px; background: var(--gold-soft); color: var(--gold);
     padding: 7px 12px 7px 10px; border-radius: 999px; font-weight: 800; font-size: 14px; white-space: nowrap; cursor: pointer; }
-  .streak svg { width: 15px; height: 15px; flex: none; }
+  .streak svg { width: 16px; height: 16px; flex: none; transform-origin: 50% 50%; }
 
   .nudge-banner { display: flex; align-items: center; gap: 8px; background: var(--gold-soft); color: var(--gold);
     border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px; line-height: 1.5;
@@ -103,9 +103,15 @@
   .ring-info-main { font-size: 14px; font-weight: 700; color: var(--ink); }
   .ring-info-sub { margin-top: 3px; font-size: 11.5px; color: var(--ink-dim); }
 
-  @keyframes flameFlicker { 0%,100% { opacity: 1; } 25% { opacity: .5; } 50% { opacity: .85; } 75% { opacity: .6; } }
-  #streakFlame.flame-flicker { animation: flameFlicker 1.7s ease-in-out infinite; }
-  #streakFlame.flame-glow { filter: drop-shadow(0 0 3px var(--gold)); }
+  @keyframes flameFlicker {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    20% { opacity: .3; transform: scale(.85); }
+    45% { opacity: 1; transform: scale(1.12); }
+    65% { opacity: .45; transform: scale(.9); }
+    85% { opacity: .9; transform: scale(1.05); }
+  }
+  #streakFlame.flame-flicker { animation: flameFlicker 1.6s ease-in-out infinite; }
+  #streakFlame.flame-glow { filter: drop-shadow(0 0 4px var(--gold)) drop-shadow(0 0 1px var(--gold)); }
 
   .cat-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px;
     margin-bottom: 12px; }
