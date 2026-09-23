@@ -162,6 +162,7 @@
   .edit-row input[type="text"]:focus { outline: none; }
   .time-chip { flex: none; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-soft);
     color: var(--ink); font-size: 12px; font-weight: 700; padding: 7px 10px; cursor: pointer; white-space: nowrap; }
+  input.time-chip { -webkit-appearance: none; appearance: none; font-family: inherit; color-scheme: light dark; max-width: 108px; }
   .icon-btn { border: none; background: transparent; color: var(--ink-dim); width: 26px; height: 26px; flex: none;
     cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .icon-btn svg { width: 16px; height: 16px; }
@@ -412,7 +413,6 @@
     <div class="btn primary" data-action="download-json">파일로 저장</div>
     <div class="btn" data-action="pick-import-file">파일에서 가져오기</div>
   </div>
-  <input type="date" id="startDateInput" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
   <input type="file" id="importFileInput" accept="application/json" style="display:none;">
 
   <div class="section-label">텍스트로 (클로드에 붙여넣기용)</div>
@@ -1744,7 +1744,7 @@
           '<button class="time-chip" data-action="open-day-picker" data-id="' + it.id + '">' + dayLabel(it) + '</button>' +
           '<button class="time-chip" data-action="open-time-picker" data-id="' + it.id + '">' + fmtDur(it.seconds) + '</button>' +
           '<button class="time-chip" data-action="open-tag-picker" data-id="' + it.id + '">' + ((it.tags && it.tags.length) ? escapeHtml(it.tags.join(", ")) : "태그") + '</button>' +
-          '<button class="time-chip" data-action="open-startdate-picker" data-id="' + it.id + '" title="이 항목이 언제부터 있었는지 — 놓친 항목 통계 계산의 기준일">' + fmtStartDate(it.createdAt) + '</button>' +
+          '<input type="date" class="time-chip start-date-input" data-item-id="' + it.id + '" value="' + (it.createdAt || todayKey()) + '" max="' + todayKey() + '" title="이 항목이 언제부터 있었는지 — 놓친 항목 통계 계산의 기준일">' +
         '</div>';
       el.appendChild(row);
     });
@@ -1754,24 +1754,23 @@
         if (it) { it.name = inp.value; saveState(); }
       });
     });
+    Array.prototype.forEach.call(el.querySelectorAll("input.start-date-input"), function (inp) {
+      inp.addEventListener("change", function () {
+        if (!inp.value) return;
+        var it = findItem(inp.getAttribute("data-item-id"));
+        if (!it) return;
+        it.createdAt = inp.value > todayKey() ? todayKey() : inp.value;
+        if (it.createdAt !== inp.value) inp.value = it.createdAt;
+        saveState();
+      });
+    });
   }
 
-  // 자동으로 채워진 시작일(createdAt)이 실제와 다를 때 직접 고칠 수 있게 하는 피커.
+  // 자동으로 채워진 시작일(createdAt)이 실제와 다를 때 직접 고칠 수 있게 하는 필드.
   // 시작일은 "놓친 항목" 통계에서 이 날짜 이전은 계산에서 제외하는 기준으로만 쓰인다.
-  function fmtStartDate(dk) {
-    if (!dk) return "시작일";
-    var d = parseKeyToDate(dk);
-    return (d.getMonth() + 1) + "/" + d.getDate() + "부터";
-  }
-  var startDateItemId = null;
-  function openStartDatePicker(id) {
-    startDateItemId = id;
-    var it = findItem(id);
-    var input = document.getElementById("startDateInput");
-    input.max = todayKey();
-    input.value = (it && it.createdAt) ? it.createdAt : todayKey();
-    input.click();
-  }
+  // (숨겨둔 input을 JS로 .click()해서 여는 방식은 iOS Safari에서 네이티브 피커가 뜨지
+  // 않아, 실제 <input type="date">를 칩처럼 스타일링해 화면에 그대로 두고 사용자가
+  // 직접 탭하게 한다.)
 
   function duplicateItem(itemId) {
     var cat = getCat(editingCatId);
@@ -2417,7 +2416,6 @@
       renderDayToggles();
     }
     else if (action === "open-tag-picker") { openTagPicker(id); }
-    else if (action === "open-startdate-picker") { openStartDatePicker(id); }
     else if (action === "tag-cancel") { closeTagPicker(); }
     else if (action === "tag-confirm") { confirmTagPicker(); }
     else if (action === "tag-add-new") { addNewTag(); }
@@ -2483,17 +2481,6 @@
     backfillDate = v > todayKey() ? todayKey() : v;
     if (backfillDate !== v) e.target.value = backfillDate;
     renderBackfill();
-  });
-  document.getElementById("startDateInput").addEventListener("change", function (e) {
-    var v = e.target.value;
-    if (!v || !startDateItemId) return;
-    var it = findItem(startDateItemId);
-    if (it) {
-      it.createdAt = v > todayKey() ? todayKey() : v;
-      saveState();
-      renderEditItems();
-    }
-    startDateItemId = null;
   });
   document.getElementById("authPassword").addEventListener("keydown", function (e) {
     if (e.key === "Enter") { e.preventDefault(); doSignIn(); }
