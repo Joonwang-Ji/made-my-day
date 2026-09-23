@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-23-10";
+  var BUILD_VERSION = "2026-09-23-11";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -317,6 +317,7 @@
     background: var(--bg-soft); color: var(--ink); font-size: 15px; font-weight: 700; font-family: inherit; margin-bottom: 4px; display: block;
     box-sizing: border-box; -webkit-appearance: none; appearance: none; }
   .cat-name-input:focus { outline: none; }
+  input[type="date"].cat-name-input { min-height: 42px; line-height: 1.3; }
 
   .day-presets { display: flex; gap: 6px; margin-bottom: 14px; }
   .day-presets button { flex: 1; padding: 7px 4px; border-radius: 10px; border: 1px solid var(--line);
@@ -2831,38 +2832,99 @@
     if (e.key === "Enter") { e.preventDefault(); addNewTag(); }
   });
 
-  // ---- edge swipe to go back (like the native iOS gesture) ----
-  var edgeSwipe = { active: false, startX: 0, startY: 0 };
-  var EDGE_ZONE = 24, SWIPE_THRESHOLD = 80, MAX_VERTICAL = 60;
+  // ---- edge swipe to go back (like the native iOS interactive pop gesture) ----
+  // 손가락 움직임에 1:1로 화면이 따라오다가, 손을 떼는 순간 방향에 따라 완주하거나
+  // 원래 자리로 스프링백하는 방식. 단순 임계값 판정 후 사후 애니메이션이 아니라
+  // touchmove마다 transform을 직접 갱신해 "붙어서 따라오는" 느낌을 준다.
+  var EDGE_ZONE = 28, MAX_VERTICAL = 60, COMPLETE_RATIO = 0.32, FLICK_VELOCITY = 0.5;
   var BACKABLE_VIEWS = ["view-editItems", "view-stats", "view-export", "view-backfill", "view-settings", "view-restDays"];
-  function triggerSwipeBack() {
-    var visible = null;
-    for (var i = 0; i < BACKABLE_VIEWS.length; i++) {
-      var el = document.getElementById(BACKABLE_VIEWS[i]);
-      if (el && !el.classList.contains("hidden")) { visible = BACKABLE_VIEWS[i]; break; }
+  var edgeSwipe = { active: false, dragging: false, startX: 0, startY: 0, current: null, width: 0, lastX: 0, lastT: 0, velocity: 0 };
+  function findBackableCurrent() {
+    var checkList = BACKABLE_VIEWS.concat(["view-run"]);
+    for (var i = 0; i < checkList.length; i++) {
+      var el = document.getElementById(checkList[i]);
+      if (el && !el.classList.contains("hidden")) return el;
     }
-    if (visible) { goHomeAnimated(); return; }
-    var runEl = document.getElementById("view-run");
-    if (runEl && !runEl.classList.contains("hidden")) { goHomeAnimated(); }
+    return null;
   }
   document.addEventListener("touchstart", function (e) {
     if (e.touches.length !== 1) { edgeSwipe.active = false; return; }
     var t = e.touches[0];
-    if (t.clientX <= EDGE_ZONE) {
-      edgeSwipe.active = true;
-      edgeSwipe.startX = t.clientX;
-      edgeSwipe.startY = t.clientY;
-    } else {
-      edgeSwipe.active = false;
+    if (t.clientX > EDGE_ZONE) { edgeSwipe.active = false; return; }
+    var current = findBackableCurrent();
+    if (!current) { edgeSwipe.active = false; return; }
+    edgeSwipe.active = true;
+    edgeSwipe.dragging = false;
+    edgeSwipe.startX = t.clientX;
+    edgeSwipe.startY = t.clientY;
+    edgeSwipe.current = current;
+    edgeSwipe.width = window.innerWidth;
+    edgeSwipe.lastX = t.clientX;
+    edgeSwipe.lastT = Date.now();
+    edgeSwipe.velocity = 0;
+  }, { passive: true });
+  document.addEventListener("touchmove", function (e) {
+    if (!edgeSwipe.active) return;
+    var t = e.touches[0];
+    var dx = t.clientX - edgeSwipe.startX;
+    var dy = t.clientY - edgeSwipe.startY;
+    if (!edgeSwipe.dragging) {
+      if (dx < 6) return;
+      if (Math.abs(dy) > MAX_VERTICAL && Math.abs(dy) > dx) { edgeSwipe.active = false; return; }
+      edgeSwipe.dragging = true;
+      var cur = edgeSwipe.current;
+      var homeEl = document.getElementById("view-home");
+      ALL_VIEWS.forEach(function (v) { if (v !== "view-home" && v !== cur.id) document.getElementById(v).classList.add("hidden"); });
+      homeEl.classList.remove("hidden");
+      renderHome();
+      cur.classList.add("slide-exit");
+      cur.style.transition = "none";
     }
+    if (dx < 0) dx = 0;
+    if (dx > edgeSwipe.width) dx = edgeSwipe.width;
+    edgeSwipe.current.style.transform = "translateX(" + dx + "px)";
+    var now = Date.now();
+    var dt = now - edgeSwipe.lastT;
+    if (dt > 0) edgeSwipe.velocity = (t.clientX - edgeSwipe.lastX) / dt;
+    edgeSwipe.lastX = t.clientX; edgeSwipe.lastT = now;
   }, { passive: true });
   document.addEventListener("touchend", function (e) {
     if (!edgeSwipe.active) return;
     edgeSwipe.active = false;
+    if (!edgeSwipe.dragging) return;
+    var cur = edgeSwipe.current;
     var t = e.changedTouches[0];
     var dx = t.clientX - edgeSwipe.startX;
-    var dy = Math.abs(t.clientY - edgeSwipe.startY);
-    if (dx > SWIPE_THRESHOLD && dy < MAX_VERTICAL) triggerSwipeBack();
+    if (dx < 0) dx = 0;
+    if (dx > edgeSwipe.width) dx = edgeSwipe.width;
+    var complete = dx > edgeSwipe.width * COMPLETE_RATIO || edgeSwipe.velocity > FLICK_VELOCITY;
+    cur.style.transition = "transform .3s cubic-bezier(.32,.72,0,1)";
+    var finished = false;
+    function finishComplete() {
+      if (finished) return; finished = true;
+      cur.classList.remove("slide-exit");
+      cur.classList.add("hidden");
+      cur.style.transform = ""; cur.style.transition = "";
+      if (cur.id === "view-run") { stopTimerInterval(); runState = null; }
+      document.getElementById("globalBottomNav").classList.toggle("hidden", NAV_HIDDEN_VIEWS.indexOf("view-home") !== -1);
+    }
+    function finishCancel() {
+      if (finished) return; finished = true;
+      cur.classList.remove("slide-exit");
+      cur.style.transform = ""; cur.style.transition = "";
+      document.getElementById("view-home").classList.add("hidden");
+      cur.classList.remove("hidden");
+      document.getElementById("globalBottomNav").classList.toggle("hidden", NAV_HIDDEN_VIEWS.indexOf(cur.id) !== -1);
+    }
+    if (complete) {
+      cur.style.transform = "translateX(" + edgeSwipe.width + "px)";
+      cur.addEventListener("transitionend", finishComplete, { once: true });
+      setTimeout(finishComplete, 360);
+    } else {
+      cur.style.transform = "translateX(0)";
+      cur.addEventListener("transitionend", finishCancel, { once: true });
+      setTimeout(finishCancel, 360);
+    }
   }, { passive: true });
 
   initAuth();
