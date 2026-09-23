@@ -165,6 +165,10 @@
   .mini-item.not-due { opacity: 0.45; }
   .mini-item.optional { opacity: 0.62; }
   .mini-item.optional.done { opacity: 1; }
+  .mini-item.optional.flex { opacity: 1; }
+  /* 오버레이·전체화면 안에서 스크롤이 끝에 닿아도 뒤 화면으로 번지지 않게 */
+  .tp-card-scroll .tp-card-body, .celeb-main, #view-run, .slide-exit, .tp-scroll, .emoji-grid, .tag-toggle-row,
+  #holidayPickerList { overscroll-behavior: contain; }
   @keyframes cat-celebrate {
     0% { transform: scale(1); }
     30% { transform: scale(1.015); box-shadow: 0 0 0 3px var(--sage-soft); }
@@ -367,7 +371,10 @@
   .day-presets { display: flex; gap: 6px; margin-bottom: 14px; }
   .day-presets button { flex: 1; padding: 7px 4px; border-radius: 10px; border: 1px solid var(--line);
     background: var(--bg-soft); color: var(--ink-dim); font-size: 11.5px; font-weight: 700; cursor: pointer; }
+  .day-presets button.active { background: var(--sage); border-color: var(--sage); color: var(--card); }
   .day-toggle-row { display: flex; justify-content: space-between; gap: 4px; }
+  .day-toggle-row.disabled { opacity: .3; pointer-events: none; }
+  .flex-hint { font-size: 11.5px; color: var(--ink-dim); line-height: 1.55; margin-top: 10px; }
   .day-toggle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg-soft);
     color: var(--ink-dim); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .day-toggle.active { background: var(--sage); border-color: var(--sage); color: var(--card); }
@@ -722,8 +729,10 @@
       <button data-action="day-preset" data-id="all">매일</button>
       <button data-action="day-preset" data-id="weekday">평일</button>
       <button data-action="day-preset" data-id="weekend">주말</button>
+      <button data-action="day-preset" data-id="flex" id="dayPresetFlex">불시</button>
     </div>
     <div class="day-toggle-row" id="dayToggleRow"></div>
+    <div class="flex-hint hidden" id="flexHint">불시 항목은 정해진 요일 없이 홈·기록에서 직접 체크해요. 스트릭·카운트다운·놓친 항목에는 들어가지 않고, 포인트에만 반영돼요.</div>
     <div class="section-label">쉬는 날 처리</div>
     <div class="theme-option" id="keepOnRestToggle" data-action="toggle-keep-on-rest"><span>쉬는 날로 표시된 날에도 유지</span><span class="dot"></span></div>
     <div class="section-label">타이머 종료음</div>
@@ -1253,7 +1262,7 @@
         var filled = sceneFilledCount(book, sc, into);
         var complete = filled === sc.count;
         html += '<div style="margin-bottom:18px;"><div style="font-size:12.5px;font-weight:700;margin-bottom:4px;">' + sc.title +
-          (complete ? " ✓" : filled > 0 ? " · 그려지는 중" : "") + '</div>' +
+          (complete ? " ✓" : filled > 0 ? " · 진행 중" : "") + '</div>' +
           (filled > 0 ? '<div style="text-align:center;">' + sceneCanvasSVG(book, sc, filled, 220) + '</div>' :
             '<div style="text-align:center;font-size:11.5px;color:var(--ink-dim);padding:14px 0;">아직 시작 전이에요</div>') + '</div>';
       });
@@ -1939,7 +1948,11 @@
   }
 
   // ---- day-of-week scheduling ----
+  // "불시" 항목(item.flex): 정해진 요일이 없어 어떤 날에도 "예정"이 아니다. 그래서 스트릭·
+  // 놓친 항목·카운트다운(▶)·진행률 등 due 기준 계산에서는 자동으로 빠지고, 완료 기록(history)만
+  // 남으므로 포인트(완료 1개당 1P)에는 그대로 들어간다. 홈/기록에서만 직접 체크·해제한다.
   function dueOn(item, dateObj) {
+    if (item.flex) return false;
     if (!item.days || item.days.length === 0 || item.days.length >= 7) return true;
     return item.days.indexOf(dateObj.getDay()) !== -1;
   }
@@ -1961,6 +1974,7 @@
   }
   function catItemsDueOn(cat, dk) { return cat.items.filter(function (it) { return isDueForDate(it, dk); }); }
   function dayLabel(item) {
+    if (item.flex) return "불시" + (item.muted ? " 🔕 무음" : "");
     var days = item.days;
     var base;
     if (!days || days.length === 0 || days.length >= 7) base = "매일";
@@ -3879,16 +3893,16 @@ attachSceneMeta("deu");
         // 쉬는 날에는 예정(due)이 아닌 항목도 자유롭게 체크할 수 있게 열어둔다(보너스/선택).
         // 스트릭 집계(overallStreakStatus)는 여전히 due 항목만 기준으로 삼으므로 이 체크는
         // 스트릭에 영향을 주지 않고, 성공 달력에서 별도 표시로만 남는다.
-        var optional = !due && todayIsRest;
+        var optional = !due && (todayIsRest || !!it.flex);
         var checked = isDone(todayK, it.id);
         var overtimeDone = checked && isOvertimeDone(todayK, it.id);
-        var itemCls = checked ? ' done' : (due ? '' : (optional ? ' optional' : ' not-due'));
+        var itemCls = checked ? ' done' : (due ? '' : (optional ? ' optional' + (it.flex ? ' flex' : '') : ' not-due'));
         var dotCls = (checked ? ' done' : (due ? '' : (optional ? ' optional' : ' na'))) + (overtimeDone ? ' overtime' : '');
         return '<div class="mini-item' + itemCls + '"' +
           ((due || optional) ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + dotCls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          '<span class="mini-dur">' + (overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (optional ? "쉬는 날 · 선택" : dayLabel(it)))) + '</span></div>';
+          '<span class="mini-dur">' + (overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
       }).join("");
       card.setAttribute("data-cat-card", cat.id);
       card.innerHTML =
@@ -4174,6 +4188,7 @@ attachSceneMeta("deu");
       keepOnRest: !!src.keepOnRest,
       createdAt: todayKey()
     };
+    if (src.flex) clone.flex = true;
     cat.items.splice(idx + 1, 0, clone);
     saveState();
     renderEditItems();
@@ -4253,7 +4268,7 @@ attachSceneMeta("deu");
   }
 
   // ---- day picker ----
-  var dpItemId = null, dpSel = [], dpKeepOnRest = false, dpMuted = false;
+  var dpItemId = null, dpSel = [], dpKeepOnRest = false, dpMuted = false, dpFlex = false;
   function updateKeepOnRestToggleUI() {
     document.getElementById("keepOnRestToggle").classList.toggle("active", dpKeepOnRest);
   }
@@ -4273,6 +4288,10 @@ attachSceneMeta("deu");
       b.setAttribute("data-id", d);
       el.appendChild(b);
     });
+    // 불시 모드: 요일 선택 비활성화 + 안내 문구 + 프리셋 강조
+    el.classList.toggle("disabled", dpFlex);
+    document.getElementById("dayPresetFlex").classList.toggle("active", dpFlex);
+    document.getElementById("flexHint").classList.toggle("hidden", !dpFlex);
   }
   function openDayPicker(itemId) {
     var it = findItem(itemId);
@@ -4281,6 +4300,7 @@ attachSceneMeta("deu");
     dpSel = (it.days && it.days.length) ? it.days.slice() : [0,1,2,3,4,5,6];
     dpKeepOnRest = !!it.keepOnRest;
     dpMuted = !!it.muted;
+    dpFlex = !!it.flex;
     renderDayToggles();
     updateKeepOnRestToggleUI();
     updateAlarmToggleUI();
@@ -4289,7 +4309,16 @@ attachSceneMeta("deu");
   function closeDayPicker() { document.getElementById("dayOverlay").classList.add("hidden"); dpItemId = null; }
   function confirmDayPicker() {
     var it = findItem(dpItemId);
-    if (it) { it.days = dpSel.length >= 7 ? null : dpSel.slice().sort(); it.keepOnRest = dpKeepOnRest; it.muted = dpMuted; saveState(); }
+    // 요일을 하나도 고르지 않았고 불시도 아니라면 저장하지 않고 안내한다(예전엔 자동으로 '매일'이 됐음).
+    if (!dpFlex && dpSel.length === 0) {
+      toast("지정된 요일이 없어요. 요일을 고르거나 '불시'를 선택해 주세요");
+      return;
+    }
+    if (it) {
+      if (dpFlex) { it.flex = true; it.days = null; }
+      else { delete it.flex; it.days = dpSel.length >= 7 ? null : dpSel.slice().sort(); }
+      it.keepOnRest = dpKeepOnRest; it.muted = dpMuted; saveState();
+    }
     closeDayPicker(); renderEditItems();
   }
 
@@ -4464,6 +4493,13 @@ attachSceneMeta("deu");
         if (isFuture) { cellsHtml += '<div class="mini-cal-cell future">' + day + '</div>'; continue; }
         var restCls = isRestDay(dk) ? ' rest' : '';
         if (!itemExistedOn(it, dk)) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
+        if (it.flex) {
+          var fDone = isDone(dk, it.id);
+          if (fDone) doneCount++;
+          var fOt = (fDone && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
+          cellsHtml += '<div class="mini-cal-cell' + (fDone ? ' done' + fOt : ' na') + restCls + '">' + day + '</div>';
+          continue;
+        }
         var due = isDueForDate(it, dk);
         if (!due) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
         dueDaysCount++;
@@ -4475,7 +4511,7 @@ attachSceneMeta("deu");
       var rate = dueDaysCount > 0 ? Math.round(doneCount / dueDaysCount * 100) : 0;
       html += '<div class="mini-cal-card"><div class="mini-cal-title">' + escapeHtml(it.name || "이름 없음") + '</div>' +
         '<div class="mini-cal-days">' + cellsHtml + '</div>' +
-        '<div class="mini-cal-foot"><span class="rate">' + rate + '%</span><span>' + doneCount + '회</span></div></div>';
+        '<div class="mini-cal-foot"><span class="rate">' + (it.flex ? '불시' : rate + '%') + '</span><span>' + doneCount + '회</span></div></div>';
     });
     html += '</div>';
     return html;
@@ -4498,6 +4534,10 @@ attachSceneMeta("deu");
         var isFuture = dk > todayStr;
         if (isFuture) return '<div class="week-cell future"></div>';
         if (!itemExistedOn(it, dk)) return '<div class="week-cell na"></div>';
+        if (it.flex) {
+          var fd = isDone(dk, it.id);
+          return '<div class="week-cell' + (fd ? ' done' : ' na') + ((fd && isOvertimeDone(dk, it.id)) ? ' overtime' : '') + '"></div>';
+        }
         if (!isDueForDate(it, dk)) return '<div class="week-cell na"></div>';
         var done = isDone(dk, it.id);
         var otCls = (done && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
@@ -4591,7 +4631,7 @@ attachSceneMeta("deu");
     if (!Array.isArray(rawCats)) return [];
     return rawCats.map(function (c) {
       var items = Array.isArray(c.items) ? c.items.map(function (it) {
-        return {
+        var normItem = {
           id: it.id || uid(),
           name: typeof it.name === "string" ? it.name : "",
           seconds: (typeof it.seconds === "number" && it.seconds >= 1) ? it.seconds : 15,
@@ -4601,6 +4641,8 @@ attachSceneMeta("deu");
           muted: !!it.muted,
           createdAt: (typeof it.createdAt === "string" && it.createdAt) ? it.createdAt : undefined
         };
+        if (it.flex === true) normItem.flex = true;
+        return normItem;
       }) : [];
       return { id: c.id || uid(), name: typeof c.name === "string" ? c.name : "", items: items };
     });
@@ -4774,19 +4816,20 @@ attachSceneMeta("deu");
     var html = "";
     state.categories.forEach(function (cat) {
       var due = catItemsDueOn(cat, dk).filter(function (it) { return itemExistedOn(it, dk); });
-      var list = (restDay ? cat.items : due).filter(function (it) { return itemExistedOn(it, dk); });
+      var list = cat.items.filter(function (it) { return itemExistedOn(it, dk) && (restDay || it.flex || due.indexOf(it) !== -1); });
       if (list.length === 0) return;
       var doneCount = due.filter(function (it) { return isDone(dk, it.id); }).length;
       var itemsHtml = list.map(function (it) {
         var isItemDue = due.indexOf(it) !== -1;
         var d = isDone(dk, it.id);
-        var cls = d ? ' done' : (isItemDue ? '' : ' optional');
+        var cls = d ? ' done' : (isItemDue ? '' : ' optional' + (it.flex ? ' flex' : ''));
         return '<div class="mini-item' + cls + '" data-action="toggle-backfill-item" data-id="' + it.id + '">' +
           '<span class="mini-dot' + cls + '"></span>' +
-          '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span></div>';
+          '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
+          (it.flex ? '<span class="mini-dur">불시</span>' : '') + '</div>';
       }).join("");
       html += '<div class="cat-card"><div class="cat-top"><div><div class="cat-name">' + escapeHtml(cat.name || "이름 없음") + '</div>' +
-        '<div class="cat-meta">' + (due.length ? (doneCount + '/' + due.length + ' 완료') : '쉬는 날 · 선택 항목') + '</div></div></div>' +
+        '<div class="cat-meta">' + (due.length ? (doneCount + '/' + due.length + ' 완료') : (restDay ? '쉬는 날 · 선택 항목' : '불시 항목')) + '</div></div></div>' +
         '<div class="cat-items-preview">' + itemsHtml + '</div></div>';
     });
     if (!html) html = '<div class="empty">이 날짜에 예정된 항목이 없어요.</div>';
@@ -4864,7 +4907,7 @@ attachSceneMeta("deu");
         '<button data-action="backfill-cal-next-month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button></div>' +
       '<div class="mini-cal-card" style="margin-top:10px;">' +
         '<div class="mini-cal-days" style="gap:6px;">' + cellsHtml + '</div>' +
-        '<div class="mini-cal-foot" style="margin-top:10px;"><span class="rate">' + rate + '%</span><span>' + doneCount + '회</span></div>' +
+        '<div class="mini-cal-foot" style="margin-top:10px;"><span class="rate">' + (it.flex ? '불시' : rate + '%') + '</span><span>' + doneCount + '회</span></div>' +
       '</div>' +
       '<div style="font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.5;">날짜를 탭할 때마다 완료 여부가 바뀌어요. 연한 칸(예정 없던 날)도 자유롭게 기록할 수 있어요.</div>';
     el.innerHTML = html;
@@ -5011,15 +5054,22 @@ attachSceneMeta("deu");
     else if (action === "toggle-keep-on-rest") { dpKeepOnRest = !dpKeepOnRest; updateKeepOnRestToggleUI(); }
     else if (action === "toggle-alarm") { dpMuted = !dpMuted; updateAlarmToggleUI(); }
     else if (action === "day-toggle") {
+      if (dpFlex) return;
       var dv = parseInt(id, 10);
       var i2 = dpSel.indexOf(dv);
       if (i2 === -1) dpSel.push(dv); else dpSel.splice(i2, 1);
       renderDayToggles();
     }
     else if (action === "day-preset") {
-      if (id === "all") dpSel = [0,1,2,3,4,5,6];
-      else if (id === "weekday") dpSel = [1,2,3,4,5];
-      else if (id === "weekend") dpSel = [0,6];
+      if (id === "flex") {
+        dpFlex = !dpFlex;
+        if (!dpFlex && dpSel.length === 0) dpSel = [0,1,2,3,4,5,6];
+      } else {
+        dpFlex = false;
+        if (id === "all") dpSel = [0,1,2,3,4,5,6];
+        else if (id === "weekday") dpSel = [1,2,3,4,5];
+        else if (id === "weekend") dpSel = [0,6];
+      }
       renderDayToggles();
     }
     else if (action === "open-tag-picker") { openTagPicker(id); }
@@ -5251,6 +5301,43 @@ attachSceneMeta("deu");
       setTimeout(finishCancel, 360);
     }
   }, { passive: true });
+
+  // ---- 오버레이/전체화면이 열려 있을 때 뒤 화면 스크롤 막기 ----
+  // CSS overscroll-behavior만으로는 "내용이 짧아 스크롤이 안 되는 오버레이"에서 손가락을
+  // 밀면 뒤 화면이 같이 움직이는 걸 못 막는다(iOS Safari). 그래서 오버레이가 하나라도 떠 있으면
+  // 터치/휠 이동을 검사해서, 손가락이 놓인 자리에서 실제로 스크롤 가능한 요소가 그 방향으로
+  // 더 움직일 수 있을 때만 통과시키고 나머지는 막는다. 가로 제스처(뒤로가기 스와이프 등)는 그대로 둔다.
+  (function initScrollLock() {
+    var LOCK_SEL = ".tp-overlay:not(.hidden), .celeb-stage:not(.hidden), #view-run:not(.hidden)";
+    var root = document.documentElement;
+    var sx = 0, sy = 0;
+    function refresh() { root.classList.toggle("scroll-locked", !!document.querySelector(LOCK_SEL)); }
+    new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ["class"], subtree: true });
+    refresh();
+    function canScrollWithin(el, down) {
+      while (el && el.nodeType === 1 && el !== document.body && el !== root) {
+        var oy = getComputedStyle(el).overflowY;
+        if ((oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight + 1) {
+          return down ? (el.scrollTop + el.clientHeight < el.scrollHeight - 1) : (el.scrollTop > 0);
+        }
+        el = el.parentNode;
+      }
+      return false;
+    }
+    document.addEventListener("touchstart", function (e) {
+      if (e.touches.length === 1) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }
+    }, { passive: true });
+    document.addEventListener("touchmove", function (e) {
+      if (!root.classList.contains("scroll-locked") || e.touches.length !== 1) return;
+      var dx = e.touches[0].clientX - sx, dy = e.touches[0].clientY - sy;
+      if (Math.abs(dx) > Math.abs(dy)) return;
+      if (!canScrollWithin(e.target, dy < 0)) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener("wheel", function (e) {
+      if (!root.classList.contains("scroll-locked")) return;
+      if (!canScrollWithin(e.target, e.deltaY > 0)) e.preventDefault();
+    }, { passive: false });
+  })();
 
   // 매번 Firebase Auth+Firestore 응답을 기다리며 "확인 중…" 화면부터 보여주면, 사실상 매번
   // 앱을 열 때마다 몇백ms~1초씩 빈 로딩 화면을 보게 된다. 이 기기에 이전에 저장해둔 상태가
