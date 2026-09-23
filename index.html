@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-23-11";
+  var BUILD_VERSION = "2026-09-23-12";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -73,6 +73,18 @@
     border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .sub-row .rest-badge { background: var(--rest-soft); color: var(--rest); }
   .sub-row .memo-badge { background: var(--gold-soft); color: var(--gold); }
+  .title-row { min-height: 18px; margin-bottom: 4px; }
+  .title-row .title-text { font-size: 13px; font-weight: 700; color: var(--ink-dim); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; display: block; }
+  .title-row .title-text.title-empty { opacity: .55; font-weight: 400; }
+  .title-row .title-skeleton { display: inline-block; width: 96px; height: 13px; border-radius: 6px;
+    background: linear-gradient(90deg, var(--line) 25%, var(--card) 50%, var(--line) 75%);
+    background-size: 200% 100%; animation: titleSkeletonPulse 1.3s ease-in-out infinite; }
+  @keyframes titleSkeletonPulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .emoji-chip { font-size: 20px; padding: 8px 0; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--bg-soft); cursor: pointer; line-height: 1; }
+  .emoji-chip.selected { border-color: var(--gold); background: var(--gold-soft); }
   .streak { display: flex; align-items: center; gap: 6px; background: var(--gold-soft); color: var(--gold);
     padding: 7px 12px 7px 10px; border-radius: 999px; font-weight: 800; font-size: 14px; white-space: nowrap; cursor: pointer;
     flex: none; margin-top: 3px; }
@@ -419,6 +431,10 @@
 
   <header class="top">
     <div class="date-block" data-action="open-today-memo" style="cursor:pointer;">
+      <div class="title-row" id="titleRow" data-action="open-title-edit" style="cursor:pointer;">
+        <span class="title-skeleton hidden" id="titleSkeleton"></span>
+        <span class="title-text hidden" id="titleText"></span>
+      </div>
       <div class="day" id="dayLabel">9월 22일 화요일</div>
       <div class="sub-row" id="subRow"></div>
     </div>
@@ -700,6 +716,18 @@
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="titleEditOverlay">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title">나만의 한마디</div>
+    <div class="emoji-grid" id="titleEmojiGrid" style="margin-bottom:12px;"></div>
+    <input type="text" id="titleTextInput" class="cat-name-input" maxlength="20" placeholder="예: 오늘도 묵묵히" style="margin-bottom:0;">
+    <div class="tp-actions">
+      <div class="btn" data-action="title-edit-cancel">취소</div>
+      <div class="btn primary" data-action="title-edit-save">저장</div>
+    </div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="holidayFirstPromptOverlay">
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title">공휴일을 불러올까요?</div>
@@ -809,6 +837,19 @@
 
   var STORE_KEY = "morning_routine_v4";
   var THEME_KEY = "morning_routine_theme_v1";
+  var TITLE_CACHE_KEY = "morning_routine_title_v1";
+  function loadCachedTitle() {
+    try {
+      var raw = localStorage.getItem(TITLE_CACHE_KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== "object") return null;
+      return { emoji: typeof p.emoji === "string" ? p.emoji : "", text: typeof p.text === "string" ? p.text : "" };
+    } catch (e) { return null; }
+  }
+  function cacheTitle(t) {
+    try { localStorage.setItem(TITLE_CACHE_KEY, JSON.stringify({ emoji: t.emoji || "", text: t.text || "" })); } catch (e) {}
+  }
   var timer = null;
   var runState = null;
   var ITEM_H = 38;
@@ -823,6 +864,21 @@
   }
   var currentTheme = loadTheme();
   applyTheme(currentTheme);
+  // personalTitle은 Firestore 응답을 기다리는 동안(확인 중… 화면 동안) 비어 보이지 않도록,
+  // 이 기기에 마지막으로 저장했던 값을 즉시 먼저 보여준다. 이 기기에서 한 번도 값을 저장한 적
+  // 없는 최초 1회에 한해서만 스켈레톤을 띄운다 — 이후 renderTitleRow()가 실제 값으로 교체한다.
+  (function showInitialTitle() {
+    var cached = loadCachedTitle();
+    var skel = document.getElementById("titleSkeleton");
+    var txt = document.getElementById("titleText");
+    if (cached && (cached.text || cached.emoji)) {
+      txt.textContent = (cached.emoji ? cached.emoji + " " : "") + cached.text;
+      txt.classList.remove("hidden");
+      if (!cached.text) txt.classList.add("title-empty");
+    } else {
+      skel.classList.remove("hidden");
+    }
+  })();
   function updateSettingsModalUI() {
     var themeOpts = document.querySelectorAll("#themeOptionRow .theme-option");
     Array.prototype.forEach.call(themeOpts, function (o) {
@@ -1195,7 +1251,8 @@
       celebratedBadgeDays: [],
       memos: {},
       holidayPromptSeen: false,
-      holidayBannerDismissedYear: null
+      holidayBannerDismissedYear: null,
+      personalTitle: { emoji: "", text: "" }
     };
   }
   function migrateHistory(history) {
@@ -1249,6 +1306,9 @@
     if (!p.memos || typeof p.memos !== "object") p.memos = {};
     if (typeof p.holidayPromptSeen !== "boolean") p.holidayPromptSeen = false;
     if (typeof p.holidayBannerDismissedYear === "undefined") p.holidayBannerDismissedYear = null;
+    if (!p.personalTitle || typeof p.personalTitle !== "object") p.personalTitle = { emoji: "", text: "" };
+    if (typeof p.personalTitle.emoji !== "string") p.personalTitle.emoji = "";
+    if (typeof p.personalTitle.text !== "string") p.personalTitle.text = "";
     if (!p.streakThreshold) p.streakThreshold = 100;
     if (!Array.isArray(p.rewards)) p.rewards = [];
     // 레벨업/배지 보상 팝업 도입 시점 마이그레이션: 기존에 이미 쌓아온 레벨·배지에 대해
@@ -1596,6 +1656,48 @@
   }
   function openMissedOverlay() { renderMissedOverlay(); document.getElementById("missedOverlay").classList.remove("hidden"); }
   function closeMissedOverlay() { document.getElementById("missedOverlay").classList.add("hidden"); }
+  var TITLE_EMOJI_PRESET = ["🔥","💪","🌱","☀️","📖","✝️","🙏","🎯","⏰","🌿","💧","⭐"];
+  var titleEditSelectedEmoji = "";
+  function renderTitleRow() {
+    var t = state.personalTitle || { emoji: "", text: "" };
+    document.getElementById("titleSkeleton").classList.add("hidden");
+    var txt = document.getElementById("titleText");
+    if (t.text) {
+      txt.textContent = (t.emoji ? t.emoji + " " : "") + t.text;
+      txt.classList.remove("title-empty");
+    } else {
+      txt.textContent = "+ 나만의 한마디 추가";
+      txt.classList.add("title-empty");
+    }
+    txt.classList.remove("hidden");
+    cacheTitle(t);
+  }
+  function renderTitleEmojiGrid() {
+    document.getElementById("titleEmojiGrid").innerHTML = TITLE_EMOJI_PRESET.map(function (e) {
+      var sel = (e === titleEditSelectedEmoji);
+      return '<button type="button" class="emoji-chip' + (sel ? ' selected' : '') + '" data-action="title-emoji-pick" data-emoji="' + e + '">' + e + '</button>';
+    }).join("");
+  }
+  function openTitleEditOverlay() {
+    var t = state.personalTitle || { emoji: "", text: "" };
+    titleEditSelectedEmoji = t.emoji || "";
+    document.getElementById("titleTextInput").value = t.text || "";
+    renderTitleEmojiGrid();
+    document.getElementById("titleEditOverlay").classList.remove("hidden");
+  }
+  function closeTitleEditOverlay() { document.getElementById("titleEditOverlay").classList.add("hidden"); }
+  function pickTitleEmoji(e) {
+    titleEditSelectedEmoji = (titleEditSelectedEmoji === e) ? "" : e;
+    renderTitleEmojiGrid();
+  }
+  function saveTitleEditOverlay() {
+    var text = document.getElementById("titleTextInput").value.trim();
+    state.personalTitle = { emoji: titleEditSelectedEmoji, text: text };
+    saveState();
+    renderTitleRow();
+    closeTitleEditOverlay();
+    toast("저장했어요");
+  }
   function openTodayMemoOverlay() {
     var input = document.getElementById("todayMemoInput");
     input.value = (state.memos && state.memos[todayKey()]) || "";
@@ -1851,6 +1953,7 @@
 
   // ---- home ----
   function renderHome() {
+    renderTitleRow();
     var d = new Date();
     var days = ["일","월","화","수","목","금","토"];
     document.getElementById("dayLabel").textContent = (d.getMonth()+1) + "월 " + d.getDate() + "일 " + days[d.getDay()] + "요일";
@@ -2640,7 +2743,8 @@
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
       rewards: state.rewards,
-      memos: state.memos
+      memos: state.memos,
+      personalTitle: state.personalTitle
     };
     document.getElementById("exportText").value = JSON.stringify(data, null, 2);
   }
@@ -2685,6 +2789,12 @@
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
     if (Array.isArray(parsed.rewards)) state.rewards = parsed.rewards;
     if (parsed.memos && typeof parsed.memos === "object") state.memos = parsed.memos;
+    if (parsed.personalTitle && typeof parsed.personalTitle === "object") {
+      state.personalTitle = {
+        emoji: typeof parsed.personalTitle.emoji === "string" ? parsed.personalTitle.emoji : "",
+        text: typeof parsed.personalTitle.text === "string" ? parsed.personalTitle.text : ""
+      };
+    }
     // 가져온 기록 기준으로 레벨/배지 기준선을 다시 맞춰서, 가져오자마자 예전 레벨업/배지
     // 축하 팝업이 뒤늦게 쏟아지지 않게 한다.
     state.lastSeenLevel = computeGamification().level;
@@ -2930,7 +3040,8 @@
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
       rewards: state.rewards,
-      memos: state.memos
+      memos: state.memos,
+      personalTitle: state.personalTitle
     };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
@@ -3082,6 +3193,10 @@
     else if (action === "open-today-memo") { openTodayMemoOverlay(); }
     else if (action === "today-memo-cancel") { closeTodayMemoOverlay(); }
     else if (action === "today-memo-save") { saveTodayMemoOverlay(); }
+    else if (action === "open-title-edit") { openTitleEditOverlay(); }
+    else if (action === "title-edit-cancel") { closeTitleEditOverlay(); }
+    else if (action === "title-edit-save") { saveTitleEditOverlay(); }
+    else if (action === "title-emoji-pick") { pickTitleEmoji(el.getAttribute("data-emoji")); }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
     else if (action === "reward-close") { closeRewardOverlay(); }
