@@ -489,7 +489,15 @@
     </div>
   </div>
   <div id="backfillItemMode" class="hidden"></div>
-  <div id="backfillMemoListMode" class="hidden"></div>
+  <div id="backfillMemoListMode" class="hidden">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <div id="memoSearchSpacer" style="flex:1;"></div>
+      <input type="text" id="memoSearchInput" class="cat-name-input hidden" placeholder="내용 검색" style="margin:0;flex:1;font-size:13px;padding:9px 10px;">
+      <button class="icon-btn" id="memoSearchOpenBtn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+      <button class="icon-btn hidden" id="memoSearchCloseBtn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div id="backfillMemoResults"></div>
+  </div>
 </div>
 
 <div class="wrap hidden" id="view-export">
@@ -2714,23 +2722,34 @@
   function toggleMemoSearch() {
     memoSearchOpen = !memoSearchOpen;
     if (!memoSearchOpen) memoSearchQuery = "";
+    updateMemoSearchBarUI();
     renderBackfillMemoList();
+    if (memoSearchOpen) document.getElementById("memoSearchInput").focus();
+  }
+  // 검색창 자체는 toggle 시에만(타이핑할 때마다가 아니라) 보이거나 숨겨진다 —
+  // 결과 목록은 별도 컨테이너(#backfillMemoResults)로 매 keystroke마다 다시 그리되,
+  // <input> 노드 자체는 절대 다시 만들지 않는다. 이래야 한글 입력 중 조합(자모 결합)
+  // 상태가 안 끊기고 자소분리 없이 정상적으로 써진다.
+  function updateMemoSearchBarUI() {
+    var input = document.getElementById("memoSearchInput");
+    var openBtn = document.getElementById("memoSearchOpenBtn");
+    var closeBtn = document.getElementById("memoSearchCloseBtn");
+    var spacer = document.getElementById("memoSearchSpacer");
+    if (!input) return;
+    input.classList.toggle("hidden", !memoSearchOpen);
+    closeBtn.classList.toggle("hidden", !memoSearchOpen);
+    spacer.classList.toggle("hidden", memoSearchOpen);
+    var hasAny = Object.keys(state.memos || {}).length > 0;
+    openBtn.classList.toggle("hidden", memoSearchOpen || !hasAny);
+    if (!memoSearchOpen) input.value = "";
   }
   function renderBackfillMemoList() {
-    var el = document.getElementById("backfillMemoListMode");
+    updateMemoSearchBarUI();
+    var el = document.getElementById("backfillMemoResults");
     var allDates = Object.keys(state.memos || {}).sort().reverse();
     var days = ["일","월","화","수","목","금","토"];
     var q = memoSearchQuery.trim().toLowerCase();
     var dates = q ? allDates.filter(function (dk) { return (state.memos[dk] || "").toLowerCase().indexOf(q) !== -1; }) : allDates;
-
-    var barHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">';
-    if (memoSearchOpen) {
-      barHtml += '<input type="text" id="memoSearchInput" class="cat-name-input" placeholder="내용 검색" style="margin:0;flex:1;font-size:13px;padding:9px 10px;" value="' + escapeHtml(memoSearchQuery) + '">' +
-        '<button class="icon-btn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
-    } else if (allDates.length > 0) {
-      barHtml += '<div style="flex:1;"></div><button class="icon-btn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>';
-    }
-    barHtml += '</div>';
 
     var bodyHtml;
     if (dates.length === 0) {
@@ -2752,23 +2771,7 @@
           '<div style="display:flex;flex-direction:column;gap:6px;">' + rows + '</div>';
       }).join("");
     }
-    el.innerHTML = barHtml + bodyHtml;
-    if (memoSearchOpen) {
-      var inputEl = document.getElementById("memoSearchInput");
-      if (inputEl) {
-        // 한글 입력은 자모가 조합되는 도중(예: ㅎ+ㅗ+ㅣ → 회) 매 keystroke마다
-        // input 이벤트가 뜨는데, 그때마다 innerHTML을 통째로 다시 그리면 입력 중이던
-        // <input> 노드가 통째로 교체되면서 IME 조합 상태가 끊겨 자소가 분리돼 버린다.
-        // compositionstart~compositionend 구간에는 리렌더를 미루고, 조합이 끝났을 때만
-        // (또는 영문/숫자처럼 조합이 없는 입력일 때는 매 keystroke) 다시 그린다.
-        var composing = false;
-        inputEl.addEventListener("compositionstart", function () { composing = true; });
-        inputEl.addEventListener("compositionend", function (e) { composing = false; memoSearchQuery = e.target.value; renderBackfillMemoList(); });
-        inputEl.addEventListener("input", function (e) { memoSearchQuery = e.target.value; if (!composing) renderBackfillMemoList(); });
-        inputEl.focus();
-        var v = inputEl.value; inputEl.value = ""; inputEl.value = v;
-      }
-    }
+    el.innerHTML = bodyHtml;
   }
   function renderBackfill() {
     var el = document.getElementById("backfillList");
@@ -3123,6 +3126,10 @@
   });
   document.getElementById("backfillMemoInput").addEventListener("change", saveMemoForBackfillDate);
   document.getElementById("backfillMemoInput").addEventListener("blur", saveMemoForBackfillDate);
+  document.getElementById("memoSearchInput").addEventListener("input", function (e) {
+    memoSearchQuery = e.target.value;
+    renderBackfillMemoList();
+  });
   document.getElementById("authPassword").addEventListener("keydown", function (e) {
     if (e.key === "Enter") { e.preventDefault(); doSignIn(); }
   });
