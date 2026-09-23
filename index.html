@@ -803,8 +803,7 @@
     <div id="msDetailIcon" style="margin:0 auto 8px;"></div>
     <div class="tp-title" id="msDetailTitle" style="margin-bottom:2px;"></div>
     <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);margin-bottom:12px;"></div>
-    <div id="msDetailVerse" style="font-family:'Fraunces',serif;font-size:14px;line-height:1.7;text-align:left;background:var(--ring-track,#f2efe8);border-radius:10px;padding:12px 14px;margin-bottom:10px;"></div>
-    <div id="msDetailFlavor" style="font-size:11.5px;color:var(--ink-dim);text-align:left;margin-bottom:16px;"></div>
+    <div id="msDetailVerse" style="font-family:'Fraunces',serif;font-size:14px;line-height:1.7;text-align:left;background:var(--ring-track,#f2efe8);border-radius:10px;padding:12px 14px;margin-bottom:16px;"></div>
     <div class="btn primary" data-action="milestone-detail-close">닫기</div>
   </div>
 </div>
@@ -1104,7 +1103,7 @@
     document.getElementById("achieveLevelPts").textContent = g.ptsIntoStage + "/" + g.ptsForNext + "P";
     document.getElementById("achieveLevelFill").style.width = Math.round(g.ptsIntoStage / g.ptsForNext * 100) + "%";
     var bookProgEl = document.getElementById("achieveBookProgress");
-    if (bookProgEl) bookProgEl.textContent = g.milestone.ref + (g.milestone.text ? " · " + g.milestone.text : "") +
+    if (bookProgEl) bookProgEl.textContent = g.milestone.ref + (g.milestone.verse ? " · " + g.milestone.verse : "") +
       "  (" + (g.bookIndex + 1) + "/" + g.totalBooks + "권 · " + g.book.section + ")";
     var genEl = document.getElementById("achieveGenealogy");
     if (genEl) {
@@ -2384,7 +2383,6 @@
     document.getElementById("msDetailTitle").textContent = found.milestone.title;
     document.getElementById("msDetailRef").textContent = found.book.name + " · " + found.milestone.ref;
     document.getElementById("msDetailVerse").textContent = found.milestone.verse || "";
-    document.getElementById("msDetailFlavor").textContent = found.milestone.text || "";
     document.getElementById("milestoneDetailOverlay").classList.remove("hidden");
   }
   function closeMilestoneDetail() { document.getElementById("milestoneDetailOverlay").classList.add("hidden"); }
