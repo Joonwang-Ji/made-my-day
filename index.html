@@ -949,6 +949,18 @@
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="runExitOverlay" style="z-index:95;">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title">진행 상황을 저장할까요?</div>
+    <div class="export-note" id="runExitText" style="margin:0 0 10px;text-align:center;"></div>
+    <div class="tp-actions" style="flex-direction:column;gap:8px;">
+      <div class="btn primary" data-action="run-exit-save">저장하고 나가기</div>
+      <div class="btn" data-action="run-exit-discard">저장 안 하고 나가기</div>
+      <div class="btn" data-action="run-exit-continue">계속하기</div>
+    </div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="holidayFirstPromptOverlay">
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title">공휴일을 불러올까요?</div>
@@ -3864,6 +3876,8 @@ attachSceneMeta("deu");
   // 연출. showView처럼 즉시 전환하지 않고, 잠깐 홈 화면 위에 겹쳐 보여주다가 애니메이션이
   // 끝나면 완전히 숨긴다.
   function goHomeAnimated() {
+    var runEl = document.getElementById("view-run");
+    if (runState && runEl && !runEl.classList.contains("hidden")) { requestCloseRun(); return; }
     if (!editItemsCanLeave()) return;
     stopTimerInterval(); runState = null;
     var current = null;
@@ -4022,7 +4036,7 @@ attachSceneMeta("deu");
           ((due || optional) ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + dotCls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          '<span class="mini-dur">' + (checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? ((overtimeDone ? "초과 " : "") + fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
+          '<span class="mini-dur">' + (!checked && due && runSaveRemaining(cat.id, it) !== null ? ("이어하기 · 남은 " + fmtMMSS(runSaveRemaining(cat.id, it))) : checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? ((overtimeDone ? "초과 " : "") + fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
       }).join("");
       card.setAttribute("data-cat-card", cat.id);
       card.innerHTML =
@@ -4106,10 +4120,79 @@ attachSceneMeta("deu");
     if (items.length === 0) { toast("이 카테고리는 오늘 모두 완료했어요"); return; }
     unlockAudioCtx(); // ▶ 탭은 확실한 사용자 제스처 — 여기서 오디오 컨텍스트를 미리 풀어둔다
     stopTimerInterval();
-    runState = { catId: catId, items: items, idx: 0, itemStart: Date.now(), pausedAt: null, pausedAccumMs: 0, paused: false, alarmFired: false };
+    // 저장해 둔 진행 상황(오늘 것만 유효)이 있으면 그 항목부터, 지나간 시간을 반영해 이어서 시작한다
+    var startIdx = 0, startElapsed = 0, resumed = false;
+    var sv = state.runSaves && state.runSaves[catId];
+    if (sv) {
+      if (sv.date === tk) {
+        for (var ri = 0; ri < items.length; ri++) {
+          if (items[ri].id === sv.itemId) { startIdx = ri; startElapsed = Math.max(0, sv.elapsed || 0); resumed = true; break; }
+        }
+      }
+      if (!resumed) clearRunSave(catId);
+    }
+    var startItem = items[startIdx];
+    runState = { catId: catId, items: items, idx: startIdx, itemStart: Date.now() - startElapsed * 1000, pausedAt: null, pausedAccumMs: 0, paused: false,
+      alarmFired: !!(resumed && startItem.seconds && startElapsed >= startItem.seconds), finished: false };
     showView("view-run");
     renderRun();
     tickStart();
+    if (resumed) {
+      var rem = (startItem.seconds || 0) - startElapsed;
+      toast(rem > 0 ? ("이어서 시작해요 · 남은 " + fmtMMSS(rem)) : "이어서 시작해요 · 시간 초과 상태");
+    }
+  }
+  // ---- run 진행 상황 저장 ----
+  // 5초 이하로 머문 뒤 나가는 것은 실수로 눌렀을 가능성이 커서 저장을 묻지 않고 그냥 나간다.
+  var RUN_SAVE_MIN_SECS = 5;
+  function clearRunSave(catId, itemId) {
+    if (!state.runSaves || !state.runSaves[catId]) return;
+    if (itemId && state.runSaves[catId].itemId !== itemId) return;
+    delete state.runSaves[catId];
+    saveState();
+  }
+  function runSaveRemaining(catId, item) {
+    var sv = state.runSaves && state.runSaves[catId];
+    if (!sv || sv.date !== todayKey() || sv.itemId !== item.id) return null;
+    return Math.max(0, (item.seconds || 0) - (sv.elapsed || 0));
+  }
+  function exitRun() {
+    document.getElementById("runExitOverlay").classList.add("hidden");
+    stopTimerInterval(); runState = null;
+    showView("view-home"); renderHome();
+  }
+  function requestCloseRun() {
+    if (!runState || runState.finished) { exitRun(); return; }
+    if (!runState.paused) { runState.pausedAt = Date.now(); runState.paused = true; renderRun(); }
+    var item = currentItem();
+    var elapsed = elapsedSeconds();
+    if (!item || elapsed <= RUN_SAVE_MIN_SECS) { exitRun(); return; }
+    var rem = (item.seconds || 0) - elapsed;
+    var txt = "\"" + (item.name || "이름 없음") + "\" · " +
+      (rem > 0 ? ("남은 시간 " + fmtMMSS(rem) + "부터 다음 실행 때 이어서 시작해요.") : ("이미 " + fmtMMSS(-rem) + " 초과했어요. 진행한 시간 그대로 이어서 시작해요."));
+    document.getElementById("runExitText").textContent = txt;
+    document.getElementById("runExitOverlay").classList.remove("hidden");
+  }
+  function runExitSave() {
+    var item = currentItem();
+    if (runState && item) {
+      if (!state.runSaves || typeof state.runSaves !== "object") state.runSaves = {};
+      state.runSaves[runState.catId] = { date: todayKey(), itemId: item.id, elapsed: elapsedSeconds() };
+      saveState();
+      toast("진행 상황을 저장했어요");
+    }
+    exitRun();
+  }
+  function runExitDiscard() {
+    if (runState) clearRunSave(runState.catId);
+    exitRun();
+  }
+  function runExitContinue() {
+    document.getElementById("runExitOverlay").classList.add("hidden");
+    if (runState && runState.paused) {
+      runState.pausedAccumMs += Date.now() - runState.pausedAt; runState.pausedAt = null; runState.paused = false;
+      renderRun();
+    }
   }
   function stopTimerInterval() { if (timer) { clearInterval(timer); timer = null; } }
   function tickStart() {
@@ -4145,11 +4228,16 @@ attachSceneMeta("deu");
     if (item) {
       var overtime = !!(item.seconds && elapsedSeconds() >= item.seconds);
       markDone(item.id, true, null, overtime, elapsedSeconds());
+      clearRunSave(runState.catId, item.id);
       checkRewardEvents();
     }
     advance();
   }
-  function skipCurrent() { advance(); }
+  function skipCurrent() {
+    var it = currentItem();
+    if (it && runState) clearRunSave(runState.catId, it.id);
+    advance();
+  }
   function advance() {
     if (runState.idx + 1 < runState.items.length) {
       runState.idx += 1;
@@ -4159,7 +4247,7 @@ attachSceneMeta("deu");
       runState.paused = false;
       runState.alarmFired = false;
       renderRun();
-    } else { stopTimerInterval(); renderRunFinish(); }
+    } else { runState.finished = true; stopTimerInterval(); renderRunFinish(); }
   }
   function updateRunTimerDOM() {
     var el = document.getElementById("runTime");
@@ -5197,7 +5285,10 @@ attachSceneMeta("deu");
     }
 
     else if (action === "run-category") { startRun(id); }
-    else if (action === "close-run") { stopTimerInterval(); runState = null; showView("view-home"); renderHome(); }
+    else if (action === "close-run") { requestCloseRun(); }
+    else if (action === "run-exit-save") { runExitSave(); }
+    else if (action === "run-exit-discard") { runExitDiscard(); }
+    else if (action === "run-exit-continue") { runExitContinue(); }
     else if (action === "run-toggle-pause") {
       unlockAudioCtx(); // 화면 잠금 등으로 컨텍스트가 다시 suspended 됐을 수 있어 탭할 때마다 한 번 더 풀어준다
       if (runState.paused) { runState.pausedAccumMs += Date.now() - runState.pausedAt; runState.pausedAt = null; runState.paused = false; }
@@ -5486,6 +5577,7 @@ attachSceneMeta("deu");
       if (dx < 6) return;
       if (Math.abs(dy) > MAX_VERTICAL && Math.abs(dy) > dx) { edgeSwipe.active = false; return; }
       if (edgeSwipe.current.id === "view-editItems" && !editItemsCanLeave()) { edgeSwipe.active = false; return; }
+      if (edgeSwipe.current.id === "view-run" && runState) { edgeSwipe.active = false; requestCloseRun(); return; }
       edgeSwipe.dragging = true;
       var cur = edgeSwipe.current;
       var homeEl = document.getElementById("view-home");
