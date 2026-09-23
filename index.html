@@ -2471,9 +2471,10 @@
     },
     person: function (cx, cy, c, scale) {
       scale = scale || 1;
-      return '<circle cx="' + cx + '" cy="' + (cy - 14 * scale) + '" r="' + (6 * scale) + '" fill="' + c + '"/>' +
-        '<path d="M' + (cx - 8 * scale) + ' ' + (cy + 10 * scale) + ' Q ' + cx + ' ' + (cy - 4 * scale) + ' ' + (cx + 8 * scale) + ' ' + (cy + 10 * scale) +
-        ' Z" fill="' + c + '"/>';
+      var hy = cy - 15 * scale, hr = 6.5 * scale, bw = 10 * scale, hemY = cy + 20 * scale, shY = cy - 10 * scale;
+      return '<circle cx="' + cx + '" cy="' + hy + '" r="' + hr + '" fill="' + c + '"/>' +
+        '<path d="M ' + (cx - bw) + ' ' + hemY + ' C ' + (cx - bw) + ' ' + (shY - bw * 0.3) + ' ' + (cx - bw * 0.55) + ' ' + shY + ' ' + cx + ' ' + shY +
+        ' C ' + (cx + bw * 0.55) + ' ' + shY + ' ' + (cx + bw) + ' ' + (shY - bw * 0.3) + ' ' + (cx + bw) + ' ' + hemY + ' Z" fill="' + c + '"/>';
     },
     ark: function (cx, cy, c1, c2) {
       return '<path d="M' + (cx - 28) + ' ' + cy + ' Q ' + cx + ' ' + (cy + 16) + ' ' + (cx + 28) + ' ' + cy +
@@ -2543,7 +2544,7 @@
     land: function () { return SVG_P.wave(70, DEEP, .6) + SVG_P.ground(72, SAGE) + SVG_P.plant(40, 74, "#2f6b3f") + SVG_P.plant(60, 76, "#2f6b3f") + SVG_P.plant(75, 74, "#2f6b3f"); },
     lights: function () { return SVG_P.sun(32, 36, 12, GOLD) + SVG_P.moon(72, 60, 10, "#dcdce8") + SVG_P.stars([[20, 70], [82, 30], [60, 20]], 5, "#e8e0b0"); },
     sea: function () { return SVG_P.wave(60, DEEP, .9) + SVG_P.fish(35, 72, "#e8dfae") + SVG_P.fish(65, 80, "#e8dfae") + SVG_P.bird(30, 30, NIGHT) + SVG_P.bird(65, 22, NIGHT); },
-    beasts: function () { return SVG_P.ground(72, SAGE) + '<circle cx="50" cy="44" r="27" fill="' + GOLD + '" opacity=".2"/>' + SVG_P.animal(20, 80, "#8a6a4a") + SVG_P.animal(82, 82, "#8a6a4a") + SVG_P.person(50, 48, "#c4574a", 1.8); },
+    beasts: function () { return SVG_P.ground(78, SAGE) + SVG_P.animal(18, 84, "#8a6a4a") + SVG_P.animal(84, 86, "#8a6a4a") + SVG_P.person(50, 46, "#c4574a", 1.5); },
     rest: function () { return SVG_P.sun(50, 40, 13, GOLD) + '<path d="M28 66 h44" stroke="' + GOLD + '" stroke-width="3" stroke-linecap="round" opacity=".6"/>'; },
     eden: function () { return SVG_P.ground(70, SAGE) + SVG_P.tree(50, 70, "#6b4a2f", "#3a8a4f") + SVG_P.person(30, 74, EMBER, .9); },
     eve: function () { return SVG_P.ground(72, SAGE) + SVG_P.person(38, 76, EMBER, .9) + SVG_P.person(62, 76, DUSK, .9); },
