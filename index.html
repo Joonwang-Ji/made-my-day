@@ -284,7 +284,8 @@
     display: flex; align-items: center; justify-content: center; color: var(--ink-dim); }
   .mini-cal-cell.done { background: var(--sage); color: var(--card); font-weight: 700; }
   .mini-cal-cell.done.overtime { background: var(--gold); }
-  .mini-cal-cell.future { visibility: hidden; }
+  .mini-cal-cell.pad { visibility: hidden; }
+  .mini-cal-cell.future { opacity: 0.28; }
   .mini-cal-cell.na { opacity: 0.25; }
   .mini-cal-cell.rest:not(.done) { color: var(--rest); font-weight: 700; }
   .mini-cal-cell.tappable { cursor: pointer; }
@@ -305,7 +306,8 @@
   .success-cell.done { background: var(--sage); color: var(--card); font-weight: 800; }
   .success-cell.na { opacity: 0.3; }
   .success-cell.na.bonus { opacity: 1; background: var(--gold-soft); color: var(--gold); font-weight: 800; }
-  .success-cell.future { visibility: hidden; }
+  .success-cell.pad { visibility: hidden; }
+  .success-cell.future { opacity: 0.3; }
   .success-cell .memo-dot { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
     width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .8; }
 
@@ -2081,8 +2083,13 @@
       if (cid) prevRects[cid] = el.getBoundingClientRect();
     });
     list.innerHTML = "";
-    // 오늘 다 완료한 카테고리는 하단으로 정렬해 보여준다(데이터 순서 자체는 바꾸지 않음).
+    // 오늘 다 완료한 카테고리는 하단으로, 쉬는 날이라 오늘 예정 항목이 아예 없는
+    // 카테고리(= 쉬는 날엔 안 하는 항목들로만 구성)는 맨 밑으로 정렬해 보여준다
+    // (데이터 순서 자체는 바꾸지 않음).
     var sortedCats = state.categories.map(function (c, i) { return { c: c, i: i }; }).sort(function (a, b) {
+      var aEmpty = (todayIsRest && catItemsDueOn(a.c, todayK).length === 0) ? 1 : 0;
+      var bEmpty = (todayIsRest && catItemsDueOn(b.c, todayK).length === 0) ? 1 : 0;
+      if (aEmpty !== bEmpty) return aEmpty - bEmpty;
       var aDone = catFullyDone(a.c, todayK) ? 1 : 0;
       var bDone = catFullyDone(b.c, todayK) ? 1 : 0;
       return aDone !== bDone ? aDone - bDone : a.i - b.i;
@@ -2674,14 +2681,14 @@
     var leadDow = new Date(year, month, 1).getDay();
     var dowHeader = ["S","M","T","W","T","F","S"].map(function (d) { return '<div class="mini-cal-dow">' + d + '</div>'; }).join("");
     var leadCells = '';
-    for (var lc = 0; lc < leadDow; lc++) leadCells += '<div class="mini-cal-cell future"></div>';
+    for (var lc = 0; lc < leadDow; lc++) leadCells += '<div class="mini-cal-cell pad"></div>';
     flat.forEach(function (pair) {
       var it = pair.item, cat = pair.cat;
       var doneCount = 0, dueDaysCount = 0, cellsHtml = dowHeader + leadCells;
       for (var day = 1; day <= daysInMonth; day++) {
         var dk = year + "-" + pad(month+1) + "-" + pad(day);
         var isFuture = dk > todayStr;
-        if (isFuture) { cellsHtml += '<div class="mini-cal-cell future"></div>'; continue; }
+        if (isFuture) { cellsHtml += '<div class="mini-cal-cell future">' + day + '</div>'; continue; }
         var restCls = isRestDay(dk) ? ' rest' : '';
         if (!itemExistedOn(it, dk)) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
         var due = isDueForDate(it, dk);
@@ -2742,10 +2749,10 @@
     var successDays = 0, ratedDays = 0, anyBonus = false;
     var leadDow = new Date(year, month, 1).getDay();
     var cellsHtml = "";
-    for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="success-cell future"></div>';
+    for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="success-cell pad"></div>';
     for (var day = 1; day <= daysInMonth; day++) {
       var dk = year + "-" + pad(month+1) + "-" + pad(day);
-      if (dk > todayStr) { cellsHtml += '<div class="success-cell future"></div>'; continue; }
+      if (dk > todayStr) { cellsHtml += '<div class="success-cell future">' + day + '</div>'; continue; }
       var s = overallStreakStatus(dk);
       if (s === null) {
         // due 항목이 없어(주로 쉬는 날) 스트릭 집계에서 건너뛴 날. 그래도 그날 뭔가
@@ -3043,12 +3050,12 @@
     var leadDow = new Date(year, month, 1).getDay();
     var dowHeader = ["S","M","T","W","T","F","S"].map(function (d) { return '<div class="mini-cal-dow">' + d + '</div>'; }).join("");
     var cellsHtml = dowHeader;
-    for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="mini-cal-cell future"></div>';
+    for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="mini-cal-cell pad"></div>';
     var doneCount = 0, dueDaysCount = 0;
     for (var day = 1; day <= daysInMonth; day++) {
       var dk = year + "-" + pad(month+1) + "-" + pad(day);
       var isFuture = dk > todayStr;
-      if (isFuture) { cellsHtml += '<div class="mini-cal-cell future"></div>'; continue; }
+      if (isFuture) { cellsHtml += '<div class="mini-cal-cell future">' + day + '</div>'; continue; }
       var restCls = isRestDay(dk) ? ' rest' : '';
       if (!itemExistedOn(it, dk)) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
       var due = isDueForDate(it, dk);
