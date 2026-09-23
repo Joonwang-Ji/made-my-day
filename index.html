@@ -267,11 +267,13 @@
   .success-header > div:nth-child(7) { color: var(--rest); font-weight: 700; }
   .success-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
   .success-cell { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    font-size: 12px; color: var(--ink-dim); background: var(--ring-track); }
+    font-size: 12px; color: var(--ink-dim); background: var(--ring-track); position: relative; }
   .success-cell.done { background: var(--sage); color: var(--card); font-weight: 800; }
   .success-cell.na { opacity: 0.3; }
   .success-cell.na.bonus { opacity: 1; background: var(--gold-soft); color: var(--gold); font-weight: 800; }
   .success-cell.future { visibility: hidden; }
+  .success-cell .memo-dot { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .8; }
 
   .week-header { display: grid; grid-template-columns: 1fr repeat(7, 26px); gap: 4px; padding: 0 2px 8px;
     font-size: 11px; color: var(--ink-dim); text-align: center; }
@@ -482,11 +484,12 @@
     </div>
     <div id="backfillList"></div>
     <div id="backfillMemoWrap" class="hidden">
-      <div class="section-label" style="margin-top:16px;">오늘 한 줄 회고</div>
+      <div class="section-label" style="margin-top:16px;">하루 한 줄</div>
       <div class="export-box" style="margin-bottom:4px;"><textarea id="backfillMemoInput" maxlength="150" placeholder="하루를 한 줄로 남겨보세요 (선택)" style="min-height:50px;"></textarea></div>
     </div>
   </div>
   <div id="backfillItemMode" class="hidden"></div>
+  <div id="backfillMemoListMode" class="hidden"></div>
 </div>
 
 <div class="wrap hidden" id="view-export">
@@ -2557,12 +2560,14 @@
         var hEntry = state.history[dk];
         var didSomething = !!(hEntry && Array.isArray(hEntry.completed) && hEntry.completed.length > 0);
         if (didSomething) anyBonus = true;
-        cellsHtml += '<div class="success-cell na' + (didSomething ? ' bonus' : '') + '">' + day + '</div>';
+        var dotHtml1 = (state.memos && state.memos[dk]) ? '<span class="memo-dot"></span>' : '';
+        cellsHtml += '<div class="success-cell na' + (didSomething ? ' bonus' : '') + '" data-action="success-cell-goto" data-id="' + dk + '">' + day + dotHtml1 + '</div>';
         continue;
       }
       ratedDays++;
       if (s) successDays++;
-      cellsHtml += '<div class="success-cell' + (s ? ' done' : '') + '">' + day + '</div>';
+      var dotHtml2 = (state.memos && state.memos[dk]) ? '<span class="memo-dot"></span>' : '';
+      cellsHtml += '<div class="success-cell' + (s ? ' done' : '') + '" data-action="success-cell-goto" data-id="' + dk + '">' + day + dotHtml2 + '</div>';
     }
     var rate = daysElapsed > 0 ? Math.round(successDays / daysElapsed * 100) : 0;
 
@@ -2668,13 +2673,23 @@
   function renderBackfillModeTabs() {
     var el = document.getElementById("backfillModeTabs");
     el.innerHTML = "";
-    [["date","날짜별"],["item","항목별"]].forEach(function (m) {
+    [["date","날짜별"],["item","항목별"],["memo","하루 한 줄"]].forEach(function (m) {
       var t = document.createElement("div");
       t.className = "tab" + (backfillMode === m[0] ? " active" : "");
       t.textContent = m[1];
       t.setAttribute("data-action", "backfill-mode"); t.setAttribute("data-id", m[0]);
       el.appendChild(t);
     });
+  }
+  function goToBackfillDate(dk) {
+    if (dk > todayKey()) dk = todayKey();
+    backfillMode = "date";
+    backfillDate = dk;
+    memoSearchOpen = false; memoSearchQuery = "";
+    var input = document.getElementById("backfillDateInput");
+    if (input) input.value = backfillDate;
+    renderBackfillModeTabs();
+    renderBackfillModeBody();
   }
   function shiftBackfillDate(delta) {
     var parts = backfillDate.split("-").map(Number);
@@ -2689,8 +2704,63 @@
   function renderBackfillModeBody() {
     document.getElementById("backfillDateMode").classList.toggle("hidden", backfillMode !== "date");
     document.getElementById("backfillItemMode").classList.toggle("hidden", backfillMode !== "item");
+    document.getElementById("backfillMemoListMode").classList.toggle("hidden", backfillMode !== "memo");
     if (backfillMode === "date") renderBackfill();
-    else renderBackfillItemMode();
+    else if (backfillMode === "item") renderBackfillItemMode();
+    else renderBackfillMemoList();
+  }
+  var memoSearchOpen = false;
+  var memoSearchQuery = "";
+  function toggleMemoSearch() {
+    memoSearchOpen = !memoSearchOpen;
+    if (!memoSearchOpen) memoSearchQuery = "";
+    renderBackfillMemoList();
+  }
+  function renderBackfillMemoList() {
+    var el = document.getElementById("backfillMemoListMode");
+    var allDates = Object.keys(state.memos || {}).sort().reverse();
+    var days = ["일","월","화","수","목","금","토"];
+    var q = memoSearchQuery.trim().toLowerCase();
+    var dates = q ? allDates.filter(function (dk) { return (state.memos[dk] || "").toLowerCase().indexOf(q) !== -1; }) : allDates;
+
+    var barHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">';
+    if (memoSearchOpen) {
+      barHtml += '<input type="text" id="memoSearchInput" class="cat-name-input" placeholder="내용 검색" style="margin:0;flex:1;font-size:13px;padding:9px 10px;" value="' + escapeHtml(memoSearchQuery) + '">' +
+        '<button class="icon-btn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
+    } else if (allDates.length > 0) {
+      barHtml += '<div style="flex:1;"></div><button class="icon-btn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>';
+    }
+    barHtml += '</div>';
+
+    var bodyHtml;
+    if (dates.length === 0) {
+      bodyHtml = '<div class="empty">' + (q ? "검색 결과가 없어요." : "아직 남긴 하루 한 줄이 없어요.") + '</div>';
+    } else {
+      var groups = {};
+      dates.forEach(function (dk) { var ym = dk.slice(0, 7); (groups[ym] = groups[ym] || []).push(dk); });
+      bodyHtml = Object.keys(groups).sort().reverse().map(function (ym) {
+        var p = ym.split("-");
+        var label = parseInt(p[0], 10) + "년 " + parseInt(p[1], 10) + "월";
+        var rows = groups[ym].map(function (dk) {
+          var d = parseKeyToDate(dk);
+          var dlabel = (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + days[d.getDay()] + ")";
+          return '<div class="rest-item" data-action="backfill-memo-goto" data-id="' + dk + '" style="align-items:flex-start;cursor:pointer;">' +
+            '<span style="font-size:11.5px;color:var(--ink-dim);flex:none;width:74px;">' + dlabel + '</span>' +
+            '<span style="flex:1;">' + escapeHtml(state.memos[dk]) + '</span></div>';
+        }).join("");
+        return '<div class="section-label" style="margin-top:14px;">' + label + ' (' + groups[ym].length + ')</div>' +
+          '<div style="display:flex;flex-direction:column;gap:6px;">' + rows + '</div>';
+      }).join("");
+    }
+    el.innerHTML = barHtml + bodyHtml;
+    if (memoSearchOpen) {
+      var inputEl = document.getElementById("memoSearchInput");
+      if (inputEl) {
+        inputEl.addEventListener("input", function (e) { memoSearchQuery = e.target.value; renderBackfillMemoList(); });
+        inputEl.focus();
+        var v = inputEl.value; inputEl.value = ""; inputEl.value = v;
+      }
+    }
   }
   function renderBackfill() {
     var el = document.getElementById("backfillList");
@@ -2998,10 +3068,14 @@
     else if (action === "backfill-mode") {
       backfillMode = id;
       if (id === "item" && !backfillItemCalMonth) { backfillItemCalMonth = new Date(); backfillItemCalMonth.setDate(1); }
+      if (id !== "memo") { memoSearchOpen = false; memoSearchQuery = ""; }
       renderBackfillModeTabs();
       renderBackfillModeBody();
     }
     else if (action === "backfill-pick-item") { backfillItemId = id; renderBackfillItemMode(); }
+    else if (action === "backfill-memo-goto") { goToBackfillDate(id); }
+    else if (action === "toggle-memo-search") { toggleMemoSearch(); }
+    else if (action === "success-cell-goto") { showView("view-backfill"); goToBackfillDate(id); }
     else if (action === "backfill-item-back") { backfillItemId = null; renderBackfillItemMode(); }
     else if (action === "backfill-cal-prev-month") { backfillItemCalMonth.setMonth(backfillItemCalMonth.getMonth() - 1); renderBackfillItemMode(); }
     else if (action === "backfill-cal-next-month") { backfillItemCalMonth.setMonth(backfillItemCalMonth.getMonth() + 1); renderBackfillItemMode(); }
