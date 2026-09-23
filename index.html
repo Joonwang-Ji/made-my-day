@@ -196,7 +196,8 @@
   .mini-cal-title { font-size: 12.5px; font-weight: 800; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mini-cal-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 3px; }
   .mini-cal-dow { font-size: 7.5px; color: var(--ink-dim); text-align: center; font-weight: 700; padding-bottom: 2px; }
-  .mini-cal-days > .mini-cal-dow:nth-child(1), .mini-cal-days > .mini-cal-dow:nth-child(7) { color: var(--gold); }
+  .mini-cal-days > .mini-cal-dow:nth-child(1) { color: var(--gold); }
+  .mini-cal-days > .mini-cal-dow:nth-child(7) { color: var(--rest); }
   .mini-cal-cell { aspect-ratio: 1; border-radius: 4px; background: var(--ring-track); font-size: 8px;
     display: flex; align-items: center; justify-content: center; color: var(--ink-dim); }
   .mini-cal-cell.done { background: var(--sage); color: var(--card); font-weight: 700; }
@@ -214,7 +215,8 @@
   .stat-box .lbl { font-size: 11.5px; color: var(--ink-dim); margin-top: 2px; }
   .success-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 6px; }
   .success-header div { text-align: center; font-size: 11px; color: var(--ink-dim); }
-  .success-header > div:nth-child(1), .success-header > div:nth-child(7) { color: var(--gold); font-weight: 700; }
+  .success-header > div:nth-child(1) { color: var(--gold); font-weight: 700; }
+  .success-header > div:nth-child(7) { color: var(--rest); font-weight: 700; }
   .success-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
   .success-cell { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center;
     font-size: 12px; color: var(--ink-dim); background: var(--ring-track); }
@@ -226,7 +228,8 @@
   .week-header { display: grid; grid-template-columns: 1fr repeat(7, 26px); gap: 4px; padding: 0 2px 8px;
     font-size: 11px; color: var(--ink-dim); text-align: center; }
   .week-header .wh-label { text-align: left; }
-  .week-header > div:nth-child(2), .week-header > div:nth-child(8) { color: var(--gold); font-weight: 700; }
+  .week-header > div:nth-child(2) { color: var(--gold); font-weight: 700; }
+  .week-header > div:nth-child(8) { color: var(--rest); font-weight: 700; }
   .week-row { display: grid; grid-template-columns: 1fr repeat(7, 26px); gap: 4px; align-items: center;
     padding: 9px 2px; border-bottom: 1px solid var(--line); }
   .week-row .wr-name { font-size: 12.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; }
@@ -407,7 +410,7 @@
   <div class="tabs" id="backfillModeTabs"></div>
   <div id="backfillDateMode">
     <div class="section-label" style="margin-top:0;">날짜 선택</div>
-    <input type="date" id="backfillDateInput" class="cat-name-input" style="margin-bottom:18px;">
+    <input type="date" id="backfillDateInput" class="cat-name-input" style="margin-bottom:12px;">
     <div id="backfillList"></div>
   </div>
   <div id="backfillItemMode" class="hidden"></div>
@@ -1150,12 +1153,15 @@
   function dueOnKey(item, dk) { return dueOn(item, parseKeyToDate(dk)); }
   function dueToday(item) { return dueOn(item, new Date()); }
   function isDueForDate(item, dk) {
+    if (!itemExistedOn(item, dk)) return false;
     if (!dueOnKey(item, dk)) return false;
     if (isRestDay(dk) && !item.keepOnRest) return false;
     return true;
   }
   // item.createdAt(생성일, "YYYY-MM-DD")이 있는 항목은 그 날짜 이전에는 "존재하지 않았던 것"으로
-  // 본다 — 놓친 항목 배너가 어제/최근 막 추가한 항목을 예전부터 놓친 것처럼 잘못 세지 않도록.
+  // 본다. isDueForDate 자체에서 걸러주기 때문에, 성공/스트릭 계산(overallStreakStatus)을 포함해
+  // due 여부를 참조하는 모든 곳에 자동으로 적용된다 — 오늘 새로 추가한 항목이 요일 패턴만
+  // 맞으면 어제도 "예정이었다"고 소급 계산되어 어제의 성공 판정을 망가뜨리는 문제를 막는다.
   // createdAt이 없는(마이그레이션 이전) 예전 항목은 항상 존재했던 것으로 간주해 그대로 둔다.
   function itemExistedOn(item, dk) {
     return !item.createdAt || dk >= item.createdAt;
@@ -1316,6 +1322,13 @@
     { days: 200, label: "200일", emoji: "💎" },
     { days: 365, label: "1년", emoji: "👑" }
   ];
+  // ---- 레벨/포인트 ----
+  // 항목 완료 1개= 1P, 그날 한 카테고리를 전부 채우면 보너스 3P(과거엔 5P라 보상이 너무 잦았음).
+  // 레벨업에 필요한 포인트는 레벨이 오를수록 커진다(레벨 n -> n+1 에는 100*n P 필요: 1→2는
+  // 100P, 2→3은 200P, 3→4는 300P...). 예전엔 항상 50P 고정이라 다 채우는 사람은 거의 매일
+  // 레벨업해서 보상 의미가 옅어졌는데, 이렇게 하면 초반엔 적당히 자주 오르다가 갈수록
+  // 간격이 벌어져서 레벨업이 계속 뜻깊게 느껴진다.
+  function pointsNeededForLevel(n) { return 100 * n; }
   function computeGamification() {
     var points = 0;
     Object.keys(state.history).forEach(function (dateKey) {
@@ -1324,12 +1337,16 @@
       points += completed.length;
       state.categories.forEach(function (cat) {
         var due = catItemsDueOn(cat, dateKey);
-        if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) points += 5;
+        if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) points += 3;
       });
     });
-    var level = Math.floor(points / 50) + 1;
-    var ptsIntoLevel = points % 50;
-    return { points: points, level: level, ptsIntoLevel: ptsIntoLevel, ptsForNext: 50 };
+    var level = 1, remaining = points, need = pointsNeededForLevel(level);
+    while (remaining >= need) {
+      remaining -= need;
+      level++;
+      need = pointsNeededForLevel(level);
+    }
+    return { points: points, level: level, ptsIntoLevel: remaining, ptsForNext: need };
   }
 
   // ---- self-reward events (레벨업 = 잦은 보상, 스트릭 배지 = 드문 보상) ----
