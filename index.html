@@ -508,6 +508,19 @@
 </style>
 </head>
 <body>
+<!-- <<MEDAL DEFS>> -->
+<svg id="medalDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<clipPath id="disc"><circle cx="50" cy="50" r="41"/></clipPath>
+<g id="fr1"><circle cx="50" cy="50" r="47" fill="#F4EBD5" stroke="#C2A25E" stroke-width="1.4"/><circle cx="50" cy="50" r="44.5" fill="none" stroke="#C2A25E" stroke-width="0.5"/></g>
+<circle id="fr2" cx="50" cy="50" r="40" fill="none" stroke="#E2C77E" stroke-width="0.7"/>
+<line id="rl" x1="50" y1="11" x2="50" y2="31" stroke="#E2C77E" stroke-width="1.6" stroke-linecap="round"/>
+<line id="rs" x1="50" y1="19" x2="50" y2="31" stroke="#E2C77E" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+<line id="sr" x1="34" y1="24" x2="34" y2="28.5" stroke="#E2C77E" stroke-width="1.6" stroke-linecap="round"/>
+<line id="hr" x1="50" y1="28" x2="50" y2="36" stroke="#E2C77E" stroke-width="1.4" stroke-linecap="round"/>
+<path id="st" d="M0-4L1-1L4 0L1 1L0 4L-1 1L-4 0L-1-1Z" fill="#E2C77E"/>
+<g id="lockm"><circle cx="50" cy="50" r="47" fill="#EEE9DC" stroke="#CDBF98" stroke-width="1.4"/><circle cx="50" cy="50" r="44.5" fill="none" stroke="#CDBF98" stroke-width="0.5"/><circle cx="50" cy="50" r="41" fill="#DDD7C8"/><circle cx="50" cy="50" r="40" fill="none" stroke="#CDBF98" stroke-width="0.7"/><path d="M42 48v-5a8 8 0 0 1 16 0v5" fill="none" stroke="#A9A18C" stroke-width="2.4" stroke-linecap="round"/><rect x="38" y="48" width="24" height="18" rx="3.5" fill="#A9A18C"/><circle cx="50" cy="56" r="2.2" fill="#DDD7C8"/><rect x="49.2" y="56" width="1.6" height="5" fill="#DDD7C8"/></g>
+</defs></svg>
+<!-- <<END MEDAL DEFS>> -->
 
 <div class="top-nav hidden" id="globalBottomNav">
   <div class="top-nav-inner">
@@ -2371,6 +2384,123 @@
   ];
   var BOOK_MILESTONES = { gen: GENESIS_MILESTONES };
 
+// <<MEDAL SYSTEM>>
+// ===== 성경 마일스톤 메달 공용 기반 =====
+// 디자인 기준: 프로젝트 파일 medals-creation-week.html (viewBox 0 0 100 100, 원판 clip #disc r41, 틀 #fr1/#fr2,
+// 금 #C2A25E/#E2C77E, 크림 #F4EBD5, 채도 낮은 원판색, 평면색+얇은 선, 그라데이션·그림자·이모지 금지).
+// 공용 defs(#disc #fr1 #fr2 #rl #rs #sr #hr #st #lockm)는 HTML 상단의 숨김 <svg id="medalDefs"> 안에 한 번만 있다.
+// MEDAL_ART[icon] = 원판 clip 안쪽 그림(문자열). 없는 icon은 기존 BIBLE_ICONS로 대체(fallback).
+var MEDAL_ART = {};
+function medalGroup(name) {
+  var a = MEDAL_ART[name];
+  return a ? '<use href="#fr1"/><g clip-path="url(#disc)">' + a + '</g><use href="#fr2"/>' : null;
+}
+function medalLockedGroup() { return '<use href="#lockm"/>'; }
+
+// 재사용 부품 (문자열 반환). 좌표는 모두 100x100 메달 좌표.
+var MP = {
+  bg: function (c) { return '<rect width="100" height="100" fill="' + c + '"/>'; },
+  band: function (y, h, c) { return '<rect y="' + y + '" width="100" height="' + h + '" fill="' + c + '"/>'; },
+  wave: function (y, c, w, o) {
+    return '<path d="M-6 ' + y + 'q6-3 12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0" fill="none" stroke="' + c +
+      '" stroke-width="' + (w || 1) + '"' + (o ? ' opacity="' + o + '"' : '') + '/>';
+  },
+  ground: function (y, c) { return '<path d="M0 ' + y + 'Q30 ' + (y - 8) + ' 60 ' + (y - 1) + 'T100 ' + (y - 4) + 'V100H0Z" fill="' + c + '"/>'; },
+  circle: function (x, y, r, c) { return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + c + '"/>'; },
+  rect: function (x, y, w, h, c, rx) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"' + (rx ? ' rx="' + rx + '"' : '') + ' fill="' + c + '"/>'; },
+  path: function (d, c) { return '<path d="' + d + '" fill="' + c + '"/>'; },
+  line: function (d, c, w, o) { return '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="' + (w || 1) + '" stroke-linecap="round" stroke-linejoin="round"' + (o ? ' opacity="' + o + '"' : '') + '/>'; },
+  star: function (x, y, s) { return '<use href="#st" transform="translate(' + x + ' ' + y + ')' + (s && s !== 1 ? ' scale(' + s + ')' : '') + '"/>'; },
+  stars: function (list) { var o = ''; list.forEach(function (p) { o += MP.star(p[0], p[1], p[2]); }); return o; },
+  rays: function (cx, cy, r1, r2, n, c, w, rot) {
+    var o = '', i, a;
+    for (i = 0; i < n; i++) {
+      a = (Math.PI * 2 * i) / n + (rot || 0);
+      o += '<path d="M' + (cx + r1 * Math.cos(a)).toFixed(1) + ' ' + (cy + r1 * Math.sin(a)).toFixed(1) + 'L' +
+        (cx + r2 * Math.cos(a)).toFixed(1) + ' ' + (cy + r2 * Math.sin(a)).toFixed(1) + '" stroke="' + c + '" stroke-width="' + (w || 1.4) + '" stroke-linecap="round"/>';
+    }
+    return o;
+  },
+  cloud: function (x, y, s, c) {
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')" fill="' + c + '"><ellipse rx="12" ry="4.5"/><ellipse cx="6" cy="-4" rx="8" ry="5"/><ellipse cx="-6" cy="-3" rx="6" ry="4"/></g>';
+  },
+  flame: function (x, y, s, c1, c2) {
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M0 0C-6 0-8-7-4-13C-3-9-1-8 0-6C0-11 2-15 3-20C9-13 7 0 0 0Z" fill="' + c1 +
+      '"/><path d="M0-1C-3-1-4-5-2-8C-1-6 0-5 0-4C1-7 2-8 2-10C5-6 4-1 0-1Z" fill="' + c2 + '"/></g>';
+  },
+  tree: function (x, y, s, trunk, leaf, fruit) {
+    var o = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M0 0V-14" stroke="' + trunk + '" stroke-width="2.6"/>' +
+      '<circle cy="-21" r="9" fill="' + leaf + '"/><circle cx="-6" cy="-16" r="5.5" fill="' + leaf + '"/><circle cx="6" cy="-16" r="5.5" fill="' + leaf + '"/>';
+    if (fruit) o += '<circle cx="-3" cy="-21" r="1.3" fill="' + fruit + '"/><circle cx="4" cy="-18" r="1.3" fill="' + fruit + '"/><circle cx="1" cy="-25" r="1.3" fill="' + fruit + '"/>';
+    return o + '</g>';
+  },
+  // 사람: 약 6등신 매끈한 단색 실루엣(머리 반지름 3.6, 키 약 43). 기준선(foot)=발 y. o.f 여자, o.robe 긴 옷, o.arms d/u/r/l/f/h
+  person: function (x, foot, s, c, o) {
+    o = o || {};
+    var hair = o.hair || '#4A3428', skin = o.skin || c;
+    var A = { d: [-7.6, 56, 7.6, 56], u: [-11, 30, 11, 30], r: [-7.6, 56, 14, 41], l: [-14, 41, 7.6, 56], f: [-3, 50, 3, 50], h: [-9.5, 47, 9.5, 47] }[o.arms || 'd'];
+    var g = '<g transform="translate(' + x + ' ' + foot + ') scale(' + s + ') translate(0 -72.5)" stroke="none">';
+    g += '<rect x="-1.4" y="36.8" width="2.8" height="3.4" fill="' + skin + '"/>';
+    if (o.robe) {
+      g += '<path d="M-6.2 40.4Q0 38.2 6.2 40.4L9.4 72.5Q0 74.2 -9.4 72.5Z" fill="' + c + '"/>';
+    } else if (o.f) {
+      g += '<path d="M-5.2 40.6Q0 38.4 5.2 40.6L3.6 50.5Q5.8 53.5 5.8 57.5H-5.8Q-5.8 53.5 -3.6 50.5Z" fill="' + c + '"/>' +
+        '<path d="M-2.4 57L-2.6 72.5M2.4 57L2.6 72.5" fill="none" stroke="' + c + '" stroke-width="3.4" stroke-linecap="round"/>';
+    } else {
+      g += '<path d="M-6.4 40.4Q0 38.2 6.4 40.4L5 50Q5.5 53.5 5.2 57.5H-5.2Q-5.5 53.5 -5 50Z" fill="' + c + '"/>' +
+        '<path d="M-2.3 57L-2.7 72.5M2.3 57L2.7 72.5" fill="none" stroke="' + c + '" stroke-width="3.6" stroke-linecap="round"/>';
+    }
+    g += '<path d="M-5.8 41L' + A[0] + ' ' + A[1] + 'M5.8 41L' + A[2] + ' ' + A[3] + '" fill="none" stroke="' + c + '" stroke-width="2.4" stroke-linecap="round"/>';
+    g += '<circle cy="33.6" r="3.6" fill="' + skin + '"/>';
+    if (o.scarf) g += '<path d="M-4.6 33.6Q-4.6 28.4 0 28.4Q4.6 28.4 4.6 33.6L5.8 44L-5.8 44Z" fill="' + o.scarf + '"/><circle cx="0" cy="34.2" r="2.6" fill="' + skin + '"/>';
+    else if (o.f) g += '<path d="M-4.6 31Q0 27.6 4.6 31L5.2 44L3.6 42L-3.6 42L-5.2 44Z" fill="' + hair + '"/><circle cy="33.8" r="3.3" fill="' + skin + '"/>';
+    else g += '<path d="M-3.8 33.2Q-4 29.4 0 29.4Q4 29.4 3.8 33.2Q0 31.2 -3.8 33.2Z" fill="' + hair + '"/>';
+    if (o.staff !== undefined) g += '<path d="M' + o.staff + ' 27V74" stroke="#7A5A3E" stroke-width="1.5" stroke-linecap="round"/>';
+    return g + '</g>';
+  },
+  // 짐승 (옆모습, 오른쪽을 봄, 기준선 y=발)
+  lamb: function (x, y, s, c, dark) {
+    dark = dark || '#5A4A3A';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-5-3v3M-1-3v3M3-3v3M6.5-3v3" stroke="' + dark + '" stroke-width="1.5" stroke-linecap="round"/>' +
+      '<ellipse cy="-8" rx="8.5" ry="5.5" fill="' + c + '"/><circle cx="-5" cy="-11" r="3.6" fill="' + c + '"/><circle cx="3" cy="-12.5" r="3.6" fill="' + c + '"/><circle cx="-8" cy="-7" r="2.6" fill="' + c + '"/>' +
+      '<ellipse cx="11" cy="-11.5" rx="3.6" ry="2.8" fill="' + dark + '"/><ellipse cx="8.4" cy="-14" rx="2.2" ry="1.2" transform="rotate(30 8.4 -14)" fill="' + dark + '"/></g>';
+  },
+  ram: function (x, y, s, c, dark, horn) {
+    dark = dark || '#6B5A48'; horn = horn || '#B08D5E';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-6-8v8M-2.5-8v8M4-8v8M7.5-8v8" stroke="' + dark + '" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<ellipse cy="-12.5" rx="10.5" ry="6.2" fill="' + c + '"/><circle cx="-9.5" cy="-13" r="2.2" fill="' + c + '"/>' +
+      '<path d="M6-16L10-23L16-20L13-11Z" fill="' + c + '"/><ellipse cx="15" cy="-19.4" rx="4.6" ry="3.2" transform="rotate(25 15 -19.4)" fill="' + dark + '"/>' +
+      '<path d="M11-22.5C5-22 4-29 9.5-29.5C14.5-30 15-25 12-24.6" fill="none" stroke="' + horn + '" stroke-width="2" stroke-linecap="round"/></g>';
+  },
+  goat: function (x, y, s, c, dark) {
+    dark = dark || '#6B5A48';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-7-10v10M-3.5-10v10M4-10v10M7.5-10v10" stroke="' + dark + '" stroke-width="1.7" stroke-linecap="round"/>' +
+      '<ellipse cy="-13" rx="10.5" ry="5" fill="' + c + '"/><path d="M6-15L10-24L14-22L12-14Z" fill="' + c + '"/><ellipse cx="13.6" cy="-22.6" rx="4" ry="2.4" transform="rotate(25 13.6 -22.6)" fill="' + c + '"/>' +
+      '<path d="M12.6-25Q11-30 6-31" fill="none" stroke="' + dark + '" stroke-width="1.4" stroke-linecap="round"/><path d="M15.4-20.4L14.6-16.4" stroke="' + dark + '" stroke-width="1.2" stroke-linecap="round"/>' +
+      '<path d="M-10.5-14Q-13-16-12-19" fill="none" stroke="' + c + '" stroke-width="1.6" stroke-linecap="round"/></g>';
+  },
+  donkey: function (x, y, s, c, dark) {
+    dark = dark || '#54493C';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-8-12v12M-4-12v12M5-12v12M9-12v12" stroke="' + dark + '" stroke-width="2" stroke-linecap="round"/>' +
+      '<ellipse cy="-16" rx="12.5" ry="6.2" fill="' + c + '"/><path d="M8-20L12-31L17-29L15-15Z" fill="' + c + '"/><ellipse cx="20.6" cy="-27" rx="6.4" ry="2.9" transform="rotate(30 20.6 -27)" fill="' + c + '"/>' +
+      '<path d="M12-30L11-38L16-31Z" fill="' + c + '"/><path d="M15-30.5L17-38L19.6-30Z" fill="' + dark + '"/><path d="M-12-18Q-17-14-15-8" fill="none" stroke="' + dark + '" stroke-width="1.6" stroke-linecap="round"/></g>';
+  },
+  calf: function (x, y, s, c, dark) {
+    dark = dark || '#8C6E30';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-8-8v8M-4-8v8M5-8v8M9-8v8" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<ellipse cy="-13.5" rx="12" ry="6.6" fill="' + c + '"/><path d="M6-16L11-24L17-21L14-13Z" fill="' + c + '"/><ellipse cx="16.4" cy="-20.4" rx="5.2" ry="3.6" transform="rotate(20 16.4 -20.4)" fill="' + c + '"/>' +
+      '<path d="M12.4-24Q9-28 12-30M15.4-24Q19-28 17-30" fill="none" stroke="' + dark + '" stroke-width="1.5" stroke-linecap="round"/><path d="M-12-15Q-17-14-16-8" fill="none" stroke="' + c + '" stroke-width="1.8" stroke-linecap="round"/></g>';
+  },
+  bird: function (x, y, s, c) { return '<path transform="translate(' + x + ' ' + y + ') scale(' + (s || 1) + ')" d="M-5 0q2.5-6 5 0q2.5-6 5 0" fill="none" stroke="' + c + '" stroke-width="1.6" stroke-linecap="round"/>'; },
+  wheat: function (x, y, s, c, rot) {
+    return '<g transform="translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(' + s + ')"><path d="M0 0V-24" stroke="' + c + '" stroke-width="1.1"/>' +
+      '<g fill="' + c + '"><ellipse cx="-2" cy="-22" rx="1.3" ry="2.6" transform="rotate(-20 -2 -22)"/><ellipse cx="2" cy="-22" rx="1.3" ry="2.6" transform="rotate(20 2 -22)"/>' +
+      '<ellipse cx="-2" cy="-17" rx="1.3" ry="2.6" transform="rotate(-20 -2 -17)"/><ellipse cx="2" cy="-17" rx="1.3" ry="2.6" transform="rotate(20 2 -17)"/>' +
+      '<ellipse cx="-2" cy="-12" rx="1.3" ry="2.6" transform="rotate(-20 -2 -12)"/><ellipse cx="2" cy="-12" rx="1.3" ry="2.6" transform="rotate(20 2 -12)"/><ellipse cy="-26" rx="1.2" ry="2.6"/></g></g>';
+  }
+};
+// <<END MEDAL SYSTEM>>
+
   // ---- 장면(scene) 단위 그림 완성 시스템 ----
   // 마일스톤을 낱개 아이콘으로만 보여주지 않고, 몇 개씩 묶어 "그려지는 중"인 한 장면으로
   // 모아 보여준다. 장면 안의 마일스톤을 하나씩 달성할 때마다 재사용 SVG 부품이 격자에
@@ -2395,6 +2525,470 @@
     });
   }
   attachSceneMeta("gen");
+// <<MEDALS day=1>>
+// 1일차: 창세기(28) 출애굽기(9) 레위기(8) 민수기(9) 신명기(9) = 63개 메달.
+// 창세기 1~7일(gen01~gen07 = light,sky,land,lights,sea,beasts,rest)은 medals-creation-week.html 승인본의 원판 안쪽 SVG를 그대로 옮긴 것(수정 금지).
+MEDAL_ART.light = "<rect width=\"100\" height=\"100\" fill=\"#1E2A44\"/>\n<use href=\"#rl\"/><use href=\"#rl\" transform=\"rotate(45 50 50)\"/><use href=\"#rl\" transform=\"rotate(90 50 50)\"/><use href=\"#rl\" transform=\"rotate(135 50 50)\"/><use href=\"#rl\" transform=\"rotate(180 50 50)\"/><use href=\"#rl\" transform=\"rotate(225 50 50)\"/><use href=\"#rl\" transform=\"rotate(270 50 50)\"/><use href=\"#rl\" transform=\"rotate(315 50 50)\"/>\n<use href=\"#rs\" transform=\"rotate(22.5 50 50)\"/><use href=\"#rs\" transform=\"rotate(67.5 50 50)\"/><use href=\"#rs\" transform=\"rotate(112.5 50 50)\"/><use href=\"#rs\" transform=\"rotate(157.5 50 50)\"/><use href=\"#rs\" transform=\"rotate(202.5 50 50)\"/><use href=\"#rs\" transform=\"rotate(247.5 50 50)\"/><use href=\"#rs\" transform=\"rotate(292.5 50 50)\"/><use href=\"#rs\" transform=\"rotate(337.5 50 50)\"/>\n<circle cx=\"50\" cy=\"50\" r=\"12\" fill=\"none\" stroke=\"#E2C77E\" stroke-width=\"0.8\"/><circle cx=\"50\" cy=\"50\" r=\"8\" fill=\"#F6E7B4\"/>\n<circle cx=\"20\" cy=\"30\" r=\"0.9\" fill=\"#F4EBD5\"/><circle cx=\"80\" cy=\"24\" r=\"0.9\" fill=\"#F4EBD5\"/><circle cx=\"86\" cy=\"62\" r=\"0.9\" fill=\"#F4EBD5\"/><circle cx=\"15\" cy=\"68\" r=\"0.9\" fill=\"#F4EBD5\"/><circle cx=\"72\" cy=\"82\" r=\"0.9\" fill=\"#F4EBD5\"/><circle cx=\"28\" cy=\"84\" r=\"0.9\" fill=\"#F4EBD5\"/>";
+MEDAL_ART.sky = "<rect width=\"100\" height=\"50\" fill=\"#7C9EBF\"/><rect y=\"50\" width=\"100\" height=\"50\" fill=\"#2F5578\"/>\n<path d=\"M12 46A38 38 0 0 1 88 46\" fill=\"none\" stroke=\"#E2C77E\" stroke-width=\"0.9\" opacity=\".7\"/>\n<ellipse cx=\"34\" cy=\"31\" rx=\"13\" ry=\"4.5\" fill=\"#EEF2F5\"/><ellipse cx=\"42\" cy=\"26\" rx=\"8\" ry=\"5\" fill=\"#EEF2F5\"/><ellipse cx=\"68\" cy=\"37\" rx=\"11\" ry=\"3.5\" fill=\"#EEF2F5\" opacity=\".9\"/>\n<path d=\"M6 51q6-4 12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0\" fill=\"none\" stroke=\"#E2C77E\" stroke-width=\"1.3\"/>\n<path d=\"M6 64q6-3 12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0\" fill=\"none\" stroke=\"#4E7AA0\" stroke-width=\"1\"/><path d=\"M6 77q6-3 12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0\" fill=\"none\" stroke=\"#4E7AA0\" stroke-width=\"1\"/>";
+MEDAL_ART.land = "<rect width=\"100\" height=\"100\" fill=\"#BCD0C2\"/>\n<path d=\"M0 60Q30 44 60 58T100 54V100H0Z\" fill=\"#6E9873\"/><path d=\"M0 74Q35 60 70 72T100 68V100H0Z\" fill=\"#4B7658\"/><path d=\"M0 90Q25 84 50 90T100 88V100H0Z\" fill=\"#3E6B86\"/>\n<path d=\"M28 74V58\" stroke=\"#F4EBD5\" stroke-width=\"1.3\"/><path d=\"M28 62q-8-1-9-8q8 0 9 8z\" fill=\"#F4EBD5\"/><path d=\"M28 58q7-1 8-7q-7 0-8 7z\" fill=\"#F4EBD5\"/>\n<path d=\"M46 76V64\" stroke=\"#F4EBD5\" stroke-width=\"1.3\"/><path d=\"M46 68q-6-1-7-6q6 0 7 6z\" fill=\"#F4EBD5\"/><path d=\"M46 65q5-1 6-5q-5 0-6 5z\" fill=\"#F4EBD5\"/>\n<path d=\"M72 72V56\" stroke=\"#7A5A3E\" stroke-width=\"2\"/><circle cx=\"72\" cy=\"48\" r=\"9\" fill=\"#2F5A40\"/><circle cx=\"68\" cy=\"46\" r=\"1.4\" fill=\"#F0C870\"/><circle cx=\"75\" cy=\"50\" r=\"1.4\" fill=\"#F0C870\"/><circle cx=\"72\" cy=\"43\" r=\"1.4\" fill=\"#F0C870\"/>";
+MEDAL_ART.lights = "<rect width=\"100\" height=\"100\" fill=\"#232049\"/>\n<circle cx=\"34\" cy=\"40\" r=\"10\" fill=\"#E7BE5F\"/><use href=\"#sr\"/><use href=\"#sr\" transform=\"rotate(45 34 40)\"/><use href=\"#sr\" transform=\"rotate(90 34 40)\"/><use href=\"#sr\" transform=\"rotate(135 34 40)\"/><use href=\"#sr\" transform=\"rotate(180 34 40)\"/><use href=\"#sr\" transform=\"rotate(225 34 40)\"/><use href=\"#sr\" transform=\"rotate(270 34 40)\"/><use href=\"#sr\" transform=\"rotate(315 34 40)\"/>\n<circle cx=\"66\" cy=\"60\" r=\"11\" fill=\"#EFE6D0\"/><circle cx=\"71\" cy=\"56\" r=\"10\" fill=\"#232049\"/>\n<use href=\"#st\" transform=\"translate(62 26)\"/><use href=\"#st\" transform=\"translate(80 42) scale(.7)\"/><use href=\"#st\" transform=\"translate(20 68) scale(.8)\"/><use href=\"#st\" transform=\"translate(46 80)\"/><use href=\"#st\" transform=\"translate(84 72) scale(.6)\"/><use href=\"#st\" transform=\"translate(48 20) scale(.6)\"/>";
+MEDAL_ART.sea = "<rect width=\"100\" height=\"46\" fill=\"#6FA0A6\"/><rect y=\"46\" width=\"100\" height=\"54\" fill=\"#21525C\"/>\n<path d=\"M6 47q6-3 12 0t12 0t12 0t12 0t12 0t12 0t12 0t12 0\" fill=\"none\" stroke=\"#F4EBD5\" stroke-width=\"1\" opacity=\".7\"/>\n<path d=\"M24 26q5-7 10 0q5-7 10 0\" fill=\"none\" stroke=\"#F4EBD5\" stroke-width=\"1.7\" stroke-linecap=\"round\"/><path d=\"M58 34q4-6 8 0q4-6 8 0\" fill=\"none\" stroke=\"#F4EBD5\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n<ellipse cx=\"38\" cy=\"66\" rx=\"11\" ry=\"5.5\" fill=\"#F1E2B9\"/><path d=\"M27 66l-9-6v12z\" fill=\"#F1E2B9\"/><path d=\"M34 62q4-3 8 0\" fill=\"none\" stroke=\"#C2A25E\" stroke-width=\"1\"/><circle cx=\"44\" cy=\"65\" r=\"1.1\" fill=\"#21525C\"/>\n<g transform=\"translate(100 0) scale(-1 1)\"><ellipse cx=\"38\" cy=\"82\" rx=\"8\" ry=\"4\" fill=\"#E2C77E\"/><path d=\"M29 82l-7-4.5v9z\" fill=\"#E2C77E\"/><circle cx=\"43\" cy=\"81\" r=\"1\" fill=\"#21525C\"/></g>\n<circle cx=\"70\" cy=\"60\" r=\"1.5\" fill=\"none\" stroke=\"#9FC4C4\" stroke-width=\".8\"/><circle cx=\"74\" cy=\"54\" r=\"1\" fill=\"none\" stroke=\"#9FC4C4\" stroke-width=\".8\"/>";
+MEDAL_ART.beasts = "<rect width=\"100\" height=\"100\" fill=\"#E7D2B3\"/><circle cx=\"78\" cy=\"22\" r=\"6.5\" fill=\"#EBC46C\"/>\n<path d=\"M0 66Q30 58 60 65T100 61V100H0Z\" fill=\"#86976A\"/><path d=\"M0 82Q40 73 100 80V100H0Z\" fill=\"#647A52\"/>\n<ellipse cx=\"39\" cy=\"75\" rx=\"7\" ry=\"1.6\" fill=\"#4E633F\" opacity=\".55\"/><ellipse cx=\"61\" cy=\"75\" rx=\"7\" ry=\"1.6\" fill=\"#4E633F\" opacity=\".55\"/>\n<g transform=\"translate(39 0)\" fill=\"#B06B54\" stroke=\"none\">\n<circle cx=\"0\" cy=\"33.6\" r=\"3.6\"/><path d=\"M-3.8 33.2Q-4 29.4 0 29.4Q4 29.4 3.8 33.2Q0 31.2 -3.8 33.2Z\" fill=\"#5A3B2E\"/><rect x=\"-1.4\" y=\"36.8\" width=\"2.8\" height=\"3\"/>\n<path d=\"M-6.4 40.4Q0 38.2 6.4 40.4L5 50Q5.5 53.5 5.2 57.5H-5.2Q-5.5 53.5 -5 50Z\"/>\n<path d=\"M-5.8 41L-7.6 56M5.8 41L7.6 56\" fill=\"none\" stroke=\"#B06B54\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>\n<path d=\"M-2.3 57L-2.7 72.5M2.3 57L2.7 72.5\" fill=\"none\" stroke=\"#B06B54\" stroke-width=\"3.6\" stroke-linecap=\"round\"/></g>\n<g transform=\"translate(61 0)\" fill=\"#BE7A63\" stroke=\"none\">\n<path d=\"M-4.6 31Q0 27.6 4.6 31L5.2 44L3.6 42L-3.6 42L-5.2 44Z\" fill=\"#5A3B2E\"/>\n<circle cx=\"0\" cy=\"33.8\" r=\"3.5\"/><rect x=\"-1.3\" y=\"36.8\" width=\"2.6\" height=\"3\"/>\n<path d=\"M-5.2 40.6Q0 38.4 5.2 40.6L3.6 50.5Q5.8 53.5 5.8 57.5H-5.8Q-5.8 53.5 -3.6 50.5Z\"/>\n<path d=\"M-4.8 41.2L-7 56M4.8 41.2L7 56\" fill=\"none\" stroke=\"#BE7A63\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>\n<path d=\"M-2.4 57L-2.6 72.5M2.4 57L2.6 72.5\" fill=\"none\" stroke=\"#BE7A63\" stroke-width=\"3.4\" stroke-linecap=\"round\"/></g>\n<ellipse cx=\"17\" cy=\"73\" rx=\"6\" ry=\"3.2\" fill=\"#6B4F3A\"/><path d=\"M21 71.8l3-6.5\" stroke=\"#6B4F3A\" stroke-width=\"2\" stroke-linecap=\"round\"/><circle cx=\"25\" cy=\"64.6\" r=\"2\" fill=\"#6B4F3A\"/><path d=\"M14 75.5v4.5M19.5 75.5v4.5\" stroke=\"#6B4F3A\" stroke-width=\"1.4\" stroke-linecap=\"round\"/>\n<path d=\"M86 76V63\" stroke=\"#7A5A3E\" stroke-width=\"2\"/><circle cx=\"86\" cy=\"57\" r=\"7\" fill=\"#4F7A56\"/>";
+MEDAL_ART.rest = "<rect width=\"100\" height=\"58\" fill=\"#6C7FA3\"/><rect y=\"58\" width=\"100\" height=\"42\" fill=\"#34506F\"/>\n<path d=\"M32 58A18 18 0 0 1 68 58Z\" fill=\"#E9C36B\"/>\n<use href=\"#hr\" transform=\"rotate(-60 50 58) translate(0 2)\"/><use href=\"#hr\" transform=\"rotate(-30 50 58) translate(0 2)\"/><use href=\"#hr\" transform=\"translate(0 2)\"/><use href=\"#hr\" transform=\"rotate(30 50 58) translate(0 2)\"/><use href=\"#hr\" transform=\"rotate(60 50 58) translate(0 2)\"/>\n<path d=\"M18 22h22M58 28h24M30 32h14\" stroke=\"#F4EBD5\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\".55\"/>\n<path d=\"M38 64h24M42 70h16M46 76h8\" stroke=\"#E2C77E\" stroke-width=\"1.4\" stroke-linecap=\"round\" opacity=\".8\"/>";
+
+// ---- 창세기 8~28 ----
+// 8 에덴, 생명나무
+MEDAL_ART.eden = MP.bg('#CFDCBE') + MP.path('M-6 70Q20 52 46 60T106 56V100H-6Z', '#9DB584') +
+  MP.line('M6 66Q30 74 52 70T96 76', '#7FA3B5', 3.2) + MP.ground(78, '#86976A') +
+  MP.circle(50, 32, 16, '#4F7A56') + MP.circle(37, 42, 10, '#5F8C63') + MP.circle(63, 42, 10, '#5F8C63') + MP.circle(50, 46, 9, '#5F8C63') +
+  MP.path('M47 80L48 50H52L53 80Z', '#7A5A3E') +
+  MP.circle(44, 30, 1.8, '#E9C36B') + MP.circle(57, 34, 1.8, '#E9C36B') + MP.circle(50, 22, 1.8, '#E9C36B') + MP.circle(38, 44, 1.6, '#E9C36B') + MP.circle(62, 45, 1.6, '#E9C36B') +
+  MP.person(24, 80, 0.46, '#B06B54', {});
+// 9 아담과 하와
+MEDAL_ART.eve = MP.bg('#EBD9BE') + MP.circle(50, 42, 30, '#F1E4CB') +
+  MP.line('M22 80A28 34 0 0 1 78 80', '#5F8C63', 4.4) +
+  MP.circle(24, 58, 2.4, '#4F7A56') + MP.circle(76, 58, 2.4, '#4F7A56') + MP.circle(31, 40, 2.4, '#4F7A56') + MP.circle(69, 40, 2.4, '#4F7A56') + MP.circle(50, 27, 2.6, '#4F7A56') +
+  MP.ground(80, '#86976A') + MP.band(90, 10, '#647A52') +
+  MP.person(41, 82, 0.92, '#B06B54', { arms: 'h', hair: '#5A3B2E' }) + MP.person(59, 82, 0.9, '#BE7A63', { f: 1, arms: 'h', hair: '#5A3B2E' });
+// 10 선악과, 타락
+MEDAL_ART.fall = MP.bg('#3B2F4A') + MP.ground(80, '#2A2236') +
+  MP.path('M47 82L48.6 46H51.4L53 82Z', '#6B4F3A') +
+  MP.circle(50, 32, 14, '#4B5B48') + MP.circle(38, 40, 9, '#4B5B48') + MP.circle(62, 40, 9, '#4B5B48') +
+  MP.circle(42, 30, 2.8, '#C0554B') + MP.circle(58, 33, 2.8, '#C0554B') + MP.circle(50, 42, 2.8, '#C0554B') + MP.circle(50, 21, 2.8, '#C0554B') +
+  MP.line('M52 78C40 72 60 66 47 60S58 52 49 46', '#A9C49A', 3) + MP.circle(47.6, 44.6, 2.6, '#A9C49A') + MP.line('M45.4 44L43 42.6M45.4 44L43.2 45.6', '#C0554B', 0.8) +
+  MP.stars([[16, 22, 0.6], [84, 26, 0.7], [20, 60, 0.5]]);
+// 11 가인과 아벨 — 받으신 제사(연기 곧게 오름), 곡식단, 어린양
+MEDAL_ART.altar = MP.bg('#CDBA98') + MP.ground(78, '#A68B63') + MP.band(88, 12, '#8C7350') +
+  MP.path('M34 82V58H66V82Z', '#8C8676') + MP.path('M32 58H68V54H32Z', '#A29C8A') + MP.rect(32, 50, 5, 5, '#A29C8A') + MP.rect(63, 50, 5, 5, '#A29C8A') +
+  MP.line('M39 66H61M39 74H61', '#6F6A5C', 1) +
+  MP.flame(50, 54, 1.05, '#D98A3A', '#F0D080') + MP.line('M50 32Q45 26 50 20T50 8', '#F4EBD5', 1.6) +
+  MP.wheat(19, 84, 0.9, '#C2A25E', -18) + MP.wheat(25, 85, 0.8, '#C2A25E', 6) + MP.lamb(80, 86, 0.6, '#F4EBD5');
+// 12 방주
+MEDAL_ART.ark = MP.bg('#B4C2CB') + MP.cloud(30, 26, 0.9, '#EEF2F5') + MP.cloud(74, 34, 0.7, '#EEF2F5') + MP.band(64, 36, '#4A6F8A') +
+  MP.path('M18 56H82L72 74Q50 79 28 74Z', '#7A5A3E') + MP.rect(34, 40, 32, 16, '#A8895A') + MP.path('M31 41L50 30L69 41Z', '#6B4F3A') +
+  MP.rect(46, 45, 8, 11, '#6B4F3A') + MP.rect(37, 44, 5, 5, '#6B4F3A') + MP.rect(58, 44, 5, 5, '#6B4F3A') +
+  MP.line('M22 62H78M26 68H74', '#5C432E', 0.8) +
+  MP.wave(72, '#F4EBD5', 1.2, 0.8) + MP.wave(82, '#7CA0BC', 1) + MP.wave(92, '#7CA0BC', 1);
+// 13 홍수
+MEDAL_ART.flood = MP.bg('#3A4A5C') +
+  (function () { var o = '', i; for (i = 0; i < 9; i++) o += MP.line('M' + (12 + i * 10) + ' ' + (10 + (i % 3) * 8) + 'l-6 15', '#9FB4C4', 1); return o; })() +
+  MP.path('M-6 52Q14 42 34 52T74 52T106 50V100H-6Z', '#2F5578') + MP.path('M-6 68Q18 60 40 68T82 68T106 66V100H-6Z', '#24466A') +
+  MP.wave(52, '#7CA0BC', 1.2, 0.8) + MP.wave(68, '#5A86AB', 1.1) + MP.wave(84, '#3E6A90', 1);
+MEDAL_ART.flood += '<g transform="translate(50 50) rotate(-6)">' + MP.path('M-11 0H11L7 8Q0 10-7 8Z', '#1B2A3D') + MP.rect(-5, -6, 10, 6, '#1B2A3D') + MP.path('M-7 -6L0 -11L7 -6Z', '#1B2A3D') + '</g>';
+// 14 무지개
+MEDAL_ART.rainbow = MP.bg('#CFE0E6') + MP.ground(84, '#86976A') +
+  (function () { var c = ['#C7796B', '#E0B06A', '#9DB98A', '#6F9BB8', '#8C82B0'], o = '', i; for (i = 0; i < 5; i++) o += MP.line('M' + (50 - 36 + i * 4.6) + ' 80A' + (36 - i * 4.6) + ' ' + (36 - i * 4.6) + ' 0 0 1 ' + (50 + 36 - i * 4.6) + ' 80', c[i], 4.4); return o; })() +
+  MP.cloud(16, 78, 0.9, '#F4EBD5') + MP.cloud(84, 78, 0.9, '#F4EBD5') + MP.cloud(30, 26, 0.7, '#F4EBD5');
+// 15 바벨탑
+MEDAL_ART.tower = MP.bg('#E2D0AA') + MP.ground(84, '#C4A672') +
+  MP.rect(28, 68, 44, 14, '#B08D5E') + MP.rect(34, 58, 32, 10, '#A07F52') + MP.rect(39, 49, 22, 9, '#B08D5E') + MP.rect(43, 41, 14, 8, '#A07F52') + MP.rect(46.5, 34, 7, 7, '#B08D5E') +
+  MP.line('M26 82L72 68M32 68L66 58M38 58L60 49', '#8C6E48', 1) + MP.rect(46, 74, 8, 8, '#6B4F3A') +
+  MP.cloud(24, 46, 0.8, '#F4EBD5') + MP.cloud(78, 30, 0.8, '#F4EBD5') + MP.cloud(60, 20, 0.6, '#F4EBD5') +
+  MP.bird(18, 24, 0.9, '#8C6E48') + MP.bird(84, 56, 0.9, '#8C6E48');
+// 16 아브람을 부르시다
+MEDAL_ART.call = MP.bg('#EBCFA3') + MP.circle(66, 52, 8, '#EBC46C') + MP.rays(66, 52, 11, 15, 12, '#E2C77E', 1.2) +
+  MP.path('M-6 56Q30 50 60 55T106 52V100H-6Z', '#B8A57C') + MP.path('M40 100C42 80 60 76 62 58L67 58C64 80 52 84 56 100Z', '#E2D0A0') +
+  MP.person(34, 82, 0.9, '#7A5A8C', { robe: 1, arms: 'r', staff: -11, skin: '#C08A6A' });
+// 17 하늘의 별처럼 — 언약
+MEDAL_ART.covenant = MP.bg('#1F2A4A') + MP.ground(86, '#2C3A4E') +
+  MP.stars([[50, 16, 1.5], [26, 26, 0.9], [74, 24, 1], [14, 46, 0.8], [86, 46, 0.8], [36, 40, 0.7], [64, 38, 0.9], [50, 34, 0.6], [22, 62, 0.6], [80, 62, 0.7], [90, 30, 0.5], [10, 30, 0.5]]) +
+  MP.person(50, 88, 0.62, '#B0806A', { arms: 'u', skin: '#B0806A' });
+// 18 소돔과 고모라
+MEDAL_ART.fire = MP.bg('#4A2B2E') + MP.band(62, 38, '#6B3B33') +
+  (function () { var o = '', i, p = [[24, 18], [42, 26], [60, 16], [76, 28], [50, 40]]; for (i = 0; i < p.length; i++) o += '<g transform="translate(' + p[i][0] + ' ' + p[i][1] + ') rotate(180) scale(.9)">' + MP.flame(0, 0, 1, '#D98A3A', '#F0D080') + '</g>'; return o; })() +
+  MP.path('M10 84V70H20V62H28V72H36V60H44V70H52V64H62V72H70V66H78V74H90V84Z', '#2A1B1E') + MP.band(84, 16, '#2A1B1E') +
+  MP.flame(24, 63, 0.7, '#D98A3A', '#F0D080') + MP.flame(58, 65, 0.6, '#D98A3A', '#F0D080') +
+  MP.circle(84, 46, 3, '#F4EBD5') + MP.path('M81 50H87L88 74H80Z', '#F4EBD5');
+// 19 이삭의 출생 — 웃음
+MEDAL_ART.birth = MP.bg('#F0DCC0') + MP.circle(50, 38, 24, '#F6E7B4') + MP.rays(50, 38, 27, 34, 16, '#E2C77E', 1.2) + MP.ground(84, '#C9AE7E') +
+  MP.person(50, 86, 1, '#8A6B8C', { robe: 1, arms: 'f', scarf: '#5F4966', skin: '#C08A6A' }) +
+  '<ellipse cx="50" cy="55" rx="6.4" ry="3.6" transform="rotate(-14 50 55)" fill="#F4EBD5"/><circle cx="46" cy="53.6" r="2.2" fill="#D7A585"/>' +
+  MP.stars([[22, 30, 0.7], [80, 26, 0.8], [16, 58, 0.5], [86, 56, 0.6]]);
+// 20 모리아 산 — 수풀에 걸린 숫양
+MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path('M-6 82L40 36L64 56L84 42L106 82Z', '#A8977A') + MP.path('M40 36L52 48L46 52L38 46Z', '#B9A88A') +
+  MP.ground(86, '#8C7A5A') + MP.rect(12, 74, 14, 5, '#8C8676') + MP.rect(15, 69, 10, 5, '#A29C8A') +
+  MP.line('M46 84C50 76 56 70 62 72M58 84C60 74 66 68 72 70M70 84C70 76 78 72 84 74M52 70C60 74 64 82 70 80', '#4F6B44', 1.4) +
+  MP.ram(56, 82, 1.35, '#F4EBD5') +
+  MP.line('M55 66L50 60M66 62L70 56M60 60L60 54', '#4F6B44', 1.3);
+// 21 붉은 죽 한 그릇, 장자권
+MEDAL_ART.birthright = MP.bg('#E8D6B8') + MP.band(76, 24, '#C8AE84') +
+  MP.path('M27 54H73A23 22 0 0 1 27 54Z', '#B9714F') + '<ellipse cx="50" cy="54" rx="23" ry="5" fill="#A6432F"/>' +
+  MP.circle(42, 54, 1, '#7A2A1E') + MP.circle(52, 55, 1, '#7A2A1E') + MP.circle(58, 53, 1, '#7A2A1E') + MP.circle(47, 52.4, 0.9, '#D98A3A') +
+  MP.rect(40, 72, 20, 4, '#9A5B40', 2) +
+  MP.line('M40 44Q36 38 40 33T40 23M50 42Q46 35 50 30T50 20M60 44Q56 38 60 33T60 23', '#F4EBD5', 1.5) +
+  MP.line('M68 60L84 44', '#8C6E48', 1.6) + '<ellipse cx="86" cy="42" rx="4.2" ry="2.6" transform="rotate(-45 86 42)" fill="#8C6E48"/>';
+// 22 야곱의 사다리
+MEDAL_ART.ladder = MP.bg('#2B3558') + MP.circle(50, 14, 9, '#F6E7B4') + MP.rays(50, 14, 12, 17, 12, '#E2C77E', 1.2) + MP.ground(86, '#2A3346') +
+  MP.line('M39 84L45.5 20M61 84L54.5 20', '#E2C77E', 1.8) +
+  (function () { var o = '', i, y, t; for (i = 0; i < 6; i++) { y = 30 + i * 9.6; t = (y - 20) / 64; o += MP.line('M' + (45.5 - 6.5 * t) + ' ' + y + 'H' + (54.5 + 6.5 * t), '#E2C77E', 1.2); } return o; })() +
+  MP.star(30, 40, 0.8) + MP.star(72, 52, 0.7) + MP.star(22, 24, 0.6) +
+  '<ellipse cx="27" cy="83.5" rx="4.6" ry="2.2" fill="#9A9484"/><ellipse cx="18" cy="82" rx="8.4" ry="2.6" fill="#8C6E5A"/><circle cx="26.5" cy="80" r="2.6" fill="#8C6E5A"/>';
+// 23 얍복강, 씨름
+MEDAL_ART.wrestle = MP.bg('#D9C09A') + MP.circle(50, 66, 12, '#EBC46C') + MP.band(66, 34, '#5D7F94') + MP.wave(74, '#9FC4C4', 1) + MP.wave(88, '#9FC4C4', 1) +
+  '<g transform="rotate(13 36 80)">' + MP.person(36, 80, 0.95, '#7A5A8C', { arms: 'r', skin: '#7A5A8C', hair: '#3E2C4A' }) + '</g>' +
+  '<g transform="rotate(-13 64 80)">' + MP.person(64, 80, 0.95, '#F4EBD5', { arms: 'l', skin: '#F4EBD5', hair: '#F4EBD5' }) + '</g>' +
+  MP.rays(64, 44, 14, 20, 10, '#F6E7B4', 1, 0.3);
+// 24 채색옷
+MEDAL_ART.coat = MP.bg('#DCCFBA') +
+  (function () {
+    var c = ['#B9714F', '#E0B06A', '#9DB98A', '#6F9BB8', '#8C82B0'], o = '', i;
+    for (i = 0; i < 5; i++) o += MP.rect(35 + i * 6, 34, 6.2, 44, c[i]);
+    for (i = 0; i < 4; i++) { o += MP.rect(16, 34 + i * 4, 20, 4.2, c[i % 5]); o += MP.rect(64, 34 + i * 4, 20, 4.2, c[(i + 2) % 5]); }
+    return o;
+  })() +
+  MP.circle(50, 34, 5.4, '#DCCFBA') + MP.line('M35 78H65M16 50.5H35M65 50.5H84', '#C2A25E', 1) + MP.wheat(20, 90, 0.7, '#C2A25E', -8) + MP.wheat(80, 90, 0.7, '#C2A25E', 8);
+// 25 구덩이, 은 이십
+MEDAL_ART.pit = MP.bg('#D2BE96') + MP.band(48, 52, '#A68B63') + '<ellipse cx="50" cy="52" rx="27" ry="10" fill="#8C8676"/><ellipse cx="50" cy="52" rx="23" ry="7.6" fill="#241C14"/>' +
+  MP.circle(26, 48, 3.4, '#A29C8A') + MP.circle(74, 48, 3.4, '#A29C8A') + MP.circle(36, 43, 3, '#9A9484') + MP.circle(64, 43, 3, '#9A9484') +
+  MP.line('M70 30C68 40 66 50 62 54', '#C9A96E', 1.6) + MP.rect(66, 26, 12, 4, '#6B4F3A', 1) +
+  '<g fill="#D8D8D0" stroke="#8C8C84" stroke-width="0.8"><circle cx="34" cy="78" r="5"/><circle cx="46" cy="82" r="5"/><circle cx="58" cy="78" r="5"/><circle cx="70" cy="82" r="5"/></g>';
+// 26 애굽의 총리 — 옥좌
+MEDAL_ART.throne = MP.bg('#E4D0A4') + MP.path('M0 66L24 44L48 66Z', '#C9A96E') + MP.path('M24 44L48 66H24Z', '#B58F55') + MP.path('M56 66L78 48L100 66Z', '#C9A96E') + MP.path('M78 48L100 66H78Z', '#B58F55') +
+  MP.band(66, 34, '#C4A672') +
+  MP.rect(38, 30, 24, 40, '#9A7A3E', 3) + MP.rect(42, 34, 16, 32, '#B58F55', 2) + MP.rect(34, 62, 32, 8, '#C2A25E', 2) + MP.rect(32, 52, 6, 20, '#8C6E3A', 2) + MP.rect(62, 52, 6, 20, '#8C6E3A', 2) + MP.rect(34, 70, 32, 10, '#8C6E3A', 2) +
+  MP.star(50, 22, 1.2) + MP.rect(46, 56, 8, 3, '#E2C77E', 1.5);
+// 27 형제들과의 재회
+MEDAL_ART.embrace = MP.bg('#E6D6BC') + MP.circle(22, 26, 6, '#EBC46C') + MP.ground(78, '#86976A') + MP.band(90, 10, '#647A52') +
+  MP.person(43.5, 86, 1, '#3E6B86', { robe: 1, arms: 'r', skin: '#C08A6A' }) + MP.person(56.5, 86, 1, '#B9714F', { robe: 1, arms: 'l', skin: '#C08A6A' });
+// 28 요셉의 유언 — 관과 별
+MEDAL_ART.scroll = MP.bg('#D9A56B') + MP.band(70, 30, '#8C6E5A') + MP.path('M-6 70Q30 62 60 68T106 64V70H-6Z', '#A88462') +
+  MP.path('M50 20C41 20 37 27 37 35V68Q37 77 50 81Q63 77 63 68V35C63 27 59 20 50 20Z', '#C9A96E') +
+  MP.path('M50 24C44 24 41 29 41 35V44H59V35C59 29 56 24 50 24Z', '#E2C77E') +
+  MP.line('M39 52H61M38 59H62M38 66H62', '#7A5A3E', 1.3) + MP.line('M50 46V78', '#7A5A3E', 1) +
+  MP.star(80, 26, 1.1) + MP.star(22, 34, 0.7);
+
+// ---- 출애굽기 ----
+// 모세의 탄생 — 갈대 상자
+MEDAL_ART.exo_nile = MP.bg('#A9C4B8') + MP.band(56, 44, '#5D8A8F') +
+  MP.line('M14 60C12 44 14 30 12 20M22 60C22 46 26 34 28 24M84 60C86 44 84 30 88 20M76 60C76 46 72 34 70 26', '#4F7A56', 1.6) +
+  MP.path('M12 20Q6 26 8 34Q14 30 12 20Z', '#4F7A56') + MP.path('M88 20Q94 26 92 34Q86 30 88 20Z', '#4F7A56') + MP.path('M28 24Q34 28 32 36Q26 32 28 24Z', '#5F8C63') + MP.path('M70 26Q64 30 66 38Q72 34 70 26Z', '#5F8C63') +
+  '<path d="M32 54H68Q66 68 50 68Q34 68 32 54Z" fill="#B08D5E"/><ellipse cx="50" cy="54" rx="18" ry="4.2" fill="#8C6E48"/><ellipse cx="50" cy="53.6" rx="15" ry="2.8" fill="#F4EBD5"/><circle cx="50" cy="52.4" r="3" fill="#D7A585"/>' +
+  MP.line('M36 58L64 58M38 63L62 63M42 56V67M50 56V68M58 56V67', '#8C6E48', 0.7) +
+  MP.wave(72, '#F4EBD5', 1, 0.6) + MP.wave(84, '#7FA8AC', 1) + MP.wave(94, '#7FA8AC', 1);
+// 불타는 떨기나무
+MEDAL_ART.exo_bush = MP.bg('#2F3A4A') + MP.circle(50, 46, 24, '#3F4B5C') + MP.rays(50, 46, 27, 33, 16, '#E2C77E', 1.2) + MP.ground(82, '#7C6C4E') +
+  MP.line('M50 84C48 74 42 66 34 58M50 84C50 72 50 62 50 50M50 84C52 74 58 66 66 58M50 84C44 78 36 76 28 76M50 84C56 78 64 76 72 76', '#4A3A2A', 2) +
+  MP.flame(34, 60, 0.9, '#D98A3A', '#F0D080') + MP.flame(66, 60, 0.9, '#D98A3A', '#F0D080') + MP.flame(50, 52, 1.5, '#D98A3A', '#F6E7B4') + MP.flame(28, 78, 0.6, '#D98A3A', '#F0D080') + MP.flame(72, 78, 0.6, '#D98A3A', '#F0D080');
+// 열 가지 재앙 — 피로 변한 나일, 개구리
+MEDAL_ART.exo_plague = MP.bg('#CFB99A') + MP.band(52, 48, '#8E3B34') + MP.wave(60, '#C98B7B', 1) + MP.wave(74, '#B65A50', 1) + MP.wave(88, '#B65A50', 1) +
+  '<g transform="translate(50 52)"><ellipse cx="0" cy="0" rx="14" ry="8" fill="#7A9A5A"/><path d="M-10 2Q-24 2-22 14L-14 14Q-16 8-8 8Z" fill="#7A9A5A"/><path d="M9 4Q16 6 16 14L20 14Q22 4 12 -1Z" fill="#7A9A5A"/>' +
+  '<circle cx="8" cy="-8" r="4.4" fill="#7A9A5A"/><circle cx="-2" cy="-8" r="4.4" fill="#7A9A5A"/><circle cx="8.4" cy="-8.4" r="1.8" fill="#2F3A2A"/><circle cx="-1.6" cy="-8.4" r="1.8" fill="#2F3A2A"/><path d="M-1 -1Q4 1 9 -1" fill="none" stroke="#4F6B44" stroke-width="1" stroke-linecap="round"/></g>' +
+  MP.circle(22, 26, 2.4, '#8E3B34') + MP.circle(78, 20, 2, '#8E3B34') + MP.circle(70, 34, 1.6, '#8E3B34') + MP.circle(30, 40, 1.6, '#8E3B34');
+// 유월절 — 문설주의 피
+MEDAL_ART.exo_passover = MP.bg('#25304F') + MP.circle(78, 22, 7, '#EFE6D0') + MP.circle(82, 19, 6.4, '#25304F') + MP.stars([[22, 22, 0.7], [40, 14, 0.6], [16, 48, 0.5]]) +
+  MP.band(82, 18, '#1A2238') + MP.rect(38, 42, 24, 40, '#1A2238') +
+  MP.rect(32, 36, 36, 6, '#8C6E48') + MP.rect(32, 42, 6, 40, '#8C6E48') + MP.rect(62, 42, 6, 40, '#8C6E48') +
+  MP.rect(30.5, 38, 39, 1.8, '#B8493F', 0.9) + MP.rect(33.5, 46, 2.4, 14, '#B8493F', 1.2) + MP.rect(64, 46, 2.4, 14, '#B8493F', 1.2) + MP.circle(34.7, 62, 1.6, '#B8493F') + MP.circle(65.2, 62, 1.6, '#B8493F') +
+  MP.rect(46, 66, 8, 16, '#232C48');
+// 홍해가 갈라지다
+MEDAL_ART.exo_sea = MP.bg('#A9C4D6') + MP.cloud(50, 22, 1.1, '#EEF2F5') +
+  MP.path('M-6 22Q22 14 34 32L40 100H-6Z', '#2F5578') + MP.path('M106 22Q78 14 66 32L60 100H106Z', '#2F5578') +
+  MP.line('M6 44Q14 40 22 46M4 62Q16 56 28 64M6 80Q14 76 24 82', '#4E7AA0', 1.2) + MP.line('M94 44Q86 40 78 46M96 62Q84 56 72 64M94 80Q86 76 76 82', '#4E7AA0', 1.2) +
+  MP.line('M24 24Q30 22 34 32M76 24Q70 22 66 32', '#F4EBD5', 1.6) +
+  MP.path('M40 100L47 46H53L60 100Z', '#DCC894') + MP.person(50, 86, 0.5, '#7A5A8C', { robe: 1, arms: 'u', skin: '#C08A6A', staff: 11 });
+// 광야의 만나
+MEDAL_ART.exo_manna = MP.bg('#E0CFA8') + MP.path('M-6 66Q26 54 54 64T106 58V100H-6Z', '#C9AE7E') + MP.path('M-6 82Q30 72 60 80T106 76V100H-6Z', '#B08D5E') +
+  (function () { var o = '', i, p = [[24, 18], [42, 12], [62, 20], [78, 14], [16, 38], [34, 32], [52, 36], [70, 34], [86, 40], [26, 54], [44, 50], [62, 52], [78, 56], [36, 70], [58, 72], [72, 70], [48, 86]]; for (i = 0; i < p.length; i++) o += '<circle cx="' + p[i][0] + '" cy="' + p[i][1] + '" r="' + (i % 3 ? 1.9 : 2.5) + '" fill="#F4EBD5" stroke="#C2A25E" stroke-width="0.5"/>'; return o; })() +
+  MP.rect(43, 76, 14, 12, '#B08D5E', 3) + MP.rect(45, 73, 10, 3.6, '#8C6E48', 1.5) + '<ellipse cx="50" cy="76.4" rx="4.6" ry="1.4" fill="#F4EBD5"/>';
+// 십계명 돌판
+MEDAL_ART.exo_tablets = MP.bg('#2F3E5A') + MP.path('M-6 88L30 46L46 62L66 40L106 88Z', '#4B5675') + MP.cloud(50, 26, 1.3, '#DDE3EA') +
+  MP.line('M56 34L50 46H56L49 60', '#E2C77E', 1.6) +
+  '<path d="M27 74V42Q27 33 36 33Q45 33 45 42V74Z" fill="#E8E0C8"/><path d="M55 74V42Q55 33 64 33Q73 33 73 42V74Z" fill="#E8E0C8"/>' +
+  MP.line('M31 42H41M31 48H41M31 54H41M31 60H41M31 66H41M59 42H69M59 48H69M59 54H69M59 60H69M59 66H69', '#8A7B57', 1);
+// 금송아지
+MEDAL_ART.exo_calf = MP.bg('#8B6D5B') + MP.circle(50, 46, 28, '#A5846C') + MP.ground(84, '#B29A74') +
+  MP.rect(26, 68, 48, 12, '#7A6A58', 1.5) + MP.rect(30, 64, 40, 5, '#8C7A66', 1.5) +
+  MP.calf(46, 64, 1.5, '#DDB552') + MP.stars([[20, 30, 0.7], [80, 34, 0.7], [70, 18, 0.5]]);
+// 성막 — 구름과 장막
+MEDAL_ART.exo_tent = MP.bg('#2C3A55') + MP.circle(50, 30, 20, '#3B4B6B') + MP.ground(86, '#6E6248') +
+  MP.rays(50, 40, 22, 30, 14, '#E2C77E', 1.1, 0.2) + MP.cloud(50, 26, 1.5, '#EEF2F5') +
+  MP.path('M20 76L32 50H68L80 76Z', '#8C6E48') + MP.path('M32 50L50 42L68 50Z', '#B9714F') + MP.path('M43 76L46 56H54L57 76Z', '#1A2238') +
+  MP.line('M32 50L28 76M68 50L72 76M40 52L38 76M60 52L62 76', '#C2A25E', 0.9) +
+  MP.line('M10 82H90', '#F4EBD5', 1) + MP.line('M14 78V84M28 78V84M42 78V84M58 78V84M72 78V84M86 78V84', '#F4EBD5', 1.2);
+
+// ---- 레위기 ----
+// 번제 — 뿔 달린 제단
+MEDAL_ART.lev_burnt = MP.bg('#4A3F55') + MP.ground(86, '#3A3145') +
+  MP.rect(30, 56, 40, 26, '#8C8676', 1.5) + MP.rect(28, 52, 44, 5, '#A29C8A', 1) + MP.rect(28, 46, 5, 6, '#A29C8A') + MP.rect(67, 46, 5, 6, '#A29C8A') + MP.line('M38 66H62M38 74H62', '#6F6A5C', 1) +
+  MP.flame(50, 52, 1.6, '#D98A3A', '#F0D080') + MP.line('M50 18Q45 12 50 6', '#F4EBD5', 1.6) + MP.line('M40 20Q36 14 40 8M60 20Q64 14 60 8', '#F4EBD5', 1);
+// 속죄제 — 어린양과 피
+MEDAL_ART.lev_sin = MP.bg('#6E7F92') + MP.ground(84, '#8A96A0') + MP.band(90, 10, '#76828F') +
+  MP.lamb(46, 82, 2.4, '#F4EBD5') +
+  '<path d="M80 22C80 22 72 32 72 37A8 8 0 0 0 88 37C88 32 80 22 80 22Z" fill="#B8493F"/><path d="M76 36Q76 40 79 41" fill="none" stroke="#E8B0A6" stroke-width="1.2" stroke-linecap="round"/>';
+// 대제사장 흉패
+MEDAL_ART.lev_priest = MP.bg('#2F3E5A') + MP.line('M26 30C34 20 44 18 50 18C56 18 66 20 74 30', '#E2C77E', 1.4) +
+  MP.rect(24, 30, 52, 44, '#C2A25E', 3.5) + MP.rect(27, 33, 46, 38, '#2F3E5A', 2.4) +
+  (function () { var c = ['#B8493F', '#E0B06A', '#6F9BB8', '#8FB08C', '#8C82B0', '#D98A3A', '#5D8A8F', '#B9714F', '#E8C4C0', '#9DB98A', '#7A9AC4', '#E2C77E'], o = '', i; for (i = 0; i < 12; i++) o += MP.rect(30.5 + (i % 4) * 10.6, 36 + Math.floor(i / 4) * 11.4, 8.6, 9, c[i], 2); return o; })() +
+  MP.circle(24, 30, 3.2, '#E2C77E') + MP.circle(76, 30, 3.2, '#E2C77E');
+// 나답과 아비후 — 다른 불
+MEDAL_ART.lev_fire = MP.bg('#3B2A2A') + MP.ground(86, '#2A1D1D') +
+  MP.line('M30 10V38M18 10L30 38M42 10L30 38', '#C2A25E', 0.9) + MP.line('M70 10V38M58 10L70 38M82 10L70 38', '#C2A25E', 0.9) +
+  MP.path('M18 46H42Q40 60 30 60Q20 60 18 46Z', '#C2A25E') + MP.path('M58 46H82Q80 60 70 60Q60 60 58 46Z', '#C2A25E') + MP.path('M25 60H35V64H25Z', '#8C6E3A') + MP.path('M65 60H75V64H65Z', '#8C6E3A') +
+  MP.flame(30, 46, 1.2, '#D98A3A', '#F0D080') + MP.flame(70, 46, 1.2, '#D98A3A', '#F0D080') +
+  MP.line('M28 26Q24 20 28 14M72 26Q76 20 72 14', '#9A8F8A', 1.2);
+// 정결 — 물두멍과 우슬초
+MEDAL_ART.lev_clean = MP.bg('#C9DCD6') + MP.ground(86, '#A8C4BC') +
+  MP.path('M30 44H70Q68 60 50 60Q32 60 30 44Z', '#B9855A') + '<ellipse cx="50" cy="44" rx="20" ry="4.4" fill="#8FB6C4"/><ellipse cx="50" cy="44" rx="10" ry="1.8" fill="none" stroke="#F4EBD5" stroke-width="0.8"/>' +
+  MP.rect(46, 60, 8, 14, '#9A6E48') + MP.path('M34 82Q34 74 50 74Q66 74 66 82Z', '#B9855A') +
+  MP.line('M70 66C78 54 84 44 88 28', '#4F7A56', 1.5) + MP.path('M78 52Q84 52 84 46Q78 46 78 52Z', '#4F7A56') + MP.path('M84 40Q90 38 90 33Q84 33 84 40Z', '#4F7A56') + MP.path('M75 58Q69 56 70 51Q75 52 75 58Z', '#4F7A56') +
+  MP.circle(30, 28, 2.2, '#8FB6C4') + MP.circle(24, 36, 1.6, '#8FB6C4') + MP.circle(36, 34, 1.4, '#8FB6C4');
+// 대속죄일 — 광야로 보내는 염소
+MEDAL_ART.lev_goat = MP.bg('#DDC9A2') + MP.circle(24, 26, 7, '#EBC46C') + MP.path('M-6 60Q20 46 40 58T74 54T106 60V100H-6Z', '#C8AE84') + MP.path('M-6 78Q30 68 60 76T106 72V100H-6Z', '#B08D5E') +
+  MP.line('M10 88h3M18 91h3M26 88h3', '#8C6E48', 1.2) +
+  MP.goat(48, 84, 1.9, '#F4EBD5') + MP.line('M50 55Q56 52 62 56', '#B8493F', 1.8) + MP.line('M61 64L64 70', '#B8493F', 1.6);
+// 이삭을 남겨 두라 — 이웃 사랑과 거룩
+MEDAL_ART.lev_glean = MP.bg('#E8DAB2') + MP.band(78, 22, '#C9AE7E') +
+  MP.wheat(14, 92, 1.0, '#B08D5E', -6) + MP.wheat(22, 93, 1.0, '#B08D5E', 4) + MP.wheat(80, 93, 1.0, '#B08D5E', -4) + MP.wheat(88, 92, 1.0, '#B08D5E', 7) +
+  MP.wheat(50, 86, 1.6, '#C2A25E', -22) + MP.wheat(50, 86, 1.6, '#C2A25E', -11) + MP.wheat(50, 86, 1.6, '#C2A25E', 0) + MP.wheat(50, 86, 1.6, '#C2A25E', 11) + MP.wheat(50, 86, 1.6, '#C2A25E', 22) +
+  MP.rect(43, 62, 14, 4, '#B8493F', 2) + MP.star(78, 26, 1) + MP.star(24, 34, 0.7);
+// 희년의 나팔
+MEDAL_ART.lev_shofar = MP.bg('#3E5A78') + MP.circle(50, 50, 30, '#48688A') +
+  MP.line('M26 68C24 46 38 36 54 36C64 36 72 32 76 24', '#B08D5E', 9) + MP.line('M26 68C24 46 38 36 54 36C64 36 72 32 76 24', '#D2AE72', 3.6) +
+  MP.path('M18 66L34 66L32 74H20Z', '#8C6E48') + MP.circle(78, 22, 3, '#8C6E48') +
+  MP.line('M76 46Q84 44 88 40M76 54Q88 52 94 46M74 62Q90 60 98 52', '#E2C77E', 1.3) + MP.stars([[20, 30, 0.8], [40, 20, 0.6], [82, 78, 0.7]]);
+
+// ---- 민수기 ----
+// 인구 조사와 진 배치
+MEDAL_ART.num_camp = MP.bg('#DCCBA4') + MP.rect(34, 34, 32, 32, '#CDB989', 2) +
+  MP.rect(41, 41, 18, 18, '#C2A25E', 2) + MP.rect(45, 45, 10, 10, '#8C6E3A', 1) + MP.circle(50, 50, 2.2, '#F4EBD5') +
+  (function () { var c = ['#B9714F', '#6F9BB8', '#8FB08C', '#8C82B0'], o = '', i, j, x, y; var pos = [[[38, 20], [50, 20], [62, 20]], [[38, 80], [50, 80], [62, 80]], [[20, 38], [20, 50], [20, 62]], [[80, 38], [80, 50], [80, 62]]];
+    for (i = 0; i < 4; i++) for (j = 0; j < 3; j++) { x = pos[i][j][0]; y = pos[i][j][1]; o += '<g transform="translate(' + x + ' ' + y + ')"><rect x="-5" y="-5" width="10" height="10" rx="1.4" fill="' + c[i] + '"/><path d="M-5 0H5" stroke="#F4EBD5" stroke-width="0.7"/></g>'; }
+    return o; })();
+// 은나팔
+MEDAL_ART.num_trumpet = MP.bg('#5F7396') + MP.cloud(50, 24, 1.1, '#DDE3EA') +
+  '<g transform="rotate(32 50 56)"><rect x="12" y="54" width="60" height="3.6" rx="1.8" fill="#D8D8D0"/><path d="M68 55.8L86 48V64Z" fill="#D8D8D0"/><rect x="34" y="52.4" width="3" height="6.8" rx="1" fill="#E2C77E"/><rect x="10" y="53" width="6" height="5.6" rx="2" fill="#B8B8B0"/></g>' +
+  '<g transform="rotate(-32 50 56)"><rect x="28" y="54" width="60" height="3.6" rx="1.8" fill="#EFEFE8"/><path d="M32 55.8L14 48V64Z" fill="#EFEFE8"/><rect x="63" y="52.4" width="3" height="6.8" rx="1" fill="#E2C77E"/><rect x="84" y="53" width="6" height="5.6" rx="2" fill="#B8B8B0"/></g>' +
+  MP.ground(90, '#4A5A78');
+// 메추라기
+MEDAL_ART.num_quail = MP.bg('#D9B98C') + MP.circle(78, 24, 7, '#EBC46C') + MP.ground(84, '#A8865A') +
+  (function () { var o = '', p = [[30, 62, 1.35, 0], [66, 58, 1.1, 1], [50, 80, 1.0, 0], [20, 34, 0.8, 1], [82, 42, 0.75, 0]], i, x, y, s, f;
+    for (i = 0; i < p.length; i++) { x = p[i][0]; y = p[i][1]; s = p[i][2]; f = p[i][3] ? -1 : 1; o += '<g transform="translate(' + x + ' ' + y + ') scale(' + (s * f) + ' ' + s + ')"><path d="M-3 4v5M3 4v5" stroke="#6B4F3A" stroke-width="1.2" stroke-linecap="round"/><ellipse rx="10" ry="6.4" fill="#A88462"/><path d="M-10 0L-15 -4L-13 3Z" fill="#A88462"/><circle cx="9" cy="-6" r="3.6" fill="#A88462"/><path d="M12.4 -6.6L16 -5.6L12.4 -4.6Z" fill="#6B4F3A"/><path d="M8 -9.6Q9 -13 11 -12" fill="none" stroke="#6B4F3A" stroke-width="1" stroke-linecap="round"/><path d="M-4 -1Q0 -4 5 -1M-5 2Q0 -1 5 2" fill="none" stroke="#F4EBD5" stroke-width="0.9" stroke-linecap="round"/></g>'; }
+    return o; })();
+// 정탐꾼의 포도송이
+MEDAL_ART.num_grapes = MP.bg('#E3D7B8') + MP.ground(86, '#B8A57C') +
+  MP.line('M20 48H80', '#7A5A3E', 1.8) + MP.person(20, 82, 0.75, '#3E6B86', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(80, 82, 0.75, '#B9714F', { robe: 1, arms: 'u', skin: '#C08A6A' }) +
+  MP.line('M50 48V54', '#4F7A56', 1.6) + MP.path('M50 52Q60 48 62 56Q54 58 50 52Z', '#5F8C63') +
+  (function () { var o = '', r, c, n, k; var rows = [[4, 40, 58], [4, 44, 63], [3, 47, 68], [2, 50, 73]]; var rowsX = [[38, 46, 54, 62], [40, 48, 56, 64], [43, 51, 59], [46, 54]]; var ys = [58, 64, 70, 76];
+    for (r = 0; r < 4; r++) { for (k = 0; k < rowsX[r].length; k++) o += '<circle cx="' + rowsX[r][k] + '" cy="' + ys[r] + '" r="4.4" fill="' + ((r + k) % 2 ? '#7A4E7A' : '#8A5C8A') + '"/>'; }
+    return o + MP.circle(50, 82, 4, '#7A4E7A') + MP.circle(37, 56.6, 1.1, '#C9A7C9') + MP.circle(57, 56.6, 1.1, '#C9A7C9'); })();
+// 아론의 싹 난 지팡이
+MEDAL_ART.num_staff = MP.bg('#43506A') + MP.ground(88, '#39435A') +
+  MP.line('M50 88V20', '#8C6E48', 3) + MP.line('M50 62Q38 58 32 46M50 48Q62 44 68 32M50 76Q62 72 68 62', '#8C6E48', 2) +
+  (function () { var o = '', i, p = [[32, 44, 1.1], [68, 30, 1.1], [68, 60, 1.0], [50, 18, 1.2], [42, 30, 0.7], [58, 62, 0.7]], j, a, s;
+    for (i = 0; i < p.length; i++) { s = p[i][2]; o += '<g transform="translate(' + p[i][0] + ' ' + p[i][1] + ') scale(' + s + ')" fill="#F0D4D0">'; for (j = 0; j < 5; j++) { a = (Math.PI * 2 * j) / 5 - Math.PI / 2; o += '<circle cx="' + (3 * Math.cos(a)).toFixed(1) + '" cy="' + (3 * Math.sin(a)).toFixed(1) + '" r="2.4"/>'; } o += '<circle r="1.5" fill="#E2C77E"/></g>'; }
+    return o; })() +
+  MP.path('M50 78Q42 74 40 68Q46 68 50 78Z', '#7FA070') + MP.path('M50 70Q58 68 60 62Q54 62 50 70Z', '#7FA070') + MP.circle(41, 22, 2, '#9DB98A') + MP.circle(28, 62, 2, '#9DB98A');
+// 므리바의 반석
+MEDAL_ART.num_rock = MP.bg('#CDB994') + MP.ground(78, '#A68B63') +
+  MP.path('M14 82L18 46Q22 30 40 28Q60 26 68 40L72 82Z', '#8C8676') + MP.path('M40 28Q60 26 68 40L72 82H52L58 44Z', '#A29C8A') + MP.line('M34 46L44 62L38 74', '#6F6A5C', 1.2) +
+  MP.line('M84 22L52 56', '#7A5A3E', 2.4) + MP.circle(85, 21, 2.2, '#7A5A3E') +
+  MP.line('M46 62Q46 74 50 82', '#7FA3C4', 3) + MP.path('M40 82Q60 78 90 84V100H30Z', '#7FA3C4') + MP.wave(88, '#F4EBD5', 0.9, 0.7) + MP.circle(52, 68, 1.6, '#DDE9F0') + MP.circle(44, 70, 1.4, '#DDE9F0');
+// 놋뱀
+MEDAL_ART.num_serpent = MP.bg('#D9C6A0') + MP.circle(50, 42, 24, '#EAD8A6') + MP.rays(50, 42, 27, 33, 16, '#C2A25E', 1.1) + MP.ground(86, '#A8865A') +
+  MP.rect(48.4, 16, 3.2, 70, '#6B4F3A', 1) + MP.rect(40, 24, 20, 3, '#6B4F3A', 1.5) +
+  MP.line('M50 80C40 74 60 68 44 62S60 52 46 46S56 36 50 30', '#B9855A', 3.4) + MP.circle(50.6, 28.6, 2.8, '#B9855A') + MP.line('M52 26.6L55 24.4M52 26.6L55.4 27.4', '#B8493F', 0.8) + MP.circle(50, 28, 0.6, '#3E2C1E');
+// 발람과 나귀
+MEDAL_ART.num_donkey = MP.bg('#D8C4A0') + MP.ground(84, '#B8A278') + MP.band(90, 10, '#A08A62') +
+  MP.donkey(30, 84, 1.7, '#7A6E60') +
+  MP.path('M78 24L82 24L83 64H77Z', '#EFE6D0') + MP.rect(70, 64, 20, 3.2, '#E2C77E', 1.4) + MP.rect(78.4, 67, 3.2, 9, '#E2C77E', 1) + MP.circle(80, 78, 2.4, '#E2C77E') + MP.line('M80 24V14', '#E2C77E', 1) +
+  MP.line('M71 36L75 36M87 36L91 36M71 50L75 50M87 50L91 50', '#E2C77E', 1.1) + MP.star(60, 22, 0.9) + MP.star(16, 24, 0.7);
+// 요단 강 앞
+MEDAL_ART.num_jordan = MP.bg('#EAD2A0') + MP.circle(66, 40, 7.5, '#EBC46C') + MP.path('M-6 50L20 36L36 46L58 34L82 48L106 40V60H-6Z', '#A7A88A') + MP.band(52, 48, '#86976A') +
+  MP.path('M46 52C46 66 30 78 26 100H78C72 78 54 66 54 52Z', '#6F9BB8') + MP.line('M50 60Q54 62 58 60M42 76Q52 80 62 76M36 90Q52 94 68 90', '#F4EBD5', 1.1, 0.7) +
+  MP.line('M18 82C20 70 20 62 16 52', '#7A5A3E', 2.2) + MP.line('M16 52Q8 52 4 58M16 52Q12 46 6 46M16 52Q20 44 26 44M16 52Q24 50 30 56', '#4F7A56', 2);
+
+// ---- 신명기 ----
+// 모압 평지의 설교
+MEDAL_ART.deu_speech = MP.bg('#DCCBA8') + MP.circle(80, 24, 6, '#EBC46C') + MP.path('M-6 60Q30 44 56 56T106 52V100H-6Z', '#C4A672') + MP.path('M-6 76Q40 66 106 74V100H-6Z', '#B08D5E') +
+  MP.path('M30 62L38 50H62L70 62Z', '#8C8676') + MP.person(50, 54, 0.85, '#7A5A8C', { robe: 1, arms: 'h', skin: '#C08A6A' }) +
+  '<g transform="translate(50 42)"><rect x="-4.6" y="-1.6" width="9.2" height="4.4" rx="1" fill="#F4EBD5"/><circle cx="-4.6" cy="0.6" r="1.6" fill="#E2C77E"/><circle cx="4.6" cy="0.6" r="1.6" fill="#E2C77E"/></g>' +
+  (function () { var o = '', r, k, c = ['#B9714F', '#3E6B86', '#8FB08C', '#8C82B0', '#6F5A48']; for (r = 0; r < 2; r++) for (k = 0; k < 8; k++) o += MP.circle(20 + k * 8.6 + (r % 2) * 4, 76 + r * 8, 2.5, c[(k + r) % 5]) + MP.path('M' + (16.6 + k * 8.6 + (r % 2) * 4) + ' ' + (82.8 + r * 8) + 'Q' + (20 + k * 8.6 + (r % 2) * 4) + ' ' + (76 + r * 8 + 2) + ' ' + (23.4 + k * 8.6 + (r % 2) * 4) + ' ' + (82.8 + r * 8) + 'Z', c[(k + r) % 5]); return o; })();
+// 호렙 산의 불
+MEDAL_ART.deu_horeb = MP.bg('#2B2F44') + MP.path('M-6 92L50 34L106 92Z', '#4B5675') + MP.path('M50 34L76 60L60 62L50 52Z', '#3E4763') +
+  MP.rays(50, 30, 12, 20, 14, '#E2C77E', 1.1) + MP.flame(50, 40, 1.7, '#D98A3A', '#F6E7B4') +
+  '<g fill="#1C2033"><ellipse cx="34" cy="38" rx="14" ry="5"/><ellipse cx="66" cy="36" rx="14" ry="5"/><ellipse cx="50" cy="46" rx="18" ry="5"/></g>' + MP.line('M28 22L24 30', '#E2C77E', 1.4) + MP.line('M72 20L76 28', '#E2C77E', 1.4) +
+  MP.ground(92, '#39435A');
+// 쉐마 — 문설주에 새기라
+MEDAL_ART.deu_shema = MP.bg('#E4D6B8') + MP.ground(86, '#C8AE84') +
+  MP.rect(37, 42, 26, 42, '#F2E2B4') + MP.circle(50, 60, 9, '#F6EBC6') +
+  MP.rect(30, 36, 40, 7, '#8C6E48') + MP.rect(30, 43, 7, 41, '#8C6E48') + MP.rect(63, 43, 7, 41, '#8C6E48') +
+  MP.rect(66, 52, 9, 18, '#C2A25E', 2) + MP.line('M68.5 56H72.5M68.5 61H72.5M68.5 66H72.5', '#7A5A3E', 1) + MP.circle(70.5, 53.4, 1, '#7A5A3E') +
+  MP.line('M42 26Q50 18 58 26', '#C2A25E', 1.4) + MP.star(22, 30, 0.8) + MP.star(80, 26, 0.7);
+// 떡으로만 사는 것이 아니다
+MEDAL_ART.deu_bread = MP.bg('#33415A') + '<path d="M38 8L62 8L70 78L30 78Z" fill="#F6E7B4" opacity=".35"/>' + '<path d="M44 8L56 8L60 78L40 78Z" fill="#F6E7B4" opacity=".4"/>' + MP.ground(84, '#2A3346') +
+  '<ellipse cx="50" cy="70" rx="24" ry="11" fill="#C9985A"/><path d="M28 66Q50 50 72 66Q50 60 28 66Z" fill="#DDB070"/>' +
+  MP.line('M38 62Q42 68 40 74M50 60Q54 68 52 76M62 62Q64 68 62 74', '#8C6E48', 1.5) +
+  MP.rect(40, 24, 20, 12, '#F4EBD5', 1.6) + MP.circle(40, 30, 3, '#E2C77E') + MP.circle(60, 30, 3, '#E2C77E') + MP.line('M43 28.4H57M43 31.6H57', '#8A7B57', 0.9) + MP.stars([[18, 30, 0.7], [84, 44, 0.7]]);
+// 면제년 — 끊어진 사슬
+MEDAL_ART.deu_chain = MP.bg('#A8B8A6') + MP.ground(88, '#8CA090') +
+  (function () { var o = '', g = function (cx, cy, rx, ry, rot) { return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + rot + ' ' + cx + ' ' + cy + ')" fill="none" stroke="#5B5B58" stroke-width="3.2"/>'; };
+    o += g(19, 48, 8, 5, 0) + g(29, 48, 4, 6.4, 0) + g(39, 47, 8, 5, -8);
+    o += g(61, 53, 8, 5, -8) + g(71, 52, 4, 6.4, 0) + g(81, 52, 8, 5, 0);
+    return o; })() + MP.line('M45 44L47 40M47 52L45 56M53 48L57 46M55 56L53 60', '#F4EBD5', 1.3) +
+  '<circle cx="50" cy="76" r="6" fill="#E2C77E" stroke="#C2A25E" stroke-width="1"/><path d="M50 72V80M47 75H53" stroke="#C2A25E" stroke-width="1.2" stroke-linecap="round"/>';
+// 첫 열매의 광주리
+MEDAL_ART.deu_fruit = MP.bg('#DCE3C8') + MP.ground(86, '#B4C49C') +
+  MP.line('M32 56C34 26 66 26 68 56', '#8C6E48', 2.2) + MP.wheat(40, 58, 0.9, '#C2A25E', -14) + MP.wheat(60, 58, 0.9, '#C2A25E', 14) +
+  MP.circle(38, 56, 6, '#B8493F') + MP.circle(50, 52, 6, '#7A4E7A') + MP.circle(62, 56, 6, '#D9A04A') + MP.circle(44, 60, 5, '#9DB98A') + MP.circle(56, 60, 5, '#B8493F') + MP.path('M50 46Q56 42 58 48Q52 50 50 46Z', '#4F7A56') +
+  MP.path('M26 58H74Q72 80 50 80Q28 80 26 58Z', '#B08D5E') + MP.line('M30 66H70M34 73H66M38 60V78M50 60V80M62 60V78', '#8C6E48', 0.8);
+// 에발 산과 그리심 산 — 축복과 저주
+MEDAL_ART.deu_mounts = MP.rect(0, 0, 50, 100, '#CFE0D0') + MP.rect(50, 0, 50, 100, '#4A4658') +
+  MP.path('M-6 88L26 34L58 88Z', '#6E9873') + MP.path('M42 88L74 34L106 88Z', '#3A3644') + MP.rect(50, 88, 60, 12, '#2E2A38') + MP.rect(0, 88, 50, 12, '#4B7658') +
+  MP.circle(30, 20, 5, '#EBC46C') + MP.rays(30, 20, 8, 12, 10, '#E2C77E', 1) +
+  MP.tree(20, 84, 0.6, '#7A5A3E', '#2F5A40') + MP.tree(38, 86, 0.5, '#7A5A3E', '#2F5A40') +
+  MP.cloud(72, 18, 0.9, '#2A2732') + MP.line('M76 24L70 36H76L68 50', '#E2C77E', 1.4) + MP.line('M62 84L64 76M66 80L70 74M84 84L82 74M86 80L90 76', '#6B6478', 1.2);
+// 생명을 택하라 — 갈림길
+MEDAL_ART.deu_choose = MP.bg('#D4DDC8') + MP.rect(52, 0, 48, 100, '#B9BEB2') + MP.circle(28, 24, 14, '#E4ECD6') + MP.ground(88, '#9DB584') + MP.path('M52 60Q76 56 106 62V100H52Z', '#A9AC9E') +
+  MP.line('M50 100V78M50 78Q50 66 32 56M50 78Q50 66 70 56', '#EBDDB5', 7) +
+  MP.tree(30, 56, 1.15, '#7A5A3E', '#4F7A56', '#E9C36B') +
+  MP.line('M70 56V36M70 46L62 38M70 42L78 34M70 50L77 45', '#4A4048', 1.8) + MP.line('M64 60L76 60', '#6B6478', 1.6) + MP.star(22, 12, 0.9) +
+  MP.line('M84 74L86 68M90 76L92 71', '#8C8A80', 1.2);
+// 느보 산, 약속의 땅을 바라보다
+MEDAL_ART.deu_nebo = MP.bg('#E0AC70') + MP.circle(50, 58, 20, '#EBC46C') + MP.rays(50, 58, 23, 30, 18, '#F6E7B4', 1.2) +
+  MP.path('M-6 72L18 66L38 72L60 64L84 70L106 64V100H-6Z', '#86976A') + MP.path('M20 100C30 88 70 88 84 100Z', '#6F9BB8') + MP.line('M30 82Q46 78 66 82', '#F4EBD5', 1, 0.6) +
+  MP.path('M22 100L44 60Q50 54 56 60L78 100Z', '#7A6A5A') + MP.person(50, 63, 0.7, '#7A5A8C', { robe: 1, arms: 'd', skin: '#C08A6A', staff: 11 });
+
+BOOK_MILESTONES.exo = [
+  { id: "exo01", need: 0, ref: "출애굽기 1-2장", title: "갈대 상자 속의 아기", icon: "exo_nile",
+    text: "핍박 속에서 나일 강가 갈대 상자에 띄워진 아기.",
+    verse: "이스라엘의 사내아이를 강물에 던지라는 명이 내려진 때, 한 어머니가 갈대 상자에 아기를 눕혀 나일 강가에 띄웠다. 바로의 딸이 그 아이를 건져 올려 '물에서 건졌다' 하여 모세라 이름 지었다." },
+  { id: "exo02", need: 20, ref: "출애굽기 3-4장", title: "불붙은 떨기나무", icon: "exo_bush",
+    text: "타도 사라지지 않는 떨기나무에서 부르시다.",
+    verse: "미디안 광야에서 양을 치던 모세 앞에, 불이 붙었는데도 타 없어지지 않는 떨기나무가 나타났다. 그 가운데서 음성이 울렸다 — '신을 벗어라, 네가 선 곳은 거룩한 땅이다. 가서 내 백성을 애굽에서 이끌어 내라.'" },
+  { id: "exo03", need: 61, ref: "출애굽기 7-11장", title: "열 가지 재앙", icon: "exo_plague",
+    text: "내 백성을 보내라 — 애굽 땅에 내린 재앙들.",
+    verse: "모세는 바로 앞에 서서 '내 백성을 보내라' 외쳤다. 나일이 피로 변하고 개구리와 메뚜기가 땅을 덮고 어둠이 사흘을 삼켰으나, 바로의 마음은 쉽사리 풀리지 않았다." },
+  { id: "exo04", need: 111, ref: "출애굽기 12장", title: "유월절 밤", icon: "exo_passover",
+    text: "문설주의 피를 보고 재앙이 넘어가다.",
+    verse: "그 밤, 어린양의 피를 문설주와 인방에 바른 집은 재앙이 그냥 지나갔다. 애굽 온 땅에 곡소리가 울리자 바로는 마침내 이스라엘을 내보냈고, 그날은 대대로 기념할 절기가 되었다." },
+  { id: "exo05", need: 131, ref: "출애굽기 14장", title: "갈라진 홍해", icon: "exo_sea",
+    text: "앞은 바다, 뒤는 군대 — 바다가 길이 되다.",
+    verse: "앞에는 바다, 뒤에는 애굽 군대였다. 모세가 지팡이를 들고 손을 내밀자 밤새 센 바람이 물을 밀어내 백성은 마른 땅 위로 바다를 건넜고, 뒤쫓던 군대 위로는 물이 도로 덮였다." },
+  { id: "exo06", need: 152, ref: "출애굽기 16장", title: "하늘에서 내린 만나", icon: "exo_manna",
+    text: "광야의 아침마다 내리던 하늘의 양식.",
+    verse: "배고프다 원망하던 광야의 백성 위로 아침마다 이슬 같은 흰 알갱이가 내렸다. '이게 뭐냐' 하는 말에서 이름이 만나가 되었고, 그들은 하루 먹을 만큼씩만 거두며 하나님을 의지했다." },
+  { id: "exo07", need: 182, ref: "출애굽기 19-20장", title: "시내 산의 열 가지 말씀", icon: "exo_tablets",
+    text: "구름과 불 가운데 돌판에 새겨진 말씀.",
+    verse: "삼 개월 만에 이른 시내 산, 구름과 불과 나팔 소리 속에서 열 가지 말씀이 주어졌다. 하나님만 섬기고, 그 이름을 가볍게 부르지 말고, 안식일을 거룩히 지키며, 부모를 공경하고 이웃을 해치지 말라 하셨다." },
+  { id: "exo08", need: 313, ref: "출애굽기 32장", title: "금송아지", icon: "exo_calf",
+    text: "기다림을 못 견딘 백성이 금으로 우상을 만들다.",
+    verse: "모세가 산에서 내려오지 않자 백성은 금붙이를 녹여 송아지를 만들고 그 앞에서 뛰놀았다. 돌판을 안고 내려온 모세는 분노하여 그것을 깨뜨렸으나, 곧 백성을 위해 하나님 앞에 엎드려 중보했다." },
+  { id: "exo09", need: 343, ref: "출애굽기 35-40장", title: "성막과 구름 기둥", icon: "exo_tent",
+    text: "백성이 자원하여 세운 성막에 영광이 가득하다.",
+    verse: "백성이 자원하여 가져온 예물로 성막이 세워졌다. 일이 끝나자 구름이 회막을 덮고 여호와의 영광이 성막에 가득했으며, 구름이 오르면 길을 떠나고 머물면 진을 쳤다." }
+];
+BOOK_SCENES.exo = [
+  { id: "exo_s0", title: "모세의 부르심", milestoneIds: ["exo01", "exo02", "exo03"] },
+  { id: "exo_s1", title: "유월절과 홍해", milestoneIds: ["exo04", "exo05", "exo06"] },
+  { id: "exo_s2", title: "시내 산의 언약", milestoneIds: ["exo07", "exo08", "exo09"] }
+];
+attachSceneMeta("exo");
+
+BOOK_MILESTONES.lev = [
+  { id: "lev01", need: 0, ref: "레위기 1-3장", title: "번제, 온전히 드리다", icon: "lev_burnt",
+    text: "제단 위에 올린 제물의 향기로운 연기.",
+    verse: "제물을 잡아 제단 위에 올리면 불이 그것을 사르고 향기로운 연기가 하늘로 올랐다. 번제와 소제와 화목제 — 예배하는 이는 가장 좋은 것을 드리며 하나님께 가까이 나아가는 길을 배웠다." },
+  { id: "lev02", need: 30, ref: "레위기 4-7장", title: "속죄제, 피로 덮다", icon: "lev_sin",
+    text: "죄를 넘기고 피로 속죄하는 제사.",
+    verse: "깨닫지 못하고 지은 죄도 그냥 지나치지 않았다. 제물의 머리에 손을 얹어 죄를 넘기고 그 피로 속죄하니, 죄 사함은 값을 치르는 일이었다." },
+  { id: "lev03", need: 71, ref: "레위기 8-9장", title: "제사장 위임식", icon: "lev_priest",
+    text: "열두 보석 흉패를 단 제사장이 세워지다.",
+    verse: "아론과 그 아들들이 물로 씻기고 거룩한 옷을 입었다. 열두 보석이 박힌 흉패를 가슴에 달고 이레 동안 기름 부음을 받아, 백성을 대표하는 제사장으로 세워졌다." },
+  { id: "lev04", need: 91, ref: "레위기 10장", title: "나답과 아비후의 다른 불", icon: "lev_fire",
+    text: "명하지 않은 불을 드린 두 아들.",
+    verse: "아론의 두 아들이 명하지 않은 불을 향로에 담아 올리자 여호와 앞에서 불이 나와 그들을 삼켰다. 가까이 나아가는 자에게 거룩함이 요구된다는 것을 온 회중이 똑똑히 보았다." },
+  { id: "lev05", need: 101, ref: "레위기 11-15장", title: "깨끗함과 부정함", icon: "lev_clean",
+    text: "물로 씻고 우슬초로 정결을 되찾다.",
+    verse: "먹을 수 있는 것과 없는 것, 몸과 집에 스며든 부정을 씻는 법이 하나하나 주어졌다. 부정해진 자는 물로 씻고 우슬초로 정결 예식을 치른 뒤 다시 공동체 안으로 돌아왔다." },
+  { id: "lev06", need: 151, ref: "레위기 16장", title: "대속죄일, 광야로 가는 염소", icon: "lev_goat",
+    text: "백성의 죄를 지고 광야로 떠나는 염소.",
+    verse: "일 년에 한 번 대제사장이 지성소에 들어가 백성의 죄를 속했다. 살아 있는 염소 한 마리의 머리에 모든 허물을 얹어 광야로 내보내니, 죄가 진영에서 멀리 사라졌다." },
+  { id: "lev07", need: 181, ref: "레위기 19장", title: "이삭을 남겨 두라", icon: "lev_glean",
+    text: "가난한 이웃을 위해 밭 귀퉁이를 남기다.",
+    verse: "밭 모퉁이까지 다 거두지 말고 떨어진 이삭도 줍지 말아, 가난한 자와 나그네를 위해 남겨 두라 하셨다. '너희는 거룩하라' — 그 거룩함은 이웃을 내 몸 아끼듯 하는 삶으로 드러났다." },
+  { id: "lev08", need: 222, ref: "레위기 23-25장", title: "안식년과 희년의 나팔", icon: "lev_shofar",
+    text: "오십 년째 울려 퍼진 해방의 나팔.",
+    verse: "일곱째 해에는 땅도 쉬고, 일곱 번의 일곱 해가 지난 오십 년째에는 나팔이 울려 온 땅에 해방이 선포되었다. 팔린 땅은 주인에게 돌아가고 종이 되었던 자는 자유를 얻었다." }
+];
+BOOK_SCENES.lev = [
+  { id: "lev_s0", title: "제사와 제사장", milestoneIds: ["lev01", "lev02", "lev03", "lev04"] },
+  { id: "lev_s1", title: "거룩한 삶의 규례", milestoneIds: ["lev05", "lev06", "lev07", "lev08"] }
+];
+attachSceneMeta("lev");
+
+BOOK_MILESTONES.num = [
+  { id: "num01", need: 0, ref: "민수기 1-4장", title: "광야의 인구조사와 진영", icon: "num_camp",
+    text: "성막을 가운데 두고 열두 지파가 진을 치다.",
+    verse: "시내 광야에서 스무 살 이상 싸울 만한 남자를 지파별로 헤아렸다. 성막을 한가운데 두고 열두 지파가 동서남북으로 진을 치니, 떠도는 백성 전체가 질서 있는 하나의 모습이 되었다." },
+  { id: "num02", need: 81, ref: "민수기 9-10장", title: "구름을 따라, 은나팔", icon: "num_trumpet",
+    text: "두 은나팔이 울리면 진영이 움직이다.",
+    verse: "구름이 성막 위에 머물면 진을 치고 떠오르면 길을 나섰다. 은나팔 둘이 울리면 회중이 모이고 진영이 움직였으니, 하나님의 인도는 하늘의 표적과 소리로 함께 왔다." },
+  { id: "num03", need: 101, ref: "민수기 11장", title: "메추라기와 탐욕의 무덤", icon: "num_quail",
+    text: "고기를 탐하던 백성과 진영 가득한 메추라기.",
+    verse: "만나에 싫증 난 백성이 고기를 달라 울부짖자 바람이 메추라기를 진 주위에 가득 몰아왔다. 그러나 욕심껏 먹어 치운 자들이 쓰러져, 그곳은 탐욕의 무덤이라 불렸다." },
+  { id: "num04", need: 121, ref: "민수기 13-14장", title: "열두 정탐꾼과 포도송이", icon: "num_grapes",
+    text: "장대에 꿴 포도송이, 그러나 갈리는 마음.",
+    verse: "가나안에서 돌아온 정탐꾼들은 장대에 포도송이를 꿰어 메고 왔다. 열 사람은 거인 앞에서 우리는 메뚜기 같았다 했으나 갈렙과 여호수아는 '올라가자, 이길 수 있다' 외쳤고, 두려움을 택한 백성은 사십 년을 광야에서 보내게 되었다." },
+  { id: "num05", need: 151, ref: "민수기 16-17장", title: "아론의 싹 난 지팡이", icon: "num_staff",
+    text: "마른 지팡이에 꽃이 피고 열매가 맺히다.",
+    verse: "고라의 무리가 제사장직에 도전하자 땅이 입을 열어 그들을 삼켰다. 열두 지파의 지팡이를 성막에 두었더니 이튿날 아론의 지팡이에만 움이 돋고 꽃이 피어 살구 열매까지 맺혔다." },
+  { id: "num06", need: 192, ref: "민수기 20장", title: "므리바의 반석", icon: "num_rock",
+    text: "반석에서 물이 터졌으나 모세는 길을 잃다.",
+    verse: "물이 없다고 원망하는 백성 앞에서 모세는 반석에게 말하라 하신 명을 잊은 채 분노하여 지팡이로 두 번 내리쳤다. 물은 터져 나왔으나 그 일로 모세는 약속의 땅에 들어가지 못하게 되었다." },
+  { id: "num07", need: 202, ref: "민수기 21장", title: "장대 위의 놋뱀", icon: "num_serpent",
+    text: "바라보면 사는 장대 위의 놋뱀.",
+    verse: "불뱀에 물려 죽어 가는 백성을 위해 모세는 놋으로 뱀을 만들어 장대 위에 달았다. 물린 사람이 그것을 올려다보기만 하면 살아났다." },
+  { id: "num08", need: 212, ref: "민수기 22-24장", title: "발람과 나귀", icon: "num_donkey",
+    text: "저주하려던 입에서 축복이 터져 나오다.",
+    verse: "모압 왕이 이스라엘을 저주하라고 발람을 불렀다. 길 위에 칼을 빼든 천사를 본 것은 나귀뿐이었고, 입이 열린 나귀 앞에서 발람의 눈도 열렸다. 저주하려던 입에서는 오히려 '야곱에게서 별이 떠오르리라'는 축복이 흘러나왔다." },
+  { id: "num09", need: 262, ref: "민수기 27장, 33-36장", title: "요단 강가에서", icon: "num_jordan",
+    text: "사십 년의 행진이 요단 앞에서 멈추다.",
+    verse: "광야 사십 년의 행진이 요단 강 건너 여리고 맞은편, 모압 평지에서 멈추었다. 모세는 여호수아를 후계자로 세우고 지나온 길을 하나하나 기록하며, 강 너머 약속의 땅을 바라보았다." }
+];
+BOOK_SCENES.num = [
+  { id: "num_s0", title: "광야의 진영", milestoneIds: ["num01", "num02", "num03"] },
+  { id: "num_s1", title: "반역과 기적", milestoneIds: ["num04", "num05", "num06"] },
+  { id: "num_s2", title: "놋뱀에서 요단까지", milestoneIds: ["num07", "num08", "num09"] }
+];
+attachSceneMeta("num");
+
+BOOK_MILESTONES.deu = [
+  { id: "deu01", need: 0, ref: "신명기 1-3장", title: "모압 평지의 고별 설교", icon: "deu_speech",
+    text: "사십 년을 돌아보며 새 세대에게 전한 말씀.",
+    verse: "요단 강 동편 모압 평지에 선 모세가 사십 년의 여정을 돌아보며 새 세대를 향해 입을 열었다. 호렙에서 여기까지 하나님이 어떻게 인도하셨는지 기억하라는 마지막 설교였다." },
+  { id: "deu02", need: 30, ref: "신명기 4-5장", title: "호렙 산의 불 가운데서", icon: "deu_horeb",
+    text: "형상은 없고 음성만 들렸던 불의 산.",
+    verse: "너희는 불 가운데서 들려오는 음성만 들었을 뿐 아무 형상도 보지 못했다. 그러니 스스로 조심하여 어떤 모양으로도 그분을 만들지 말고, 들은 말씀을 지키라고 모세는 당부했다." },
+  { id: "deu03", need: 50, ref: "신명기 6장", title: "들으라, 이스라엘아", icon: "deu_shema",
+    text: "문설주에 써 붙이고 자녀에게 가르치라.",
+    verse: "'들으라 이스라엘아, 여호와는 오직 한 분이시니 마음과 목숨과 힘을 다해 그분을 사랑하라.' 이 말씀을 자녀에게 되풀이해 가르치고, 집 문설주와 대문에 써 붙이라 하셨다." },
+  { id: "deu04", need: 71, ref: "신명기 8장", title: "사람은 떡으로만 살지 않는다", icon: "deu_bread",
+    text: "광야 사십 년이 가르친 것.",
+    verse: "광야 사십 년 동안 낮추고 시험하며 만나로 먹이신 것은, 사람이 떡만으로 사는 것이 아니라 하나님의 입에서 나오는 모든 말씀으로 산다는 것을 알게 하려 하심이었다." },
+  { id: "deu05", need: 141, ref: "신명기 15장", title: "일곱째 해의 면제", icon: "deu_chain",
+    text: "빚과 종살이의 사슬을 끊는 해.",
+    verse: "일곱째 해가 오면 동족에게 꾸어 준 빚을 면제하고, 종이 되었던 이도 자유롭게 놓아주라 하셨다. 가난한 형제에게 손을 움켜쥐지 말고 넉넉히 베풀라는 명령이었다." },
+  { id: "deu06", need: 252, ref: "신명기 26장", title: "첫 열매의 광주리", icon: "deu_fruit",
+    text: "첫 소산을 담아 드리며 감사를 고백하다.",
+    verse: "약속의 땅에서 처음 거둔 소산을 광주리에 담아 제사장 앞에 드리라 하셨다. '내 조상은 떠돌던 아람 사람이었으나 하나님이 나를 이 땅으로 이끄셨습니다' 하고 고백하며, 그분이 주신 복을 함께 기뻐하라 하셨다." },
+  { id: "deu07", need: 262, ref: "신명기 27-28장", title: "그리심 산과 에발 산", icon: "deu_mounts",
+    text: "복과 저주가 나란히 선포된 두 산.",
+    verse: "요단을 건너면 그리심 산에서는 복을, 에발 산에서는 저주를 선포하라 하셨다. 순종하면 성읍에서도 들에서도 복이 넘치고, 등을 돌리면 그 복이 모두 거두어진다는 두 갈래 길이었다." },
+  { id: "deu08", need: 293, ref: "신명기 30장", title: "생명을 택하라", icon: "deu_choose",
+    text: "생명과 죽음이 앞에 놓인 갈림길.",
+    verse: "이 명령은 하늘 위에 있어 오르지 못할 것도 바다 건너에 있어 가지 못할 것도 아니다. 그 말씀은 네 입과 마음에 가까이 있으니, 오늘 내가 생명과 죽음을 네 앞에 두었다 — 생명을 택하라!" },
+  { id: "deu09", need: 333, ref: "신명기 31-34장", title: "느보 산, 약속의 땅을 바라보다", icon: "deu_nebo",
+    text: "건너지 못한 땅을 눈에 담은 모세.",
+    verse: "여호수아에게 지도력을 넘긴 모세는 느보 산 꼭대기에 올랐다. 하나님이 온 땅을 보여 주시며 '네 눈으로 보게는 하나 건너가지는 못한다' 하시자, 백이십 세의 종은 그 자리에서 숨을 거두었다." }
+];
+BOOK_SCENES.deu = [
+  { id: "deu_s0", title: "모압 평지의 설교", milestoneIds: ["deu01", "deu02", "deu03"] },
+  { id: "deu_s1", title: "언약의 삶", milestoneIds: ["deu04", "deu05", "deu06"] },
+  { id: "deu_s2", title: "생명과 마지막 걸음", milestoneIds: ["deu07", "deu08", "deu09"] }
+];
+attachSceneMeta("deu");
+// <<END MEDALS day=1>>
+
   function scenesForBook(book) {
     milestonesForBook(book); // 아직 캐시되지 않은 책이면 자리표시자 생성 + 장면 부여를 트리거
     return BOOK_SCENES[book.id] || [];
@@ -2413,8 +3007,9 @@
         ' transform="translate(' + tx + ',' + ty + ')">' +
         '<rect x="1" y="1" width="48" height="48" fill="transparent"/>' +
         '<g transform="scale(0.5)">' +
-        (tappable ? (BIBLE_ICONS[m.icon] || BIBLE_ICONS.scroll)()
-          : '<circle cx="50" cy="50" r="32" fill="none" stroke="#9a9a9a" stroke-width="2.5" stroke-dasharray="5 5" opacity=".35"/>') +
+        (tappable ? (medalGroup(m.icon) || (BIBLE_ICONS[m.icon] || BIBLE_ICONS.scroll)())
+          : (MEDAL_ART[m.icon] ? medalLockedGroup()
+            : '<circle cx="50" cy="50" r="32" fill="none" stroke="#9a9a9a" stroke-width="2.5" stroke-dasharray="5 5" opacity=".35"/>')) +
         '</g></g>';
     }
     size = size || 200;
@@ -2610,7 +3205,8 @@
   function bibleIconSVG(name, size) {
     size = size || 56;
     var fn = BIBLE_ICONS[name] || BIBLE_ICONS.scroll;
-    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' + fn() + '</svg>';
+    var mg = medalGroup(name); // 메달 디자인이 있으면 틀+원판 메달, 없으면 기존 아이콘
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' + (mg || fn()) + '</svg>';
   }
 
   var SECTION_ICON = {
