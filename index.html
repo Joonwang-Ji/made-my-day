@@ -11,20 +11,20 @@
   :root {
     --bg: #EFE8D6; --bg-soft: #F7F2E5; --card: #FBF7EC; --ink: #23302A; --ink-dim: #5C6A5F;
     --line: #DCD0AE; --gold: #B4841E; --gold-soft: #E8D6A6; --sage: #5B7A5E; --sage-soft: #DCE6D6;
-    --ring-track: #E4D9B8; --danger: #B25445; --overlay: rgba(20,24,20,0.55);
+    --ring-track: #E4D9B8; --danger: #B25445; --overlay: rgba(20,24,20,0.55); --rest: #5E7F91;
     box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #1B231E; --bg-soft: #212B24; --card: #26302A; --ink: #EDE6D3; --ink-dim: #9CA89E;
       --line: #384339; --gold: #D6AA4E; --gold-soft: #3A3222; --sage: #8FB593; --sage-soft: #29352A;
-      --ring-track: #34403A; --overlay: rgba(0,0,0,0.7);
+      --ring-track: #34403A; --overlay: rgba(0,0,0,0.7); --rest: #86ABBE;
     }
   }
   :root[data-theme="dark"] {
     --bg: #1B231E; --bg-soft: #212B24; --card: #26302A; --ink: #EDE6D3; --ink-dim: #9CA89E;
     --line: #384339; --gold: #D6AA4E; --gold-soft: #3A3222; --sage: #8FB593; --sage-soft: #29352A;
-    --ring-track: #34403A; --overlay: rgba(0,0,0,0.7);
+    --ring-track: #34403A; --overlay: rgba(0,0,0,0.7); --rest: #86ABBE;
   }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
   * { box-sizing: border-box; }
@@ -57,11 +57,12 @@
   .nudge-banner svg { width: 16px; height: 16px; flex: none; }
   .nudge-banner .nb-chev { margin-left: auto; opacity: .6; }
   .missed-list { display: flex; flex-direction: column; gap: 2px; }
-  .missed-row { display: flex; align-items: center; gap: 8px; padding: 8px 2px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .missed-row { display: flex; flex-direction: column; gap: 3px; padding: 9px 2px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
   .missed-row:last-child { border-bottom: none; }
-  .missed-cat { color: var(--ink-dim); font-size: 11px; flex: none; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .missed-name { flex: 1; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .missed-rate { color: var(--gold); font-weight: 700; font-size: 11px; flex: none; }
+  .missed-cat { color: var(--ink-dim); font-size: 11px; }
+  .missed-line { display: flex; align-items: baseline; gap: 8px; }
+  .missed-name { flex: 1; color: var(--ink); min-width: 0; white-space: normal; word-break: break-word; line-height: 1.4; }
+  .missed-rate { color: var(--gold); font-weight: 700; font-size: 11px; flex: none; white-space: nowrap; }
 
   .weekly-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px;
     margin-bottom: 14px; font-size: 12.5px; color: var(--ink-dim); line-height: 1.7; }
@@ -194,12 +195,16 @@
   .mini-cal-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
   .mini-cal-title { font-size: 12.5px; font-weight: 800; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mini-cal-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 3px; }
+  .mini-cal-dow { font-size: 7.5px; color: var(--ink-dim); text-align: center; font-weight: 700; padding-bottom: 2px; }
+  .mini-cal-days > .mini-cal-dow:nth-child(1), .mini-cal-days > .mini-cal-dow:nth-child(7) { color: var(--gold); }
   .mini-cal-cell { aspect-ratio: 1; border-radius: 4px; background: var(--ring-track); font-size: 8px;
     display: flex; align-items: center; justify-content: center; color: var(--ink-dim); }
   .mini-cal-cell.done { background: var(--sage); color: var(--card); font-weight: 700; }
   .mini-cal-cell.done.overtime { background: var(--gold); }
   .mini-cal-cell.future { visibility: hidden; }
   .mini-cal-cell.na { opacity: 0.25; }
+  .mini-cal-cell.rest:not(.done) { color: var(--rest); font-weight: 700; }
+  .mini-cal-cell.tappable { cursor: pointer; }
   .mini-cal-foot { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--ink-dim); }
   .mini-cal-foot .rate { font-weight: 800; color: var(--ink); }
 
@@ -209,6 +214,7 @@
   .stat-box .lbl { font-size: 11.5px; color: var(--ink-dim); margin-top: 2px; }
   .success-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 6px; }
   .success-header div { text-align: center; font-size: 11px; color: var(--ink-dim); }
+  .success-header > div:nth-child(1), .success-header > div:nth-child(7) { color: var(--gold); font-weight: 700; }
   .success-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
   .success-cell { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center;
     font-size: 12px; color: var(--ink-dim); background: var(--ring-track); }
@@ -220,6 +226,7 @@
   .week-header { display: grid; grid-template-columns: 1fr repeat(7, 26px); gap: 4px; padding: 0 2px 8px;
     font-size: 11px; color: var(--ink-dim); text-align: center; }
   .week-header .wh-label { text-align: left; }
+  .week-header > div:nth-child(2), .week-header > div:nth-child(8) { color: var(--gold); font-weight: 700; }
   .week-row { display: grid; grid-template-columns: 1fr repeat(7, 26px); gap: 4px; align-items: center;
     padding: 9px 2px; border-bottom: 1px solid var(--line); }
   .week-row .wr-name { font-size: 12.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; }
@@ -397,9 +404,13 @@
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h2>과거 기록</h2>
   </div>
-  <div class="section-label" style="margin-top:0;">날짜 선택</div>
-  <input type="date" id="backfillDateInput" class="cat-name-input" style="margin-bottom:18px;">
-  <div id="backfillList"></div>
+  <div class="tabs" id="backfillModeTabs"></div>
+  <div id="backfillDateMode">
+    <div class="section-label" style="margin-top:0;">날짜 선택</div>
+    <input type="date" id="backfillDateInput" class="cat-name-input" style="margin-bottom:18px;">
+    <div id="backfillList"></div>
+  </div>
+  <div id="backfillItemMode" class="hidden"></div>
 </div>
 
 <div class="wrap hidden" id="view-export">
@@ -1251,15 +1262,15 @@
     html += missed.length
       ? '<div class="missed-list">' + missed.map(function (m) {
           return '<div class="missed-row"><span class="missed-cat">' + escapeHtml(m.cat.name || "") + '</span>' +
-            '<span class="missed-name">' + escapeHtml(m.item.name || "이름 없음") + '</span></div>';
+            '<span class="missed-line"><span class="missed-name">' + escapeHtml(m.item.name || "이름 없음") + '</span></span></div>';
         }).join("") + '</div>'
       : '<div class="empty" style="padding:8px 0;">어제는 놓친 항목이 없었어요.</div>';
     html += '<div class="section-label" style="margin-top:16px;">자주 놓치는 항목 (최근 14일)</div>';
     html += freq.length
       ? '<div class="missed-list">' + freq.map(function (f) {
           return '<div class="missed-row"><span class="missed-cat">' + escapeHtml(f.cat.name || "") + '</span>' +
-            '<span class="missed-name">' + escapeHtml(f.item.name || "이름 없음") + '</span>' +
-            '<span class="missed-rate">' + f.missed + '/' + f.due + '회 놓침</span></div>';
+            '<span class="missed-line"><span class="missed-name">' + escapeHtml(f.item.name || "이름 없음") + '</span>' +
+            '<span class="missed-rate">' + f.missed + '/' + f.due + '회 놓침</span></span></div>';
         }).join("") + '</div>'
       : '<div class="empty" style="padding:8px 0;">아직 자주 놓치는 항목은 없어요.</div>';
     document.getElementById("missedOverlayBody").innerHTML = html;
@@ -2004,8 +2015,7 @@
   function startOfWeek(d) {
     var x = new Date(d);
     var day = x.getDay();
-    var diff = (day === 0 ? -6 : 1 - day);
-    x.setDate(x.getDate() + diff);
+    x.setDate(x.getDate() - day);
     x.setHours(0,0,0,0);
     return x;
   }
@@ -2065,23 +2075,26 @@
       '<div class="label">' + year + '년 ' + (month+1) + '월</div>' +
       '<button data-action="stats-next-month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button></div>';
     html += '<div class="mini-cal-grid">';
-    var leadDow = (new Date(year, month, 1).getDay() + 6) % 7;
+    var leadDow = new Date(year, month, 1).getDay();
+    var dowHeader = ["S","M","T","W","T","F","S"].map(function (d) { return '<div class="mini-cal-dow">' + d + '</div>'; }).join("");
     var leadCells = '';
     for (var lc = 0; lc < leadDow; lc++) leadCells += '<div class="mini-cal-cell future"></div>';
     flat.forEach(function (pair) {
       var it = pair.item, cat = pair.cat;
-      var doneCount = 0, dueDaysCount = 0, cellsHtml = leadCells;
+      var doneCount = 0, dueDaysCount = 0, cellsHtml = dowHeader + leadCells;
       for (var day = 1; day <= daysInMonth; day++) {
         var dk = year + "-" + pad(month+1) + "-" + pad(day);
         var isFuture = dk > todayStr;
         if (isFuture) { cellsHtml += '<div class="mini-cal-cell future"></div>'; continue; }
+        var restCls = isRestDay(dk) ? ' rest' : '';
+        if (!itemExistedOn(it, dk)) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
         var due = isDueForDate(it, dk);
-        if (!due) { cellsHtml += '<div class="mini-cal-cell na">' + day + '</div>'; continue; }
+        if (!due) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
         dueDaysCount++;
         var done = isDone(dk, it.id);
         if (done) doneCount++;
         var otCls = (done && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
-        cellsHtml += '<div class="mini-cal-cell' + (done ? ' done' : '') + otCls + '">' + day + '</div>';
+        cellsHtml += '<div class="mini-cal-cell' + (done ? ' done' : '') + otCls + restCls + '">' + day + '</div>';
       }
       var rate = dueDaysCount > 0 ? Math.round(doneCount / dueDaysCount * 100) : 0;
       html += '<div class="mini-cal-card"><div class="mini-cal-title">' + escapeHtml(it.name || "이름 없음") + '</div>' +
@@ -2101,13 +2114,14 @@
       '<button data-action="stats-prev-week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>' +
       '<div class="label">' + label + '</div>' +
       '<button data-action="stats-next-week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button></div>';
-    html += '<div class="week-header"><div class="wh-label"></div>' + ["월","화","수","목","금","토","일"].map(function(d){return '<div>'+d+'</div>';}).join("") + '</div>';
+    html += '<div class="week-header"><div class="wh-label"></div>' + ["S","M","T","W","T","F","S"].map(function(d){return '<div>'+d+'</div>';}).join("") + '</div>';
     flat.forEach(function (pair) {
       var it = pair.item, cat = pair.cat;
       var cells = days.map(function (d) {
         var dk = keyFor(d);
         var isFuture = dk > todayStr;
         if (isFuture) return '<div class="week-cell future"></div>';
+        if (!itemExistedOn(it, dk)) return '<div class="week-cell na"></div>';
         if (!isDueForDate(it, dk)) return '<div class="week-cell na"></div>';
         var done = isDone(dk, it.id);
         var otCls = (done && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
@@ -2130,7 +2144,7 @@
 
     var streak = computeStreakGeneric(overallStreakStatus);
     var successDays = 0, ratedDays = 0, anyBonus = false;
-    var leadDow = (new Date(year, month, 1).getDay() + 6) % 7;
+    var leadDow = new Date(year, month, 1).getDay();
     var cellsHtml = "";
     for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="success-cell future"></div>';
     for (var day = 1; day <= daysInMonth; day++) {
@@ -2158,7 +2172,7 @@
       '<div class="stat-box"><div class="num">' + successDays + '</div><div class="lbl">성공일</div></div>' +
       '<div class="stat-box"><div class="num">' + rate + '%</div><div class="lbl">이번 달 달성률</div></div>' +
     '</div>';
-    html += '<div class="success-header">' + ["월","화","수","목","금","토","일"].map(function(d){return '<div>'+d+'</div>';}).join("") + '</div>';
+    html += '<div class="success-header">' + ["S","M","T","W","T","F","S"].map(function(d){return '<div>'+d+'</div>';}).join("") + '</div>';
     html += '<div class="success-grid">' + cellsHtml + '</div>';
     if (anyBonus) html += '<div style="margin-top:10px;font-size:11.5px;color:var(--ink-dim);">🟡 쉬는 날인데 뭔가 한 날 (스트릭에는 반영되지 않아요)</div>';
     return html;
@@ -2235,14 +2249,37 @@
   }
   // ---- past-date backfill ----
   var backfillDate = null;
+  var backfillMode = "date";
+  var backfillItemId = null;
+  var backfillItemCalMonth = null;
   function openBackfill() {
     var y = new Date(Date.now() - 86400000);
     backfillDate = keyFor(y);
     var input = document.getElementById("backfillDateInput");
     input.max = todayKey();
     input.value = backfillDate;
+    backfillMode = "date";
+    backfillItemId = null;
     showView("view-backfill");
-    renderBackfill();
+    renderBackfillModeTabs();
+    renderBackfillModeBody();
+  }
+  function renderBackfillModeTabs() {
+    var el = document.getElementById("backfillModeTabs");
+    el.innerHTML = "";
+    [["date","날짜별"],["item","항목별"]].forEach(function (m) {
+      var t = document.createElement("div");
+      t.className = "tab" + (backfillMode === m[0] ? " active" : "");
+      t.textContent = m[1];
+      t.setAttribute("data-action", "backfill-mode"); t.setAttribute("data-id", m[0]);
+      el.appendChild(t);
+    });
+  }
+  function renderBackfillModeBody() {
+    document.getElementById("backfillDateMode").classList.toggle("hidden", backfillMode !== "date");
+    document.getElementById("backfillItemMode").classList.toggle("hidden", backfillMode !== "item");
+    if (backfillMode === "date") renderBackfill();
+    else renderBackfillItemMode();
   }
   function renderBackfill() {
     var el = document.getElementById("backfillList");
@@ -2251,11 +2288,13 @@
     if (dk > todayKey()) { el.innerHTML = '<div class="empty">미래 날짜는 기록할 수 없어요.</div>'; return; }
     // 쉬는 날은 due 항목이 없어도(=keepOnRest 안 된 항목뿐이어도) 전체 항목을 선택적으로
     // 체크할 수 있게 보여준다 — 홈 화면의 "쉬는 날 · 선택" 로직과 동일한 취지.
+    // 그 항목의 시작일(createdAt) 이전 날짜라면, 아직 존재하지 않았던 항목이므로 목록에서
+    // 아예 빼서 체크할 수 없게 한다.
     var restDay = isRestDay(dk);
     var html = "";
     state.categories.forEach(function (cat) {
-      var due = catItemsDueOn(cat, dk);
-      var list = restDay ? cat.items : due;
+      var due = catItemsDueOn(cat, dk).filter(function (it) { return itemExistedOn(it, dk); });
+      var list = (restDay ? cat.items : due).filter(function (it) { return itemExistedOn(it, dk); });
       if (list.length === 0) return;
       var doneCount = due.filter(function (it) { return isDone(dk, it.id); }).length;
       var itemsHtml = list.map(function (it) {
@@ -2271,6 +2310,66 @@
         '<div class="cat-items-preview">' + itemsHtml + '</div></div>';
     });
     if (!html) html = '<div class="empty">이 날짜에 예정된 항목이 없어요.</div>';
+    el.innerHTML = html;
+  }
+  // "항목별" 기록 모드: 항목 하나를 고르면 그 항목의 달력이 뜨고, 날짜 칸을 여러 개
+  // 툭툭 탭해서 한 번에 여러 날을 체크/취소할 수 있다. 시작일 이전 날짜는 아예
+  // 탭할 수 없게(na, 클릭 핸들러 없음) 막아 놓는다.
+  function renderBackfillItemMode() {
+    var el = document.getElementById("backfillItemMode");
+    if (!backfillItemId) {
+      var html = '<div class="section-label" style="margin-top:0;">항목 선택</div>';
+      state.categories.forEach(function (cat) {
+        if (!cat.items.length) return;
+        var itemsHtml = cat.items.map(function (it) {
+          return '<div class="mini-item" data-action="backfill-pick-item" data-id="' + it.id + '">' +
+            '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
+            '<span class="mini-dur">' + fmtDur(it.seconds) + '</span></div>';
+        }).join("");
+        html += '<div class="cat-card"><div class="cat-top"><div><div class="cat-name">' + escapeHtml(cat.name || "이름 없음") + '</div></div></div>' +
+          '<div class="cat-items-preview">' + itemsHtml + '</div></div>';
+      });
+      el.innerHTML = html;
+      return;
+    }
+    var it = findItem(backfillItemId);
+    if (!it) { backfillItemId = null; renderBackfillItemMode(); return; }
+    if (!backfillItemCalMonth) { backfillItemCalMonth = new Date(); backfillItemCalMonth.setDate(1); }
+    var year = backfillItemCalMonth.getFullYear(), month = backfillItemCalMonth.getMonth();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var todayStr = todayKey();
+    var leadDow = new Date(year, month, 1).getDay();
+    var dowHeader = ["S","M","T","W","T","F","S"].map(function (d) { return '<div class="mini-cal-dow">' + d + '</div>'; }).join("");
+    var cellsHtml = dowHeader;
+    for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="mini-cal-cell future"></div>';
+    var doneCount = 0, dueDaysCount = 0;
+    for (var day = 1; day <= daysInMonth; day++) {
+      var dk = year + "-" + pad(month+1) + "-" + pad(day);
+      var isFuture = dk > todayStr;
+      if (isFuture) { cellsHtml += '<div class="mini-cal-cell future"></div>'; continue; }
+      var restCls = isRestDay(dk) ? ' rest' : '';
+      if (!itemExistedOn(it, dk)) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
+      var due = isDueForDate(it, dk);
+      var done = isDone(dk, it.id);
+      if (done) doneCount++;
+      if (due) dueDaysCount++;
+      var otCls = (done && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
+      var cls = (done ? ' done' : (due ? '' : ' na')) + otCls + restCls;
+      cellsHtml += '<div class="mini-cal-cell tappable' + cls + '" data-action="backfill-toggle-cal-day" data-date="' + dk + '">' + day + '</div>';
+    }
+    var rate = dueDaysCount > 0 ? Math.round(doneCount / dueDaysCount * 100) : 0;
+    var html = '<div class="cat-top" style="margin-bottom:12px;">' +
+      '<button class="back-btn" data-action="backfill-item-back" style="position:static;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>' +
+      '<div class="cat-name" style="flex:1;">' + escapeHtml(it.name || "이름 없음") + '</div></div>' +
+      '<div class="month-nav">' +
+        '<button data-action="backfill-cal-prev-month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>' +
+        '<div class="label">' + year + '년 ' + (month+1) + '월</div>' +
+        '<button data-action="backfill-cal-next-month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button></div>' +
+      '<div class="mini-cal-card" style="margin-top:10px;">' +
+        '<div class="mini-cal-days" style="gap:6px;">' + cellsHtml + '</div>' +
+        '<div class="mini-cal-foot" style="margin-top:10px;"><span class="rate">' + rate + '%</span><span>' + doneCount + '회</span></div>' +
+      '</div>' +
+      '<div style="font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.5;">날짜를 탭할 때마다 완료 여부가 바뀌어요. 연한 칸(예정 없던 날)도 자유롭게 기록할 수 있어요.</div>';
     el.innerHTML = html;
   }
 
@@ -2456,6 +2555,23 @@
       markDone(id, !wasD, backfillDate);
       if (!wasD) checkRewardEvents();
       renderBackfill();
+    }
+    else if (action === "backfill-mode") {
+      backfillMode = id;
+      if (id === "item" && !backfillItemCalMonth) { backfillItemCalMonth = new Date(); backfillItemCalMonth.setDate(1); }
+      renderBackfillModeTabs();
+      renderBackfillModeBody();
+    }
+    else if (action === "backfill-pick-item") { backfillItemId = id; renderBackfillItemMode(); }
+    else if (action === "backfill-item-back") { backfillItemId = null; renderBackfillItemMode(); }
+    else if (action === "backfill-cal-prev-month") { backfillItemCalMonth.setMonth(backfillItemCalMonth.getMonth() - 1); renderBackfillItemMode(); }
+    else if (action === "backfill-cal-next-month") { backfillItemCalMonth.setMonth(backfillItemCalMonth.getMonth() + 1); renderBackfillItemMode(); }
+    else if (action === "backfill-toggle-cal-day") {
+      var bfDk = el.getAttribute("data-date");
+      var wasBfD = isDone(bfDk, backfillItemId);
+      markDone(backfillItemId, !wasBfD, bfDk);
+      if (!wasBfD) checkRewardEvents();
+      renderBackfillItemMode();
     }
     else if (action === "stats-view") { statsView = id; renderStats(); }
     else if (action === "stats-tag") { statsTagFilter = id === "all" ? null : id; renderStats(); }
