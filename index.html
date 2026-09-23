@@ -704,8 +704,7 @@
   </div>
   <div class="theme-option" id="recurringToggle" data-action="toggle-recurring-add" style="margin-bottom:10px;"><span>매년 반복 공휴일로 등록</span><span class="dot"></span></div>
   <div class="btn" data-action="add-rest-range" style="margin-bottom:10px;">추가</div>
-  <div class="btn" data-action="seed-kr-holidays" style="margin-bottom:10px;">한국 공휴일 자동 추가</div>
-  <div class="btn" data-action="open-holiday-picker" style="margin-bottom:16px;">설날·추석·대체공휴일 불러오기</div>
+  <div class="btn" data-action="open-holiday-picker" style="margin-bottom:16px;">공휴일 자동 추가</div>
 
   <div class="section-label" style="margin-top:0;">목록으로 한 번에 추가</div>
   <div class="export-note" style="margin:0 0 8px;">YYYY-MM-DD 뒤에 이름을 붙여 한 줄에 하나씩 붙여넣으세요 (이름은 생략 가능해요).</div>
@@ -775,7 +774,7 @@
 <div class="tp-overlay hidden" id="holidayPickerOverlay">
   <div class="tp-card" style="max-width:320px;">
     <div class="tp-title">공휴일 불러오기</div>
-    <div class="export-note" style="margin:0 0 10px;">설날·추석·대체공휴일처럼 해마다 날짜가 바뀌는 공휴일이에요. 실제로 쉬지 않는 날은 체크를 해제하고 추가하세요.</div>
+    <div class="export-note" style="margin:0 0 10px;">매년 반복되는 고정 공휴일과, 설날·추석·대체공휴일처럼 해마다 날짜가 바뀌는 공휴일을 한 번에 불러와요. 실제로 쉬지 않는 날은 체크를 해제하고 추가하세요.</div>
     <div style="text-align:right;margin-bottom:8px;"><span data-action="toggle-holiday-pick-all" style="font-size:12px;text-decoration:underline;font-weight:700;cursor:pointer;color:var(--ink-dim);">전체 선택/해제</span></div>
     <div id="holidayPickerList" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;"></div>
     <div class="tp-actions">
@@ -1046,66 +1045,96 @@
     ]
   };
   var holidayPickerSel = {};
-  function bundledHolidayList() {
+  // 매년 반복되는 고정 공휴일(recurringHolidays)과, 해마다 날짜가 바뀌는 설날·추석·대체공휴일
+  // (restDays, KR_HOLIDAY_TABLE 기준)을 한 목록으로 합친다. 이미 추가된 항목은 애초에
+  // 목록에서 빠지므로, 여기 나오는 것만 선택 가능 = 중복 추가가 구조적으로 불가능하다.
+  function pendingHolidayItems() {
     var out = [];
+    Object.keys(KNOWN_KR_HOLIDAYS).sort().forEach(function (md) {
+      if (state.recurringHolidays.indexOf(md) === -1) {
+        out.push({ key: "r:" + md, kind: "recurring", md: md, label: KNOWN_KR_HOLIDAYS[md] });
+      }
+    });
     Object.keys(KR_HOLIDAY_TABLE).sort().forEach(function (y) {
       KR_HOLIDAY_TABLE[y].forEach(function (h) {
-        if (findRestIdx(h.date) === -1) out.push(h);
+        if (findRestIdx(h.date) === -1) {
+          out.push({ key: "d:" + h.date, kind: "date", date: h.date, label: h.label });
+        }
       });
     });
     return out;
   }
+  // 최초 가입 알림/12월 배너처럼 특정 연도 하나만 다룰 때 쓰는 버전 — 고정 공휴일(연도 무관) +
+  // 그 해의 설날·추석·대체공휴일만 대상으로 한다.
+  function pendingHolidayItemsForYear(y) {
+    var out = [];
+    Object.keys(KNOWN_KR_HOLIDAYS).sort().forEach(function (md) {
+      if (state.recurringHolidays.indexOf(md) === -1) {
+        out.push({ key: "r:" + md, kind: "recurring", md: md, label: KNOWN_KR_HOLIDAYS[md] });
+      }
+    });
+    (KR_HOLIDAY_TABLE[y] || []).forEach(function (h) {
+      if (findRestIdx(h.date) === -1) {
+        out.push({ key: "d:" + h.date, kind: "date", date: h.date, label: h.label });
+      }
+    });
+    return out;
+  }
+  function addHolidayItems(items) {
+    var added = 0;
+    items.forEach(function (item) {
+      if (item.kind === "recurring") {
+        if (state.recurringHolidays.indexOf(item.md) === -1) { state.recurringHolidays.push(item.md); added++; }
+      } else {
+        if (findRestIdx(item.date) === -1) { state.restDays.push({ date: item.date, label: item.label }); added++; }
+      }
+    });
+    if (added > 0) saveState();
+    renderRecurringList(); renderRestList(); updateRestTodayBtnLabel(); renderHome();
+    return added;
+  }
   function openHolidayPicker() {
-    var list = bundledHolidayList();
-    if (list.length === 0) { toast("추가할 공휴일이 없어요 (이미 다 등록됐거나, 준비된 연도가 아직 없어요)"); return; }
+    var list = pendingHolidayItems();
+    if (list.length === 0) { toast("추가할 공휴일이 없어요 (이미 다 등록됐거나, 준비된 항목이 없어요)"); return; }
     holidayPickerSel = {};
-    list.forEach(function (h) { holidayPickerSel[h.date] = true; });
+    list.forEach(function (item) { holidayPickerSel[item.key] = true; });
     renderHolidayPicker();
     document.getElementById("holidayPickerOverlay").classList.remove("hidden");
   }
   function closeHolidayPicker() { document.getElementById("holidayPickerOverlay").classList.add("hidden"); }
   function renderHolidayPicker() {
-    var list = bundledHolidayList();
+    var list = pendingHolidayItems();
     var el = document.getElementById("holidayPickerList");
-    el.innerHTML = list.map(function (h) {
-      var active = holidayPickerSel[h.date];
-      return '<div class="theme-option' + (active ? ' active' : '') + '" data-action="toggle-holiday-pick" data-id="' + h.date + '">' +
-        '<span>' + h.date + ' · ' + escapeHtml(h.label) + '</span><span class="dot"></span></div>';
+    el.innerHTML = list.map(function (item) {
+      var active = holidayPickerSel[item.key];
+      var text = item.kind === "recurring"
+        ? (escapeHtml(item.label) + " · 매년 반복")
+        : (item.date + ' · ' + escapeHtml(item.label));
+      return '<div class="theme-option' + (active ? ' active' : '') + '" data-action="toggle-holiday-pick" data-id="' + item.key + '">' +
+        '<span>' + text + '</span><span class="dot"></span></div>';
     }).join("");
   }
   function toggleHolidayPickAll() {
-    var list = bundledHolidayList();
-    var allOn = list.every(function (h) { return holidayPickerSel[h.date]; });
-    list.forEach(function (h) { holidayPickerSel[h.date] = !allOn; });
+    var list = pendingHolidayItems();
+    var allOn = list.every(function (item) { return holidayPickerSel[item.key]; });
+    list.forEach(function (item) { holidayPickerSel[item.key] = !allOn; });
     renderHolidayPicker();
   }
   function applyHolidayPicker() {
-    var added = 0;
-    bundledHolidayList().forEach(function (h) {
-      if (holidayPickerSel[h.date] && findRestIdx(h.date) === -1) {
-        state.restDays.push({ date: h.date, label: h.label });
-        added++;
-      }
-    });
-    if (added > 0) saveState();
+    var selected = pendingHolidayItems().filter(function (item) { return holidayPickerSel[item.key]; });
+    var added = addHolidayItems(selected);
     closeHolidayPicker();
-    renderRestList(); updateRestTodayBtnLabel(); renderHome();
     toast(added > 0 ? (added + "개 추가했어요") : "선택된 날짜가 없어요");
   }
 
   // ---- 연초/연말 공휴일 자동 안내 ----
   function quickAddYear(y) {
-    var added = 0;
-    (KR_HOLIDAY_TABLE[y] || []).forEach(function (h) {
-      if (findRestIdx(h.date) === -1) { state.restDays.push({ date: h.date, label: h.label }); added++; }
-    });
-    if (added > 0) saveState();
-    renderRestList(); updateRestTodayBtnLabel(); renderHome();
-    return added;
+    return addHolidayItems(pendingHolidayItemsForYear(y));
   }
   function openHolidayFirstPrompt(y) {
+    var count = pendingHolidayItemsForYear(y).length;
     document.getElementById("holidayFirstPromptText").textContent =
-      y + "년 설날·추석·대체공휴일 등 " + ((KR_HOLIDAY_TABLE[y] || []).length) + "개를 쉬는 날 후보로 불러올까요? (나중에 목록에서 골라 지울 수 있어요)";
+      "매년 반복되는 공휴일과 " + y + "년 설날·추석·대체공휴일 등 " + count + "개를 쉬는 날 후보로 불러올까요? (나중에 목록에서 골라 지울 수 있어요)";
     document.getElementById("holidayFirstPromptOverlay").classList.remove("hidden");
     document.getElementById("holidayFirstPromptOverlay").setAttribute("data-year", y);
   }
@@ -1153,7 +1182,7 @@
     if (state.holidayPromptSeen) return;
     var y = "" + new Date().getFullYear();
     if (!KR_HOLIDAY_TABLE[y]) { state.holidayPromptSeen = true; saveState(); return; }
-    if (bundledHolidayList().filter(function (h) { return h.date.slice(0,4) === y; }).length === 0) {
+    if (pendingHolidayItemsForYear(y).length === 0) {
       state.holidayPromptSeen = true; saveState(); return;
     }
     openHolidayFirstPrompt(y);
@@ -1295,15 +1324,6 @@
     var idx = state.recurringHolidays.indexOf(md);
     if (idx !== -1) { state.recurringHolidays.splice(idx, 1); saveState(); renderRecurringList(); updateRestTodayBtnLabel(); renderHome(); }
   }
-  function seedKrHolidays() {
-    var added = 0;
-    Object.keys(KNOWN_KR_HOLIDAYS).forEach(function (md) {
-      if (state.recurringHolidays.indexOf(md) === -1) { state.recurringHolidays.push(md); added++; }
-    });
-    saveState(); renderRecurringList(); updateRestTodayBtnLabel(); renderHome();
-    toast(added > 0 ? (added + "개 추가했어요 (설날·추석은 음력이라 직접 추가해주세요)") : "이미 다 등록되어 있어요");
-  }
-
   function uid() { return Math.random().toString(36).slice(2, 10); }
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
   function keyFor(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
@@ -3360,7 +3380,6 @@
     else if (action === "cancel-rest-label") { cancelEditRestLabel(); }
     else if (action === "remove-recurring") { removeRecurring(id); }
     else if (action === "toggle-recurring-add") { restAddRecurring = !restAddRecurring; updateRecurringToggleUI(); }
-    else if (action === "seed-kr-holidays") { seedKrHolidays(); }
     else if (action === "open-holiday-picker") { openHolidayPicker(); }
     else if (action === "close-holiday-picker") { closeHolidayPicker(); }
     else if (action === "toggle-holiday-pick") { holidayPickerSel[id] = !holidayPickerSel[id]; renderHolidayPicker(); }
