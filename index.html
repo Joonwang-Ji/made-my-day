@@ -1327,12 +1327,17 @@
   function defaultState() {
     return {
       categories: [
-        { id: uid(), name: "아침 동선", items: [
-          { id: uid(), name: "이불 개기", seconds: 15, days: null, tags: [] },
-          { id: uid(), name: "물 한 잔 마시기", seconds: 15, days: null, tags: [] },
-          { id: uid(), name: "가볍게 스트레칭", seconds: 30, days: null, tags: [] },
-          { id: uid(), name: "성경 암송 확인", seconds: 20, days: null, tags: [] },
-          { id: uid(), name: "오늘 할 일 확인", seconds: 15, days: null, tags: [] }
+        { id: uid(), name: "Good Morning", items: [
+          { id: uid(), name: "물 한 잔 마시기", seconds: 15, days: null, tags: [] }
+        ]},
+        { id: uid(), name: "Good Afternoon", items: [
+          { id: uid(), name: "가볍게 스트레칭", seconds: 30, days: null, tags: [] }
+        ]},
+        { id: uid(), name: "Good Evening", items: [
+          { id: uid(), name: "오늘 하루 정리", seconds: 20, days: null, tags: [] }
+        ]},
+        { id: uid(), name: "Good Night", items: [
+          { id: uid(), name: "내일 할 일 확인", seconds: 15, days: null, tags: [] }
         ]}
       ],
       history: {},
