@@ -420,6 +420,7 @@
   </header>
 
   <div id="nudgeBanner" class="nudge-banner hidden" data-action="open-missed-overlay"></div>
+  <div id="holidayBanner" class="nudge-banner hidden" data-action="open-holiday-banner-year"></div>
   <div id="todayRingCard" class="today-ring-card hidden" data-action="open-achievements">
     <div class="ring-wrap">
       <svg class="ring-svg" viewBox="0 0 76 76">
@@ -480,6 +481,10 @@
       <button data-action="backfill-date-next-day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
     <div id="backfillList"></div>
+    <div id="backfillMemoWrap" class="hidden">
+      <div class="section-label" style="margin-top:16px;">오늘 한 줄 회고</div>
+      <div class="export-box" style="margin-bottom:4px;"><textarea id="backfillMemoInput" maxlength="150" placeholder="하루를 한 줄로 남겨보세요 (선택)" style="min-height:50px;"></textarea></div>
+    </div>
   </div>
   <div id="backfillItemMode" class="hidden"></div>
 </div>
@@ -632,7 +637,8 @@
   </div>
   <div class="theme-option" id="recurringToggle" data-action="toggle-recurring-add" style="margin-bottom:10px;"><span>매년 반복 공휴일로 등록</span><span class="dot"></span></div>
   <div class="btn" data-action="add-rest-range" style="margin-bottom:10px;">추가</div>
-  <div class="btn" data-action="seed-kr-holidays" style="margin-bottom:16px;">한국 공휴일 자동 추가</div>
+  <div class="btn" data-action="seed-kr-holidays" style="margin-bottom:10px;">한국 공휴일 자동 추가</div>
+  <div class="btn" data-action="open-holiday-picker" style="margin-bottom:16px;">설날·추석·대체공휴일 불러오기</div>
 
   <div class="section-label" style="margin-top:0;">목록으로 한 번에 추가</div>
   <div class="export-note" style="margin:0 0 8px;">YYYY-MM-DD 뒤에 이름을 붙여 한 줄에 하나씩 붙여넣으세요 (이름은 생략 가능해요).</div>
@@ -662,6 +668,30 @@
     <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
     <div id="rewardLogList"></div>
     <div class="btn primary" data-action="achieve-close" style="margin-top:16px;">닫기</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="holidayFirstPromptOverlay">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title">공휴일을 불러올까요?</div>
+    <div class="export-note" id="holidayFirstPromptText" style="margin:0 0 6px;text-align:center;"></div>
+    <div class="tp-actions">
+      <div class="btn" data-action="holiday-first-prompt-decline">괜찮아요</div>
+      <div class="btn primary" data-action="holiday-first-prompt-accept">불러오기</div>
+    </div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="holidayPickerOverlay">
+  <div class="tp-card" style="max-width:320px;">
+    <div class="tp-title">공휴일 불러오기</div>
+    <div class="export-note" style="margin:0 0 10px;">설날·추석·대체공휴일처럼 해마다 날짜가 바뀌는 공휴일이에요. 실제로 쉬지 않는 날은 체크를 해제하고 추가하세요.</div>
+    <div style="text-align:right;margin-bottom:8px;"><span data-action="toggle-holiday-pick-all" style="font-size:12px;text-decoration:underline;font-weight:700;cursor:pointer;color:var(--ink-dim);">전체 선택/해제</span></div>
+    <div id="holidayPickerList" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;"></div>
+    <div class="tp-actions">
+      <div class="btn" data-action="close-holiday-picker">취소</div>
+      <div class="btn primary" data-action="apply-holiday-picker">선택한 날짜 추가</div>
+    </div>
   </div>
 </div>
 
@@ -803,6 +833,153 @@
     "01-01": "신정", "03-01": "삼일절", "05-05": "어린이날", "06-06": "현충일",
     "08-15": "광복절", "10-03": "개천절", "10-09": "한글날", "12-25": "성탄절"
   };
+  // 설날/추석/부처님오신날처럼 매년 날짜가 바뀌는 공휴일과, 위 고정 공휴일이 주말과 겹쳐
+  // 생기는 대체공휴일, 그리고 정부가 지정한 임시공휴일을 연도별로 미리 정리해 둔 표.
+  // (출처: publicholidays.co.kr, 관공서의 공휴일에 관한 규정 기준 — 매해 안전선에서 몇 해치를 미리 채워둠)
+  var KR_HOLIDAY_TABLE = {
+    "2026": [
+      { date: "2026-02-16", label: "설날 연휴" },
+      { date: "2026-02-17", label: "설날" },
+      { date: "2026-02-18", label: "설날 연휴" },
+      { date: "2026-03-02", label: "삼일절 대체공휴일" },
+      { date: "2026-05-24", label: "부처님오신날" },
+      { date: "2026-05-25", label: "부처님오신날 대체공휴일" },
+      { date: "2026-06-03", label: "전국동시지방선거(임시공휴일)" },
+      { date: "2026-08-17", label: "광복절 대체공휴일" },
+      { date: "2026-09-24", label: "추석 연휴" },
+      { date: "2026-09-25", label: "추석" },
+      { date: "2026-09-26", label: "추석 연휴" },
+      { date: "2026-10-05", label: "개천절 대체공휴일" }
+    ],
+    "2027": [
+      { date: "2027-02-06", label: "설날 연휴" },
+      { date: "2027-02-07", label: "설날" },
+      { date: "2027-02-08", label: "설날 연휴" },
+      { date: "2027-02-09", label: "설날 연휴" },
+      { date: "2027-05-13", label: "부처님오신날" },
+      { date: "2027-06-07", label: "현충일 대체공휴일" },
+      { date: "2027-08-16", label: "광복절 대체공휴일" },
+      { date: "2027-09-14", label: "추석 연휴" },
+      { date: "2027-09-15", label: "추석" },
+      { date: "2027-09-16", label: "추석 연휴" },
+      { date: "2027-10-04", label: "개천절 대체공휴일" },
+      { date: "2027-10-11", label: "한글날 대체공휴일" },
+      { date: "2027-12-27", label: "크리스마스 대체공휴일" }
+    ]
+  };
+  var holidayPickerSel = {};
+  function bundledHolidayList() {
+    var out = [];
+    Object.keys(KR_HOLIDAY_TABLE).sort().forEach(function (y) {
+      KR_HOLIDAY_TABLE[y].forEach(function (h) {
+        if (findRestIdx(h.date) === -1) out.push(h);
+      });
+    });
+    return out;
+  }
+  function openHolidayPicker() {
+    var list = bundledHolidayList();
+    if (list.length === 0) { toast("추가할 공휴일이 없어요 (이미 다 등록됐거나, 준비된 연도가 아직 없어요)"); return; }
+    holidayPickerSel = {};
+    list.forEach(function (h) { holidayPickerSel[h.date] = true; });
+    renderHolidayPicker();
+    document.getElementById("holidayPickerOverlay").classList.remove("hidden");
+  }
+  function closeHolidayPicker() { document.getElementById("holidayPickerOverlay").classList.add("hidden"); }
+  function renderHolidayPicker() {
+    var list = bundledHolidayList();
+    var el = document.getElementById("holidayPickerList");
+    el.innerHTML = list.map(function (h) {
+      var active = holidayPickerSel[h.date];
+      return '<div class="theme-option' + (active ? ' active' : '') + '" data-action="toggle-holiday-pick" data-id="' + h.date + '">' +
+        '<span>' + h.date + ' · ' + escapeHtml(h.label) + '</span><span class="dot"></span></div>';
+    }).join("");
+  }
+  function toggleHolidayPickAll() {
+    var list = bundledHolidayList();
+    var allOn = list.every(function (h) { return holidayPickerSel[h.date]; });
+    list.forEach(function (h) { holidayPickerSel[h.date] = !allOn; });
+    renderHolidayPicker();
+  }
+  function applyHolidayPicker() {
+    var added = 0;
+    bundledHolidayList().forEach(function (h) {
+      if (holidayPickerSel[h.date] && findRestIdx(h.date) === -1) {
+        state.restDays.push({ date: h.date, label: h.label });
+        added++;
+      }
+    });
+    if (added > 0) saveState();
+    closeHolidayPicker();
+    renderRestList(); updateRestTodayBtnLabel(); renderHome();
+    toast(added > 0 ? (added + "개 추가했어요") : "선택된 날짜가 없어요");
+  }
+
+  // ---- 연초/연말 공휴일 자동 안내 ----
+  function quickAddYear(y) {
+    var added = 0;
+    (KR_HOLIDAY_TABLE[y] || []).forEach(function (h) {
+      if (findRestIdx(h.date) === -1) { state.restDays.push({ date: h.date, label: h.label }); added++; }
+    });
+    if (added > 0) saveState();
+    renderRestList(); updateRestTodayBtnLabel(); renderHome();
+    return added;
+  }
+  function openHolidayFirstPrompt(y) {
+    document.getElementById("holidayFirstPromptText").textContent =
+      y + "년 설날·추석·대체공휴일 등 " + ((KR_HOLIDAY_TABLE[y] || []).length) + "개를 쉬는 날 후보로 불러올까요? (나중에 목록에서 골라 지울 수 있어요)";
+    document.getElementById("holidayFirstPromptOverlay").classList.remove("hidden");
+    document.getElementById("holidayFirstPromptOverlay").setAttribute("data-year", y);
+  }
+  function closeHolidayFirstPrompt(accepted) {
+    var y = document.getElementById("holidayFirstPromptOverlay").getAttribute("data-year");
+    document.getElementById("holidayFirstPromptOverlay").classList.add("hidden");
+    state.holidayPromptSeen = true;
+    saveState();
+    if (accepted && y) {
+      var added = quickAddYear(y);
+      toast(added > 0 ? (added + "개 추가했어요") : "이미 다 등록되어 있어요");
+    }
+  }
+  function renderHolidayBanner() {
+    var el = document.getElementById("holidayBanner");
+    if (!el) return;
+    var now = new Date();
+    var thisYear = "" + now.getFullYear();
+    var nextYear = "" + (now.getFullYear() + 1);
+    // 12월 한 달 동안, 다음 해 표가 준비돼 있고 아직 다음 해 쉬는 날을 하나도 안 넣었고
+    // 이번 연도에 배너를 닫은 적이 없다면 노출
+    var show = state.holidayPromptSeen && now.getMonth() === 11 &&
+      !!KR_HOLIDAY_TABLE[nextYear] &&
+      !state.restDays.some(function (e) { return restDayDate(e).slice(0, 4) === nextYear; }) &&
+      state.holidayBannerDismissedYear !== nextYear;
+    if (!show) { el.classList.add("hidden"); return; }
+    el.classList.remove("hidden");
+    el.setAttribute("data-year", nextYear);
+    el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
+      '<span>' + nextYear + '년 공휴일을 불러올까요?</span>' +
+      '<button class="icon-btn" data-action="dismiss-holiday-banner" style="margin-left:auto;padding:2px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
+  }
+  function dismissHolidayBanner() {
+    var el = document.getElementById("holidayBanner");
+    var y = el ? el.getAttribute("data-year") : null;
+    if (y) { state.holidayBannerDismissedYear = y; saveState(); }
+    renderHolidayBanner();
+  }
+  function openHolidayBannerYear() {
+    var el = document.getElementById("holidayBanner");
+    var y = el ? el.getAttribute("data-year") : null;
+    if (y) openHolidayFirstPrompt(y);
+  }
+  function checkHolidayFirstPrompt() {
+    if (state.holidayPromptSeen) return;
+    var y = "" + new Date().getFullYear();
+    if (!KR_HOLIDAY_TABLE[y]) { state.holidayPromptSeen = true; saveState(); return; }
+    if (bundledHolidayList().filter(function (h) { return h.date.slice(0,4) === y; }).length === 0) {
+      state.holidayPromptSeen = true; saveState(); return;
+    }
+    openHolidayFirstPrompt(y);
+  }
   var restAddRecurring = false;
   var restShowAllPast = false;
   var restEditingDk = null;
@@ -986,7 +1163,10 @@
       streakThreshold: 100,
       rewards: [],
       lastSeenLevel: 1,
-      celebratedBadgeDays: []
+      celebratedBadgeDays: [],
+      memos: {},
+      holidayPromptSeen: false,
+      holidayBannerDismissedYear: null
     };
   }
   function migrateHistory(history) {
@@ -1037,6 +1217,9 @@
     });
     if (!p.restDays || !Array.isArray(p.restDays)) p.restDays = [];
     if (!p.recurringHolidays || !Array.isArray(p.recurringHolidays)) p.recurringHolidays = [];
+    if (!p.memos || typeof p.memos !== "object") p.memos = {};
+    if (typeof p.holidayPromptSeen !== "boolean") p.holidayPromptSeen = false;
+    if (typeof p.holidayBannerDismissedYear === "undefined") p.holidayBannerDismissedYear = null;
     if (!p.streakThreshold) p.streakThreshold = 100;
     if (!Array.isArray(p.rewards)) p.rewards = [];
     // 레벨업/배지 보상 팝업 도입 시점 마이그레이션: 기존에 이미 쌓아온 레벨·배지에 대해
@@ -1170,6 +1353,7 @@
       }
       if (firstLoad) { firstLoad = false; showView("view-home"); }
       renderHome();
+      if (!window.__holidayPromptChecked) { window.__holidayPromptChecked = true; checkHolidayFirstPrompt(); }
     }, function (err) {
       console.error("subscribe failed", err);
       if (firstLoad) {
@@ -1644,6 +1828,7 @@
     } else {
       nudgeEl.classList.add("hidden");
     }
+    renderHolidayBanner();
 
     // ---- 오늘 진행률 링 (스트릭 기준과 직결) ----
     var withDueToday = state.categories.filter(function (c) { return catItemsDueOn(c, todayK).length > 0; });
@@ -2403,7 +2588,8 @@
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
-      rewards: state.rewards
+      rewards: state.rewards,
+      memos: state.memos
     };
     document.getElementById("exportText").value = JSON.stringify(data, null, 2);
   }
@@ -2447,6 +2633,7 @@
     if (Array.isArray(parsed.recurringHolidays)) state.recurringHolidays = parsed.recurringHolidays;
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
     if (Array.isArray(parsed.rewards)) state.rewards = parsed.rewards;
+    if (parsed.memos && typeof parsed.memos === "object") state.memos = parsed.memos;
     // 가져온 기록 기준으로 레벨/배지 기준선을 다시 맞춰서, 가져오자마자 예전 레벨업/배지
     // 축하 팝업이 뒤늦게 쏟아지지 않게 한다.
     state.lastSeenLevel = computeGamification().level;
@@ -2508,8 +2695,8 @@
   function renderBackfill() {
     var el = document.getElementById("backfillList");
     var dk = backfillDate;
-    if (!dk) { el.innerHTML = ""; return; }
-    if (dk > todayKey()) { el.innerHTML = '<div class="empty">미래 날짜는 기록할 수 없어요.</div>'; return; }
+    if (!dk) { el.innerHTML = ""; loadMemoBox(dk); return; }
+    if (dk > todayKey()) { el.innerHTML = '<div class="empty">미래 날짜는 기록할 수 없어요.</div>'; loadMemoBox(dk); return; }
     // 쉬는 날은 due 항목이 없어도(=keepOnRest 안 된 항목뿐이어도) 전체 항목을 선택적으로
     // 체크할 수 있게 보여준다 — 홈 화면의 "쉬는 날 · 선택" 로직과 동일한 취지.
     // 그 항목의 시작일(createdAt) 이전 날짜라면, 아직 존재하지 않았던 항목이므로 목록에서
@@ -2535,6 +2722,23 @@
     });
     if (!html) html = '<div class="empty">이 날짜에 예정된 항목이 없어요.</div>';
     el.innerHTML = html;
+    loadMemoBox(dk);
+  }
+  function loadMemoBox(dk) {
+    var wrap = document.getElementById("backfillMemoWrap");
+    var input = document.getElementById("backfillMemoInput");
+    if (!wrap || !input) return;
+    var show = !!dk && dk <= todayKey();
+    wrap.classList.toggle("hidden", !show);
+    if (show) input.value = (state.memos && state.memos[dk]) || "";
+  }
+  function saveMemoForBackfillDate() {
+    var input = document.getElementById("backfillMemoInput");
+    if (!input || !backfillDate || backfillDate > todayKey()) return;
+    var v = input.value.trim();
+    if (!state.memos) state.memos = {};
+    if (v) state.memos[backfillDate] = v; else delete state.memos[backfillDate];
+    saveState();
   }
   // "항목별" 기록 모드: 항목 하나를 고르면 그 항목의 달력이 뜨고, 날짜 칸을 여러 개
   // 툭툭 탭해서 한 번에 여러 날을 체크/취소할 수 있다. 시작일 이전 날짜는 아예
@@ -2606,7 +2810,8 @@
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
-      rewards: state.rewards
+      rewards: state.rewards,
+      memos: state.memos
     };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
@@ -2772,6 +2977,15 @@
     else if (action === "remove-recurring") { removeRecurring(id); }
     else if (action === "toggle-recurring-add") { restAddRecurring = !restAddRecurring; updateRecurringToggleUI(); }
     else if (action === "seed-kr-holidays") { seedKrHolidays(); }
+    else if (action === "open-holiday-picker") { openHolidayPicker(); }
+    else if (action === "close-holiday-picker") { closeHolidayPicker(); }
+    else if (action === "toggle-holiday-pick") { holidayPickerSel[id] = !holidayPickerSel[id]; renderHolidayPicker(); }
+    else if (action === "toggle-holiday-pick-all") { toggleHolidayPickAll(); }
+    else if (action === "apply-holiday-picker") { applyHolidayPicker(); }
+    else if (action === "dismiss-holiday-banner") { dismissHolidayBanner(); }
+    else if (action === "open-holiday-banner-year") { openHolidayBannerYear(); }
+    else if (action === "holiday-first-prompt-accept") { closeHolidayFirstPrompt(true); }
+    else if (action === "holiday-first-prompt-decline") { closeHolidayFirstPrompt(false); }
     else if (action === "toggle-rest-show-all") { restShowAllPast = !restShowAllPast; renderRestList(); }
     else if (action === "open-stats") { statsView = "monthly"; statsTagFilter = null; statsMonth = new Date(); statsMonth.setDate(1); statsWeekStart = startOfWeek(new Date()); showView("view-stats"); renderStats(); }
     else if (action === "open-backfill") { openBackfill(); }
@@ -2825,6 +3039,8 @@
     if (backfillDate !== v) e.target.value = backfillDate;
     renderBackfill();
   });
+  document.getElementById("backfillMemoInput").addEventListener("change", saveMemoForBackfillDate);
+  document.getElementById("backfillMemoInput").addEventListener("blur", saveMemoForBackfillDate);
   document.getElementById("authPassword").addEventListener("keydown", function (e) {
     if (e.key === "Enter") { e.preventDefault(); doSignIn(); }
   });
