@@ -274,6 +274,8 @@
   .success-cell.future { visibility: hidden; }
   .success-cell .memo-dot { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
     width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .8; }
+  .memo-dot-inline { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold);
+    margin-left: 6px; vertical-align: middle; }
 
   .week-header { display: grid; grid-template-columns: 1fr repeat(7, 26px); gap: 4px; padding: 0 2px 8px;
     font-size: 11px; color: var(--ink-dim); text-align: center; }
@@ -411,8 +413,8 @@
 <div class="wrap hidden" id="view-home">
 
   <header class="top">
-    <div class="date-block">
-      <div class="day" id="dayLabel">9월 22일 화요일</div>
+    <div class="date-block" data-action="open-today-memo" style="cursor:pointer;">
+      <div class="day"><span id="dayLabel">9월 22일 화요일</span><span id="todayMemoDot" class="memo-dot-inline hidden"></span></div>
       <div class="sub" id="subLabel">오늘의 루틴</div>
     </div>
     <div class="streak" id="streakChip" data-action="open-achievements">
@@ -679,6 +681,17 @@
     <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
     <div id="rewardLogList"></div>
     <div class="btn primary" data-action="achieve-close" style="margin-top:16px;">닫기</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="todayMemoOverlay">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title">하루 한 줄</div>
+    <div class="export-box" style="margin-bottom:4px;"><textarea id="todayMemoInput" maxlength="150" placeholder="오늘 하루를 한 줄로 남겨보세요" style="min-height:70px;"></textarea></div>
+    <div class="tp-actions">
+      <div class="btn" data-action="today-memo-cancel">취소</div>
+      <div class="btn primary" data-action="today-memo-save">저장</div>
+    </div>
   </div>
 </div>
 
@@ -1578,6 +1591,23 @@
   }
   function openMissedOverlay() { renderMissedOverlay(); document.getElementById("missedOverlay").classList.remove("hidden"); }
   function closeMissedOverlay() { document.getElementById("missedOverlay").classList.add("hidden"); }
+  function openTodayMemoOverlay() {
+    var input = document.getElementById("todayMemoInput");
+    input.value = (state.memos && state.memos[todayKey()]) || "";
+    document.getElementById("todayMemoOverlay").classList.remove("hidden");
+    input.focus();
+  }
+  function closeTodayMemoOverlay() { document.getElementById("todayMemoOverlay").classList.add("hidden"); }
+  function saveTodayMemoOverlay() {
+    var v = document.getElementById("todayMemoInput").value.trim();
+    var k = todayKey();
+    if (!state.memos) state.memos = {};
+    if (v) state.memos[k] = v; else delete state.memos[k];
+    saveState();
+    closeTodayMemoOverlay();
+    renderHome();
+    toast("저장했어요");
+  }
   function computeStreakGeneric(statusFn) {
     var streak = 0, d = new Date(), first = true;
     while (true) {
@@ -1825,11 +1855,11 @@
 
     var todayK = todayKey();
     var todayIsRest = isRestDay(todayK);
-    var doneCats = state.categories.filter(function(c){ return catFullyDone(c); }).length;
-    var catsWithDue = state.categories.filter(function(c){ return catItemsDueOn(c, todayK).length > 0; }).length;
-    var baseSub = state.categories.length === 0
-      ? "카테고리를 추가해보세요" : (doneCats + "/" + catsWithDue + " 카테고리 완료");
-    document.getElementById("subLabel").textContent = todayIsRest ? (baseSub + " · 오늘은 쉬는 날 (해도 되고 안 해도 돼요)") : baseSub;
+    var baseSub = state.categories.length === 0 ? "카테고리를 추가해보세요" : "";
+    document.getElementById("subLabel").textContent = todayIsRest
+      ? (baseSub ? (baseSub + " · 오늘은 쉬는 날 (해도 되고 안 해도 돼요)") : "오늘은 쉬는 날 (해도 되고 안 해도 돼요)")
+      : baseSub;
+    document.getElementById("todayMemoDot").classList.toggle("hidden", !(state.memos && state.memos[todayK]));
 
     var yKey = keyFor(new Date(Date.now() - 86400000));
     var nudgeEl = document.getElementById("nudgeBanner");
@@ -3041,6 +3071,9 @@
     }
     else if (action === "open-missed-overlay") { openMissedOverlay(); }
     else if (action === "missed-close") { closeMissedOverlay(); }
+    else if (action === "open-today-memo") { openTodayMemoOverlay(); }
+    else if (action === "today-memo-cancel") { closeTodayMemoOverlay(); }
+    else if (action === "today-memo-save") { saveTodayMemoOverlay(); }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
     else if (action === "reward-close") { closeRewardOverlay(); }
