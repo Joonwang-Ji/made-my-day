@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-23-15";
+  var BUILD_VERSION = "2026-09-23-17";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -74,11 +74,19 @@
   .sub-row .rest-badge { background: var(--rest-soft); color: var(--rest); }
   .sub-row .memo-badge { background: var(--gold-soft); color: var(--gold); }
   .splash { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
-  .splash-mark { width: 40px; height: 40px; color: var(--gold); animation: splashPulse 1.8s ease-in-out infinite; }
-  .splash-mark svg { width: 100%; height: 100%; }
+  .splash-mark { position: relative; width: 64px; height: 80px; }
+  .splash-mark svg { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 46px; height: 46px; color: var(--gold); animation: splashPulse 1.8s ease-in-out infinite; }
+  .splash-dove { position: absolute; top: 2px; left: 50%; font-size: 26px; line-height: 1;
+    animation: doveDescend 2.6s ease-in-out infinite; }
   .splash-word { font-family: 'Fraunces', serif; font-weight: 650; font-size: 30px; letter-spacing: -0.01em; color: var(--ink); }
   .splash-sub { font-size: 13px; color: var(--ink-dim); letter-spacing: .02em; }
-  @keyframes splashPulse { 0%, 100% { opacity: .5; transform: scale(.92); } 50% { opacity: 1; transform: scale(1); } }
+  @keyframes splashPulse { 0%, 100% { opacity: .5; transform: translateX(-50%) scale(.92); } 50% { opacity: 1; transform: translateX(-50%) scale(1); } }
+  @keyframes doveDescend {
+    0% { transform: translate(-62%, -6px) rotate(-8deg); opacity: .8; }
+    50% { transform: translate(-50%, 10px) rotate(3deg); opacity: 1; }
+    100% { transform: translate(-62%, -6px) rotate(-8deg); opacity: .8; }
+  }
   .title-row { min-height: 18px; margin-bottom: 4px; }
   .title-row .title-text { font-size: 13px; font-weight: 700; color: var(--ink-dim); white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; display: block; }
@@ -95,7 +103,7 @@
   .streak { display: flex; align-items: center; gap: 6px; background: var(--gold-soft); color: var(--gold);
     padding: 7px 12px 7px 10px; border-radius: 999px; font-weight: 800; font-size: 14px; white-space: nowrap; cursor: pointer;
     flex: none; margin-top: 3px; }
-  .streak svg { width: 16px; height: 16px; flex: none; transform-origin: 50% 50%; }
+  .streak svg { width: 17px; height: 17px; flex: none; transform-origin: 50% 50%; }
 
   .nudge-banner { display: flex; align-items: center; gap: 8px; background: var(--gold-soft); color: var(--gold);
     border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px; line-height: 1.5;
@@ -413,7 +421,10 @@
 
 <div class="wrap" id="view-checking">
   <div class="splash">
-    <div class="splash-mark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3-1 4.5-2 6-1.5 2-2 3.5-2 5.5C8 17.5 9.8 20 12 20s4-2.5 4-5.5c0-1.6-.5-2.6-1-3.5.9.6 2 1.9 2 4 0 3-2.2 5.5-5 5.5s-5-2.5-5-6c0-3.3 2.2-5.2 3.4-6.7C11 6.6 12 5 12 2z"/></svg></div>
+    <div class="splash-mark">
+      <span class="splash-dove" aria-hidden="true">🕊️</span>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0.8 C9.7 4 8.4 6.8 9.2 9.6 C6.8 8.6 5 10.7 4.8 13.5 C4.6 16.6 6.4 19.2 9 20.5 C9.5 20.8 10.2 21 11 21.2 C10 19 10.3 16.7 11.8 15 C12.3 17.8 13.7 20 15.8 21 C18.9 19.7 20.3 16.3 19.1 13.1 C18.5 11.5 17.2 10.4 15.7 10 C16.5 7 15.6 3.8 12 0.8 Z"/></svg>
+    </div>
     <div class="splash-word">Made My Day</div>
     <div class="splash-sub">불러오는 중…</div>
   </div>
@@ -448,7 +459,7 @@
       <div class="sub-row" id="subRow"></div>
     </div>
     <div class="streak" id="streakChip" data-action="open-achievements">
-      <svg id="streakFlame" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3-1 4.5-2 6-1.5 2-2 3.5-2 5.5C8 17.5 9.8 20 12 20s4-2.5 4-5.5c0-1.6-.5-2.6-1-3.5.9.6 2 1.9 2 4 0 3-2.2 5.5-5 5.5s-5-2.5-5-6c0-3.3 2.2-5.2 3.4-6.7C11 6.6 12 5 12 2z"/></svg>
+      <svg id="streakFlame" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0.8 C9.7 4 8.4 6.8 9.2 9.6 C6.8 8.6 5 10.7 4.8 13.5 C4.6 16.6 6.4 19.2 9 20.5 C9.5 20.8 10.2 21 11 21.2 C10 19 10.3 16.7 11.8 15 C12.3 17.8 13.7 20 15.8 21 C18.9 19.7 20.3 16.3 19.1 13.1 C18.5 11.5 17.2 10.4 15.7 10 C16.5 7 15.6 3.8 12 0.8 Z"/></svg>
       <span id="streakNum">0</span>일째<span id="levelTag" style="margin-left:5px;opacity:.75;"></span>
     </div>
   </header>
@@ -1689,7 +1700,7 @@
     "🏅","🥈","🥉","⚽","🏀","🏈","🎾","🏐","🏓","🏸","🚴","🏊",
     "☕","🍵","🛌","🧘","🛀","🌺","🕰️",
     "💎","🔑","🗝️","🧩","🪄","🎁","🧗","🏔️","🗻","🏕️",
-    "🌦️","🌧️","❄️","☃️","🍁","🌷","🌹"
+    "🌦️","🌧️","❄️","☃️","🍁","🌷","🌹","🎄"
   ];
   var titleEditSelectedEmoji = "";
   function renderTitleRow() {
