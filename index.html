@@ -293,6 +293,16 @@
   .mini-cal-cell.na { opacity: 0.25; }
   .mini-cal-cell.rest:not(.done) { color: var(--rest); font-weight: 700; }
   .mini-cal-cell.tappable { cursor: pointer; }
+  .mini-cal-cell.pending { box-shadow: 0 0 0 2px var(--gold) inset; opacity: 1; }
+  .bf-save-bar { display: flex; gap: 10px; margin-top: 14px; }
+  .bf-save-note { font-size: 12px; color: var(--gold); font-weight: 700; margin-top: 12px; text-align: center; }
+  .time-review-row { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+  .time-review-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .time-review-name { font-size: 13.5px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .time-review-diff { font-size: 12px; font-weight: 800; flex: none; font-variant-numeric: tabular-nums; }
+  .time-review-diff.over { color: var(--gold); }
+  .time-review-diff.under { color: var(--sage); }
+  .time-review-sub { font-size: 11.5px; color: var(--ink-dim); margin-top: 4px; line-height: 1.5; }
   .mini-cal-foot { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--ink-dim); }
   .mini-cal-foot .rate { font-weight: 800; color: var(--ink); }
 
@@ -924,6 +934,17 @@
     <div class="tp-actions">
       <div class="btn" data-action="title-edit-cancel">취소</div>
       <div class="btn primary" data-action="title-edit-save">저장</div>
+    </div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="confirmOverlay" style="z-index:95;">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title" id="confirmTitle"></div>
+    <div class="export-note" id="confirmText" style="margin:0 0 6px;text-align:center;"></div>
+    <div class="tp-actions">
+      <div class="btn" data-action="confirm-cancel">취소</div>
+      <div class="btn primary" data-action="confirm-ok" id="confirmOkBtn">확인</div>
     </div>
   </div>
 </div>
@@ -1658,7 +1679,11 @@
       var dayObj = history[dateKey];
       var union = {};
       var overtimeUnion = {};
+      var secsIn = {};
+      var timedUnion = {};
       if (dayObj && typeof dayObj === "object") {
+        if (dayObj.secs && typeof dayObj.secs === "object" && !Array.isArray(dayObj.secs)) secsIn = dayObj.secs;
+        if (Array.isArray(dayObj.timed)) dayObj.timed.forEach(function (id) { timedUnion[id] = true; });
         if (Array.isArray(dayObj.completed)) {
           dayObj.completed.forEach(function (id) { union[id] = true; });
         }
@@ -1666,7 +1691,7 @@
           dayObj.overtime.forEach(function (id) { overtimeUnion[id] = true; });
         }
         Object.keys(dayObj).forEach(function (k) {
-          if (k === "completed" || k === "overtime") return;
+          if (k === "completed" || k === "overtime" || k === "secs" || k === "timed") return;
           var v = dayObj[k];
           if (v && typeof v === "object" && Array.isArray(v.completed)) {
             v.completed.forEach(function (id) { union[id] = true; });
@@ -1676,7 +1701,18 @@
       // overtime 표시는 completed의 부분집합이어야 한다(체크 취소 시 함께 해제되므로 정상적으로는
       // 항상 그렇지만, 방어적으로 한 번 더 걸러준다)
       var overtimeIds = Object.keys(overtimeUnion).filter(function (id) { return union[id]; });
-      out[dateKey] = { completed: Object.keys(union), overtime: overtimeIds };
+      var entryOut = { completed: Object.keys(union), overtime: overtimeIds };
+      // 완료 시간 기록(secs: 항목별 걸린 초, timed: 그중 런모드에서 실제로 잰 항목) — 완료된 항목 것만 유지
+      var secsOut = {};
+      Object.keys(secsIn).forEach(function (id) {
+        if (union[id] && typeof secsIn[id] === "number" && isFinite(secsIn[id]) && secsIn[id] >= 0) secsOut[id] = Math.round(secsIn[id]);
+      });
+      if (Object.keys(secsOut).length) {
+        entryOut.secs = secsOut;
+        var timedOut = Object.keys(timedUnion).filter(function (id) { return secsOut[id] !== undefined; });
+        if (timedOut.length) entryOut.timed = timedOut;
+      }
+      out[dateKey] = entryOut;
     });
     return out;
   }
@@ -1924,8 +1960,9 @@
     var d = state.history[dateKey];
     return !!d && Array.isArray(d.overtime) && d.overtime.indexOf(itemId) !== -1;
   }
-  function markDone(itemId, done, dateKey, overtime) {
-    var entry = dayEntry(dateKey || todayKey());
+  function applyDone(itemId, done, dateKey, overtime, actualSecs) {
+    var dk = dateKey || todayKey();
+    var entry = dayEntry(dk);
     var idx = entry.completed.indexOf(itemId);
     if (done && idx === -1) entry.completed.push(itemId);
     if (!done && idx !== -1) entry.completed.splice(idx, 1);
@@ -1935,7 +1972,52 @@
     var oidx = entry.overtime.indexOf(itemId);
     if (done && overtime && oidx === -1) entry.overtime.push(itemId);
     if ((!done || !overtime) && oidx !== -1) entry.overtime.splice(oidx, 1);
+    // 완료 시간 기록: 런모드(카운트다운)로 마치면 실제 걸린 시간, 그 외(홈 탭·기록)는 지정된 시간.
+    // 체크를 취소하면 시간 기록도 함께 지운다. 시간이 없는 불시 항목은 기록하지 않는다.
+    if (!entry.secs || typeof entry.secs !== "object") entry.secs = {};
+    if (!Array.isArray(entry.timed)) entry.timed = [];
+    var tidx = entry.timed.indexOf(itemId);
+    var it = findItem(itemId);
+    if (done && it && !it.flex) {
+      if (typeof actualSecs === "number" && isFinite(actualSecs)) {
+        entry.secs[itemId] = Math.max(0, Math.round(actualSecs));
+        if (tidx === -1) entry.timed.push(itemId);
+      } else {
+        entry.secs[itemId] = it.seconds || 0;
+        if (tidx !== -1) entry.timed.splice(tidx, 1);
+      }
+    } else {
+      delete entry.secs[itemId];
+      if (tidx !== -1) entry.timed.splice(tidx, 1);
+    }
+    if (Object.keys(entry.secs).length === 0) delete entry.secs;
+    if (entry.timed.length === 0) delete entry.timed;
+  }
+  function markDone(itemId, done, dateKey, overtime, actualSecs) {
+    applyDone(itemId, done, dateKey, overtime, actualSecs);
     saveState();
+  }
+  function actualSecsOf(dateKey, itemId) {
+    var d = state.history[dateKey];
+    return (d && d.secs && typeof d.secs[itemId] === "number") ? d.secs[itemId] : null;
+  }
+  function isTimedDone(dateKey, itemId) {
+    var d = state.history[dateKey];
+    return !!d && Array.isArray(d.timed) && d.timed.indexOf(itemId) !== -1;
+  }
+  // ---- generic confirm dialog ----
+  var confirmCb = null;
+  function askConfirm(title, text, okLabel, cb) {
+    confirmCb = cb;
+    document.getElementById("confirmTitle").textContent = title;
+    document.getElementById("confirmText").textContent = text || "";
+    document.getElementById("confirmOkBtn").textContent = okLabel || "확인";
+    document.getElementById("confirmOverlay").classList.remove("hidden");
+  }
+  function closeConfirm(run) {
+    document.getElementById("confirmOverlay").classList.add("hidden");
+    var cb = confirmCb; confirmCb = null;
+    if (run && cb) cb();
   }
   function getCat(id) { return state.categories.filter(function (c) { return c.id === id; })[0]; }
   function findCatOfItem(itemId) {
@@ -3940,7 +4022,7 @@ attachSceneMeta("deu");
           ((due || optional) ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + dotCls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          '<span class="mini-dur">' + (overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
+          '<span class="mini-dur">' + (checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? ((overtimeDone ? "초과 " : "") + fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
       }).join("");
       card.setAttribute("data-cat-card", cat.id);
       card.innerHTML =
@@ -4062,7 +4144,7 @@ attachSceneMeta("deu");
     var item = currentItem();
     if (item) {
       var overtime = !!(item.seconds && elapsedSeconds() >= item.seconds);
-      markDone(item.id, true, null, overtime);
+      markDone(item.id, true, null, overtime, elapsedSeconds());
       checkRewardEvents();
     }
     advance();
@@ -4181,7 +4263,7 @@ attachSceneMeta("deu");
         '</div>' +
         '<div class="row-bottom">' +
           '<button class="time-chip" data-action="open-day-picker" data-id="' + it.id + '">' + dayLabel(it) + '</button>' +
-          '<button class="time-chip" data-action="open-time-picker" data-id="' + it.id + '">' + fmtDur(it.seconds) + '</button>' +
+          (it.flex ? '' : '<button class="time-chip" data-action="open-time-picker" data-id="' + it.id + '">' + fmtDur(it.seconds) + '</button>') +
           '<button class="time-chip" data-action="open-tag-picker" data-id="' + it.id + '">' + ((it.tags && it.tags.length) ? escapeHtml(it.tags.join(", ")) : "태그") + '</button>' +
           '<input type="date" class="time-chip start-date-input" data-item-id="' + it.id + '" value="' + (it.createdAt || todayKey()) + '" max="' + todayKey() + '" title="이 항목이 언제부터 있었는지 — 놓친 항목 통계 계산의 기준일">' +
         '</div>';
@@ -4474,7 +4556,7 @@ attachSceneMeta("deu");
   function renderStatsViewTabs() {
     var el = document.getElementById("statsViewTabs");
     el.innerHTML = "";
-    [["monthly","월간"],["weekly","주간"],["success","성공"]].forEach(function (m) {
+    [["monthly","월간"],["weekly","주간"],["success","성공"],["time","시간"]].forEach(function (m) {
       var t = document.createElement("div");
       t.className = "tab" + (statsView === m[0] ? " active" : "");
       t.textContent = m[1];
@@ -4516,7 +4598,45 @@ attachSceneMeta("deu");
       body.innerHTML = '<div class="empty">' + (statsTagFilter ? "이 태그를 가진 항목이 없어요." : "아직 항목이 없어요. 카테고리에 루틴 항목을 추가해보세요.") + '</div>';
       return;
     }
-    body.innerHTML = statsView === "monthly" ? monthlyStatsHtml(flat) : weeklyStatsHtml(flat);
+    body.innerHTML = statsView === "monthly" ? monthlyStatsHtml(flat) : (statsView === "time" ? timeReviewHtml(flat) : weeklyStatsHtml(flat));
+  }
+  // 지정 시간 vs 실제 걸린 시간 점검 — 카운트다운(▶)으로 마친 기록만 "실제 시간"으로 친다.
+  function timeReviewHtml(flat) {
+    var DAYS = 30;
+    var from = new Date(); from.setDate(from.getDate() - (DAYS - 1));
+    var fromKey = keyFor(from);
+    var rows = [];
+    flat.forEach(function (pair) {
+      var it = pair.item;
+      if (it.flex || !it.seconds) return;
+      var n = 0, sum = 0, over = 0, under = 0;
+      Object.keys(state.history).forEach(function (dk) {
+        if (dk < fromKey) return;
+        var e = state.history[dk];
+        if (!e || !Array.isArray(e.timed) || e.timed.indexOf(it.id) === -1 || !e.secs || typeof e.secs[it.id] !== "number") return;
+        var v = e.secs[it.id];
+        n++; sum += v;
+        if (v > it.seconds) over++; else if (v < it.seconds) under++;
+      });
+      if (n === 0) return;
+      rows.push({ it: it, n: n, avg: Math.round(sum / n), over: over, under: under, ratio: (sum / n) / it.seconds });
+    });
+    var html = '<div class="export-note" style="margin:0 0 12px;">최근 ' + DAYS + '일, 카운트다운(▶)으로 마친 기록의 평균이에요. 홈·기록에서 바로 체크한 날은 지정 시간으로 저장돼 여기엔 넣지 않아요.</div>';
+    if (rows.length === 0) return html + '<div class="empty">아직 카운트다운으로 마친 기록이 없어요.</div>';
+    rows.sort(function (a, b) { return Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1); });
+    rows.forEach(function (r) {
+      var diff = r.avg - r.it.seconds;
+      var pct = Math.round((r.ratio - 1) * 100);
+      var cls = diff > 0 ? "over" : (diff < 0 ? "under" : "");
+      var diffTxt = diff === 0 ? "딱 맞아요" : ((diff > 0 ? "+" : "−") + fmtDur(Math.abs(diff)) + " (" + (pct > 0 ? "+" : "") + pct + "%)");
+      var hint = "";
+      if (r.n >= 3 && r.ratio >= 1.2) hint = " · 시간을 늘려볼까요? (" + fmtDur(r.avg) + " 정도)";
+      else if (r.n >= 3 && r.ratio <= 0.8) hint = " · 시간을 줄여도 좋아요 (" + fmtDur(r.avg) + " 정도)";
+      html += '<div class="time-review-row"><div class="time-review-top"><div class="time-review-name">' + escapeHtml(r.it.name || "이름 없음") + '</div>' +
+        '<div class="time-review-diff ' + cls + '">' + diffTxt + '</div></div>' +
+        '<div class="time-review-sub">지정 ' + fmtDur(r.it.seconds) + ' · 평균 ' + fmtDur(r.avg) + ' · ' + r.n + '회 (초과 ' + r.over + ' / 단축 ' + r.under + ')' + hint + '</div></div>';
+    });
+    return html;
   }
   function monthlyStatsHtml(flat) {
     var year = statsMonth.getFullYear(), month = statsMonth.getMonth();
@@ -4743,6 +4863,29 @@ attachSceneMeta("deu");
   var backfillMode = "date";
   var backfillItemId = null;
   var backfillItemCalMonth = null;
+  // 항목별 화면에서 아직 저장하지 않은 변경 { "YYYY-MM-DD": true(완료로)/false(해제로) }
+  var bfPending = {};
+  function bfPendingCount() { return Object.keys(bfPending).length; }
+  function saveBackfillPending() {
+    var id = backfillItemId;
+    var keys = Object.keys(bfPending);
+    if (!id || keys.length === 0) return;
+    var added = 0, removed = 0;
+    keys.forEach(function (dk) {
+      var want = bfPending[dk];
+      if (want === isDone(dk, id)) return;
+      applyDone(id, want, dk, false);   // 카운트다운 없이 처리 → 지정된 시간으로 기록
+      if (want) added++; else removed++;
+    });
+    bfPending = {};
+    saveState();
+    if (added > 0) checkRewardEvents();
+    var parts = [];
+    if (added) parts.push(added + "일 완료");
+    if (removed) parts.push(removed + "일 해제");
+    toast(parts.join(" · ") + " 저장했어요");
+    renderBackfillItemMode();
+  }
   function openBackfill() {
     var y = new Date(Date.now() - 86400000);
     backfillDate = keyFor(y);
@@ -4751,6 +4894,7 @@ attachSceneMeta("deu");
     input.value = backfillDate;
     backfillMode = "date";
     backfillItemId = null;
+    bfPending = {};
     showView("view-backfill");
     renderBackfillModeTabs();
     renderBackfillModeBody();
@@ -4911,7 +5055,7 @@ attachSceneMeta("deu");
         var itemsHtml = cat.items.map(function (it) {
           return '<div class="mini-item" data-action="backfill-pick-item" data-id="' + it.id + '">' +
             '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-            '<span class="mini-dur">' + fmtDur(it.seconds) + '</span></div>';
+            '<span class="mini-dur">' + (it.flex ? "불시" : fmtDur(it.seconds)) + '</span></div>';
         }).join("");
         html += '<div class="cat-card"><div class="cat-top"><div><div class="cat-name">' + escapeHtml(cat.name || "이름 없음") + '</div></div></div>' +
           '<div class="cat-items-preview">' + itemsHtml + '</div></div>';
@@ -4937,11 +5081,12 @@ attachSceneMeta("deu");
       var restCls = isRestDay(dk) ? ' rest' : '';
       if (!itemExistedOn(it, dk)) { cellsHtml += '<div class="mini-cal-cell na' + restCls + '">' + day + '</div>'; continue; }
       var due = isDueForDate(it, dk);
-      var done = isDone(dk, it.id);
+      var isPend = (bfPending[dk] !== undefined);
+      var done = isPend ? bfPending[dk] : isDone(dk, it.id);
       if (done) doneCount++;
       if (due) dueDaysCount++;
-      var otCls = (done && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
-      var cls = (done ? ' done' : (due ? '' : ' na')) + otCls + restCls;
+      var otCls = (done && !isPend && isOvertimeDone(dk, it.id)) ? ' overtime' : '';
+      var cls = (done ? ' done' : (due ? '' : ' na')) + otCls + restCls + (isPend ? ' pending' : '');
       cellsHtml += '<div class="mini-cal-cell tappable' + cls + '" data-action="backfill-toggle-cal-day" data-date="' + dk + '">' + day + '</div>';
     }
     var rate = dueDaysCount > 0 ? Math.round(doneCount / dueDaysCount * 100) : 0;
@@ -4956,7 +5101,11 @@ attachSceneMeta("deu");
         '<div class="mini-cal-days" style="gap:6px;">' + cellsHtml + '</div>' +
         '<div class="mini-cal-foot" style="margin-top:10px;"><span class="rate">' + (it.flex ? '불시' : rate + '%') + '</span><span>' + doneCount + '회</span></div>' +
       '</div>' +
-      '<div style="font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.5;">날짜를 탭할 때마다 완료 여부가 바뀌어요. 연한 칸(예정 없던 날)도 자유롭게 기록할 수 있어요.</div>';
+      (bfPendingCount() > 0
+        ? '<div class="bf-save-note">저장하지 않은 변경 ' + bfPendingCount() + '개 (노란 테두리)</div>' +
+          '<div class="bf-save-bar"><div class="btn" data-action="backfill-reset-pending">되돌리기</div><div class="btn primary" data-action="backfill-save-pending">저장</div></div>'
+        : '') +
+      '<div style="font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.5;">날짜를 탭해서 완료 여부를 바꾼 뒤 \'저장\'을 눌러야 반영돼요. 연한 칸(예정 없던 날)도 자유롭게 기록할 수 있어요. 카운트다운 없이 기록한 날은 지정된 시간으로 저장돼요.</div>';
     el.innerHTML = html;
   }
 
@@ -5025,20 +5174,28 @@ attachSceneMeta("deu");
       var tItemId = id;
       if (tCat) {
         var wasDone = isDone(todayKey(), tItemId);
-        var wasFull = catFullyDone(tCat);
-        markDone(tItemId, !wasDone);
-        if (!wasDone) checkRewardEvents();
-        renderHome();
-        if (!wasFull && catFullyDone(tCat)) {
-          var cardEl = document.querySelector('[data-cat-card="' + tCat.id + '"]');
-          if (cardEl) {
-            cardEl.classList.add("celebrate");
-            setTimeout(function () { cardEl.classList.remove("celebrate"); }, 550);
+        var doHomeToggle = function () {
+          var wasFull = catFullyDone(tCat);
+          markDone(tItemId, !wasDone);
+          if (!wasDone) checkRewardEvents();
+          renderHome();
+          if (!wasFull && catFullyDone(tCat)) {
+            var cardEl = document.querySelector('[data-cat-card="' + tCat.id + '"]');
+            if (cardEl) {
+              cardEl.classList.add("celebrate");
+              setTimeout(function () { cardEl.classList.remove("celebrate"); }, 550);
+            }
+            toast("카테고리 완료! 🎉");
           }
-          toast("카테고리 완료! 🎉");
-        }
+        };
+        if (wasDone) {
+          // 글씨가 작고 간격이 좁아 실수로 해제하기 쉬우므로 한 번 확인한다
+          var tIt = findItem(tItemId);
+          askConfirm("체크를 해제할까요?", "\"" + ((tIt && tIt.name) || "이름 없음") + "\" 완료 기록이 지워져요.", "해제", doHomeToggle);
+        } else doHomeToggle();
       }
     }
+
     else if (action === "run-category") { startRun(id); }
     else if (action === "close-run") { stopTimerInterval(); runState = null; showView("view-home"); renderHome(); }
     else if (action === "run-toggle-pause") {
@@ -5199,9 +5356,25 @@ attachSceneMeta("deu");
     else if (action === "open-backfill") { openBackfill(); }
     else if (action === "toggle-backfill-item") {
       var wasD = isDone(backfillDate, id);
-      markDone(id, !wasD, backfillDate);
-      if (!wasD) checkRewardEvents();
-      renderBackfill();
+      var bfDateNow = backfillDate;
+      var doBfToggle = function () {
+        markDone(id, !wasD, bfDateNow);
+        if (!wasD) checkRewardEvents();
+        renderBackfill();
+      };
+      if (wasD) {
+        var bfIt = findItem(id);
+        askConfirm("체크를 해제할까요?", "\"" + ((bfIt && bfIt.name) || "이름 없음") + "\" (" + bfDateNow + ") 기록이 지워져요.", "해제", doBfToggle);
+      } else doBfToggle();
+    }
+    else if (action === "backfill-mode" && backfillMode === "item" && id !== "item" && bfPendingCount() > 0) {
+      askConfirm("저장하지 않은 변경이 있어요", "저장하지 않고 이동하면 변경한 내용이 사라져요.", "이동", function () {
+        bfPending = {};
+        backfillMode = id;
+        if (id !== "memo") { memoSearchOpen = false; memoSearchQuery = ""; }
+        renderBackfillModeTabs();
+        renderBackfillModeBody();
+      });
     }
     else if (action === "backfill-mode") {
       backfillMode = id;
@@ -5210,20 +5383,29 @@ attachSceneMeta("deu");
       renderBackfillModeTabs();
       renderBackfillModeBody();
     }
-    else if (action === "backfill-pick-item") { backfillItemId = id; renderBackfillItemMode(); }
+    else if (action === "confirm-cancel") { closeConfirm(false); }
+    else if (action === "confirm-ok") { closeConfirm(true); }
+    else if (action === "backfill-pick-item") { bfPending = {}; backfillItemId = id; renderBackfillItemMode(); }
+    else if (action === "backfill-save-pending") { saveBackfillPending(); }
+    else if (action === "backfill-reset-pending") { bfPending = {}; renderBackfillItemMode(); }
     else if (action === "backfill-memo-goto") { goToBackfillDate(id); }
     else if (action === "toggle-memo-search") { toggleMemoSearch(); }
     else if (action === "success-cell-goto") { showView("view-backfill"); goToBackfillDate(id); }
-    else if (action === "backfill-item-back") { backfillItemId = null; renderBackfillItemMode(); }
+    else if (action === "backfill-item-back") {
+      if (bfPendingCount() > 0) askConfirm("저장하지 않은 변경이 있어요", "저장하지 않고 나가면 변경한 내용이 사라져요.", "나가기", function () { bfPending = {}; backfillItemId = null; renderBackfillItemMode(); });
+      else { backfillItemId = null; renderBackfillItemMode(); }
+    }
     else if (action === "backfill-cal-prev-month") { backfillItemCalMonth.setMonth(backfillItemCalMonth.getMonth() - 1); renderBackfillItemMode(); }
     else if (action === "backfill-cal-next-month") { backfillItemCalMonth.setMonth(backfillItemCalMonth.getMonth() + 1); renderBackfillItemMode(); }
     else if (action === "backfill-date-prev-day") { shiftBackfillDate(-1); }
     else if (action === "backfill-date-next-day") { shiftBackfillDate(1); }
     else if (action === "backfill-toggle-cal-day") {
+      // 항목별 화면은 바로 저장하지 않고 "저장" 버튼을 눌러야 반영된다 — 여기서는 대기 상태만 바꾼다.
       var bfDk = el.getAttribute("data-date");
-      var wasBfD = isDone(bfDk, backfillItemId);
-      markDone(backfillItemId, !wasBfD, bfDk);
-      if (!wasBfD) checkRewardEvents();
+      var bfNow = (bfPending[bfDk] !== undefined) ? bfPending[bfDk] : isDone(bfDk, backfillItemId);
+      var bfWant = !bfNow;
+      if (bfWant === isDone(bfDk, backfillItemId)) delete bfPending[bfDk];
+      else bfPending[bfDk] = bfWant;
       renderBackfillItemMode();
     }
     else if (action === "stats-view") { statsView = id; renderStats(); }
