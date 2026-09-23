@@ -421,6 +421,8 @@
   .growth-pop .emoji { font-size: 52px; line-height: 1; display: block; margin-bottom: 10px;
     animation: growthPop .55s cubic-bezier(.34,1.56,.64,1); }
   @keyframes growthPop { 0% { transform: scale(.3) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+  .book-open-anim .emoji { animation: bookOpenPop .7s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes bookOpenPop { 0% { transform: scaleX(.05) scaleY(.6); opacity: 0; } 55% { transform: scaleX(1.15) scaleY(1.05); opacity: 1; } 100% { transform: scaleX(1) scaleY(1); } }
   .growth-pop .label { font-family: 'Fraunces', serif; font-weight: 650; font-size: 17px; margin-bottom: 6px; }
   .growth-pop .sub { font-size: 12px; color: var(--ink-dim); margin-bottom: 16px; }
   .growth-bar-track { height: 8px; border-radius: 999px; background: var(--ring-track); overflow: hidden; margin: 4px 0 2px; }
@@ -767,16 +769,19 @@
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title">업적</div>
     <div class="achieve-level-row">
-      <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;">🌱</div>
+      <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;">📜</div>
       <div style="flex:1;">
         <div style="font-size:12.5px;font-weight:700;" id="achieveGrowthLabel"></div>
         <div class="growth-bar-track"><div class="growth-bar-fill" id="achieveLevelFill"></div></div>
         <div class="growth-pts" id="achieveLevelPts">0P</div>
       </div>
     </div>
+    <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 14px;"></div>
     <div class="btn" data-action="open-pending-rewards" style="margin-bottom:16px;">🎀 보상 상자 보기</div>
     <div class="section-label">배지 (최장 연속일 기준)</div>
     <div class="badge-grid" id="badgeGrid"></div>
+    <div class="section-label" style="margin-top:16px;">족보 트랙</div>
+    <div id="achieveGenealogy" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
     <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
     <div id="rewardLogList"></div>
     <div class="btn primary" data-action="achieve-close" style="margin-top:16px;">닫기</div>
@@ -861,9 +866,9 @@
 
 <div class="tp-overlay hidden" id="growthOverlay">
   <div class="tp-card growth-pop" style="max-width:280px;">
-    <span class="emoji" id="growthEmoji">🌱</span>
+    <span class="emoji" id="growthEmoji">📜</span>
     <div class="label" id="growthLabel"></div>
-    <div class="sub" id="growthSub">쑥쑥 자라고 있어요</div>
+    <div class="sub" id="growthSub"></div>
     <div class="btn primary" data-action="growth-close">좋아요!</div>
   </div>
 </div>
@@ -1071,10 +1076,20 @@
   function openAchievements() {
     var gam = computeGamification();
     var g = computeGrowth(gam.points);
-    document.getElementById("achieveLevelNum").textContent = g.stage.emoji;
+    document.getElementById("achieveLevelNum").innerHTML = bibleIconSVG(g.milestone.icon, 34);
     document.getElementById("achieveGrowthLabel").textContent = growthFullLabel(g);
     document.getElementById("achieveLevelPts").textContent = g.ptsIntoStage + "/" + g.ptsForNext + "P";
     document.getElementById("achieveLevelFill").style.width = Math.round(g.ptsIntoStage / g.ptsForNext * 100) + "%";
+    var bookProgEl = document.getElementById("achieveBookProgress");
+    if (bookProgEl) bookProgEl.textContent = g.milestone.ref + (g.milestone.text ? " · " + g.milestone.text : "") +
+      "  (" + (g.bookIndex + 1) + "/" + g.totalBooks + "권 · " + g.book.section + ")";
+    var genEl = document.getElementById("achieveGenealogy");
+    if (genEl) {
+      var gen = bibleUnlockedGenealogy();
+      genEl.innerHTML = gen.length ? gen.map(function (p) {
+        return '<span class="reward-idea-chip" title="' + escapeHtml(p.relation) + '">' + escapeHtml(p.name) + '</span>';
+      }).join("") : '<span style="font-size:11.5px;color:var(--ink-dim);">아직 등장한 인물이 없어요</span>';
+    }
     var longest = computeLongestStreak();
     var grid = document.getElementById("badgeGrid");
     grid.innerHTML = BADGE_THRESHOLDS.map(function (b) {
@@ -1455,7 +1470,7 @@
       celebratedBadgeDays: [],
       bonusPoints: 0,
       openedBoxes: {},
-      lastSeenStageIdx: 0,
+      lastSeenBibleKey: 0,
       lastSeenGen: 1,
       quarterGoalPoints: null,
       celebratedQuarterGoals: [],
@@ -1545,12 +1560,12 @@
         p.celebratedBadgeDays = BADGE_THRESHOLDS.filter(function (b) { return longestSoFar >= b.days; }).map(function (b) { return b.days; });
       }
     }
-    // 나무→마을 성장 시스템 도입 시점 마이그레이션: 기존에 이미 쌓아온 포인트만큼 성장 단계가
+    // 성경 마일스톤 시스템 도입/변경 시점 마이그레이션: 기존에 이미 쌓아온 포인트만큼 마일스톤이
     // 뒤늦게 한꺼번에 팝업으로 쏟아지지 않도록, 처음 보는 상태라면 지금까지를 기준선으로 맞춰둔다.
-    if (typeof p.lastSeenStageIdx !== "number" || typeof p.lastSeenGen !== "number") {
+    if (typeof p.lastSeenBibleKey !== "number" || typeof p.lastSeenGen !== "number") {
       state = p;
       var gNow = computeGrowth(computeGamification().points);
-      p.lastSeenStageIdx = gNow.stageIndex;
+      p.lastSeenBibleKey = gNow.bookIndex * 1000 + gNow.milestoneIndex;
       p.lastSeenGen = gNow.gen;
     }
     return p;
@@ -2014,9 +2029,9 @@
   var BADGE_THRESHOLDS = [
     { days: 3, label: "불씨", emoji: "🔥" },
     { days: 7, label: "일주일", emoji: "⭐" },
-    { days: 14, label: "2주", emoji: "🌱" },
-    { days: 30, label: "한 달", emoji: "🌿" },
-    { days: 60, label: "두 달", emoji: "🌳" },
+    { days: 14, label: "2주", emoji: "🕊️" },
+    { days: 30, label: "한 달", emoji: "⛺" },
+    { days: 60, label: "두 달", emoji: "⛰️" },
     { days: 100, label: "백 일", emoji: "🏆" },
     { days: 200, label: "200일", emoji: "💎" },
     { days: 365, label: "1년", emoji: "👑" }
@@ -2049,63 +2064,402 @@
     return { points: points, level: level, ptsIntoLevel: remaining, ptsForNext: need };
   }
 
-  // ---- 성장(나무→마을) 시스템: 레벨업을 대체하는 장기 성장 여정 ----
-  // 창세기(씨앗·나무·동물)에서 시작해 갈라디아서 5:22-23의 성령의 9가지 열매를 거쳐,
-  // 요한계시록 21-22장의 새 예루살렘(성문·보석·생명나무·생명강) 이미지로 이어진다.
-  // 마지막 단계 이후에는 CYCLE_SIZE 포인트마다 "새로운 숲"이 시작되어 사실상 끝이 없다.
-  var GROWTH_STAGES = [
-    { label: "씨앗", emoji: "🌰", need: 0 },
-    { label: "새싹", emoji: "🌱", need: 15 },
-    { label: "어린 나무", emoji: "🌿", need: 40 },
-    { label: "나무", emoji: "🌳", need: 90 },
-    { label: "시냇가의 나무", emoji: "💧", need: 160 },
-    { label: "첫 열매 · 사랑", emoji: "❤️", need: 260 },
-    { label: "희락의 열매", emoji: "😊", need: 390 },
-    { label: "화평의 열매", emoji: "🕊️", need: 550 },
-    { label: "오래참음의 열매", emoji: "⏳", need: 750 },
-    { label: "자비의 열매", emoji: "🤝", need: 1000 },
-    { label: "양선의 열매", emoji: "🌼", need: 1300 },
-    { label: "충성의 열매", emoji: "🛡️", need: 1650 },
-    { label: "온유의 열매", emoji: "🍃", need: 2050 },
-    { label: "절제의 열매 (아홉 열매 완성)", emoji: "🍇", need: 2500 },
-    { label: "작은 숲", emoji: "🌲", need: 3000 },
-    { label: "마을의 샘", emoji: "⛲", need: 3600 },
-    { label: "첫 집", emoji: "🏠", need: 4300 },
-    { label: "커지는 마을", emoji: "🏘️", need: 5100 },
-    { label: "첫째 성문", emoji: "🚪", need: 6100 },
-    { label: "열두 성문", emoji: "🏛️", need: 7300 },
-    { label: "보석 성벽", emoji: "💎", need: 8700 },
-    { label: "성벽 완성", emoji: "🔷", need: 10300 },
-    { label: "생명나무와 생명강", emoji: "🌟", need: 12000 }
+  var BIBLE_BOOKS = [
+    { id: "gen", name: "창세기", testament: "OT", section: "모세오경", chapters: 50, points: 505 },
+    { id: "exo", name: "출애굽기", testament: "OT", section: "모세오경", chapters: 40, points: 404 },
+    { id: "lev", name: "레위기", testament: "OT", section: "모세오경", chapters: 27, points: 272 },
+    { id: "num", name: "민수기", testament: "OT", section: "모세오경", chapters: 36, points: 363 },
+    { id: "deu", name: "신명기", testament: "OT", section: "모세오경", chapters: 34, points: 343 },
+    { id: "jos", name: "여호수아", testament: "OT", section: "역사서", chapters: 24, points: 242 },
+    { id: "jdg", name: "사사기", testament: "OT", section: "역사서", chapters: 21, points: 212 },
+    { id: "rut", name: "룻기", testament: "OT", section: "역사서", chapters: 4, points: 40 },
+    { id: "1sa", name: "사무엘상", testament: "OT", section: "역사서", chapters: 31, points: 313 },
+    { id: "2sa", name: "사무엘하", testament: "OT", section: "역사서", chapters: 24, points: 242 },
+    { id: "1ki", name: "열왕기상", testament: "OT", section: "역사서", chapters: 22, points: 222 },
+    { id: "2ki", name: "열왕기하", testament: "OT", section: "역사서", chapters: 25, points: 252 },
+    { id: "1ch", name: "역대상", testament: "OT", section: "역사서", chapters: 29, points: 293 },
+    { id: "2ch", name: "역대하", testament: "OT", section: "역사서", chapters: 36, points: 363 },
+    { id: "ezr", name: "에스라", testament: "OT", section: "역사서", chapters: 10, points: 101 },
+    { id: "neh", name: "느헤미야", testament: "OT", section: "역사서", chapters: 13, points: 131 },
+    { id: "est", name: "에스더", testament: "OT", section: "역사서", chapters: 10, points: 101 },
+    { id: "job", name: "욥기", testament: "OT", section: "시가서", chapters: 42, points: 424 },
+    { id: "psa", name: "시편", testament: "OT", section: "시가서", chapters: 150, points: 1472 },
+    { id: "pro", name: "잠언", testament: "OT", section: "시가서", chapters: 31, points: 313 },
+    { id: "ecc", name: "전도서", testament: "OT", section: "시가서", chapters: 12, points: 121 },
+    { id: "sng", name: "아가", testament: "OT", section: "시가서", chapters: 8, points: 81 },
+    { id: "isa", name: "이사야", testament: "OT", section: "대선지서", chapters: 66, points: 666 },
+    { id: "jer", name: "예레미야", testament: "OT", section: "대선지서", chapters: 52, points: 525 },
+    { id: "lam", name: "예레미야애가", testament: "OT", section: "대선지서", chapters: 5, points: 50 },
+    { id: "ezk", name: "에스겔", testament: "OT", section: "대선지서", chapters: 48, points: 484 },
+    { id: "dan", name: "다니엘", testament: "OT", section: "대선지서", chapters: 12, points: 121 },
+    { id: "hos", name: "호세아", testament: "OT", section: "소선지서", chapters: 14, points: 141 },
+    { id: "jol", name: "요엘", testament: "OT", section: "소선지서", chapters: 3, points: 30 },
+    { id: "amo", name: "아모스", testament: "OT", section: "소선지서", chapters: 9, points: 91 },
+    { id: "oba", name: "오바댜", testament: "OT", section: "소선지서", chapters: 1, points: 20 },
+    { id: "jon", name: "요나", testament: "OT", section: "소선지서", chapters: 4, points: 40 },
+    { id: "mic", name: "미가", testament: "OT", section: "소선지서", chapters: 7, points: 71 },
+    { id: "nam", name: "나훔", testament: "OT", section: "소선지서", chapters: 3, points: 30 },
+    { id: "hab", name: "하박국", testament: "OT", section: "소선지서", chapters: 3, points: 30 },
+    { id: "zep", name: "스바냐", testament: "OT", section: "소선지서", chapters: 3, points: 30 },
+    { id: "hag", name: "학개", testament: "OT", section: "소선지서", chapters: 2, points: 20 },
+    { id: "zec", name: "스가랴", testament: "OT", section: "소선지서", chapters: 14, points: 141 },
+    { id: "mal", name: "말라기", testament: "OT", section: "소선지서", chapters: 4, points: 40 },
+    { id: "mat", name: "마태복음", testament: "NT", section: "복음서", chapters: 28, points: 283 },
+    { id: "mrk", name: "마가복음", testament: "NT", section: "복음서", chapters: 16, points: 161 },
+    { id: "luk", name: "누가복음", testament: "NT", section: "복음서", chapters: 24, points: 242 },
+    { id: "jhn", name: "요한복음", testament: "NT", section: "복음서", chapters: 21, points: 212 },
+    { id: "act", name: "사도행전", testament: "NT", section: "사도행전", chapters: 28, points: 283 },
+    { id: "rom", name: "로마서", testament: "NT", section: "바울서신", chapters: 16, points: 161 },
+    { id: "1co", name: "고린도전서", testament: "NT", section: "바울서신", chapters: 16, points: 161 },
+    { id: "2co", name: "고린도후서", testament: "NT", section: "바울서신", chapters: 13, points: 131 },
+    { id: "gal", name: "갈라디아서", testament: "NT", section: "바울서신", chapters: 6, points: 61 },
+    { id: "eph", name: "에베소서", testament: "NT", section: "바울서신", chapters: 6, points: 61 },
+    { id: "php", name: "빌립보서", testament: "NT", section: "바울서신", chapters: 4, points: 40 },
+    { id: "col", name: "골로새서", testament: "NT", section: "바울서신", chapters: 4, points: 40 },
+    { id: "1th", name: "데살로니가전서", testament: "NT", section: "바울서신", chapters: 5, points: 50 },
+    { id: "2th", name: "데살로니가후서", testament: "NT", section: "바울서신", chapters: 3, points: 30 },
+    { id: "1ti", name: "디모데전서", testament: "NT", section: "바울서신", chapters: 6, points: 61 },
+    { id: "2ti", name: "디모데후서", testament: "NT", section: "바울서신", chapters: 4, points: 40 },
+    { id: "tit", name: "디도서", testament: "NT", section: "바울서신", chapters: 3, points: 30 },
+    { id: "phm", name: "빌레몬서", testament: "NT", section: "바울서신", chapters: 1, points: 20 },
+    { id: "heb", name: "히브리서", testament: "NT", section: "일반서신", chapters: 13, points: 131 },
+    { id: "jas", name: "야고보서", testament: "NT", section: "일반서신", chapters: 5, points: 50 },
+    { id: "1pe", name: "베드로전서", testament: "NT", section: "일반서신", chapters: 5, points: 50 },
+    { id: "2pe", name: "베드로후서", testament: "NT", section: "일반서신", chapters: 3, points: 30 },
+    { id: "1jn", name: "요한1서", testament: "NT", section: "일반서신", chapters: 5, points: 50 },
+    { id: "2jn", name: "요한2서", testament: "NT", section: "일반서신", chapters: 1, points: 20 },
+    { id: "3jn", name: "요한3서", testament: "NT", section: "일반서신", chapters: 1, points: 20 },
+    { id: "jud", name: "유다서", testament: "NT", section: "일반서신", chapters: 1, points: 20 },
+    { id: "rev", name: "요한계시록", testament: "NT", section: "계시록", chapters: 22, points: 222 },
   ];
-  var GROWTH_CYCLE_SIZE = 6000; // 마지막 단계 이후, 이만큼씩 쌓일 때마다 새 숲(세대)이 시작됨
-  function computeGrowth(points) {
-    var stages = GROWTH_STAGES, idx = 0;
-    for (var i = 0; i < stages.length; i++) { if (points >= stages[i].need) idx = i; else break; }
-    var stage = stages[idx], next = stages[idx + 1] || null;
-    if (next) {
-      return { gen: 1, stage: stage, stageIndex: idx, totalStages: stages.length, next: next,
-        ptsIntoStage: points - stage.need, ptsForNext: next.need - stage.need, final: false };
+  var GENESIS_MILESTONES = [
+    { id: "gen01", need: 0,   ref: "창세기 1:3-5",   title: "빛이 있으라",       icon: "light",
+      text: "어둠 위에 말씀 한 마디, 빛이 갈라져 나오다. 빛과 어둠이 처음으로 나뉜 첫째 날." },
+    { id: "gen02", need: 20,  ref: "창세기 1:6-8",   title: "궁창, 하늘이 되다", icon: "sky",
+      text: "물과 물 사이에 궁창이 세워지다. 위의 물과 아래의 물이 갈라져 하늘이 열린 둘째 날." },
+    { id: "gen03", need: 40,  ref: "창세기 1:9-13",  title: "땅과 바다, 첫 초록", icon: "land",
+      text: "물이 한 곳으로 모이니 마른 땅이 드러나고, 그 위에 풀과 나무가 씨를 맺으며 돋아난 셋째 날." },
+    { id: "gen04", need: 62,  ref: "창세기 1:14-19", title: "해와 달과 별들",     icon: "lights",
+      text: "하늘에 빛나는 것들이 걸려 낮과 밤을, 계절과 해를 나누다. 넷째 날, 하늘이 시계가 되다." },
+    { id: "gen05", need: 85,  ref: "창세기 1:20-23", title: "물고기와 새들",      icon: "sea",
+      text: "바다가 생명으로 끓어오르고 하늘엔 날개가 가득하다. 물과 공중이 처음으로 살아 움직인 다섯째 날." },
+    { id: "gen06", need: 110, ref: "창세기 1:24-31", title: "땅의 짐승과 사람",   icon: "beasts",
+      text: "땅이 짐승들로 채워지고, 마침내 하나님의 형상을 따라 사람이 지어지다. 여섯째 날, 창조의 정점." },
+    { id: "gen07", need: 135, ref: "창세기 2:1-3",   title: "일곱째 날, 안식",    icon: "rest",
+      text: "지으신 모든 일을 마치시고 쉬시다. 안식이 복 받고 거룩하게 되어 창조의 왕관이 되다." },
+    { id: "gen08", need: 150, ref: "창세기 2:7-17",  title: "에덴, 사람을 두시다", icon: "eden",
+      text: "흙으로 지은 사람에게 생기를 불어넣으시니 생령이 되다. 동산 한가운데 생명나무가 서 있다.",
+      genealogy: [{ name: "아담", relation: "흙으로 지음받은 첫 사람" }] },
+    { id: "gen09", need: 165, ref: "창세기 2:18-25", title: "돕는 배필, 하와",    icon: "eve",
+      text: "혼자 있는 것이 좋지 못하므로, 아담의 갈빗대로 여자를 지어 그에게로 이끌어 오시다.",
+      genealogy: [{ name: "하와", relation: "아담의 아내, 모든 산 자의 어머니" }] },
+    { id: "gen10", need: 185, ref: "창세기 3:1-24",  title: "선악과, 타락",       icon: "fall",
+      text: "먹지 말라 하신 열매를 손에 쥐던 날, 눈이 밝아졌으나 동산 문은 닫히고 만다." },
+    { id: "gen11", need: 205, ref: "창세기 4:1-16",  title: "가인과 아벨",        icon: "altar",
+      text: "제단 위, 받아들여진 제물과 거부된 제물 사이에서 분노가 자라 형제의 피가 땅에 스미다.",
+      genealogy: [{ name: "가인", relation: "아담의 맏아들" }, { name: "아벨", relation: "아담의 둘째 아들" }] },
+    { id: "gen12", need: 225, ref: "창세기 6:9-22",  title: "노아, 방주를 지으라", icon: "ark",
+      text: "땅이 부패함으로 가득할 때, 한 사람이 하나님과 동행하며 살아남을 배를 짓기 시작하다.",
+      genealogy: [{ name: "노아", relation: "아담의 10대손, 하나님과 동행한 의인" }] },
+    { id: "gen13", need: 250, ref: "창세기 7:1-24",  title: "온 땅을 덮은 홍수",  icon: "flood",
+      text: "하늘의 창이 열리고 땅의 깊은 샘이 터지니, 물이 사십 주야 그치지 않고 세상을 삼키다." },
+    { id: "gen14", need: 270, ref: "창세기 9:8-17",  title: "무지개, 언약의 표",  icon: "rainbow",
+      text: "다시는 물로 심판하지 않겠다는 약속이 구름 사이 무지개로 걸리다. 새 땅 위, 새 시작.",
+      genealogy: [{ name: "셈", relation: "노아의 아들" }, { name: "함", relation: "노아의 아들" }, { name: "야벳", relation: "노아의 아들" }] },
+    { id: "gen15", need: 290, ref: "창세기 11:1-9",  title: "바벨탑, 흩어진 언어", icon: "tower",
+      text: "하늘까지 닿으려던 탑 앞에서 언어가 뒤섞이고, 사람들은 온 땅 위로 흩어지다." },
+    { id: "gen16", need: 310, ref: "창세기 12:1-9",  title: "아브람을 부르시다",  icon: "call",
+      text: "네 본토, 친척, 아비 집을 떠나라. 알지 못하는 땅을 향해 한 사람이 짐을 꾸리다.",
+      genealogy: [{ name: "아브라함", relation: "셈의 후손, 믿음의 조상으로 부름받음" }] },
+    { id: "gen17", need: 330, ref: "창세기 15:1-21", title: "언약, 하늘의 별처럼", icon: "covenant",
+      text: "하늘을 보라, 저 별들을 셀 수 있겠느냐. 네 자손이 그와 같으리라는 약속이 새겨지다." },
+    { id: "gen18", need: 350, ref: "창세기 19:1-29", title: "소돔과 고모라",      icon: "fire",
+      text: "유황과 불이 하늘로부터 쏟아지던 날, 뒤돌아본 자는 소금 기둥이 되어 남다." },
+    { id: "gen19", need: 370, ref: "창세기 21:1-7",  title: "웃음, 이삭의 출생",  icon: "birth",
+      text: "여호와께서 말씀하신 대로 행하시니, 노년의 사라가 아들을 안고 웃음을 되찾다.",
+      genealogy: [{ name: "이삭", relation: "아브라함과 사라의 아들, 약속으로 태어난 자녀" }] },
+    { id: "gen20", need: 390, ref: "창세기 22:1-19", title: "모리아 산, 순종의 시험", icon: "akedah",
+      text: "네 아들, 네 독자를 번제로 드리라. 산 위에서 칼이 멈추고, 수풀에 걸린 숫양이 대신하다." },
+    { id: "gen21", need: 410, ref: "창세기 25장,27장", title: "장자권과 축복",    icon: "birthright",
+      text: "붉은 죽 한 그릇에 장자의 명분이 넘어가고, 아비의 축복은 손끝의 계략을 타고 흐르다.",
+      genealogy: [{ name: "에서", relation: "이삭의 맏아들" }, { name: "야곱", relation: "이삭의 둘째 아들, 훗날 이스라엘" }] },
+    { id: "gen22", need: 430, ref: "창세기 28:10-22", title: "야곱의 사다리",     icon: "ladder",
+      text: "돌베개를 베고 잠든 밤, 하늘까지 닿은 사다리 위로 하나님의 사자들이 오르내리다." },
+    { id: "gen23", need: 450, ref: "창세기 32:22-32", title: "얍복강, 천사와 씨름", icon: "wrestle",
+      text: "날이 새도록 씨름하며 놓지 않던 밤, 환도뼈가 위골되어도 축복을 붙들고 이스라엘이 되다." },
+    { id: "gen24", need: 465, ref: "창세기 37:1-11", title: "채색옷과 꿈",        icon: "coat",
+      text: "아버지가 입혀준 채색옷 위로, 형들의 곡식단이 절하는 꿈이 시기의 불씨를 당기다.",
+      genealogy: [{ name: "요셉", relation: "야곱의 열한째 아들, 라헬의 첫 아들" }] },
+    { id: "gen25", need: 478, ref: "창세기 37:12-36", title: "구덩이, 팔려가다",  icon: "pit",
+      text: "형제들의 손에 구덩이로 던져지고, 은 이십 개에 팔려 애굽으로 끌려가는 길이 시작되다." },
+    { id: "gen26", need: 490, ref: "창세기 41장",     title: "총리가 된 노예",    icon: "throne",
+      text: "옥에서 총리의 자리로, 꿈을 해석하던 손이 이제 애굽 온 땅의 양식을 쥐다." },
+    { id: "gen27", need: 498, ref: "창세기 45-46장",  title: "형제들과의 재회",   icon: "embrace",
+      text: "나는 요셉입니다 — 그 한 마디에 얼어붙었던 형제들이 목을 끌어안고 눈물로 화해하다." },
+    { id: "gen28", need: 505, ref: "창세기 50장",     title: "요셉의 유언, 창세기의 끝", icon: "scroll",
+      text: "하나님이 너희를 돌보시리니 내 뼈를 메고 올라가라 — 약속을 남기고 창세기가 닫히다." }
+  ];
+  var BOOK_MILESTONES = { gen: GENESIS_MILESTONES };
+  // ---- 재사용 SVG 부품 (매번 새로 그리지 않고 조합) ----
+  var SVG_P = {
+    rays: function (cx, cy, r1, r2, n, c) {
+      var s = "";
+      for (var i = 0; i < n; i++) {
+        var a = (Math.PI * 2 * i) / n;
+        s += '<line x1="' + (cx + r1 * Math.cos(a)) + '" y1="' + (cy + r1 * Math.sin(a)) +
+          '" x2="' + (cx + r2 * Math.cos(a)) + '" y2="' + (cy + r2 * Math.sin(a)) +
+          '" stroke="' + c + '" stroke-width="3" stroke-linecap="round"/>';
+      }
+      return s;
+    },
+    sun: function (cx, cy, r, c) {
+      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + c + '"/>' + SVG_P.rays(cx, cy, r + 4, r + 12, 8, c);
+    },
+    moon: function (cx, cy, r, c) {
+      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + c + '"/>' +
+        '<circle cx="' + (cx + r * 0.5) + '" cy="' + (cy - r * 0.3) + '" r="' + (r * 0.85) + '" fill="var(--card,#fff)"/>';
+    },
+    star: function (cx, cy, r, c) {
+      var pts = [], n = 5;
+      for (var i = 0; i < n * 2; i++) {
+        var rad = i % 2 === 0 ? r : r * 0.42;
+        var a = (Math.PI * i) / n - Math.PI / 2;
+        pts.push((cx + rad * Math.cos(a)) + "," + (cy + rad * Math.sin(a)));
+      }
+      return '<polygon points="' + pts.join(" ") + '" fill="' + c + '"/>';
+    },
+    stars: function (pts, r, c) { return pts.map(function (p) { return SVG_P.star(p[0], p[1], r, c); }).join(""); },
+    wave: function (y, c, opacity) {
+      return '<path d="M0 ' + y + ' Q 15 ' + (y - 6) + ' 30 ' + y + ' T 60 ' + y + ' T 90 ' + y + ' T 120 ' + y +
+        ' V100 H0 Z" fill="' + c + '" opacity="' + (opacity || 1) + '"/>';
+    },
+    ground: function (y, c) { return '<rect x="-5" y="' + y + '" width="110" height="' + (100 - y) + '" fill="' + c + '"/>'; },
+    tree: function (cx, cy, c1, c2) {
+      return '<rect x="' + (cx - 3) + '" y="' + (cy - 6) + '" width="6" height="20" fill="' + c1 + '"/>' +
+        '<circle cx="' + cx + '" cy="' + (cy - 16) + '" r="16" fill="' + c2 + '"/>';
+    },
+    plant: function (cx, cy, c) {
+      return '<path d="M' + cx + ' ' + cy + ' q -6 -14 -2 -22 M' + cx + ' ' + cy + ' q 6 -12 3 -24 M' + cx + ' ' + cy +
+        ' q 0 -18 0 -26" stroke="' + c + '" stroke-width="3" fill="none" stroke-linecap="round"/>';
+    },
+    flame: function (cx, cy, r, c) {
+      return '<path d="M' + cx + ' ' + (cy + r) + ' C ' + (cx - r) + ' ' + (cy + r * 0.4) + ' ' + (cx - r * 0.6) + ' ' + (cy - r) +
+        ' ' + cx + ' ' + (cy - r * 1.6) + ' C ' + (cx + r * 0.6) + ' ' + (cy - r) + ' ' + (cx + r) + ' ' + (cy + r * 0.4) +
+        ' ' + cx + ' ' + (cy + r) + ' Z" fill="' + c + '"/>';
+    },
+    bird: function (cx, cy, c) {
+      return '<path d="M' + (cx - 10) + ' ' + cy + ' Q ' + cx + ' ' + (cy - 9) + ' ' + (cx + 10) + ' ' + cy +
+        ' M' + (cx - 10) + ' ' + (cy + 4) + ' Q ' + cx + ' ' + (cy - 5) + ' ' + (cx + 10) + ' ' + (cy + 4) +
+        '" stroke="' + c + '" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+    },
+    fish: function (cx, cy, c) {
+      return '<path d="M' + (cx - 12) + ' ' + cy + ' Q ' + cx + ' ' + (cy - 8) + ' ' + (cx + 10) + ' ' + cy +
+        ' Q ' + cx + ' ' + (cy + 8) + ' ' + (cx - 12) + ' ' + cy + ' Z" fill="' + c + '"/>' +
+        '<polygon points="' + (cx + 10) + ',' + cy + ' ' + (cx + 17) + ',' + (cy - 5) + ' ' + (cx + 17) + ',' + (cy + 5) + '" fill="' + c + '"/>';
+    },
+    animal: function (cx, cy, c) {
+      return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="15" ry="9" fill="' + c + '"/>' +
+        '<circle cx="' + (cx + 14) + '" cy="' + (cy - 4) + '" r="6" fill="' + c + '"/>' +
+        '<rect x="' + (cx - 10) + '" y="' + (cy + 6) + '" width="3" height="10" fill="' + c + '"/>' +
+        '<rect x="' + (cx + 6) + '" y="' + (cy + 6) + '" width="3" height="10" fill="' + c + '"/>';
+    },
+    person: function (cx, cy, c, scale) {
+      scale = scale || 1;
+      return '<circle cx="' + cx + '" cy="' + (cy - 14 * scale) + '" r="' + (6 * scale) + '" fill="' + c + '"/>' +
+        '<path d="M' + (cx - 8 * scale) + ' ' + (cy + 10 * scale) + ' Q ' + cx + ' ' + (cy - 4 * scale) + ' ' + (cx + 8 * scale) + ' ' + (cy + 10 * scale) +
+        ' Z" fill="' + c + '"/>';
+    },
+    ark: function (cx, cy, c1, c2) {
+      return '<path d="M' + (cx - 28) + ' ' + cy + ' Q ' + cx + ' ' + (cy + 16) + ' ' + (cx + 28) + ' ' + cy +
+        ' L ' + (cx + 24) + ' ' + (cy - 14) + ' L ' + (cx - 24) + ' ' + (cy - 14) + ' Z" fill="' + c1 + '"/>' +
+        '<rect x="' + (cx - 14) + '" y="' + (cy - 24) + '" width="28" height="10" rx="2" fill="' + c2 + '"/>';
+    },
+    ladder: function (cx, cy, c) {
+      var s = '<line x1="' + (cx - 10) + '" y1="' + (cy - 30) + '" x2="' + (cx - 6) + '" y2="' + (cy + 30) + '" stroke="' + c + '" stroke-width="3"/>' +
+        '<line x1="' + (cx + 10) + '" y1="' + (cy - 30) + '" x2="' + (cx + 6) + '" y2="' + (cy + 30) + '" stroke="' + c + '" stroke-width="3"/>';
+      for (var i = 0; i < 6; i++) {
+        var y = cy - 26 + i * 11;
+        s += '<line x1="' + (cx - 9 + i * 0.6) + '" y1="' + y + '" x2="' + (cx + 9 - i * 0.6) + '" y2="' + y + '" stroke="' + c + '" stroke-width="2.5"/>';
+      }
+      return s;
+    },
+    rainbow: function (cx, cy, c) {
+      var cols = ["#e05a5a", "#e8a13a", "#e0d24a", "#5ab06a", "#4a90c4", "#7a5ac4"];
+      var s = "";
+      for (var i = 0; i < cols.length; i++) {
+        s += '<path d="M ' + (cx - 46 + i * 1.5) + ' ' + cy + ' A ' + (46 - i * 7.2) + ' ' + (46 - i * 7.2) + ' 0 0 1 ' +
+          (cx + 46 - i * 1.5) + ' ' + cy + '" fill="none" stroke="' + cols[i] + '" stroke-width="6"/>';
+      }
+      return s;
+    },
+    tower: function (cx, cy, c) {
+      var s = "";
+      for (var i = 0; i < 4; i++) {
+        var w = 30 - i * 5, y = cy + 8 - i * 11;
+        s += '<rect x="' + (cx - w / 2) + '" y="' + y + '" width="' + w + '" height="11" fill="' + c + '" opacity="' + (0.6 + i * 0.1) + '"/>';
+      }
+      return s;
+    },
+    coat: function (cx, cy) {
+      var cols = ["#c4574a", "#d99a3a", "#d9cd3a", "#5ba36a", "#4a86b0", "#7a5aa8"];
+      var s = '<path d="M' + (cx - 12) + ' ' + (cy - 16) + ' L' + (cx + 12) + ' ' + (cy - 16) + ' L' + (cx + 12) + ' ' + (cy + 16) + ' L' + (cx - 12) + ' ' + (cy + 16) + ' Z" fill="#fff" opacity="0"/>';
+      for (var i = 0; i < cols.length; i++) {
+        s += '<rect x="' + (cx - 12 + i * 4) + '" y="' + (cy - 16) + '" width="4" height="32" fill="' + cols[i] + '"/>';
+      }
+      return s;
+    },
+    crown: function (cx, cy, c) {
+      return '<polygon points="' + (cx - 16) + ',' + (cy + 8) + ' ' + (cx - 16) + ',' + (cy - 4) + ' ' + (cx - 8) + ',' + (cy + 4) +
+        ' ' + cx + ',' + (cy - 10) + ' ' + (cx + 8) + ',' + (cy + 4) + ' ' + (cx + 16) + ',' + (cy - 4) + ' ' + (cx + 16) + ',' + (cy + 8) +
+        '" fill="' + c + '"/>';
+    },
+    scroll: function (cx, cy, c) {
+      return '<rect x="' + (cx - 16) + '" y="' + (cy - 12) + '" width="32" height="24" rx="2" fill="' + c + '"/>' +
+        '<circle cx="' + (cx - 16) + '" cy="' + cy + '" r="4" fill="' + c + '"/>' +
+        '<circle cx="' + (cx + 16) + '" cy="' + cy + '" r="4" fill="' + c + '"/>';
+    },
+    altarFire: function (cx, cy, c1, c2) {
+      return '<path d="M' + (cx - 16) + ' ' + (cy + 14) + ' L' + (cx - 10) + ' ' + (cy - 4) + ' L' + (cx + 10) + ' ' + (cy - 4) +
+        ' L' + (cx + 16) + ' ' + (cy + 14) + ' Z" fill="' + c1 + '"/>' + SVG_P.flame(cx, cy - 10, 9, c2);
+    },
+    well: function (cx, cy, c) {
+      return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="16" ry="7" fill="' + c + '" opacity="0.5"/>' +
+        '<path d="M' + (cx - 16) + ' ' + cy + ' L' + (cx - 12) + ' ' + (cy + 20) + ' L' + (cx + 12) + ' ' + (cy + 20) +
+        ' L' + (cx + 16) + ' ' + cy + '" fill="none" stroke="' + c + '" stroke-width="2.5"/>';
     }
-    var extra = points - stage.need;
-    var gen = 2 + Math.floor(extra / GROWTH_CYCLE_SIZE);
-    var intoGen = extra % GROWTH_CYCLE_SIZE;
-    return { gen: gen, stage: stage, stageIndex: idx, totalStages: stages.length, next: null,
-      ptsIntoStage: intoGen, ptsForNext: GROWTH_CYCLE_SIZE, final: true };
-  }
-  function growthShortLabel(g) { return g.stage.emoji; }
-  function growthFullLabel(g) { return g.final ? (g.stage.label + " · " + g.gen + "번째 숲") : g.stage.label; }
+  };
 
-  // ---- self-reward events (스트릭 배지 = 드문 보상, "내가 나에게 준 선물" 로그에 기록됨) ----
-  var REWARD_IDEAS = [
-    "☕ 좋아하는 음료 한 잔", "📖 읽고 싶던 책 사기", "🍫 작은 간식 사 먹기",
-    "🛍️ 고민하던 물건 사기", "🎧 좋아하는 음악 들으며 산책", "🛌 낮잠 30분 자기", "✨ 오늘은 일찍 쉬기"
-  ];
+  var GOLD = "#c9a24a", DEEP = "#3a6b8a", SAGE = "#5a9a6a", DUSK = "#7a5aa8", EMBER = "#c4574a", SKYC = "#6a9fd4", NIGHT = "#2e3b55";
+
+  var BIBLE_ICONS = {
+    light: function () { return SVG_P.rays(50, 50, 8, 42, 12, GOLD) + '<circle cx="50" cy="50" r="10" fill="#fff8e0"/>'; },
+    sky: function () { return SVG_P.wave(30, SKYC, .5) + SVG_P.wave(68, DEEP, .8); },
+    land: function () { return SVG_P.wave(70, DEEP, .6) + SVG_P.ground(72, SAGE) + SVG_P.plant(40, 74, "#2f6b3f") + SVG_P.plant(60, 76, "#2f6b3f") + SVG_P.plant(75, 74, "#2f6b3f"); },
+    lights: function () { return SVG_P.sun(32, 36, 12, GOLD) + SVG_P.moon(72, 60, 10, "#dcdce8") + SVG_P.stars([[20, 70], [82, 30], [60, 20]], 5, "#e8e0b0"); },
+    sea: function () { return SVG_P.wave(60, DEEP, .9) + SVG_P.fish(35, 72, "#e8dfae") + SVG_P.fish(65, 80, "#e8dfae") + SVG_P.bird(30, 30, NIGHT) + SVG_P.bird(65, 22, NIGHT); },
+    beasts: function () { return SVG_P.ground(66, SAGE) + SVG_P.animal(35, 70, "#8a6a4a") + SVG_P.animal(70, 74, "#8a6a4a") + SVG_P.person(52, 56, "#c4574a", 1.1); },
+    rest: function () { return SVG_P.sun(50, 40, 13, GOLD) + '<path d="M28 66 h44" stroke="' + GOLD + '" stroke-width="3" stroke-linecap="round" opacity=".6"/>'; },
+    eden: function () { return SVG_P.ground(70, SAGE) + SVG_P.tree(50, 70, "#6b4a2f", "#3a8a4f") + SVG_P.person(30, 74, EMBER, .9); },
+    eve: function () { return SVG_P.ground(72, SAGE) + SVG_P.person(38, 76, EMBER, .9) + SVG_P.person(62, 76, DUSK, .9); },
+    fall: function () { return SVG_P.ground(72, "#8a7a4a") + SVG_P.tree(50, 72, "#6b4a2f", "#7a3a3a") + '<circle cx="50" cy="60" r="4" fill="' + EMBER + '"/>'; },
+    altar: function () { return SVG_P.ground(78, SAGE) + SVG_P.altarFire(50, 66, "#8a8070", EMBER); },
+    ark: function () { return SVG_P.wave(74, DEEP, .8) + SVG_P.ark(50, 60, "#6b4a2f", "#8a6a4a") + SVG_P.bird(50, 30, NIGHT); },
+    flood: function () { return SVG_P.wave(30, DEEP, .5) + SVG_P.wave(55, DEEP, .7) + SVG_P.wave(78, "#1e3f55", 1); },
+    rainbow: function () { return SVG_P.wave(80, SAGE, .8) + SVG_P.rainbow(50, 78, null); },
+    tower: function () { return SVG_P.ground(80, "#c9a24a") + SVG_P.tower(50, 70, "#a8895a"); },
+    call: function () { return SVG_P.ground(76, "#c9a24a") + SVG_P.person(40, 70, DUSK, 1) + '<path d="M55 68 L80 68 M74 62 L80 68 L74 74" stroke="' + DUSK + '" stroke-width="2.5" fill="none" stroke-linecap="round"/>'; },
+    covenant: function () { return '<rect width="100" height="100" fill="' + NIGHT + '" opacity=".12"/>' + SVG_P.stars([[25, 30], [50, 20], [75, 32], [35, 55], [65, 50], [50, 70]], 6, "#f0e6a8"); },
+    fire: function () { return SVG_P.ground(78, "#8a6a4a") + SVG_P.flame(35, 66, 11, EMBER) + SVG_P.flame(55, 70, 13, EMBER) + SVG_P.flame(72, 64, 9, "#d98a3a"); },
+    birth: function () { return SVG_P.person(50, 60, EMBER, 1.2) + '<circle cx="50" cy="52" r="5" fill="#f5e0c0"/>'; },
+    akedah: function () { return SVG_P.ground(78, "#a8895a") + SVG_P.altarFire(50, 66, "#8a8070", "#d98a3a") + SVG_P.animal(78, 76, "#e8e0c8"); },
+    birthright: function () { return SVG_P.person(35, 68, EMBER, 1) + SVG_P.person(65, 68, DUSK, 1) + '<circle cx="50" cy="80" r="6" fill="#8a6a3a"/>'; },
+    ladder: function () { return SVG_P.ground(82, "#8a7a5a") + SVG_P.ladder(50, 50, "#c9a24a") + SVG_P.stars([[25, 20], [75, 18], [50, 12]], 4, "#f0e6a8"); },
+    wrestle: function () { return SVG_P.wave(84, DEEP, .7) + SVG_P.person(42, 62, DUSK, 1) + SVG_P.person(58, 62, "#e8e0c8", 1); },
+    coat: function () { return SVG_P.coat(50, 50); },
+    pit: function () { return SVG_P.ground(60, "#8a6a4a") + SVG_P.well(50, 56, "#6b4a2f"); },
+    throne: function () { return SVG_P.ground(80, "#c9a24a") + SVG_P.crown(50, 44, GOLD) + '<rect x="38" y="58" width="24" height="24" fill="#a8895a"/>'; },
+    embrace: function () { return SVG_P.ground(80, SAGE) + SVG_P.person(44, 68, EMBER, 1) + SVG_P.person(56, 68, DUSK, 1); },
+    scroll: function () { return SVG_P.scroll(50, 50, "#a8895a"); }
+  };
+  function bibleIconSVG(name, size) {
+    size = size || 56;
+    var fn = BIBLE_ICONS[name] || BIBLE_ICONS.scroll;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' + fn() + '</svg>';
+  }
+
+  var SECTION_ICON = {
+    "모세오경": "📜", "역사서": "🏛️", "시가서": "🎼", "대선지서": "🔥", "소선지서": "🕊️",
+    "복음서": "✝️", "사도행전": "⛵", "바울서신": "✉️", "일반서신": "📨", "계시록": "👑"
+  };
+  (function () {
+    var acc = 0;
+    BIBLE_BOOKS.forEach(function (b) {
+      b.cumStart = acc; acc += b.points; b.cumEnd = acc;
+      b.icon = SECTION_ICON[b.section] || "📖";
+    });
+  })();
+  var BIBLE_TOTAL_POINTS = 12000;
+  var BIBLE_REPEAT_CYCLE = 3000; // 완주(66권) 이후 회차마다 이만큼씩 목표가 늘어남 — 잠정안, 추후 조정 가능
+
+  function milestonesForBook(book) {
+    if (BOOK_MILESTONES[book.id]) return BOOK_MILESTONES[book.id];
+    var n = Math.min(6, book.chapters), list = [];
+    for (var i = 0; i < n; i++) {
+      var chFrom = Math.floor((book.chapters * i) / n) + 1;
+      var chTo = Math.floor((book.chapters * (i + 1)) / n);
+      list.push({
+        id: book.id + "_" + i, need: Math.round((book.points * i) / n),
+        ref: book.name + " " + chFrom + (chTo > chFrom ? "-" + chTo : "") + "장",
+        title: book.name + " " + (i + 1) + "부", icon: "scroll",
+        text: "아직 세부 사건이 채워지지 않았어요 — 다음 업데이트에서 이어집니다."
+      });
+    }
+    return list;
+  }
+  function bookForPoints(points) {
+    var p = Math.max(0, Math.min(points, BIBLE_TOTAL_POINTS - 1));
+    for (var i = 0; i < BIBLE_BOOKS.length; i++) {
+      var b = BIBLE_BOOKS[i];
+      if (p >= b.cumStart && p < b.cumEnd) return b;
+    }
+    return BIBLE_BOOKS[BIBLE_BOOKS.length - 1];
+  }
+
+  // ---- 성경 사건 마일스톤 시스템 (구 나무→마을 성장 시스템 대체) ----
+  // 66권을 순서대로 읽어나가며, 권마다 배분된 포인트(총 12,000P) 안에서 사건 단위 마일스톤을
+  // 하나씩 연다. 각 권은 "책이 열리고" 마지막 사건에서 "책이 닫히는" 연출로 시작·종료된다.
+  // 현재는 창세기(GENESIS_MILESTONES)만 사건 단위로 채워져 있고, 나머지 권은 장(chapter) 구간을
+  // 6등분한 자리표시자 마일스톤으로 자동 생성되며 다음 세션들에서 하나씩 실제 내용으로 교체된다.
+  function computeGrowth(points) {
+    if (points < BIBLE_TOTAL_POINTS) {
+      var book = bookForPoints(points), bookIdx = BIBLE_BOOKS.indexOf(book);
+      var ms = milestonesForBook(book), idx = 0, into = points - book.cumStart;
+      for (var i = 0; i < ms.length; i++) { if (into >= ms[i].need) idx = i; else break; }
+      var m = ms[idx], nextM = ms[idx + 1] || null;
+      return {
+        gen: 1, final: false, book: book, bookIndex: bookIdx, totalBooks: BIBLE_BOOKS.length,
+        milestone: m, milestoneIndex: idx, totalMilestones: ms.length, nextMilestone: nextM,
+        ptsIntoStage: into - m.need, ptsForNext: Math.max((nextM ? nextM.need : book.points) - m.need, 1),
+        isBookStart: idx === 0, isBookEnd: !nextM
+      };
+    }
+    var extra = points - BIBLE_TOTAL_POINTS;
+    var gen = 2 + Math.floor(extra / BIBLE_REPEAT_CYCLE);
+    var lastBook = BIBLE_BOOKS[BIBLE_BOOKS.length - 1], lastMs = milestonesForBook(lastBook);
+    var lastM = lastMs[lastMs.length - 1];
+    return {
+      gen: gen, final: true, book: lastBook, bookIndex: BIBLE_BOOKS.length - 1, totalBooks: BIBLE_BOOKS.length,
+      milestone: lastM, milestoneIndex: lastMs.length - 1, totalMilestones: lastMs.length, nextMilestone: null,
+      ptsIntoStage: extra % BIBLE_REPEAT_CYCLE, ptsForNext: BIBLE_REPEAT_CYCLE, isBookStart: false, isBookEnd: true
+    };
+  }
+  function growthShortLabel(g) { return g.book.icon; }
+  function growthFullLabel(g) {
+    return g.final ? (g.book.name + " · " + g.milestone.title + " · " + g.gen + "회독")
+      : (g.book.name + " · " + g.milestone.title);
+  }
+  function bibleUnlockedGenealogy() {
+    var out = [], seen = {};
+    Object.keys(BOOK_MILESTONES).forEach(function (bid) {
+      var book = BIBLE_BOOKS.filter(function (b) { return b.id === bid; })[0];
+      if (!book) return;
+      var pts = computeGamification().points, into = pts - book.cumStart;
+      BOOK_MILESTONES[bid].forEach(function (m) {
+        if (into >= m.need && Array.isArray(m.genealogy)) {
+          m.genealogy.forEach(function (p) {
+            if (!seen[p.name]) { seen[p.name] = true; out.push(p); }
+          });
+        }
+      });
+    });
+    return out;
+  }
+
   var rewardQueue = [];
   var growthQueue = [];
   // 체크(홈 탭, 기록/백필 탭)가 일어날 때마다 호출되는 단일 진입점.
   // 1) 배지(스트릭 최장일수) — 기존 그대로, 눌러야 특별한 선물 팝업
-  // 2) 성장 단계(나무→마을) — 조용한 축하 팝업, 선물 기록은 안 함 (레벨업 대체)
+  // 2) 성경 마일스톤 — 조용한 축하 팝업, 선물 기록은 안 함 (레벨업 대체)
   // 3) 주간 보상(평일 4/5) — 금/토/일에만 판정, pending 보상 생성
   // 4) 분기 보상(설정에서 정한 목표 포인트 돌파) — pending 보상 생성
   function checkRewardEvents() {
@@ -2159,24 +2513,30 @@
     closeRewardOverlay();
   }
 
-  // ---- 성장(나무→마을) 단계 축하 팝업 ----
+  // ---- 성경 마일스톤 축하 팝업 (책이 열리고/닫히는 연출 포함) ----
   function checkGrowthEvents() {
     var g = computeGrowth(computeGamification().points);
-    if (typeof state.lastSeenStageIdx !== "number") state.lastSeenStageIdx = g.stageIndex;
+    var key = g.bookIndex * 1000 + g.milestoneIndex;
+    if (typeof state.lastSeenBibleKey !== "number") state.lastSeenBibleKey = key;
     if (typeof state.lastSeenGen !== "number") state.lastSeenGen = g.gen;
-    if (g.stageIndex > state.lastSeenStageIdx || g.gen > state.lastSeenGen) {
-      state.lastSeenStageIdx = g.stageIndex;
+    if (key > state.lastSeenBibleKey || g.gen > state.lastSeenGen) {
+      var newBook = g.isBookStart && (Math.floor(state.lastSeenBibleKey / 1000) < g.bookIndex || g.gen > state.lastSeenGen);
+      state.lastSeenBibleKey = key;
       state.lastSeenGen = g.gen;
-      growthQueue.push(g);
+      growthQueue.push({ g: g, newBook: newBook });
       if (growthQueue.length === 1) showGrowthOverlay();
     }
   }
   function showGrowthOverlay() {
-    var g = growthQueue[0];
-    if (!g) return;
-    document.getElementById("growthEmoji").textContent = g.stage.emoji;
-    document.getElementById("growthLabel").textContent = growthFullLabel(g);
-    document.getElementById("growthSub").textContent = g.final ? "다시 씨앗부터, 새로운 숲이 시작돼요" : "쑥쑥 자라고 있어요";
+    var entry = growthQueue[0];
+    if (!entry) return;
+    var g = entry.g;
+    document.getElementById("growthEmoji").innerHTML = bibleIconSVG(g.milestone.icon, 64);
+    document.getElementById("growthLabel").textContent = entry.newBook ? (g.book.name + " 시작") : g.milestone.title;
+    var sub = entry.newBook ? (g.book.section + " · " + g.book.name + "이 열렸어요")
+      : (g.milestone.ref + (g.isBookEnd ? " · " + g.book.name + " 완결" : ""));
+    document.getElementById("growthSub").textContent = sub;
+    document.getElementById("growthOverlay").classList.toggle("book-open-anim", !!entry.newBook);
     document.getElementById("growthOverlay").classList.remove("hidden");
   }
   function closeGrowthOverlay() {
@@ -3291,7 +3651,7 @@
     var importedLongest = computeLongestStreak();
     state.celebratedBadgeDays = BADGE_THRESHOLDS.filter(function (b) { return importedLongest >= b.days; }).map(function (b) { return b.days; });
     var importedG = computeGrowth(computeGamification().points);
-    state.lastSeenStageIdx = importedG.stageIndex;
+    state.lastSeenBibleKey = importedG.bookIndex * 1000 + importedG.milestoneIndex;
     state.lastSeenGen = importedG.gen;
     saveState();
     toast((sourceLabel || "") + "가져왔어요");
