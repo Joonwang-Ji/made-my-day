@@ -446,6 +446,16 @@
       <div class="btn" data-action="auth-signup">처음이에요 (가입)</div>
     </div>
     <div data-action="auth-forgot" style="text-align:center;margin-top:16px;font-size:12.5px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">비밀번호를 잊으셨나요?</div>
+    <div class="sub" style="text-align:center;margin-top:18px;">가입 후 관리자 승인이 있어야 이용할 수 있어요</div>
+  </div>
+</div>
+
+<div class="wrap hidden" id="view-pending">
+  <div style="min-height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+    <div style="font-size:40px;margin-bottom:14px;">⏳</div>
+    <div class="day" style="font-size:20px;">가입 승인 대기 중</div>
+    <div class="sub" id="pendingSubText" style="margin-top:10px;max-width:260px;"></div>
+    <div class="btn" data-action="auth-logout" style="margin-top:28px;min-width:140px;">로그아웃</div>
   </div>
 </div>
 
@@ -661,6 +671,7 @@
     <div class="theme-option" data-action="threshold-select" data-id="70"><span>느슨하게 (70% 이상)</span><span class="dot"></span></div>
   </div>
   <div class="btn" data-action="open-rest-modal" style="margin-top:16px;">쉬는 날 관리</div>
+  <div class="btn hidden" id="adminApprovalBtn" data-action="open-approval-overlay" style="margin-top:10px;">가입 승인 관리</div>
   <div class="btn" data-action="open-changepw-modal" style="margin-top:10px;">비밀번호 변경</div>
   <div class="btn" data-action="auth-logout" style="margin-top:10px;color:var(--danger);">로그아웃</div>
 </div>
@@ -774,6 +785,14 @@
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="approvalOverlay">
+  <div class="tp-card" style="max-width:320px;">
+    <div class="tp-title">가입 승인 관리</div>
+    <div id="approvalOverlayBody"></div>
+    <div class="btn primary" data-action="approval-close" style="margin-top:16px;">닫기</div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="missedOverlay">
   <div class="tp-card" style="max-width:320px;">
     <div class="tp-title">놓친 항목</div>
@@ -806,7 +825,7 @@
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, setDoc, onSnapshot,
-    enableIndexedDbPersistence
+    enableIndexedDbPersistence, collection, query, where, getDocs, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   var firebaseConfig = {
@@ -849,6 +868,17 @@
       return onSnapshot(doc(db, "users", uid), function (snap) {
         onData(snap.exists() ? snap.data() : null, snap.metadata.hasPendingWrites);
       }, onError);
+    },
+    listPendingUsers: function () {
+      var q = query(collection(db, "users"), where("approved", "==", false));
+      return getDocs(q).then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) { out.push({ uid: d.id, data: d.data() }); });
+        return out;
+      });
+    },
+    approveUser: function (uid) {
+      return updateDoc(doc(db, "users", uid), { approved: true });
     }
   };
   window.dispatchEvent(new Event("fb-ready"));
@@ -910,6 +940,47 @@
     var curTh = String(state.streakThreshold || 100);
     Array.prototype.forEach.call(thOpts, function (o) {
       o.classList.toggle("active", o.getAttribute("data-id") === curTh);
+    });
+    var adminBtn = document.getElementById("adminApprovalBtn");
+    if (adminBtn) adminBtn.classList.toggle("hidden", !isAdminUser);
+  }
+
+  // ---- 가입 승인 관리 (관리자 전용) ----
+  function openApprovalOverlay() {
+    document.getElementById("approvalOverlay").classList.remove("hidden");
+    var body = document.getElementById("approvalOverlayBody");
+    body.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);text-align:center;">불러오는 중…</div>';
+    window.__fb.listPendingUsers().then(function (list) {
+      list = list.filter(function (u) { return (u.data.email || "").toLowerCase() !== ADMIN_EMAIL.toLowerCase(); });
+      if (list.length === 0) {
+        body.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);text-align:center;">대기 중인 가입 요청이 없어요.</div>';
+        return;
+      }
+      list.sort(function (a, b) {
+        var ra = a.data.requestedAt || "", rb = b.data.requestedAt || "";
+        return ra < rb ? -1 : (ra > rb ? 1 : 0);
+      });
+      body.innerHTML = list.map(function (u) {
+        var email = escapeHtml(u.data.email || "(이메일 없음)");
+        var dt = u.data.requestedAt ? escapeHtml(String(u.data.requestedAt).slice(0, 10)) : "";
+        return '<div class="rest-item"><span>' + email + (dt ? (' · ' + dt) : '') + '</span>' +
+          '<button class="btn primary" data-action="approve-user" data-id="' + u.uid + '" style="margin:0;padding:7px 14px;font-size:12px;">승인</button></div>';
+      }).join("");
+    }).catch(function (err) {
+      body.innerHTML = '<div style="font-size:12.5px;color:var(--danger);text-align:center;">목록을 불러오지 못했어요.</div>';
+      console.error("listPendingUsers failed", err);
+    });
+  }
+  function closeApprovalOverlay() { document.getElementById("approvalOverlay").classList.add("hidden"); }
+  function approveUserAction(uid, btnEl) {
+    if (btnEl) { btnEl.textContent = "승인 중…"; btnEl.setAttribute("disabled", "true"); }
+    window.__fb.approveUser(uid).then(function () {
+      toast("승인했어요");
+      openApprovalOverlay();
+    }).catch(function (err) {
+      toast("승인에 실패했어요");
+      console.error("approve failed", err);
+      if (btnEl) { btnEl.textContent = "승인"; btnEl.removeAttribute("disabled"); }
     });
   }
 
@@ -1274,7 +1345,10 @@
       memos: {},
       holidayPromptSeen: false,
       holidayBannerDismissedYear: null,
-      personalTitle: { emoji: "", text: "" }
+      personalTitle: { emoji: "", text: "" },
+      approved: false,
+      email: "",
+      requestedAt: null
     };
   }
   function migrateHistory(history) {
@@ -1331,6 +1405,9 @@
     if (!p.personalTitle || typeof p.personalTitle !== "object") p.personalTitle = { emoji: "", text: "" };
     if (typeof p.personalTitle.emoji !== "string") p.personalTitle.emoji = "";
     if (typeof p.personalTitle.text !== "string") p.personalTitle.text = "";
+    if (typeof p.approved !== "boolean") p.approved = false;
+    if (typeof p.email !== "string") p.email = "";
+    if (typeof p.requestedAt === "undefined") p.requestedAt = null;
     if (!p.streakThreshold) p.streakThreshold = 100;
     if (!Array.isArray(p.rewards)) p.rewards = [];
     // 레벨업/배지 보상 팝업 도입 시점 마이그레이션: 기존에 이미 쌓아온 레벨·배지에 대해
@@ -1361,6 +1438,7 @@
 
   var state = defaultState();
   var currentUid = null;
+  var isAdminUser = false;
   var saveDebounceTimer = null;
   var saveChain = Promise.resolve();
 
@@ -1392,13 +1470,12 @@
     };
     return map[code] || ("로그인에 실패했어요 (" + code + ")");
   }
-  var ALLOWED_EMAIL = "god@yonsei.ac.kr";
+  var ADMIN_EMAIL = "god@yonsei.ac.kr"; // 관리자 계정 — 가입 승인 권한을 가짐, 항상 승인된 것으로 취급
   function doSignIn() {
     var email = document.getElementById("authEmail").value.trim();
     var pw = document.getElementById("authPassword").value;
     authError("");
     if (!email || !pw) { authError("이메일과 비밀번호를 입력해주세요"); return; }
-    if (email.toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) { authError("이 앱은 지정된 계정만 사용할 수 있어요"); return; }
     window.__fb.signIn(email, pw).catch(function (err) { authError(translateAuthError(err.code)); });
   }
   function doSignUp() {
@@ -1406,15 +1483,16 @@
     var pw = document.getElementById("authPassword").value;
     authError("");
     if (!email || !pw) { authError("이메일과 비밀번호를 입력해주세요"); return; }
-    if (email.toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) { authError("이 앱은 지정된 계정만 사용할 수 있어요"); return; }
     if (pw.length < 6) { authError("비밀번호는 6자 이상이어야 해요"); return; }
     window.__fb.signUp(email, pw).catch(function (err) { authError(translateAuthError(err.code)); });
   }
   function doForgotPassword() {
     authError("");
-    window.__fb.resetPassword(ALLOWED_EMAIL).then(function () {
+    var email = document.getElementById("authEmail").value.trim();
+    if (!email) { authError("먼저 이메일을 입력해주세요"); return; }
+    window.__fb.resetPassword(email).then(function () {
       authError("");
-      toast(ALLOWED_EMAIL + "로 재설정 메일을 보냈어요");
+      toast(email + "로 재설정 메일을 보냈어요");
     }).catch(function (err) { authError(translateAuthError(err.code)); });
   }
   function changePwError(msg) {
@@ -1453,7 +1531,11 @@
   }
 
   var stateUnsub = null;
-  function onUserLoaded(uid) {
+  function renderPendingView() {
+    var el = document.getElementById("pendingSubText");
+    if (el) el.textContent = (state.email || "") + " 계정으로 가입 요청이 접수됐어요. 관리자가 승인하면 자동으로 이용할 수 있게 돼요.";
+  }
+  function onUserLoaded(uid, email) {
     currentUid = uid;
     var firstLoad = true;
     stateUnsub = window.__fb.subscribeState(uid, function (data, hasPendingWrites) {
@@ -1461,16 +1543,26 @@
       if (data) {
         var rawHistoryJson = JSON.stringify(data.history || {});
         var rawCategoriesJson = JSON.stringify(data.categories || []);
+        var rawApproved = data.approved === true;
         state = normalizeLoaded(data);
-        saveToLocalStorage(state);
-        if (firstLoad && (JSON.stringify(state.history) !== rawHistoryJson || JSON.stringify(state.categories) !== rawCategoriesJson)) {
+        // 관리자 계정은 항상 승인된 것으로 취급하고, 문서에도 반영해 승인 대기 목록에
+        // 뜨지 않게 한다(문서에 approved 필드가 아예 없던 과거 관리자 계정 포함).
+        if (isAdminUser) state.approved = true;
+        if (state.approved) saveToLocalStorage(state);
+        if (firstLoad && (JSON.stringify(state.history) !== rawHistoryJson || JSON.stringify(state.categories) !== rawCategoriesJson || state.approved !== rawApproved)) {
           window.__fb.saveState(uid, JSON.parse(JSON.stringify(state))).catch(function (err) { console.error("migration save failed", err); });
         }
       } else if (firstLoad) {
         state = loadFromLocalStorage() || defaultState();
+        state.approved = isAdminUser;
+        state.email = email || "";
+        state.requestedAt = new Date().toISOString();
         window.__fb.saveState(uid, JSON.parse(JSON.stringify(state))).catch(function (err) { console.error("seed failed", err); });
       }
-      if (firstLoad) { firstLoad = false; showView("view-home"); }
+      var effectiveApproved = isAdminUser || !!state.approved;
+      if (firstLoad) { firstLoad = false; showView(effectiveApproved ? "view-home" : "view-pending"); }
+      if (!effectiveApproved) { renderPendingView(); return; }
+      if (!document.getElementById("view-pending").classList.contains("hidden")) { showView("view-home"); }
       renderHome();
       if (!window.__holidayPromptChecked) { window.__holidayPromptChecked = true; checkHolidayFirstPrompt(); }
     }, function (err) {
@@ -1490,16 +1582,11 @@
     window.__fb.onAuthStateChanged(function (user) {
       logoutArmed = false;
       if (user) {
-        if ((user.email || "").toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) {
-          window.__fb.signOutUser();
-          currentUid = null;
-          showView("view-login");
-          authError("이 앱은 지정된 계정만 사용할 수 있어요");
-          return;
-        }
-        onUserLoaded(user.uid);
+        isAdminUser = (user.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        onUserLoaded(user.uid, user.email || "");
       } else {
         currentUid = null;
+        isAdminUser = false;
         if (stateUnsub) { stateUnsub(); stateUnsub = null; }
         showView("view-login");
       }
@@ -1952,8 +2039,8 @@
   }
 
   // ---------------- views ----------------
-  var NAV_HIDDEN_VIEWS = ["view-checking", "view-login", "view-run"];
-  var ALL_VIEWS = ["view-checking","view-login","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings","view-restDays"];
+  var NAV_HIDDEN_VIEWS = ["view-checking", "view-login", "view-pending", "view-run"];
+  var ALL_VIEWS = ["view-checking","view-login","view-pending","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings","view-restDays"];
   function showView(id) {
     ALL_VIEWS.forEach(function (v) {
       document.getElementById(v).classList.toggle("hidden", v !== id);
@@ -3133,6 +3220,9 @@
     else if (action === "changepw-cancel") { closeChangePwModal(); }
     else if (action === "changepw-confirm") { doChangePassword(); }
     else if (action === "auth-logout") { doSignOutRequest(); }
+    else if (action === "open-approval-overlay") { openApprovalOverlay(); }
+    else if (action === "approval-close") { closeApprovalOverlay(); }
+    else if (action === "approve-user") { approveUserAction(id, el); }
     else if (action === "toggle-item") {
       var tCat = getCat(el.getAttribute("data-cat"));
       var tItemId = id;
@@ -3449,7 +3539,7 @@
   // 기기(캐시가 전혀 없음)에서만 기존처럼 "확인 중…"이 보인다.
   (function eagerBootFromCache() {
     var cached = loadFromLocalStorage();
-    if (cached) {
+    if (cached && cached.approved) {
       state = cached;
       showView("view-home");
       renderHome();
