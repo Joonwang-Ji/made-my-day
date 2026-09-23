@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-23-9";
+  var BUILD_VERSION = "2026-09-23-10";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -62,7 +62,7 @@
     background: none; border: none; color: var(--ink-dim); cursor: pointer; }
   .nav-btn svg { width: 17px; height: 17px; }
   .nav-btn span { font-size: 10.5px; font-weight: 700; }
-  #view-home, #view-editItems, #view-stats, #view-backfill, #view-export, #view-settings { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 68px); }
+  #view-home, #view-editItems, #view-stats, #view-backfill, #view-export, #view-settings, #view-restDays { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 68px); }
 
   header.top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; }
   .date-block .day { font-family: 'Fraunces', serif; font-weight: 560; font-size: 28px; line-height: 1; letter-spacing: -0.01em; }
@@ -219,6 +219,9 @@
     border-radius: 14px; border: 1.5px dashed var(--line); color: var(--ink-dim); font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .add-row svg { width: 13px; height: 13px; }
   .top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .slide-exit { position: fixed; inset: 0; z-index: 55; background: var(--bg); overflow-y: auto;
+    transform: translateX(0); transition: transform .32s cubic-bezier(.32,.72,0,1); will-change: transform; }
+  .slide-exit-active { transform: translateX(100%); }
   .back-btn { border: 1px solid var(--line); background: var(--card); color: var(--ink); width: 34px; height: 34px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .back-btn svg { width: 15px; height: 15px; }
@@ -614,36 +617,35 @@
   </div>
 </div>
 
-<div class="tp-overlay hidden" id="restOverlay">
-  <div class="tp-card" style="max-width:320px;max-height:85vh;overflow-y:auto;">
-    <div class="tp-title">쉬는 날 관리</div>
-    <div class="btn primary" id="restTodayBtn" data-action="toggle-today-rest" style="margin-bottom:16px;">오늘을 쉬는 날로 표시</div>
-
-    <div class="section-label" style="margin-top:0;">기간으로 추가</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <input type="date" id="restStartInput" class="cat-name-input" style="margin-bottom:0;font-size:13px;padding:9px;">
-      <input type="date" id="restEndInput" class="cat-name-input" style="margin-bottom:0;font-size:13px;padding:9px;">
-    </div>
-    <div class="theme-option" id="recurringToggle" data-action="toggle-recurring-add" style="margin-bottom:10px;"><span>매년 반복 공휴일로 등록</span><span class="dot"></span></div>
-    <div class="btn" data-action="add-rest-range" style="margin-bottom:10px;">추가</div>
-    <div class="btn" data-action="seed-kr-holidays" style="margin-bottom:16px;">한국 공휴일 자동 추가</div>
-
-    <div class="section-label" style="margin-top:0;">목록으로 한 번에 추가</div>
-    <div class="export-note" style="margin:0 0 8px;">YYYY-MM-DD 뒤에 이름을 붙여 한 줄에 하나씩 붙여넣으세요 (이름은 생략 가능해요).</div>
-    <div class="export-box" style="margin-bottom:10px;"><textarea id="restBulkInput" placeholder="2026-02-16 설날 연휴&#10;2026-02-17 설날&#10;2026-02-18 설날 연휴" style="min-height:80px;"></textarea></div>
-    <div class="btn" data-action="add-rest-bulk" style="margin-bottom:16px;">목록 추가</div>
-
-    <div class="section-label" style="margin-top:0;">매년 반복 공휴일</div>
-    <div id="recurringList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
-
-    <div class="section-label" style="margin-top:0;display:flex;justify-content:space-between;align-items:center;">
-      <span>특정 휴가</span>
-      <span data-action="toggle-rest-show-all" style="text-decoration:underline;cursor:pointer;font-weight:700;" id="restShowAllLink">지난 기록 전체 보기</span>
-    </div>
-    <div id="restList" style="max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
-
-    <div class="btn primary" data-action="rest-close" style="margin-top:16px;">닫기</div>
+<div class="wrap hidden" id="view-restDays">
+  <div class="top-bar">
+    <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <h2>쉬는 날 관리</h2>
   </div>
+  <div class="btn primary" id="restTodayBtn" data-action="toggle-today-rest" style="margin-bottom:16px;">오늘을 쉬는 날로 표시</div>
+
+  <div class="section-label" style="margin-top:0;">기간으로 추가</div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <input type="date" id="restStartInput" class="cat-name-input" style="margin-bottom:0;font-size:13px;padding:9px;">
+    <input type="date" id="restEndInput" class="cat-name-input" style="margin-bottom:0;font-size:13px;padding:9px;">
+  </div>
+  <div class="theme-option" id="recurringToggle" data-action="toggle-recurring-add" style="margin-bottom:10px;"><span>매년 반복 공휴일로 등록</span><span class="dot"></span></div>
+  <div class="btn" data-action="add-rest-range" style="margin-bottom:10px;">추가</div>
+  <div class="btn" data-action="seed-kr-holidays" style="margin-bottom:16px;">한국 공휴일 자동 추가</div>
+
+  <div class="section-label" style="margin-top:0;">목록으로 한 번에 추가</div>
+  <div class="export-note" style="margin:0 0 8px;">YYYY-MM-DD 뒤에 이름을 붙여 한 줄에 하나씩 붙여넣으세요 (이름은 생략 가능해요).</div>
+  <div class="export-box" style="margin-bottom:10px;"><textarea id="restBulkInput" placeholder="2026-02-16 설날 연휴&#10;2026-02-17 설날&#10;2026-02-18 설날 연휴" style="min-height:80px;"></textarea></div>
+  <div class="btn" data-action="add-rest-bulk" style="margin-bottom:16px;">목록 추가</div>
+
+  <div class="section-label" style="margin-top:0;">매년 반복 공휴일</div>
+  <div id="recurringList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
+
+  <div class="section-label" style="margin-top:0;display:flex;justify-content:space-between;align-items:center;">
+    <span>특정 휴가</span>
+    <span data-action="toggle-rest-show-all" style="text-decoration:underline;cursor:pointer;font-weight:700;" id="restShowAllLink">지난 기록 전체 보기</span>
+  </div>
+  <div id="restList" style="display:flex;flex-direction:column;gap:6px;"></div>
 </div>
 
 <div class="tp-overlay hidden" id="achieveOverlay">
@@ -802,6 +804,7 @@
   };
   var restAddRecurring = false;
   var restShowAllPast = false;
+  var restEditingDk = null;
   function restDayDate(e) { return typeof e === "string" ? e : e.date; }
   function restDayLabel(e) { return typeof e === "string" ? "" : (e.label || ""); }
   function findRestIdx(dk) { return state.restDays.findIndex(function (e) { return restDayDate(e) === dk; }); }
@@ -833,8 +836,38 @@
     if (visible.length === 0) { el.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);">등록된 날짜가 없어요.</div>'; return; }
     el.innerHTML = visible.map(function (e) {
       var dk = restDayDate(e), lb = restDayLabel(e);
-      return '<div class="rest-item"><span>' + dk + (lb ? (' · ' + escapeHtml(lb)) : '') + '</span><button class="icon-btn" data-action="remove-rest" data-id="' + dk + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+      if (restEditingDk === dk) {
+        return '<div class="rest-item" style="flex-direction:column;align-items:stretch;gap:8px;">' +
+          '<span style="font-size:12px;color:var(--ink-dim);">' + dk + '</span>' +
+          '<input type="text" class="cat-name-input" id="restLabelInput" placeholder="왜 쉬었는지 메모 (선택)" value="' + escapeHtml(lb) + '" style="margin-bottom:0;font-size:13px;padding:9px 10px;">' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button class="btn" data-action="cancel-rest-label" style="flex:1;margin:0;padding:9px;font-size:12.5px;">취소</button>' +
+            '<button class="btn primary" data-action="save-rest-label" data-id="' + dk + '" style="flex:1;margin:0;padding:9px;font-size:12.5px;">저장</button>' +
+          '</div></div>';
+      }
+      return '<div class="rest-item"><span>' + dk + (lb ? (' · ' + escapeHtml(lb)) : '') + '</span>' +
+        '<div style="display:flex;gap:2px;">' +
+        '<button class="icon-btn" data-action="edit-rest-label" data-id="' + dk + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>' +
+        '<button class="icon-btn" data-action="remove-rest" data-id="' + dk + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
+        '</div></div>';
     }).join("");
+    if (restEditingDk !== null && visible.some(function (e) { return restDayDate(e) === restEditingDk; })) {
+      var inputEl = document.getElementById("restLabelInput");
+      if (inputEl) { inputEl.focus(); var v = inputEl.value; inputEl.value = ""; inputEl.value = v; }
+    }
+  }
+  function startEditRestLabel(dk) { restEditingDk = dk; renderRestList(); }
+  function cancelEditRestLabel() { restEditingDk = null; renderRestList(); }
+  function saveRestLabel(dk) {
+    var input = document.getElementById("restLabelInput");
+    var val = input ? input.value.trim() : "";
+    var idx = findRestIdx(dk);
+    if (idx !== -1) {
+      state.restDays[idx] = val ? { date: dk, label: val } : dk;
+      saveState();
+    }
+    restEditingDk = null;
+    renderRestList();
   }
   function updateRestTodayBtnLabel() {
     document.getElementById("restTodayBtn").textContent = isRestDay(todayKey()) ? "오늘 쉬는 날 표시 해제" : "오늘을 쉬는 날로 표시";
@@ -843,11 +876,9 @@
     document.getElementById("recurringToggle").classList.toggle("active", restAddRecurring);
   }
   function openRestModal() {
-    restShowAllPast = false; restAddRecurring = false;
+    restShowAllPast = false; restAddRecurring = false; restEditingDk = null;
     renderRestList(); renderRecurringList(); updateRestTodayBtnLabel(); updateRecurringToggleUI();
-    document.getElementById("restOverlay").classList.remove("hidden");
   }
-  function closeRestModal() { document.getElementById("restOverlay").classList.add("hidden"); }
   function toggleTodayRest() {
     var k = todayKey();
     var idx = findRestIdx(k);
@@ -898,7 +929,11 @@
   }
   function removeRestDay(dk) {
     var idx = findRestIdx(dk);
-    if (idx !== -1) { state.restDays.splice(idx, 1); saveState(); renderRestList(); updateRestTodayBtnLabel(); renderHome(); }
+    if (idx !== -1) {
+      state.restDays.splice(idx, 1); saveState();
+      if (restEditingDk === dk) restEditingDk = null;
+      renderRestList(); updateRestTodayBtnLabel(); renderHome();
+    }
   }
   function removeRecurring(md) {
     var idx = state.recurringHolidays.indexOf(md);
@@ -1538,11 +1573,44 @@
 
   // ---------------- views ----------------
   var NAV_HIDDEN_VIEWS = ["view-checking", "view-login", "view-run"];
+  var ALL_VIEWS = ["view-checking","view-login","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings","view-restDays"];
   function showView(id) {
-    ["view-checking","view-login","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings"].forEach(function (v) {
+    ALL_VIEWS.forEach(function (v) {
       document.getElementById(v).classList.toggle("hidden", v !== id);
     });
     document.getElementById("globalBottomNav").classList.toggle("hidden", NAV_HIDDEN_VIEWS.indexOf(id) !== -1);
+  }
+  // 뒤로 갈 때(백 버튼 탭 또는 엣지 스와이프) 현재 화면이 오른쪽으로 슬라이드되며 사라지는
+  // 연출. showView처럼 즉시 전환하지 않고, 잠깐 홈 화면 위에 겹쳐 보여주다가 애니메이션이
+  // 끝나면 완전히 숨긴다.
+  function goHomeAnimated() {
+    stopTimerInterval(); runState = null;
+    var current = null;
+    var checkList = BACKABLE_VIEWS.concat(["view-run"]);
+    for (var i = 0; i < checkList.length; i++) {
+      var el = document.getElementById(checkList[i]);
+      if (el && !el.classList.contains("hidden")) { current = el; break; }
+    }
+    if (!current) { showView("view-home"); renderHome(); return; }
+    var homeEl = document.getElementById("view-home");
+    ALL_VIEWS.forEach(function (v) {
+      if (v !== "view-home" && v !== current.id) document.getElementById(v).classList.add("hidden");
+    });
+    homeEl.classList.remove("hidden");
+    document.getElementById("globalBottomNav").classList.toggle("hidden", NAV_HIDDEN_VIEWS.indexOf("view-home") !== -1);
+    renderHome();
+    current.classList.add("slide-exit");
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { current.classList.add("slide-exit-active"); });
+    });
+    var finished = false;
+    function finish() {
+      if (finished) return; finished = true;
+      current.classList.remove("slide-exit", "slide-exit-active");
+      current.classList.add("hidden");
+    }
+    current.addEventListener("transitionend", finish, { once: true });
+    setTimeout(finish, 380);
   }
   function toast(msg) {
     var t = document.getElementById("toast");
@@ -2569,7 +2637,7 @@
     var action = el.getAttribute("data-action");
     var id = el.getAttribute("data-id");
 
-    if (action === "go-home") { stopTimerInterval(); runState = null; showView("view-home"); renderHome(); }
+    if (action === "go-home") { goHomeAnimated(); }
     else if (action === "auth-signin") { doSignIn(); }
     else if (action === "auth-signup") { doSignUp(); }
     else if (action === "auth-forgot") { doForgotPassword(); }
@@ -2692,12 +2760,14 @@
     else if (action === "reward-save") { saveRewardOverlay(); }
     else if (action === "theme-select") { currentTheme = id; applyTheme(id); updateSettingsModalUI(); }
     else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
-    else if (action === "open-rest-modal") { openRestModal(); }
-    else if (action === "rest-close") { closeRestModal(); }
+    else if (action === "open-rest-modal") { showView("view-restDays"); openRestModal(); }
     else if (action === "toggle-today-rest") { toggleTodayRest(); }
     else if (action === "add-rest-range") { addRestRange(); }
     else if (action === "add-rest-bulk") { addRestBulk(); }
     else if (action === "remove-rest") { removeRestDay(id); }
+    else if (action === "edit-rest-label") { startEditRestLabel(id); }
+    else if (action === "save-rest-label") { saveRestLabel(id); }
+    else if (action === "cancel-rest-label") { cancelEditRestLabel(); }
     else if (action === "remove-recurring") { removeRecurring(id); }
     else if (action === "toggle-recurring-add") { restAddRecurring = !restAddRecurring; updateRecurringToggleUI(); }
     else if (action === "seed-kr-holidays") { seedKrHolidays(); }
@@ -2764,18 +2834,16 @@
   // ---- edge swipe to go back (like the native iOS gesture) ----
   var edgeSwipe = { active: false, startX: 0, startY: 0 };
   var EDGE_ZONE = 24, SWIPE_THRESHOLD = 80, MAX_VERTICAL = 60;
-  var BACKABLE_VIEWS = ["view-editItems", "view-stats", "view-export", "view-backfill", "view-settings"];
+  var BACKABLE_VIEWS = ["view-editItems", "view-stats", "view-export", "view-backfill", "view-settings", "view-restDays"];
   function triggerSwipeBack() {
     var visible = null;
     for (var i = 0; i < BACKABLE_VIEWS.length; i++) {
       var el = document.getElementById(BACKABLE_VIEWS[i]);
       if (el && !el.classList.contains("hidden")) { visible = BACKABLE_VIEWS[i]; break; }
     }
-    if (visible) { stopTimerInterval(); runState = null; showView("view-home"); renderHome(); return; }
+    if (visible) { goHomeAnimated(); return; }
     var runEl = document.getElementById("view-run");
-    if (runEl && !runEl.classList.contains("hidden")) {
-      stopTimerInterval(); runState = null; showView("view-home"); renderHome();
-    }
+    if (runEl && !runEl.classList.contains("hidden")) { goHomeAnimated(); }
   }
   document.addEventListener("touchstart", function (e) {
     if (e.touches.length !== 1) { edgeSwipe.active = false; return; }
