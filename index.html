@@ -407,6 +407,36 @@
   .reward-log-date { font-size: 10.5px; color: var(--ink-dim); }
   .reward-log-note { font-size: 12.5px; margin-top: 2px; }
   .reward-log-empty { font-size: 11.5px; color: var(--ink-dim); text-align: center; padding: 8px 0; }
+
+  .daily-box { display: flex; align-items: center; gap: 10px; background: var(--gold-soft); color: var(--gold);
+    border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px; line-height: 1.4;
+    cursor: pointer; animation: boxBob 1.6s ease-in-out infinite; }
+  .daily-box .emoji { font-size: 20px; flex: none; }
+  @keyframes boxBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  .pending-banner { display: flex; align-items: center; gap: 10px; background: var(--sage-soft); color: var(--sage);
+    border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px; line-height: 1.4;
+    cursor: pointer; }
+  .pending-banner .emoji { font-size: 18px; flex: none; }
+  .growth-pop { text-align: center; }
+  .growth-pop .emoji { font-size: 52px; line-height: 1; display: block; margin-bottom: 10px;
+    animation: growthPop .55s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes growthPop { 0% { transform: scale(.3) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+  .growth-pop .label { font-family: 'Fraunces', serif; font-weight: 650; font-size: 17px; margin-bottom: 6px; }
+  .growth-pop .sub { font-size: 12px; color: var(--ink-dim); margin-bottom: 16px; }
+  .growth-bar-track { height: 8px; border-radius: 999px; background: var(--ring-track); overflow: hidden; margin: 4px 0 2px; }
+  .growth-bar-fill { height: 100%; background: var(--sage); border-radius: 999px; transition: width .3s ease; }
+  .growth-pts { font-size: 11px; color: var(--ink-dim); text-align: right; }
+  .quarter-goal-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .quarter-goal-row input { flex: 1; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg-soft); color: var(--ink); font-size: 13px; font-family: inherit; }
+  .quarter-goal-note { font-size: 11.5px; color: var(--ink-dim); margin-top: 6px; line-height: 1.5; }
+  .pending-reward-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
+    border-bottom: 1px solid var(--line); cursor: pointer; gap: 10px; }
+  .pending-reward-item:last-child { border-bottom: none; }
+  .pending-reward-main { min-width: 0; }
+  .pending-reward-title { font-size: 12.5px; font-weight: 700; }
+  .pending-reward-note { font-size: 11.5px; color: var(--ink-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pending-reward-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex: none; }
 </style>
 </head>
 <body>
@@ -476,6 +506,12 @@
     </div>
   </header>
 
+  <div id="dailyBoxCard" class="daily-box hidden" data-action="open-daily-box">
+    <span class="emoji">🎁</span><span>오늘의 성공 보너스가 도착했어요 — 탭해서 열어보세요</span>
+  </div>
+  <div id="pendingRewardBanner" class="pending-banner hidden" data-action="open-pending-rewards">
+    <span class="emoji">🎀</span><span id="pendingRewardBannerText"></span>
+  </div>
   <div id="nudgeBanner" class="nudge-banner hidden" data-action="open-missed-overlay"></div>
   <div id="holidayBanner" class="nudge-banner hidden" data-action="open-holiday-banner-year"></div>
   <div id="todayRingCard" class="today-ring-card hidden" data-action="open-achievements">
@@ -670,6 +706,12 @@
     <div class="theme-option" data-action="threshold-select" data-id="80"><span>웬만큼 (80% 이상)</span><span class="dot"></span></div>
     <div class="theme-option" data-action="threshold-select" data-id="70"><span>느슨하게 (70% 이상)</span><span class="dot"></span></div>
   </div>
+  <div class="section-label">분기 목표 포인트 (큰 보상 기준)</div>
+  <div class="quarter-goal-row">
+    <input type="number" id="quarterGoalInput" inputmode="numeric" placeholder="예: 6000">
+    <div class="btn primary" data-action="save-quarter-goal" style="margin:0;padding:9px 14px;">저장</div>
+  </div>
+  <div class="quarter-goal-note">이 포인트를 넘으면 '큰 보상'이 열려요. 최근 몇 주 평균 포인트를 보고 다음 목표를 직접 정해서 올려주세요.</div>
   <div class="btn" data-action="open-rest-modal" style="margin-top:16px;">쉬는 날 관리</div>
   <div class="btn hidden" id="adminApprovalBtn" data-action="open-approval-overlay" style="margin-top:10px;">가입 승인 관리</div>
   <div class="btn" data-action="open-changepw-modal" style="margin-top:10px;">비밀번호 변경</div>
@@ -725,10 +767,14 @@
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title">업적</div>
     <div class="achieve-level-row">
-      <div class="achieve-level-num" id="achieveLevelNum">Lv.1</div>
-      <div class="achieve-level-bar-track"><div class="achieve-level-bar-fill" id="achieveLevelFill"></div></div>
-      <div class="achieve-level-pts" id="achieveLevelPts">0P</div>
+      <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;">🌱</div>
+      <div style="flex:1;">
+        <div style="font-size:12.5px;font-weight:700;" id="achieveGrowthLabel"></div>
+        <div class="growth-bar-track"><div class="growth-bar-fill" id="achieveLevelFill"></div></div>
+        <div class="growth-pts" id="achieveLevelPts">0P</div>
+      </div>
     </div>
+    <div class="btn" data-action="open-pending-rewards" style="margin-bottom:16px;">🎀 보상 상자 보기</div>
     <div class="section-label">배지 (최장 연속일 기준)</div>
     <div class="badge-grid" id="badgeGrid"></div>
     <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
@@ -809,6 +855,35 @@
     <div class="tp-actions">
       <div class="btn" data-action="reward-close">괜찮아요</div>
       <div class="btn primary" data-action="reward-save">기록하고 닫기</div>
+    </div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="growthOverlay">
+  <div class="tp-card growth-pop" style="max-width:280px;">
+    <span class="emoji" id="growthEmoji">🌱</span>
+    <div class="label" id="growthLabel"></div>
+    <div class="sub" id="growthSub">쑥쑥 자라고 있어요</div>
+    <div class="btn primary" data-action="growth-close">좋아요!</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="pendingRewardsOverlay">
+  <div class="tp-card" style="max-width:320px;">
+    <div class="tp-title">보상 상자</div>
+    <div id="pendingRewardsList"></div>
+    <div class="btn primary" data-action="pending-rewards-close" style="margin-top:16px;">닫기</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="rewardClaimOverlay">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title" id="rewardClaimTitle">보상 기록</div>
+    <div id="rewardClaimBody" style="font-size:12.5px;color:var(--ink-dim);text-align:center;margin-bottom:12px;"></div>
+    <input type="text" class="reward-note-input" id="rewardClaimInput" placeholder="무엇으로 보상했나요? (나중에 다시 눌러 수정 가능)" maxlength="60">
+    <div class="tp-actions">
+      <div class="btn" data-action="reward-claim-cancel">취소</div>
+      <div class="btn primary" data-action="reward-claim-save">저장</div>
     </div>
   </div>
 </div>
@@ -942,6 +1017,15 @@
     });
     var adminBtn = document.getElementById("adminApprovalBtn");
     if (adminBtn) adminBtn.classList.toggle("hidden", !isAdminUser);
+    var qgInput = document.getElementById("quarterGoalInput");
+    if (qgInput) qgInput.value = state.quarterGoalPoints || "";
+  }
+  function saveQuarterGoal() {
+    var v = parseInt(document.getElementById("quarterGoalInput").value, 10);
+    state.quarterGoalPoints = (v && v > 0) ? v : null;
+    saveState();
+    toast(state.quarterGoalPoints ? "목표를 저장했어요" : "목표를 비웠어요");
+    checkRewardEvents();
   }
 
   // ---- 가입 승인 관리 (관리자 전용) ----
@@ -986,9 +1070,11 @@
   // ---- achievements ----
   function openAchievements() {
     var gam = computeGamification();
-    document.getElementById("achieveLevelNum").textContent = "Lv." + gam.level;
-    document.getElementById("achieveLevelPts").textContent = gam.ptsIntoLevel + "/" + gam.ptsForNext + "P";
-    document.getElementById("achieveLevelFill").style.width = Math.round(gam.ptsIntoLevel / gam.ptsForNext * 100) + "%";
+    var g = computeGrowth(gam.points);
+    document.getElementById("achieveLevelNum").textContent = g.stage.emoji;
+    document.getElementById("achieveGrowthLabel").textContent = growthFullLabel(g);
+    document.getElementById("achieveLevelPts").textContent = g.ptsIntoStage + "/" + g.ptsForNext + "P";
+    document.getElementById("achieveLevelFill").style.width = Math.round(g.ptsIntoStage / g.ptsForNext * 100) + "%";
     var longest = computeLongestStreak();
     var grid = document.getElementById("badgeGrid");
     grid.innerHTML = BADGE_THRESHOLDS.map(function (b) {
@@ -1367,6 +1453,14 @@
       rewards: [],
       lastSeenLevel: 1,
       celebratedBadgeDays: [],
+      bonusPoints: 0,
+      openedBoxes: {},
+      lastSeenStageIdx: 0,
+      lastSeenGen: 1,
+      quarterGoalPoints: null,
+      celebratedQuarterGoals: [],
+      celebratedWeeks: [],
+      pendingRewards: [],
       memos: {},
       holidayPromptSeen: false,
       holidayBannerDismissedYear: null,
@@ -1435,6 +1529,12 @@
     if (typeof p.requestedAt === "undefined") p.requestedAt = null;
     if (!p.streakThreshold) p.streakThreshold = 100;
     if (!Array.isArray(p.rewards)) p.rewards = [];
+    if (typeof p.bonusPoints !== "number") p.bonusPoints = 0;
+    if (!p.openedBoxes || typeof p.openedBoxes !== "object") p.openedBoxes = {};
+    if (typeof p.quarterGoalPoints !== "number") p.quarterGoalPoints = null;
+    if (!Array.isArray(p.celebratedQuarterGoals)) p.celebratedQuarterGoals = [];
+    if (!Array.isArray(p.celebratedWeeks)) p.celebratedWeeks = [];
+    if (!Array.isArray(p.pendingRewards)) p.pendingRewards = [];
     // 레벨업/배지 보상 팝업 도입 시점 마이그레이션: 기존에 이미 쌓아온 레벨·배지에 대해
     // 뒤늦게 축하 팝업이 뜨지 않도록, 처음 보는 상태라면 "지금까지"를 기준선으로 맞춰둔다.
     if (typeof p.lastSeenLevel !== "number" || !Array.isArray(p.celebratedBadgeDays)) {
@@ -1444,6 +1544,14 @@
         var longestSoFar = computeLongestStreak();
         p.celebratedBadgeDays = BADGE_THRESHOLDS.filter(function (b) { return longestSoFar >= b.days; }).map(function (b) { return b.days; });
       }
+    }
+    // 나무→마을 성장 시스템 도입 시점 마이그레이션: 기존에 이미 쌓아온 포인트만큼 성장 단계가
+    // 뒤늦게 한꺼번에 팝업으로 쏟아지지 않도록, 처음 보는 상태라면 지금까지를 기준선으로 맞춰둔다.
+    if (typeof p.lastSeenStageIdx !== "number" || typeof p.lastSeenGen !== "number") {
+      state = p;
+      var gNow = computeGrowth(computeGamification().points);
+      p.lastSeenStageIdx = gNow.stageIndex;
+      p.lastSeenGen = gNow.gen;
     }
     return p;
   }
@@ -1931,6 +2039,7 @@
         if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) points += 3;
       });
     });
+    points += state.bonusPoints || 0;
     var level = 1, remaining = points, need = pointsNeededForLevel(level);
     while (remaining >= need) {
       remaining -= need;
@@ -1940,18 +2049,67 @@
     return { points: points, level: level, ptsIntoLevel: remaining, ptsForNext: need };
   }
 
-  // ---- self-reward events (레벨업 = 잦은 보상, 스트릭 배지 = 드문 보상) ----
+  // ---- 성장(나무→마을) 시스템: 레벨업을 대체하는 장기 성장 여정 ----
+  // 창세기(씨앗·나무·동물)에서 시작해 갈라디아서 5:22-23의 성령의 9가지 열매를 거쳐,
+  // 요한계시록 21-22장의 새 예루살렘(성문·보석·생명나무·생명강) 이미지로 이어진다.
+  // 마지막 단계 이후에는 CYCLE_SIZE 포인트마다 "새로운 숲"이 시작되어 사실상 끝이 없다.
+  var GROWTH_STAGES = [
+    { label: "씨앗", emoji: "🌰", need: 0 },
+    { label: "새싹", emoji: "🌱", need: 15 },
+    { label: "어린 나무", emoji: "🌿", need: 40 },
+    { label: "나무", emoji: "🌳", need: 90 },
+    { label: "시냇가의 나무", emoji: "💧", need: 160 },
+    { label: "첫 열매 · 사랑", emoji: "❤️", need: 260 },
+    { label: "희락의 열매", emoji: "😊", need: 390 },
+    { label: "화평의 열매", emoji: "🕊️", need: 550 },
+    { label: "오래참음의 열매", emoji: "⏳", need: 750 },
+    { label: "자비의 열매", emoji: "🤝", need: 1000 },
+    { label: "양선의 열매", emoji: "🌼", need: 1300 },
+    { label: "충성의 열매", emoji: "🛡️", need: 1650 },
+    { label: "온유의 열매", emoji: "🍃", need: 2050 },
+    { label: "절제의 열매 (아홉 열매 완성)", emoji: "🍇", need: 2500 },
+    { label: "작은 숲", emoji: "🌲", need: 3000 },
+    { label: "마을의 샘", emoji: "⛲", need: 3600 },
+    { label: "첫 집", emoji: "🏠", need: 4300 },
+    { label: "커지는 마을", emoji: "🏘️", need: 5100 },
+    { label: "첫째 성문", emoji: "🚪", need: 6100 },
+    { label: "열두 성문", emoji: "🏛️", need: 7300 },
+    { label: "보석 성벽", emoji: "💎", need: 8700 },
+    { label: "성벽 완성", emoji: "🔷", need: 10300 },
+    { label: "생명나무와 생명강", emoji: "🌟", need: 12000 }
+  ];
+  var GROWTH_CYCLE_SIZE = 6000; // 마지막 단계 이후, 이만큼씩 쌓일 때마다 새 숲(세대)이 시작됨
+  function computeGrowth(points) {
+    var stages = GROWTH_STAGES, idx = 0;
+    for (var i = 0; i < stages.length; i++) { if (points >= stages[i].need) idx = i; else break; }
+    var stage = stages[idx], next = stages[idx + 1] || null;
+    if (next) {
+      return { gen: 1, stage: stage, stageIndex: idx, totalStages: stages.length, next: next,
+        ptsIntoStage: points - stage.need, ptsForNext: next.need - stage.need, final: false };
+    }
+    var extra = points - stage.need;
+    var gen = 2 + Math.floor(extra / GROWTH_CYCLE_SIZE);
+    var intoGen = extra % GROWTH_CYCLE_SIZE;
+    return { gen: gen, stage: stage, stageIndex: idx, totalStages: stages.length, next: null,
+      ptsIntoStage: intoGen, ptsForNext: GROWTH_CYCLE_SIZE, final: true };
+  }
+  function growthShortLabel(g) { return g.stage.emoji; }
+  function growthFullLabel(g) { return g.final ? (g.stage.label + " · " + g.gen + "번째 숲") : g.stage.label; }
+
+  // ---- self-reward events (스트릭 배지 = 드문 보상, "내가 나에게 준 선물" 로그에 기록됨) ----
   var REWARD_IDEAS = [
     "☕ 좋아하는 음료 한 잔", "📖 읽고 싶던 책 사기", "🍫 작은 간식 사 먹기",
     "🛍️ 고민하던 물건 사기", "🎧 좋아하는 음악 들으며 산책", "🛌 낮잠 30분 자기", "✨ 오늘은 일찍 쉬기"
   ];
   var rewardQueue = [];
+  var growthQueue = [];
+  // 체크(홈 탭, 기록/백필 탭)가 일어날 때마다 호출되는 단일 진입점.
+  // 1) 배지(스트릭 최장일수) — 기존 그대로, 눌러야 특별한 선물 팝업
+  // 2) 성장 단계(나무→마을) — 조용한 축하 팝업, 선물 기록은 안 함 (레벨업 대체)
+  // 3) 주간 보상(평일 4/5) — 금/토/일에만 판정, pending 보상 생성
+  // 4) 분기 보상(설정에서 정한 목표 포인트 돌파) — pending 보상 생성
   function checkRewardEvents() {
-    var gam = computeGamification();
-    if (gam.level > (state.lastSeenLevel || 1)) {
-      state.lastSeenLevel = gam.level;
-      queueReward({ type: "level", level: gam.level });
-    }
+    checkGrowthEvents();
     var longest = computeLongestStreak();
     if (!Array.isArray(state.celebratedBadgeDays)) state.celebratedBadgeDays = [];
     BADGE_THRESHOLDS.forEach(function (b) {
@@ -1960,7 +2118,10 @@
         queueReward({ type: "badge", badge: b });
       }
     });
+    checkWeeklyReward();
+    checkQuarterReward();
     saveState();
+    renderPendingIndicator();
   }
   function queueReward(ev) {
     rewardQueue.push(ev);
@@ -1969,16 +2130,8 @@
   function showRewardOverlay() {
     var ev = rewardQueue[0];
     if (!ev) return;
-    var title, body;
-    if (ev.type === "badge") {
-      title = ev.badge.emoji + " " + ev.badge.days + "일 연속 달성!";
-      body = "정말 대단해요 — 이번엔 좀 더 특별한 걸로 자신에게 선물해보는 거 어때요?";
-    } else {
-      title = "레벨 " + ev.level + " 달성! 🎉";
-      body = "차곡차곡 쌓이고 있어요. 오늘은 스스로에게 작은 걸 선물해보는 거 어때요?";
-    }
-    document.getElementById("rewardTitle").textContent = title;
-    document.getElementById("rewardBody").textContent = body;
+    document.getElementById("rewardTitle").textContent = ev.badge.emoji + " " + ev.badge.days + "일 연속 달성!";
+    document.getElementById("rewardBody").textContent = "정말 대단해요 — 이번엔 좀 더 특별한 걸로 자신에게 선물해보는 거 어때요?";
     document.getElementById("rewardIdeas").innerHTML = REWARD_IDEAS.map(function (t) {
       return '<span class="reward-idea-chip">' + t + '</span>';
     }).join("");
@@ -1996,18 +2149,175 @@
     if (ev && note) {
       if (!Array.isArray(state.rewards)) state.rewards = [];
       state.rewards.unshift({
-        id: uid(),
-        type: ev.type,
-        level: ev.type === "level" ? ev.level : null,
-        badgeDays: ev.type === "badge" ? ev.badge.days : null,
-        date: todayKey(),
-        note: note
+        id: uid(), type: "badge", level: null,
+        badgeDays: ev.badge.days, date: todayKey(), note: note
       });
       if (state.rewards.length > 200) state.rewards.length = 200;
       saveState();
       toast("기록했어요 🎁");
     }
     closeRewardOverlay();
+  }
+
+  // ---- 성장(나무→마을) 단계 축하 팝업 ----
+  function checkGrowthEvents() {
+    var g = computeGrowth(computeGamification().points);
+    if (typeof state.lastSeenStageIdx !== "number") state.lastSeenStageIdx = g.stageIndex;
+    if (typeof state.lastSeenGen !== "number") state.lastSeenGen = g.gen;
+    if (g.stageIndex > state.lastSeenStageIdx || g.gen > state.lastSeenGen) {
+      state.lastSeenStageIdx = g.stageIndex;
+      state.lastSeenGen = g.gen;
+      growthQueue.push(g);
+      if (growthQueue.length === 1) showGrowthOverlay();
+    }
+  }
+  function showGrowthOverlay() {
+    var g = growthQueue[0];
+    if (!g) return;
+    document.getElementById("growthEmoji").textContent = g.stage.emoji;
+    document.getElementById("growthLabel").textContent = growthFullLabel(g);
+    document.getElementById("growthSub").textContent = g.final ? "다시 씨앗부터, 새로운 숲이 시작돼요" : "쑥쑥 자라고 있어요";
+    document.getElementById("growthOverlay").classList.remove("hidden");
+  }
+  function closeGrowthOverlay() {
+    document.getElementById("growthOverlay").classList.add("hidden");
+    growthQueue.shift();
+    if (growthQueue.length) setTimeout(showGrowthOverlay, 300);
+  }
+
+  // ---- 오늘의 상자(일일 스트릭 성공 보너스) ----
+  var DAILY_BOX_BONUS = 5;
+  function todayBoxAvailable() {
+    var k = todayKey();
+    if (state.openedBoxes && state.openedBoxes[k]) return false;
+    return overallStreakStatus(k) === true;
+  }
+  function openTodayBox() {
+    var k = todayKey();
+    if (!state.openedBoxes) state.openedBoxes = {};
+    if (state.openedBoxes[k]) return;
+    state.bonusPoints = (state.bonusPoints || 0) + DAILY_BOX_BONUS;
+    state.openedBoxes[k] = true;
+    saveState();
+    toast("오늘의 보너스 +" + DAILY_BOX_BONUS + "P 🎁");
+    checkRewardEvents();
+    renderHome();
+  }
+
+  // ---- 주간 보상(평일 월~금 5일 중 4일 이상 성공) ----
+  function mondayOf(d) {
+    var s = startOfWeek(d);
+    s.setDate(s.getDate() + 1);
+    return s;
+  }
+  function weekdaySuccessInfo(monday) {
+    var success = 0, counted = 0;
+    for (var i = 0; i < 5; i++) {
+      var d = new Date(monday); d.setDate(d.getDate() + i);
+      var s = overallStreakStatus(keyFor(d));
+      if (s !== null) { counted++; if (s) success++; }
+    }
+    return { success: success, counted: counted };
+  }
+  function checkWeeklyReward() {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var dow = today.getDay();
+    if (dow !== 5 && dow !== 6 && dow !== 0) return; // 금/토/일에만 판정
+    var monday = mondayOf(today);
+    var mondayKey = keyFor(monday);
+    if (!Array.isArray(state.celebratedWeeks)) state.celebratedWeeks = [];
+    if (state.celebratedWeeks.indexOf(mondayKey) !== -1) return;
+    var friday = new Date(monday); friday.setDate(friday.getDate() + 4);
+    if (friday > today) return;
+    var info = weekdaySuccessInfo(monday);
+    if (info.counted === 0) return;
+    var needed = info.counted >= 5 ? 4 : info.counted;
+    if (info.success >= needed) {
+      state.celebratedWeeks.push(mondayKey);
+      if (!Array.isArray(state.pendingRewards)) state.pendingRewards = [];
+      state.pendingRewards.unshift({ id: uid(), kind: "weekly", periodKey: mondayKey,
+        unlockedAt: todayKey(), status: "pending", note: "", claimedAt: null });
+      toast("이번 주 보상이 열렸어요 🎀");
+    }
+  }
+
+  // ---- 분기 보상(설정에서 정한 목표 포인트 돌파) ----
+  function checkQuarterReward() {
+    var goal = state.quarterGoalPoints;
+    if (!goal || goal <= 0) return;
+    var points = computeGamification().points;
+    if (!Array.isArray(state.celebratedQuarterGoals)) state.celebratedQuarterGoals = [];
+    if (state.celebratedQuarterGoals.indexOf(goal) !== -1) return;
+    if (points >= goal) {
+      state.celebratedQuarterGoals.push(goal);
+      if (!Array.isArray(state.pendingRewards)) state.pendingRewards = [];
+      state.pendingRewards.unshift({ id: uid(), kind: "quarter", goalPoints: goal,
+        unlockedAt: todayKey(), status: "pending", note: "", claimedAt: null });
+      toast(goal + "P 돌파! 큰 보상이 열렸어요 🎉");
+    }
+  }
+
+  // ---- 보상 상자(주간/분기 pending 보상 보류 후 나중 입력 & 수정) ----
+  function findReward(id) {
+    var list = state.pendingRewards || [];
+    for (var i = 0; i < list.length; i++) { if (list[i].id === id) return list[i]; }
+    return null;
+  }
+  function renderPendingIndicator() {
+    var el = document.getElementById("pendingRewardBanner");
+    if (!el) return;
+    var n = (state.pendingRewards || []).filter(function (r) { return r.status === "pending"; }).length;
+    el.classList.toggle("hidden", n === 0);
+    if (n > 0) document.getElementById("pendingRewardBannerText").textContent =
+      "열린 보상 " + n + "개가 기다리고 있어요 — 탭해서 기록하기";
+  }
+  function openPendingRewardsOverlay() {
+    renderPendingRewardsList();
+    document.getElementById("pendingRewardsOverlay").classList.remove("hidden");
+  }
+  function closePendingRewardsOverlay() { document.getElementById("pendingRewardsOverlay").classList.add("hidden"); }
+  function renderPendingRewardsList() {
+    var list = (state.pendingRewards || []).slice(0, 40);
+    var el = document.getElementById("pendingRewardsList");
+    if (!list.length) { el.innerHTML = '<div class="reward-log-empty">아직 열린 보상이 없어요</div>'; return; }
+    el.innerHTML = list.map(function (r) {
+      var title = r.kind === "quarter" ? ("🎉 " + r.goalPoints + "P 돌파") : ("🎀 주간 보상 · " + r.periodKey.slice(5) + " 주");
+      var noteTxt = r.status === "pending" ? "탭해서 기록하기" : escapeHtml(r.note || "");
+      return '<div class="pending-reward-item" data-action="open-reward-claim" data-id="' + r.id + '">' +
+        '<div class="pending-reward-main"><div class="pending-reward-title">' + title + '</div>' +
+        '<div class="pending-reward-note">' + noteTxt + '</div></div>' +
+        (r.status === "pending" ? '<span class="pending-reward-dot"></span>' : '') + '</div>';
+    }).join("");
+  }
+  var claimingRewardId = null;
+  function openRewardClaim(id) {
+    var r = findReward(id);
+    if (!r) return;
+    claimingRewardId = id;
+    document.getElementById("rewardClaimTitle").textContent = r.kind === "quarter" ? (r.goalPoints + "P 돌파 보상!") : "이번 주 작은 보상";
+    document.getElementById("rewardClaimBody").textContent = r.kind === "quarter" ?
+      "꾸준히 3개월 가까이 애썼어요. 크게 하나 해보는 거 어때요?" :
+      "이번 주도 잘 보냈어요. 주말에 무얼 했는지(또는 할 건지) 적어보세요.";
+    document.getElementById("rewardClaimInput").value = r.note || "";
+    document.getElementById("rewardClaimOverlay").classList.remove("hidden");
+  }
+  function closeRewardClaim() {
+    document.getElementById("rewardClaimOverlay").classList.add("hidden");
+    claimingRewardId = null;
+  }
+  function saveRewardClaim() {
+    var note = document.getElementById("rewardClaimInput").value.trim();
+    var r = findReward(claimingRewardId);
+    if (r) {
+      r.note = note;
+      if (note) { r.status = "claimed"; if (!r.claimedAt) r.claimedAt = todayKey(); }
+      else { r.status = "pending"; r.claimedAt = null; }
+      saveState();
+      renderPendingRewardsList();
+      renderPendingIndicator();
+      toast("기록했어요");
+    }
+    closeRewardClaim();
   }
 
   // ---- weekly summary + consistency ----
@@ -2118,7 +2428,11 @@
     document.getElementById("dayLabel").textContent = (d.getMonth()+1) + "월 " + d.getDate() + "일 " + days[d.getDay()] + "요일";
     document.getElementById("streakNum").textContent = computeStreakGeneric(overallStreakStatus);
     var gam = computeGamification();
-    document.getElementById("levelTag").textContent = "· Lv." + gam.level;
+    var g = computeGrowth(gam.points);
+    document.getElementById("levelTag").textContent = "· " + growthShortLabel(g);
+
+    document.getElementById("dailyBoxCard").classList.toggle("hidden", !todayBoxAvailable());
+    renderPendingIndicator();
 
     var todayK = todayKey();
     var todayIsRest = isRestDay(todayK);
@@ -2908,7 +3222,13 @@
       streakThreshold: state.streakThreshold,
       rewards: state.rewards,
       memos: state.memos,
-      personalTitle: state.personalTitle
+      personalTitle: state.personalTitle,
+      bonusPoints: state.bonusPoints,
+      openedBoxes: state.openedBoxes,
+      quarterGoalPoints: state.quarterGoalPoints,
+      celebratedQuarterGoals: state.celebratedQuarterGoals,
+      celebratedWeeks: state.celebratedWeeks,
+      pendingRewards: state.pendingRewards
     };
     document.getElementById("exportText").value = JSON.stringify(data, null, 2);
   }
@@ -2953,6 +3273,12 @@
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
     if (Array.isArray(parsed.rewards)) state.rewards = parsed.rewards;
     if (parsed.memos && typeof parsed.memos === "object") state.memos = parsed.memos;
+    if (typeof parsed.bonusPoints === "number") state.bonusPoints = parsed.bonusPoints;
+    if (parsed.openedBoxes && typeof parsed.openedBoxes === "object") state.openedBoxes = parsed.openedBoxes;
+    if (typeof parsed.quarterGoalPoints === "number") state.quarterGoalPoints = parsed.quarterGoalPoints;
+    if (Array.isArray(parsed.celebratedQuarterGoals)) state.celebratedQuarterGoals = parsed.celebratedQuarterGoals;
+    if (Array.isArray(parsed.celebratedWeeks)) state.celebratedWeeks = parsed.celebratedWeeks;
+    if (Array.isArray(parsed.pendingRewards)) state.pendingRewards = parsed.pendingRewards;
     if (parsed.personalTitle && typeof parsed.personalTitle === "object") {
       state.personalTitle = {
         emoji: typeof parsed.personalTitle.emoji === "string" ? parsed.personalTitle.emoji : "",
@@ -2964,6 +3290,9 @@
     state.lastSeenLevel = computeGamification().level;
     var importedLongest = computeLongestStreak();
     state.celebratedBadgeDays = BADGE_THRESHOLDS.filter(function (b) { return importedLongest >= b.days; }).map(function (b) { return b.days; });
+    var importedG = computeGrowth(computeGamification().points);
+    state.lastSeenStageIdx = importedG.stageIndex;
+    state.lastSeenGen = importedG.gen;
     saveState();
     toast((sourceLabel || "") + "가져왔어요");
     showView("view-home"); renderHome();
@@ -3205,7 +3534,13 @@
       streakThreshold: state.streakThreshold,
       rewards: state.rewards,
       memos: state.memos,
-      personalTitle: state.personalTitle
+      personalTitle: state.personalTitle,
+      bonusPoints: state.bonusPoints,
+      openedBoxes: state.openedBoxes,
+      quarterGoalPoints: state.quarterGoalPoints,
+      celebratedQuarterGoals: state.celebratedQuarterGoals,
+      celebratedWeeks: state.celebratedWeeks,
+      pendingRewards: state.pendingRewards
     };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
@@ -3368,6 +3703,14 @@
     else if (action === "achieve-close") { closeAchievements(); }
     else if (action === "reward-close") { closeRewardOverlay(); }
     else if (action === "reward-save") { saveRewardOverlay(); }
+    else if (action === "growth-close") { closeGrowthOverlay(); }
+    else if (action === "open-daily-box") { openTodayBox(); }
+    else if (action === "open-pending-rewards") { openPendingRewardsOverlay(); }
+    else if (action === "pending-rewards-close") { closePendingRewardsOverlay(); }
+    else if (action === "open-reward-claim") { openRewardClaim(id); }
+    else if (action === "reward-claim-cancel") { closeRewardClaim(); }
+    else if (action === "reward-claim-save") { saveRewardClaim(); }
+    else if (action === "save-quarter-goal") { saveQuarterGoal(); }
     else if (action === "theme-select") { currentTheme = id; applyTheme(id); updateSettingsModalUI(); }
     else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
     else if (action === "open-rest-modal") { showView("view-restDays"); openRestModal(); }
