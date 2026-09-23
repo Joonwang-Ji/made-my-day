@@ -338,6 +338,13 @@
   .tp-overlay { position: fixed; inset: 0; background: var(--overlay); z-index: 70; display: flex;
     align-items: center; justify-content: center; padding: 20px; }
   .tp-card { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; max-width: 280px; }
+  .tp-card-scroll { display: flex; flex-direction: column; padding: 0; max-height: 82vh; }
+  .tp-card-scroll .tp-card-head { flex: none; display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 18px 18px 10px; }
+  .tp-card-scroll .tp-card-head .tp-title { margin: 0; text-align: left; flex: 1; }
+  .tp-card-scroll .tp-card-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 18px 18px; }
+  .tp-close-x { width: 26px; height: 26px; border-radius: 50%; background: var(--ring-track); color: var(--ink-dim);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex: none; cursor: pointer; }
   .tp-title { font-weight: 800; font-size: 14px; margin-bottom: 14px; text-align: center; color: var(--ink); }
   .tp-wheels { position: relative; display: flex; justify-content: center; gap: 22px; height: 114px; }
   .tp-col { display: flex; flex-direction: column; align-items: center; }
@@ -766,8 +773,12 @@
 </div>
 
 <div class="tp-overlay hidden" id="achieveOverlay">
-  <div class="tp-card" style="max-width:300px;">
-    <div class="tp-title">업적</div>
+  <div class="tp-card tp-card-scroll" style="max-width:300px;">
+    <div class="tp-card-head">
+      <div class="tp-title">업적</div>
+      <span class="tp-close-x" data-action="achieve-close">✕</span>
+    </div>
+    <div class="tp-card-body">
     <div id="achieveTotalPoints" style="text-align:center;font-size:13px;font-weight:700;color:var(--ink-dim);margin-bottom:10px;">누적 0P</div>
     <div class="achieve-level-row">
       <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;">📜</div>
@@ -786,15 +797,17 @@
     <div id="achieveGenealogy" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
     <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
     <div id="rewardLogList"></div>
-    <div class="btn primary" data-action="achieve-close" style="margin-top:16px;">닫기</div>
+    </div>
   </div>
 </div>
 
 <div class="tp-overlay hidden" id="bibleShelfOverlay">
-  <div class="tp-card" style="max-width:340px;max-height:82vh;overflow-y:auto;">
-    <div class="tp-title" id="bibleShelfTitle">성경 여정</div>
-    <div id="bibleShelfBody"></div>
-    <div class="btn primary" data-action="bible-shelf-close" style="margin-top:16px;">닫기</div>
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title" id="bibleShelfTitle">성경 여정</div>
+      <span class="tp-close-x" data-action="bible-shelf-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="bibleShelfBody"></div>
   </div>
 </div>
 
@@ -856,18 +869,22 @@
 </div>
 
 <div class="tp-overlay hidden" id="approvalOverlay">
-  <div class="tp-card" style="max-width:320px;">
-    <div class="tp-title">가입 승인 관리</div>
-    <div id="approvalOverlayBody"></div>
-    <div class="btn primary" data-action="approval-close" style="margin-top:16px;">닫기</div>
+  <div class="tp-card tp-card-scroll" style="max-width:320px;">
+    <div class="tp-card-head">
+      <div class="tp-title">가입 승인 관리</div>
+      <span class="tp-close-x" data-action="approval-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="approvalOverlayBody"></div>
   </div>
 </div>
 
 <div class="tp-overlay hidden" id="missedOverlay">
-  <div class="tp-card" style="max-width:320px;">
-    <div class="tp-title">놓친 항목</div>
-    <div id="missedOverlayBody"></div>
-    <div class="btn primary" data-action="missed-close" style="margin-top:16px;">닫기</div>
+  <div class="tp-card tp-card-scroll" style="max-width:320px;">
+    <div class="tp-card-head">
+      <div class="tp-title">놓친 항목</div>
+      <span class="tp-close-x" data-action="missed-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="missedOverlayBody"></div>
   </div>
 </div>
 
@@ -894,10 +911,12 @@
 </div>
 
 <div class="tp-overlay hidden" id="pendingRewardsOverlay">
-  <div class="tp-card" style="max-width:320px;">
-    <div class="tp-title">내 선물함</div>
-    <div id="pendingRewardsList"></div>
-    <div class="btn primary" data-action="pending-rewards-close" style="margin-top:16px;">닫기</div>
+  <div class="tp-card tp-card-scroll" style="max-width:320px;">
+    <div class="tp-card-head">
+      <div class="tp-title">내 선물함</div>
+      <span class="tp-close-x" data-action="pending-rewards-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="pendingRewardsList"></div>
   </div>
 </div>
 
