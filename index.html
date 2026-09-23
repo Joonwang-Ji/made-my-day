@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-23-7";
+  var BUILD_VERSION = "2026-09-23-8";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -1600,12 +1600,20 @@
         document.getElementById("ringPctText").textContent = todayPct + "%";
         document.getElementById("ringInfoMain").textContent = totalDoneToday + "/" + totalDueToday + " 오늘 완료";
         var met = todayPct >= threshold;
-        var near = !met && todayPct >= threshold - 20;
+        var remaining = totalDueToday - totalDoneToday;
+        var needed = 0, unreachable = false;
+        if (!met) {
+          needed = Math.max(0, Math.ceil(threshold / 100 * totalDueToday - totalDoneToday - 1e-9));
+          if (needed > remaining) { needed = remaining; unreachable = true; }
+        }
+        var near = !met && !unreachable && needed <= 1;
         if (met) { fillCircle.classList.add("met"); flame.classList.add("flame-glow"); }
         else { flame.classList.add("flame-flicker"); if (near) fillCircle.classList.add("near"); }
         document.getElementById("ringInfoSub").textContent = met
           ? "오늘 기준 달성 · 스트릭 유지 🔥"
-          : "기준 " + threshold + "%까지 " + Math.max(0, threshold - todayPct) + "%p 남았어요";
+          : unreachable
+            ? "오늘은 기준 " + threshold + "% 달성이 어려워요"
+            : needed + "개만 더 하면 기준 " + threshold + "% 달성이에요";
       }
     }
 
