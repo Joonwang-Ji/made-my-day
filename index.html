@@ -768,6 +768,7 @@
 <div class="tp-overlay hidden" id="achieveOverlay">
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title">업적</div>
+    <div id="achieveTotalPoints" style="text-align:center;font-size:13px;font-weight:700;color:var(--ink-dim);margin-bottom:10px;">누적 0P</div>
     <div class="achieve-level-row">
       <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;">📜</div>
       <div style="flex:1;">
@@ -777,6 +778,7 @@
       </div>
     </div>
     <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 14px;"></div>
+    <div class="btn" data-action="open-bible-shelf" style="margin-bottom:10px;">📖 성경 여정 전체보기</div>
     <div class="btn" data-action="open-pending-rewards" style="margin-bottom:16px;">🎀 보상 상자 보기</div>
     <div class="section-label">배지 (최장 연속일 기준)</div>
     <div class="badge-grid" id="badgeGrid"></div>
@@ -785,6 +787,14 @@
     <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
     <div id="rewardLogList"></div>
     <div class="btn primary" data-action="achieve-close" style="margin-top:16px;">닫기</div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="bibleShelfOverlay">
+  <div class="tp-card" style="max-width:340px;max-height:82vh;overflow-y:auto;">
+    <div class="tp-title" id="bibleShelfTitle">성경 여정</div>
+    <div id="bibleShelfBody"></div>
+    <div class="btn primary" data-action="bible-shelf-close" style="margin-top:16px;">닫기</div>
   </div>
 </div>
 
@@ -1076,6 +1086,8 @@
   function openAchievements() {
     var gam = computeGamification();
     var g = computeGrowth(gam.points);
+    var totalEl = document.getElementById("achieveTotalPoints");
+    if (totalEl) totalEl.textContent = "누적 " + gam.points + "P";
     document.getElementById("achieveLevelNum").innerHTML = bibleIconSVG(g.milestone.icon, 34);
     document.getElementById("achieveGrowthLabel").textContent = growthFullLabel(g);
     document.getElementById("achieveLevelPts").textContent = g.ptsIntoStage + "/" + g.ptsForNext + "P";
@@ -1105,6 +1117,68 @@
     document.getElementById("achieveOverlay").classList.remove("hidden");
   }
   function closeAchievements() { document.getElementById("achieveOverlay").classList.add("hidden"); }
+
+  // ---- 성경 여정 전체보기: 66권 책장 + 권별 장면 갤러리 ----
+  var bibleShelfState = { mode: "list", bookId: null };
+  function openBibleShelf() {
+    bibleShelfState = { mode: "list", bookId: null };
+    renderBibleShelf();
+    document.getElementById("bibleShelfOverlay").classList.remove("hidden");
+  }
+  function closeBibleShelf() { document.getElementById("bibleShelfOverlay").classList.add("hidden"); }
+  function openBibleShelfBook(bookId) { bibleShelfState = { mode: "book", bookId: bookId }; renderBibleShelf(); }
+  function backToBibleShelfList() { bibleShelfState = { mode: "list", bookId: null }; renderBibleShelf(); }
+  function renderBibleShelf() {
+    var points = computeGamification().points;
+    var g = computeGrowth(points);
+    var titleEl = document.getElementById("bibleShelfTitle");
+    var body = document.getElementById("bibleShelfBody");
+    if (bibleShelfState.mode === "list") {
+      titleEl.textContent = "성경 여정 · " + (g.bookIndex + 1) + "/" + g.totalBooks + "권";
+      var bySection = {}, order = [];
+      BIBLE_BOOKS.forEach(function (b) {
+        if (!bySection[b.section]) { bySection[b.section] = []; order.push(b.section); }
+        bySection[b.section].push(b);
+      });
+      var html = "";
+      order.forEach(function (sec) {
+        html += '<div class="section-label" style="margin-top:14px;">' + sec + '</div><div style="display:flex;flex-direction:column;gap:4px;">';
+        bySection[sec].forEach(function (b) {
+          var idx = BIBLE_BOOKS.indexOf(b);
+          var status = idx < g.bookIndex ? "done" : (idx === g.bookIndex ? "current" : "locked");
+          var pct = status === "current" ? Math.min(100, Math.round((points - b.cumStart) / b.points * 100)) : (status === "done" ? 100 : 0);
+          var icon = status === "locked" ? "🔒" : b.icon;
+          html += '<div class="btn" data-action="bible-shelf-open-book" data-id="' + b.id + '" style="display:flex;justify-content:space-between;align-items:center;opacity:' +
+            (status === "locked" ? 0.45 : 1) + ';margin:0;"><span>' + icon + ' ' + b.name + '</span><span style="font-size:11px;color:var(--ink-dim);">' +
+            (status === "done" ? "완료 ✓" : status === "current" ? pct + "%" : "잠김") + '</span></div>';
+        });
+        html += '</div>';
+      });
+      body.innerHTML = html;
+    } else {
+      var book = BIBLE_BOOKS.filter(function (b) { return b.id === bibleShelfState.bookId; })[0];
+      if (!book) { backToBibleShelfList(); return; }
+      var bookIdx = BIBLE_BOOKS.indexOf(book);
+      titleEl.textContent = book.icon + " " + book.name;
+      if (bookIdx > g.bookIndex) {
+        body.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink-dim);font-size:13px;">🔒 아직 열리지 않았어요<br>앞의 권들을 먼저 완주해보세요</div>' +
+          '<div class="btn" data-action="bible-shelf-back" style="margin-top:14px;">← 목록으로</div>';
+        return;
+      }
+      var scenes = scenesForBook(book);
+      var into = Math.min(points - book.cumStart, book.points);
+      var html = '<div class="btn" data-action="bible-shelf-back" style="margin-bottom:12px;">← 목록으로</div>';
+      scenes.forEach(function (sc) {
+        var filled = sceneFilledCount(book, sc, into);
+        var complete = filled === sc.count;
+        html += '<div style="margin-bottom:18px;"><div style="font-size:12.5px;font-weight:700;margin-bottom:4px;">' + sc.title +
+          (complete ? " ✓" : filled > 0 ? " · 그려지는 중" : "") + '</div>' +
+          (filled > 0 ? '<div style="text-align:center;">' + sceneCanvasSVG(book, sc, filled, 220) + '</div>' :
+            '<div style="text-align:center;font-size:11.5px;color:var(--ink-dim);padding:14px 0;">아직 시작 전이에요</div>') + '</div>';
+      });
+      body.innerHTML = html;
+    }
+  }
 
   // ---- rest days ----
   var KNOWN_KR_HOLIDAYS = {
@@ -2200,6 +2274,59 @@
       text: "하나님이 너희를 돌보시리니 내 뼈를 메고 올라가라 — 약속을 남기고 창세기가 닫히다." }
   ];
   var BOOK_MILESTONES = { gen: GENESIS_MILESTONES };
+
+  // ---- 장면(scene) 단위 그림 완성 시스템 ----
+  // 마일스톤을 낱개 아이콘으로만 보여주지 않고, 몇 개씩 묶어 "그려지는 중"인 한 장면으로
+  // 모아 보여준다. 장면 안의 마일스톤을 하나씩 달성할 때마다 재사용 SVG 부품이 격자에
+  // 하나씩 채워지고, 장면이 다 채워지면 "완성"되어 갤러리에 남는다.
+  var BOOK_SCENES = {
+    gen: [
+      { id: "gen_s0", title: "창조 주간", milestoneIds: ["gen01", "gen02", "gen03", "gen04", "gen05", "gen06", "gen07"] },
+      { id: "gen_s1", title: "에덴과 타락", milestoneIds: ["gen08", "gen09", "gen10", "gen11"] },
+      { id: "gen_s2", title: "노아의 방주", milestoneIds: ["gen12", "gen13", "gen14", "gen15"] },
+      { id: "gen_s3", title: "믿음의 조상들", milestoneIds: ["gen16", "gen17", "gen18", "gen19", "gen20", "gen21", "gen22", "gen23"] },
+      { id: "gen_s4", title: "요셉 이야기", milestoneIds: ["gen24", "gen25", "gen26", "gen27", "gen28"] }
+    ]
+  };
+  function attachSceneMeta(bookId) {
+    var ms = BOOK_MILESTONES[bookId], scenes = BOOK_SCENES[bookId];
+    if (!ms || !scenes) return;
+    var pos = 0;
+    scenes.forEach(function (sc, si) {
+      sc.startIdx = pos; sc.count = sc.milestoneIds.length; sc.endIdx = pos + sc.count;
+      for (var k = 0; k < sc.count; k++) { ms[pos + k].sceneIdx = si; ms[pos + k].sceneSlot = k; }
+      pos += sc.count;
+    });
+  }
+  attachSceneMeta("gen");
+  function scenesForBook(book) {
+    milestonesForBook(book); // 아직 캐시되지 않은 책이면 자리표시자 생성 + 장면 부여를 트리거
+    return BOOK_SCENES[book.id] || [];
+  }
+  // 장면 하나를 격자(최대 4열)로 조합해 그려지는 그림처럼 보여준다. 이미 이룬 마일스톤만큼만
+  // 실제 아이콘을 채우고, 나머지는 점선 빈칸으로 남겨 "채워지는 중"임을 보여준다.
+  function sceneCanvasSVG(book, scene, filledCount, size) {
+    var ms = milestonesForBook(book), cols = 4, rows = Math.ceil(scene.count / cols);
+    var cellW = 50, cellH = 50, vw = cols * cellW, vh = rows * cellH;
+    var content = "";
+    for (var i = 0; i < scene.count; i++) {
+      var col = i % cols, row = Math.floor(i / cols), tx = col * cellW, ty = row * cellH;
+      var m = ms[scene.startIdx + i];
+      content += '<g transform="translate(' + tx + ',' + ty + ') scale(0.5)">';
+      content += (i < filledCount) ? (BIBLE_ICONS[m.icon] || BIBLE_ICONS.scroll)()
+        : '<circle cx="50" cy="50" r="32" fill="none" stroke="#9a9a9a" stroke-width="2.5" stroke-dasharray="5 5" opacity=".35"/>';
+      content += '</g>';
+    }
+    size = size || 200;
+    return '<svg width="' + size + '" height="' + Math.round(size * vh / vw) + '" viewBox="0 0 ' + vw + ' ' + vh +
+      '" xmlns="http://www.w3.org/2000/svg">' + content + '</svg>';
+  }
+  function sceneFilledCount(book, scene, pointsIntoBook) {
+    var ms = milestonesForBook(book), filled = 0;
+    for (var k = 0; k < scene.count; k++) { if (pointsIntoBook >= ms[scene.startIdx + k].need) filled = k + 1; }
+    return filled;
+  }
+
   // ---- 재사용 SVG 부품 (매번 새로 그리지 않고 조합) ----
   var SVG_P = {
     rays: function (cx, cy, r1, r2, n, c) {
@@ -2394,6 +2521,9 @@
         text: "아직 세부 사건이 채워지지 않았어요 — 다음 업데이트에서 이어집니다."
       });
     }
+    BOOK_MILESTONES[book.id] = list;
+    BOOK_SCENES[book.id] = [{ id: book.id + "_s0", title: book.name + " 전체", milestoneIds: list.map(function (m) { return m.id; }) }];
+    attachSceneMeta(book.id);
     return list;
   }
   function bookForPoints(points) {
@@ -2533,7 +2663,11 @@
     var g = entry.g;
     document.getElementById("growthEmoji").innerHTML = bibleIconSVG(g.milestone.icon, 64);
     document.getElementById("growthLabel").textContent = entry.newBook ? (g.book.name + " 시작") : g.milestone.title;
+    var scenes = BOOK_SCENES[g.book.id] || [];
+    var scene = scenes[g.milestone.sceneIdx];
+    var sceneDone = scene && g.milestone.sceneSlot === scene.count - 1;
     var sub = entry.newBook ? (g.book.section + " · " + g.book.name + "이 열렸어요")
+      : sceneDone ? ('"' + scene.title + '" 장면 완성! 🖼️')
       : (g.milestone.ref + (g.isBookEnd ? " · " + g.book.name + " 완결" : ""));
     document.getElementById("growthSub").textContent = sub;
     document.getElementById("growthOverlay").classList.toggle("book-open-anim", !!entry.newBook);
@@ -4061,6 +4195,10 @@
     else if (action === "title-emoji-pick") { pickTitleEmoji(el.getAttribute("data-emoji")); }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
+    else if (action === "open-bible-shelf") { openBibleShelf(); }
+    else if (action === "bible-shelf-close") { closeBibleShelf(); }
+    else if (action === "bible-shelf-open-book") { openBibleShelfBook(id); }
+    else if (action === "bible-shelf-back") { backToBibleShelfList(); }
     else if (action === "reward-close") { closeRewardOverlay(); }
     else if (action === "reward-save") { saveRewardOverlay(); }
     else if (action === "growth-close") { closeGrowthOverlay(); }
