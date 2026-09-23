@@ -2756,7 +2756,15 @@
     if (memoSearchOpen) {
       var inputEl = document.getElementById("memoSearchInput");
       if (inputEl) {
-        inputEl.addEventListener("input", function (e) { memoSearchQuery = e.target.value; renderBackfillMemoList(); });
+        // 한글 입력은 자모가 조합되는 도중(예: ㅎ+ㅗ+ㅣ → 회) 매 keystroke마다
+        // input 이벤트가 뜨는데, 그때마다 innerHTML을 통째로 다시 그리면 입력 중이던
+        // <input> 노드가 통째로 교체되면서 IME 조합 상태가 끊겨 자소가 분리돼 버린다.
+        // compositionstart~compositionend 구간에는 리렌더를 미루고, 조합이 끝났을 때만
+        // (또는 영문/숫자처럼 조합이 없는 입력일 때는 매 keystroke) 다시 그린다.
+        var composing = false;
+        inputEl.addEventListener("compositionstart", function () { composing = true; });
+        inputEl.addEventListener("compositionend", function (e) { composing = false; memoSearchQuery = e.target.value; renderBackfillMemoList(); });
+        inputEl.addEventListener("input", function (e) { memoSearchQuery = e.target.value; if (!composing) renderBackfillMemoList(); });
         inputEl.focus();
         var v = inputEl.value; inputEl.value = ""; inputEl.value = v;
       }
