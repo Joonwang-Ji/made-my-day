@@ -629,6 +629,34 @@
   .pending-reward-title { font-size: 12.5px; font-weight: 700; }
   .pending-reward-note { font-size: 11.5px; color: var(--ink-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pending-reward-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex: none; }
+
+  /* ---- 도움말(?) ---- */
+  .help-q { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-left: 6px;
+    border-radius: 50%; border: 1px solid var(--ink-dim); color: var(--ink-dim); opacity: .55; cursor: pointer; flex: none;
+    font: 700 10px/1 'Nanum Gothic', -apple-system, sans-serif; vertical-align: middle; position: relative; letter-spacing: 0; }
+  .help-q::after { content: ""; position: absolute; inset: -9px; }
+  .top-bar .help-q { margin-left: -4px; }
+  .today-ring-card { position: relative; }
+  .today-ring-card > .help-q { position: absolute; top: 9px; right: 9px; margin: 0; }
+  .help-overlay { align-items: flex-end; padding: 0; z-index: 85; }
+  .help-sheet { background: var(--card); width: 100%; max-width: 480px; border-radius: 22px 22px 0 0; max-height: 78vh;
+    display: flex; flex-direction: column; animation: help-up .22s ease; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  @keyframes help-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .help-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 18px 18px 8px; }
+  .help-head .help-title { flex: 1; font-weight: 800; font-size: 15px; color: var(--ink); }
+  .help-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 4px 18px 18px; }
+  .help-h { font-size: 12.5px; font-weight: 800; color: var(--ink); margin: 14px 0 4px; }
+  .help-h:first-child { margin-top: 4px; }
+  .help-p { font-size: 13px; line-height: 1.7; color: var(--ink-dim); }
+  .help-p b { color: var(--ink); }
+  .help-see { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .help-see-label { width: 100%; font-size: 11.5px; color: var(--ink-dim); font-weight: 700; }
+  .help-chip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    font-size: 12px; font-weight: 700; cursor: pointer; }
+  .help-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; margin-bottom: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .help-row .help-row-sub { display: block; font-size: 11.5px; font-weight: 400; color: var(--ink-dim); margin-top: 2px; }
+  .help-row .chev { color: var(--ink-dim); }
 </style>
 </head>
 <body>
@@ -720,6 +748,7 @@
   <div id="nudgeBanner" class="nudge-banner hidden" data-action="open-missed-overlay"></div>
   <div id="holidayBanner" class="nudge-banner hidden" data-action="open-holiday-banner-year"></div>
   <div id="todayRingCard" class="today-ring-card hidden" data-action="open-achievements">
+    <span class="help-q" data-action="help" data-id="home">?</span>
     <div class="ring-wrap">
       <svg class="ring-svg" viewBox="0 0 76 76">
         <circle class="ring-track" cx="38" cy="38" r="32"></circle>
@@ -745,7 +774,7 @@
 <div class="wrap hidden" id="view-editItems">
   <div class="top-bar">
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2 id="editItemsTitle">항목 편집</h2>
+    <h2 id="editItemsTitle">항목 편집</h2><span class="help-q" data-action="help" data-id="edit">?</span>
   </div>
   <div class="section-label">동선 순서대로 정리하세요. 요일 칩과 시간 칩을 눌러 설정하세요.</div>
   <div id="editItemsList"></div>
@@ -758,7 +787,7 @@
 <div class="wrap hidden" id="view-stats">
   <div class="top-bar">
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2>통계</h2>
+    <h2>통계</h2><span class="help-q" data-action="help" data-id="stats">?</span>
   </div>
   <div class="tabs" id="statsViewTabs"></div>
   <div class="tabs" id="statsTagTabs"></div>
@@ -768,7 +797,7 @@
 <div class="wrap hidden" id="view-backfill">
   <div class="top-bar">
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2>과거 기록</h2>
+    <h2>과거 기록</h2><span class="help-q" data-action="help" data-id="backfill">?</span>
   </div>
   <div class="tabs" id="backfillModeTabs"></div>
   <div id="backfillDateMode">
@@ -799,7 +828,7 @@
 <div class="wrap hidden" id="view-export">
   <div class="top-bar">
     <button class="back-btn" data-action="go-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2>데이터</h2>
+    <h2>데이터</h2><span class="help-q" data-action="help" data-id="backup">?</span>
   </div>
   <div class="section-label" style="margin-top:0;">백업 (파일)</div>
   <div class="export-note">기록 전체를 파일 하나로 저장해두세요. 기기를 바꾸거나 데이터가 지워졌을 때 이 파일로 복원할 수 있어요.</div>
@@ -841,7 +870,7 @@
 
 <div class="tp-overlay hidden" id="dayOverlay">
   <div class="tp-card">
-    <div class="tp-title">반복 요일</div>
+    <div class="tp-title">반복 요일<span class="help-q" data-action="help" data-id="days">?</span></div>
     <div class="day-presets">
       <button data-action="day-preset" data-id="all">매일</button>
       <button data-action="day-preset" data-id="weekday">평일</button>
@@ -850,11 +879,11 @@
     </div>
     <div class="day-toggle-row" id="dayToggleRow"></div>
     <div class="flex-hint hidden" id="flexHint">불시 항목은 정해진 요일 없이 홈·기록에서 직접 체크해요. 스트릭·카운트다운·놓친 항목에는 들어가지 않고, 포인트에만 반영돼요.</div>
-    <div class="section-label">쉬는 날 처리</div>
+    <div class="section-label">쉬는 날 처리<span class="help-q" data-action="help" data-id="keeprest">?</span></div>
     <div class="theme-option" id="keepOnRestToggle" data-action="toggle-keep-on-rest"><span>쉬는 날로 표시된 날에도 유지</span><span class="dot"></span></div>
     <div class="section-label">타이머 종료음</div>
     <div class="theme-option" id="alarmToggle" data-action="toggle-alarm"><span>이 항목은 무음 (타이머 종료 시 소리 안 남)</span><span class="dot"></span></div>
-    <div class="section-label">시간 조정 제안</div>
+    <div class="section-label">시간 조정 제안<span class="help-q" data-action="help" data-id="timesuggest">?</span></div>
     <div class="theme-option" id="noSuggestToggle" data-action="toggle-no-suggest"><span>이 항목은 시간 조정 제안 받지 않기</span><span class="dot"></span></div>
     <div class="tp-actions">
       <div class="btn" data-action="day-cancel">취소</div>
@@ -900,22 +929,23 @@
 <div class="wrap hidden" id="view-settings">
   <div class="top-bar">
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2>설정</h2>
+    <h2>설정</h2><span class="help-q" data-action="help" data-id="settings">?</span>
   </div>
+  <div class="btn" data-action="open-help-view" style="margin:0 0 16px;">❓ 사용법 · 도움말</div>
   <div class="section-label" style="margin-top:0;">테마</div>
   <div class="theme-option-row" id="themeOptionRow">
     <div class="theme-option" data-action="theme-select" data-id="auto"><span>기기 설정을 따름</span><span class="dot"></span></div>
     <div class="theme-option" data-action="theme-select" data-id="light"><span>항상 밝게</span><span class="dot"></span></div>
     <div class="theme-option" data-action="theme-select" data-id="dark"><span>항상 어둡게</span><span class="dot"></span></div>
   </div>
-  <div class="section-label">스트릭 인정 기준</div>
+  <div class="section-label">스트릭 인정 기준<span class="help-q" data-action="help" data-id="streak">?</span></div>
   <div class="theme-option-row" id="thresholdOptionRow">
     <div class="theme-option" data-action="threshold-select" data-id="100"><span>전부 다 하기 (100%)</span><span class="dot"></span></div>
     <div class="theme-option" data-action="threshold-select" data-id="90"><span>대부분 (90% 이상)</span><span class="dot"></span></div>
     <div class="theme-option" data-action="threshold-select" data-id="80"><span>웬만큼 (80% 이상)</span><span class="dot"></span></div>
     <div class="theme-option" data-action="threshold-select" data-id="70"><span>느슨하게 (70% 이상)</span><span class="dot"></span></div>
   </div>
-  <div class="section-label">알람 소리</div>
+  <div class="section-label">알람 소리<span class="help-q" data-action="help" data-id="alarm">?</span></div>
   <div class="theme-option-row">
     <div class="theme-option" id="alarmForceToggle" data-action="toggle-alarm-force"><span>무음 스위치가 켜져 있어도 울리기</span><span class="dot"></span></div>
     <div class="btn" data-action="alarm-preview" style="margin:0;">🔔 알람 소리 미리듣기</div>
@@ -941,10 +971,19 @@
   </div>
 </div>
 
+<div class="wrap hidden" id="view-help">
+  <div class="top-bar">
+    <button class="back-btn" data-action="go-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <h2>사용법</h2>
+  </div>
+  <div class="export-note" style="margin-top:0;">화면 제목이나 설정 옆의 작은 <b>?</b>를 누르면 그 자리의 설명이 바로 열려요. 여기서는 전체 목록을 볼 수 있어요.</div>
+  <div id="helpListBody"></div>
+</div>
+
 <div class="wrap hidden" id="view-restDays">
   <div class="top-bar">
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2>쉬는 날 관리</h2>
+    <h2>쉬는 날 관리</h2><span class="help-q" data-action="help" data-id="rest">?</span>
   </div>
   <div class="btn primary" id="restTodayBtn" data-action="toggle-today-rest" style="margin-bottom:16px;">오늘을 쉬는 날로 표시</div>
 
@@ -975,7 +1014,7 @@
 <div class="tp-overlay hidden" id="achieveOverlay">
   <div class="tp-card tp-card-scroll" style="max-width:300px;">
     <div class="tp-card-head">
-      <div class="tp-title">업적</div>
+      <div class="tp-title">업적<span class="help-q" data-action="help" data-id="achieve">?</span></div>
       <span class="tp-close-x" data-action="achieve-close">✕</span>
     </div>
     <div class="tp-card-body">
@@ -991,7 +1030,7 @@
     <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 14px;"></div>
     <div class="btn" data-action="open-bible-shelf" style="margin-bottom:10px;">📖 성경 여정 전체보기</div>
     <div class="btn" data-action="open-pending-rewards" style="margin-bottom:10px;">🎀 내 선물함 열기</div>
-    <div class="section-label">배지 (최장 연속일 기준)</div>
+    <div class="section-label">배지 (최장 연속일 기준)<span class="help-q" data-action="help" data-id="badges">?</span></div>
     <div class="badge-grid" id="badgeGrid"></div>
     <div class="section-label" style="margin-top:16px;">족보 트랙</div>
     <div id="achieveGenealogy" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
@@ -1014,7 +1053,7 @@
 <div class="wrap hidden" id="view-friends">
   <div class="top-bar">
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2 style="flex:1;">지인</h2>
+    <h2 style="flex:1;">지인<span class="help-q" data-action="help" data-id="friends">?</span></h2>
     <span class="fr-ico" data-action="friends-refresh" title="새로고침">↻</span>
   </div>
   <div id="friendsBody"></div>
@@ -1160,12 +1199,22 @@
   </div>
 </div>
 
+<div class="tp-overlay help-overlay hidden" id="helpOverlay" data-action="help-backdrop">
+  <div class="help-sheet">
+    <div class="help-head">
+      <div class="help-title" id="helpTitle"></div>
+      <span class="tp-close-x" data-action="help-close">✕</span>
+    </div>
+    <div class="help-body" id="helpBody"></div>
+  </div>
+</div>
+
 <div class="celeb-stage hidden" id="celebStage"></div>
 
 <div class="tp-overlay hidden" id="pendingRewardsOverlay">
   <div class="tp-card tp-card-scroll" style="max-width:320px;">
     <div class="tp-card-head">
-      <div class="tp-title">내 선물함</div>
+      <div class="tp-title">내 선물함<span class="help-q" data-action="help" data-id="rewards">?</span></div>
       <span class="tp-close-x" data-action="pending-rewards-close">✕</span>
     </div>
     <div class="tp-card-body" id="pendingRewardsList"></div>
@@ -1665,7 +1714,7 @@
     }
 
     if (showMgmt) {
-      h += '<div class="section-label" style="margin-top:' + (sc.shareOn ? 18 : 0) + 'px;">내 공개 설정</div>';
+      h += '<div class="section-label" style="margin-top:' + (sc.shareOn ? 18 : 0) + 'px;">내 공개 설정<span class="help-q" data-action="help" data-id="share">?</span></div>';
       h += '<div class="fr-note">공개를 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 레벨 · 누적P · 연속일 · 성경 진행이 보여요. 루틴 이름, 메모, 선물함, 이메일은 공개되지 않아요.</div>';
       h += '<input class="fr-input" id="friendNickInput" maxlength="12" placeholder="닉네임 (1~12자)" value="' + escapeHtml(sc.nickname || "") + '">';
       h += '<div class="fr-opts">' +
@@ -7764,7 +7813,7 @@ attachSceneMeta("rev");
 
   // ---------------- views ----------------
   var NAV_HIDDEN_VIEWS = ["view-checking", "view-login", "view-pending", "view-run"];
-  var ALL_VIEWS = ["view-checking","view-login","view-pending","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings","view-restDays","view-friends"];
+  var ALL_VIEWS = ["view-checking","view-login","view-pending","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings","view-restDays","view-friends","view-help"];
   // 항목 편집 화면을 떠날 때의 검사: 이름도 없고 아무 설정도 안 건드린 빈 항목은 조용히 지우고,
   // 이름 없이 설정만 만진 항목이 있으면 떠나지 못하게 막고 안내한다. 떠나도 되면 true.
   function isPristineBlankItem(it) {
@@ -7808,7 +7857,7 @@ attachSceneMeta("rev");
   // 연출. showView처럼 즉시 전환하지 않고, 잠깐 홈 화면 위에 겹쳐 보여주다가 애니메이션이
   // 끝나면 완전히 숨긴다.
   // 일부 화면은 홈이 아니라 자기를 연 화면(부모)으로 돌아간다: 데이터 → 설정
-  var PARENT_VIEW = { "view-export": "view-settings" };
+  var PARENT_VIEW = { "view-export": "view-settings", "view-help": "view-settings" };
   function goHomeAnimated(toParent) {
     var runEl = document.getElementById("view-run");
     if (runState && runEl && !runEl.classList.contains("hidden")) { requestCloseRun(); return; }
@@ -8601,7 +8650,7 @@ attachSceneMeta("rev");
   }
 
   // ---- stats ----
-  var statsView = "monthly";
+  var statsView = "success";
   var statsTagFilter = null;
   var statsMonth = new Date(); statsMonth.setDate(1);
   var statsWeekStart = startOfWeek(new Date());
@@ -8621,7 +8670,7 @@ attachSceneMeta("rev");
   function renderStatsViewTabs() {
     var el = document.getElementById("statsViewTabs");
     el.innerHTML = "";
-    [["monthly","월간"],["weekly","주간"],["success","성공"],["time","시간"]].forEach(function (m) {
+    [["success","성공"],["weekly","주간"],["monthly","월간"],["time","시간"]].forEach(function (m) {
       var t = document.createElement("div");
       t.className = "tab" + (statsView === m[0] ? " active" : "");
       t.textContent = m[1];
@@ -9322,6 +9371,162 @@ attachSceneMeta("rev");
     reader.readAsText(file);
   }
 
+  // ---------------- 도움말(?) ----------------
+  // 설명 문구는 전부 여기 한 곳에 있다. 화면의 ? 버튼은 data-id로 주제 이름만 가리킨다.
+  var HELP_TOPICS = {
+    home: { t: "홈 화면", sub: "체크 · ▶ 카운트다운 · 상단 표시", s: [
+      ["항목 체크", "항목 이름을 탭하면 완료, 다시 탭하면 해제돼요. 이미 체크한 항목을 해제할 때는 실수를 막으려고 한 번 더 물어봐요."],
+      ["▶ 카운트다운", "카테고리의 ▶를 누르면 오늘 할 항목을 순서대로 타이머와 함께 진행해요. 이미 끝낸 항목은 건너뛰어요. 시간이 다 돼도 저절로 넘어가지 않고 초과 시간(+분:초)이 표시되며, 완료를 눌러야 다음으로 가요."],
+      ["상단 영역", "날짜를 탭하면 ‘하루 한 줄’ 메모를 바로 쓸 수 있어요. 오른쪽 불꽃은 연속 성공일이고, 누르면 업적 화면이 열려요. 아래 원형 카드는 오늘 진행률이에요."],
+      ["알림 띠", "‘어제 놓친 부분’을 누르면 놓친 항목을 볼 수 있어요. 선물이 있으면 선물 띠가 뜨고, 시간 조정 제안이 있으면 상단에 작은 뱃지로 알려줘요."]
+    ], see: ["colors", "streak", "alarm"] },
+    edit: { t: "항목 편집", sub: "이름 · 시간 · 요일 · 태그 · 시작일", s: [
+      ["항목 추가와 수정", "항목 이름을 쓰고, 시간 칩과 요일 칩을 눌러 정해요. 하루 동선 순서대로 정리해 두면 ▶ 카운트다운도 그 순서로 진행돼요."],
+      ["시작일", "항목마다 시작일이 있어요. 시작일 이전 날짜는 놓친 것으로 계산하지 않고, 기록에서도 체크할 수 없어요."],
+      ["복제 · 이동 · 태그", "항목을 복제하거나 다른 카테고리로 옮길 수 있어요. 옮겨도 과거 기록은 그대로 따라가요. 태그를 붙여 두면 통계에서 태그별로 모아 볼 수 있어요."],
+      ["이름이 빈 항목", "이름이 비어 있는 항목이 남아 있으면 이 화면을 나갈 수 없어요."]
+    ], see: ["days", "timesuggest"] },
+    stats: { t: "통계 화면", sub: "성공 · 주간 · 월간 · 시간", s: [
+      ["네 개의 탭", "<b>성공</b>: 모든 항목 기준으로 성공한 날을 한 달력에 모아 봐요. <b>주간</b>: 항목별 한 주 표. <b>월간</b>: 항목별 한 달 달력. <b>시간</b>: 항목마다 걸린 시간을 점검하고 시간 조정을 제안해요."],
+      ["태그 필터", "태그를 고르면 그 태그가 붙은 항목만 모아 볼 수 있어요."],
+      ["메모와 이동", "성공 달력에서 메모가 있는 날에는 작은 점이 있고, 그 날을 누르면 기록 화면의 해당 날짜로 가요."]
+    ], see: ["colors", "timesuggest", "streak"] },
+    colors: { t: "통계 색 의미", sub: "초록 · 금색 · 파랑 · 점선", s: [
+      ["초록", "정상적으로 완료한 칸이에요."],
+      ["금색(완료)", "카운트다운에서 정해진 시간을 넘겨 끝낸 완료예요. 홈이나 기록에서 다시 체크하면 초록으로 돌아가요."],
+      ["점선 · 옅은 칸", "시작일 이전이거나 그날 해당이 없는 칸이에요."],
+      ["날짜 숫자 색", "토·일은 금색, 쉬는 날은 파란 계열로 보여요."],
+      ["쉬는 날 보너스", "쉬는 날에 자발적으로 한 항목은 성공 달력에 금색 ‘보너스’ 칸으로 보여요. 스트릭에는 포함되지 않아요."]
+    ], see: ["streak", "keeprest"] },
+    backfill: { t: "과거 기록", sub: "날짜별 · 항목별 · 하루 한 줄", s: [
+      ["날짜별", "날짜를 고르면 그날 해야 했던 항목을 체크하거나 해제할 수 있어요. 체크된 항목을 해제할 때는 한 번 확인해요."],
+      ["항목별", "항목 하나를 고르고, 그 항목의 달력에서 여러 날을 눌러 표시한 뒤 마지막에 <b>저장</b>을 눌러야 반영돼요."],
+      ["하루 한 줄", "날짜별 화면 맨 아래에서 그날의 한 줄 메모를 써요. 세 번째 탭에서는 지난 메모를 월별로 모아 보고 검색할 수 있어요."],
+      ["체크할 수 없는 날", "항목의 시작일 이전 날짜는 체크할 수 없어요."],
+      ["시간 기록", "기록에서 체크한 완료는 그 항목에 정해 둔 시간으로 저장돼요."]
+    ], see: ["rest", "days"] },
+    streak: { t: "스트릭(연속일) 규칙", sub: "성공한 날의 기준", s: [
+      ["성공한 날이란", "그날 해야 하는 모든 항목을 합쳐서 완료 비율이 기준 이상이면 성공이에요. 카테고리별이 아니라 전체 합산이라, 작은 카테고리 하나를 놓쳐도 무너지지 않아요."],
+      ["기준 고르기", "설정에서 100% · 90% · 80% · 70% 중에 고를 수 있어요."],
+      ["이어지는 규칙", "쉬는 날이나 할 일이 하나도 없는 날은 건너뛰어요. 끊기지도, 세어지지도 않아요. ‘불시’ 항목과 쉬는 날에 자발적으로 한 항목은 스트릭에 들어가지 않아요."],
+      ["포인트와의 관계", "연속일이 끊겨도 누적 포인트와 성경 여정은 그대로 남아요. 이미 얻은 배지도 사라지지 않아요."]
+    ], see: ["badges", "points", "keeprest"] },
+    days: { t: "반복 요일 · 불시", sub: "요일 정하기와 불시 항목", s: [
+      ["요일 정하기", "매일 · 평일 · 주말 중에서 고르거나 요일 칸을 직접 눌러 정해요. 요일을 모두 해제하면 저장할 수 없어요."],
+      ["불시", "정해진 요일 없이 가끔 하는 항목이에요. 홈과 기록에서 직접 체크하고, 스트릭 · ▶ 카운트다운 · 놓친 항목에는 들어가지 않고 포인트에만 반영돼요. 시간도 지정하지 않아요."],
+      ["같은 창의 다른 설정", "이 창에서 쉬는 날 유지, 타이머 종료음(무음), 시간 조정 제안 끄기도 항목마다 정해요."]
+    ], see: ["keeprest", "alarm", "timesuggest"] },
+    keeprest: { t: "쉬는 날 처리", sub: "쉬는 날에도 유지 · 자발적 체크", s: [
+      ["기본 동작", "쉬는 날로 표시된 날에는 항목들이 ‘해야 할 일’에서 빠져요."],
+      ["쉬는 날에도 유지", "켜 두면 그 항목은 쉬는 날에도 해야 할 항목으로 남아요. 쉬는 날에도 꼭 지키고 싶은 항목에 쓰세요."],
+      ["자발적으로 하기", "유지 설정이 없는 항목도 쉬는 날에는 ‘쉬는 날 · 선택’으로 보이고, 하고 싶으면 체크할 수 있어요. 포인트에는 들어가지만 스트릭에는 들어가지 않아요."]
+    ], see: ["rest", "streak"] },
+    rest: { t: "쉬는 날 관리", sub: "휴일 · 공휴일 · 매년 반복", s: [
+      ["오늘 쉬기", "맨 위 버튼으로 오늘을 쉬는 날로 표시하거나 해제해요."],
+      ["기간 · 날짜 추가", "기간으로 한꺼번에 추가하거나 날짜 목록을 붙여 넣어 추가할 수 있어요. ‘매년 반복’으로 넣으면 해마다 같은 월·일이 쉬는 날이 돼요."],
+      ["공휴일 자동 추가", "‘공휴일 자동 추가’에서 고정 공휴일과 설날 · 추석 · 대체공휴일 등을 골라 넣어요. 이미 추가한 날은 목록에서 빠져서 중복되지 않아요. 실제로 쉬지 않는 날은 체크를 풀고 추가하면 돼요."],
+      ["쉬는 날의 효과", "쉬는 날은 스트릭에서 건너뛰어요. 끊기지도, 세어지지도 않아요."]
+    ], see: ["keeprest", "streak"] },
+    timesuggest: { t: "시간 조정 제안", sub: "항목 시간이 맞는지 점검", s: [
+      ["무엇을 하나", "▶ 카운트다운으로 실제로 잰 기록이 5회 이상 쌓이면, 정해 둔 시간과 비교해서 자주 초과하거나 자주 일찍 끝나는 항목에 시간 조정을 제안해요. 카운트다운 없이 체크한 완료는 정해 둔 시간으로 기록돼요."],
+      ["제안이 나오면", "홈 상단에 ‘시간 조정 제안’ 뱃지가 생겨요. 누르면 통계의 시간 탭으로 가고, 시간을 조정하면 그 제안은 사라져요."],
+      ["필요 없을 때", "‘지금 시간이 맞아요’를 누르면 새 기록이 10회 쌓일 때까지 다시 제안하지 않아요. 항목의 반복 요일 창에서 ‘제안 받지 않기’를 켜면 그 항목은 계속 제외돼요."],
+      ["시간 탭 보기", "기본으로는 제안이 있는 항목만 보이고, [전체]를 누르면 기간(7·30·90일·전체)과 태그로 전체 통계를 볼 수 있어요."]
+    ], see: ["stats", "days"] },
+    alarm: { t: "타이머 알람", sub: "언제 울리는지 · 무음 스위치", s: [
+      ["언제 울리나", "▶ 카운트다운에서 시간이 0:00이 되는 순간 한 번 울려요. 홈에서 탭해서 체크하거나, 카운트다운 중에 일찍 완료를 눌렀을 때는 울리지 않아요."],
+      ["무음 스위치", "‘무음 스위치가 켜져 있어도 울리기’를 켜 두면(기본 켜짐) 아이폰의 무음 스위치가 켜져 있어도 소리가 나요."],
+      ["항목별 무음 · 미리듣기", "항목의 반복 요일 창에서 그 항목만 무음으로 할 수 있어요. 설정의 ‘알람 소리 미리듣기’로 소리를 확인해 보세요."]
+    ], see: ["home", "days"] },
+    achieve: { t: "업적 화면", sub: "누적 포인트 · 성경 여정 · 선물함", s: [
+      ["누적 포인트와 성경 여정", "위쪽 숫자가 지금까지의 누적 포인트예요. 포인트가 쌓이면 창세기부터 요한계시록까지 66권의 메달이 하나씩 열려요. ‘성경 여정 전체보기’에서 열린 권과 장면을 볼 수 있고, 채워진 칸을 누르면 상세를 볼 수 있어요."],
+      ["내 선물함", "받은 보상을 확인하고 입력하는 곳이에요."],
+      ["배지와 족보 트랙", "연속일 배지와, 이야기가 진행되면서 채워지는 족보 트랙도 여기서 볼 수 있어요."],
+      ["내가 나에게 준 선물", "스스로에게 준 작은 선물을 기록해 두면 여기에 모여요."]
+    ], see: ["points", "rewards", "badges"] },
+    points: { t: "포인트와 성경 여정", sub: "포인트가 쌓이는 방법", s: [
+      ["쌓이는 방법", "완료한 항목마다 1P예요. 그날 한 카테고리를 전부 끝내면 3P가 더 붙어요. 성공한 날 열리는 보너스 상자에서 5P를 더 받아요. 불시 항목도 포인트에는 들어가요."],
+      ["줄어들지 않아요", "연속일이 끊겨도 포인트는 줄지 않아요. 연속일 기록과 포인트는 서로 별개예요."],
+      ["성경 여정", "누적 포인트에 따라 66권이 순서대로 열려요. 66권 전체를 채우려면 약 12,000P가 필요해요. 새 권이 열릴 때는 책이 펼쳐지는 연출이 나와요."]
+    ], see: ["rewards", "badges", "achieve"] },
+    rewards: { t: "선물함과 보상", sub: "매일 · 주간 · 분기 보상", s: [
+      ["매일 상자", "하루의 성공 기준을 채우면 보너스 상자가 도착해요. 열면 5P가 더해져요. [나중에]를 누르면 홈에 상자 카드가 남아요."],
+      ["주간 보상", "평일(월~금) 5일 중 4일 이상 성공하면 ‘작은 보상’이 열려요. 금·토·일에 판정해요. 쉬는 날 등으로 평가할 날이 5일보다 적으면 그날들을 모두 성공해야 해요."],
+      ["분기 보상", "누적 포인트가 3000P를 넘으면 ‘큰 보상’이 열려요. 목표는 3000P로 고정돼 있어요."],
+      ["보상 입력", "보상이 열려도 바로 정하지 않아도 돼요. 나중에 선물함에서 입력하고, 입력한 뒤에도 다시 눌러 고칠 수 있어요."]
+    ], see: ["points", "streak"] },
+    badges: { t: "연속일 배지", sub: "3 · 7 · 14 · 30 · 60 · 100 · 200 · 365일", s: [
+      ["배지를 얻는 조건", "최장 연속 성공일이 3 · 7 · 14 · 30 · 60 · 100 · 200 · 365일에 닿으면 배지를 얻어요."],
+      ["사라지지 않아요", "한 번 얻은 배지는 연속일이 끊겨도 남아요. 새 배지가 열리는 순간에는 전체 화면 축하가 나와요."]
+    ], see: ["streak", "rewards"] },
+    friends: { t: "지인 화면", sub: "연결 · 새로고침 · 대화", s: [
+      ["지인 연결", "초대 코드로 요청하면 상대가 수락해야 연결돼요. 연결된 지인은 카드로 보이고, 카드를 누르면 상세 정보와 응원 대화가 있는 화면으로 들어가요."],
+      ["새로고침", "오른쪽 위 ↻로 지인 정보를 다시 불러와요."],
+      ["안 읽은 응원", "응원이 오면 지인 탭과 홈에 뱃지가 떠요."],
+      ["연결 끊기", "대화 화면 위쪽 ⋯ 메뉴에서 끊을 수 있고, 한 번 더 확인해요."]
+    ], see: ["share", "cheers"] },
+    share: { t: "내 공개 설정", sub: "무엇이 누구에게 보이는지", s: [
+      ["공개는 내가 켜야 해요", "공개를 켜기 전에는 지인에게 아무것도 보이지 않아요. 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 레벨 · 누적P · 연속일 · 성경 진행이 보여요."],
+      ["선택 공개", "‘오늘 진행률도 공개’와 ‘루틴 개수도 공개’는 원할 때만 켜요."],
+      ["공개용 요약", "지인에게 보이는 건 이 요약뿐이에요. 루틴 이름이나 상세 기록은 보이지 않아요."],
+      ["닉네임과 끄기", "공개하려면 닉네임이 필요해요. 언제든 ‘공개 끄기’로 멈출 수 있어요."]
+    ], see: ["friends", "cheers"] },
+    cheers: { t: "응원 보내기", sub: "정해진 문구 · 직접 쓴 문장", s: [
+      ["보내기", "연결된 지인에게 정해진 응원·칭찬 문구를 고르거나, 직접 쓴 문장(100자 이내)을 보낼 수 있어요."],
+      ["하루 2개", "한 지인에게 하루 최대 2개까지 보낼 수 있어요. 정해진 문구와 직접 쓴 문장을 합쳐서 세요."],
+      ["받은 응원", "받은 응원에는 간단한 반응을 남길 수 있어요. 보낸 것과 받은 것은 채팅처럼 한 대화에 모여요."]
+    ], see: ["friends", "share"] },
+    settings: { t: "설정 화면", sub: "테마 · 스트릭 · 알람 · 계정", s: [
+      ["테마", "기기 설정을 따르거나 항상 밝게 · 항상 어둡게 고를 수 있어요."],
+      ["스트릭 · 알람", "‘스트릭 인정 기준’과 ‘알람 소리’ 옆의 ?에서 자세한 규칙을 볼 수 있어요."],
+      ["쉬는 날 · 데이터", "쉬는 날 관리와 데이터 백업·복원 화면으로 들어가요."],
+      ["계정", "비밀번호를 바꾸거나 로그아웃할 수 있어요."]
+    ], see: ["streak", "alarm", "backup"] },
+    backup: { t: "데이터 백업 · 복원", sub: "파일 · 텍스트", s: [
+      ["파일로 저장", "기록 전체를 파일 하나로 내려받아 두세요. 기기를 바꾸거나 데이터가 지워졌을 때 이 파일로 복원할 수 있어요."],
+      ["텍스트로", "텍스트로 복사해 두거나, 붙여넣어 가져올 수도 있어요. 텍스트는 Claude 대화에 붙여넣어 보여줄 때 편해요."],
+      ["가져오기 전에", "가져오기 전에 현재 상태를 먼저 백업해 두면 안전해요."]
+    ], see: ["settings"] }
+  };
+  var HELP_GROUPS = [
+    ["화면별 안내", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
+    ["루틴 · 통계 규칙", ["colors", "streak", "days", "keeprest", "rest", "timesuggest", "alarm"]],
+    ["포인트 · 보상", ["points", "rewards", "badges"]],
+    ["지인 · 데이터", ["share", "cheers", "backup"]]
+  ];
+  function openHelp(id) {
+    var tp = HELP_TOPICS[id];
+    if (!tp) return;
+    var h = "";
+    tp.s.forEach(function (sec) {
+      h += '<div class="help-h">' + sec[0] + '</div><div class="help-p">' + sec[1] + '</div>';
+    });
+    if (tp.see && tp.see.length) {
+      h += '<div class="help-see"><div class="help-see-label">이것도 보기</div>';
+      tp.see.forEach(function (sid) {
+        if (HELP_TOPICS[sid] && sid !== id) h += '<span class="help-chip" data-action="help-see" data-id="' + sid + '">' + HELP_TOPICS[sid].t + '</span>';
+      });
+      h += '</div>';
+    }
+    document.getElementById("helpTitle").textContent = tp.t;
+    var body = document.getElementById("helpBody");
+    body.innerHTML = h;
+    body.scrollTop = 0;
+    document.getElementById("helpOverlay").classList.remove("hidden");
+  }
+  function closeHelp() { document.getElementById("helpOverlay").classList.add("hidden"); }
+  function renderHelpList() {
+    var h = "";
+    HELP_GROUPS.forEach(function (g, gi) {
+      h += '<div class="section-label"' + (gi === 0 ? ' style="margin-top:0;"' : ' style="margin-top:18px;"') + '>' + g[0] + '</div>';
+      g[1].forEach(function (id) {
+        var tp = HELP_TOPICS[id];
+        h += '<div class="help-row" data-action="help" data-id="' + id + '"><span>' + tp.t + '<span class="help-row-sub">' + tp.sub + '</span></span><span class="chev">›</span></div>';
+      });
+    });
+    document.getElementById("helpListBody").innerHTML = h;
+  }
+
   // ---------------- event delegation ----------------
   document.addEventListener("click", function (e) {
     var el = e.target.closest("[data-action]");
@@ -9331,6 +9536,11 @@ attachSceneMeta("rev");
 
     if (action === "go-home") { goHomeAnimated(); }
     else if (action === "go-back") { goHomeAnimated(true); }
+    else if (action === "help") { openHelp(id); }
+    else if (action === "help-see") { openHelp(id); }
+    else if (action === "help-close") { closeHelp(); }
+    else if (action === "help-backdrop") { if (e.target === el) closeHelp(); }
+    else if (action === "open-help-view") { showView("view-help"); renderHelpList(); }
     else if (action === "auth-signin") { doSignIn(); }
     else if (action === "auth-signup") { doSignUp(); }
     else if (action === "auth-forgot") { doForgotPassword(); }
@@ -9568,7 +9778,7 @@ attachSceneMeta("rev");
     else if (action === "holiday-first-prompt-accept") { closeHolidayFirstPrompt(true); }
     else if (action === "holiday-first-prompt-decline") { closeHolidayFirstPrompt(false); }
     else if (action === "toggle-rest-show-all") { restShowAllPast = !restShowAllPast; renderRestList(); }
-    else if (action === "open-stats") { statsView = "monthly"; statsTimeOnlySuggest = true; statsTagFilter = null; statsMonth = new Date(); statsMonth.setDate(1); statsWeekStart = startOfWeek(new Date()); showView("view-stats"); renderStats(); }
+    else if (action === "open-stats") { statsView = "success"; statsTimeOnlySuggest = true; statsTagFilter = null; statsMonth = new Date(); statsMonth.setDate(1); statsWeekStart = startOfWeek(new Date()); showView("view-stats"); renderStats(); }
     else if (action === "open-backfill") { openBackfill(); }
     else if (action === "toggle-backfill-item") {
       var wasD = isDone(backfillDate, id);
@@ -9697,7 +9907,7 @@ attachSceneMeta("rev");
   // 원래 자리로 스프링백하는 방식. 단순 임계값 판정 후 사후 애니메이션이 아니라
   // touchmove마다 transform을 직접 갱신해 "붙어서 따라오는" 느낌을 준다.
   var EDGE_ZONE = 28, MAX_VERTICAL = 60, COMPLETE_RATIO = 0.32, FLICK_VELOCITY = 0.5;
-  var BACKABLE_VIEWS = ["view-editItems", "view-stats", "view-export", "view-backfill", "view-settings", "view-restDays", "view-friends"];
+  var BACKABLE_VIEWS = ["view-editItems", "view-stats", "view-export", "view-backfill", "view-settings", "view-restDays", "view-friends", "view-help"];
   var edgeSwipe = { active: false, dragging: false, startX: 0, startY: 0, current: null, width: 0, lastX: 0, lastT: 0, velocity: 0 };
   function findBackableCurrent() {
     var checkList = BACKABLE_VIEWS.concat(["view-run"]);
