@@ -561,6 +561,53 @@
   .growth-pop .label { font-family: 'Fraunces', serif; font-weight: 650; font-size: 17px; margin-bottom: 6px; }
   .growth-pop .sub { font-size: 12px; color: var(--ink-dim); margin-bottom: 16px; }
 
+  /* ---- 메달 동전(3D) · 메달 상세 창 · 책 표지 연출 ---- */
+  .coin-fly { position: relative; will-change: transform; }
+  .coin-fly.fixed { position: fixed; z-index: 120; pointer-events: none; }
+  .coin { position: absolute; inset: 0; border-radius: 50%; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; }
+  .coin-face { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .coin-face svg { display: block; width: 100%; height: 100%; }
+  .coin-front { overflow: hidden; }
+  .coin-back { transform: rotateY(180deg); }
+  .coin-shine { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; transform: translateX(-130%);
+    background: linear-gradient(105deg, transparent 36%, rgba(255,255,255,.85) 50%, transparent 64%); }
+  .medal-ring { position: fixed; z-index: 121; border-radius: 50%; border: 2px solid #E2C77E; pointer-events: none; box-shadow: 0 0 14px rgba(232,199,102,.7); }
+  .ms-cell { transform-box: fill-box; transform-origin: 50% 50%; }
+  .ms-cellin { animation: msCellIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes msCellIn { from { transform: scale(.15); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  #milestoneDetailOverlay { background: transparent; }
+  .msd-backdrop { position: absolute; inset: 0; background: var(--overlay); }
+  .msd-wrap { --s: min(56vw, 208px); position: relative; z-index: 1; width: 100%; max-width: 320px; }
+  .msd-glow { position: absolute; z-index: 1; left: 50%; top: calc(var(--s) * .5); width: calc(var(--s) * 1.9); height: calc(var(--s) * 1.9);
+    margin: calc(var(--s) * -.95) 0 0 calc(var(--s) * -.95); border-radius: 50%; pointer-events: none; opacity: 0; transform: scale(.6);
+    background: radial-gradient(circle, rgba(232,199,102,.62) 0%, rgba(232,199,102,.2) 38%, transparent 66%);
+    transition: opacity .7s ease, transform .7s ease; }
+  .msd-glow.on { opacity: 1; transform: scale(1); }
+  .msd-coinslot { position: relative; z-index: 3; width: var(--s); height: var(--s); margin: 0 auto calc(var(--s) * -.42); cursor: pointer; }
+  .msd-card { position: relative; z-index: 2; background: var(--card); border-radius: 22px; text-align: center;
+    padding: calc(var(--s) * .42 + 16px) 20px 18px; box-shadow: 0 10px 40px rgba(0,0,0,.22); }
+  .msd-verse { font-family: 'Fraunces', serif; font-size: 14px; line-height: 1.7; text-align: left; background: var(--ring-track, #f2efe8);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain; max-height: calc(100vh - var(--s) * .58 - 300px); min-height: 56px; }
+  .msd-hint { font-size: 11px; color: var(--ink-dim); margin-bottom: 12px; }
+
+  #bibleShelfOverlay .tp-card { position: relative; }
+  .book-cover { position: absolute; inset: 0; z-index: 5; transform-origin: 0 50%; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; pointer-events: none; }
+  .bc-front, .bc-back { position: absolute; inset: 0; border-radius: 20px; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .bc-front { background: linear-gradient(135deg, #6E4E2C, #48311A); display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 0 1.5px rgba(232,199,102,.6), inset 0 0 0 8px #573A1F, inset 0 0 0 9.5px rgba(232,199,102,.45); }
+  .bc-front::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 16px; border-radius: 20px 0 0 20px;
+    background: linear-gradient(90deg, rgba(0,0,0,.4), transparent); }
+  .bc-back { transform: rotateY(180deg); background: #F4EBD5; box-shadow: inset 0 0 0 1px #C2A25E; }
+  .bc-frame { text-align: center; }
+  .bc-icon { font-size: 56px; line-height: 1; }
+  .bc-name { font-family: 'Fraunces', serif; font-weight: 650; font-size: 24px; letter-spacing: .04em; color: #F1DFA8; margin-top: 10px; }
+  .bc-sec { font-size: 11.5px; letter-spacing: .14em; color: rgba(241,223,168,.7); margin-top: 6px; }
+  .celeb-plate { position: relative; overflow: hidden; }
+  .celeb-plate .coin-shine { animation: celebShine 1.1s ease-in-out .9s both; }
+  @keyframes celebShine { from { transform: translateX(-130%); } to { transform: translateX(130%); } }
+
   /* ---- 통합 축하 연출 (전체화면) ---- */
   .celeb-stage { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center;
     justify-content: center; overflow: hidden; padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px)); }
@@ -1100,12 +1147,17 @@
 </div>
 
 <div class="tp-overlay hidden" id="milestoneDetailOverlay">
-  <div class="tp-card" style="max-width:300px;text-align:center;">
-    <div id="msDetailIcon" style="margin:0 auto 8px;"></div>
-    <div class="tp-title" id="msDetailTitle" style="margin-bottom:2px;"></div>
-    <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);margin-bottom:12px;"></div>
-    <div id="msDetailVerse" style="font-family:'Fraunces',serif;font-size:14px;line-height:1.7;text-align:left;background:var(--ring-track,#f2efe8);border-radius:10px;padding:12px 14px;margin-bottom:16px;"></div>
-    <div class="btn primary" data-action="milestone-detail-close">닫기</div>
+  <div class="msd-backdrop" id="msdBackdrop" data-action="msd-backdrop"></div>
+  <div class="msd-wrap" id="msdWrap">
+    <div class="msd-glow" id="msdGlow"></div>
+    <div class="msd-coinslot" id="msdCoinSlot" data-action="msd-flip"></div>
+    <div class="msd-card" id="msdCard">
+      <div class="tp-title" id="msDetailTitle" style="font-family:'Fraunces',serif;font-size:17px;font-weight:650;margin-bottom:2px;"></div>
+      <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);margin-bottom:12px;"></div>
+      <div id="msDetailVerse" class="msd-verse"></div>
+      <div class="msd-hint">메달을 탭하면 뒷면이 보여요</div>
+      <div class="btn primary" id="msdCloseBtn" data-action="milestone-detail-close">닫기</div>
+    </div>
   </div>
 </div>
 
@@ -2271,16 +2323,132 @@
   function closeAchievements() { document.getElementById("achieveOverlay").classList.add("hidden"); }
 
   // ---- 성경 여정 전체보기: 66권 책장 + 권별 장면 갤러리 ----
+  // 권을 탭하면 책 표지가 왼쪽으로 넘어가며 열리고 메달들이 하나씩 떠오른다. 닫으면(← 목록으로, ✕) 책이 덮인다.
   var bibleShelfState = { mode: "list", bookId: null };
+  var shelfPop = { on: false, base: 0, i: 0 };
+  var shelfAnimBusy = false;
+  function shelfBodyEl() { return document.getElementById("bibleShelfBody"); }
+  function shelfCardEl() { var o = document.getElementById("bibleShelfOverlay"); return o ? o.querySelector(".tp-card") : null; }
+  function shelfSlotEl(mid) { return document.querySelector('#bibleShelfBody [data-action="open-milestone-detail"][data-id="' + mid + '"]'); }
+  // 스크롤되는 책장 본문 안에서 el이 가운데쯤 오도록 즉시 맞춘다(이미 잘 보이면 그대로)
+  function shelfRevealSlot(el, force) {
+    var body = shelfBodyEl();
+    if (!body || !el) return;
+    var b = body.getBoundingClientRect(), r = el.getBoundingClientRect();
+    if (force || r.top < b.top + 8 || r.bottom > b.bottom - 8) body.scrollTop += (r.top + r.height / 2) - (b.top + b.height / 2);
+  }
+  function bookUnlocked(book) {
+    var g = computeGrowth(computeGamification().points);
+    return BIBLE_BOOKS.indexOf(book) <= g.bookIndex;
+  }
+  function makeBookCover(book) {
+    var d = document.createElement("div");
+    d.className = "book-cover";
+    d.innerHTML = '<div class="bc-front"><div class="bc-frame"><div class="bc-icon">' + book.icon + '</div><div class="bc-name">' +
+      escapeHtml(book.name) + '</div><div class="bc-sec">' + escapeHtml(book.section) + '</div></div></div><div class="bc-back"></div>';
+    return d;
+  }
+  function removeShelfCover() {
+    var c = document.querySelector("#bibleShelfOverlay .book-cover");
+    if (c) { cancelAnimsIn(c); c.remove(); }
+    var card = shelfCardEl();
+    if (card) card.style.perspective = "";
+  }
+  function playBookOpen(book, render) {
+    var card = shelfCardEl();
+    if (!card || !card.animate) { render(); return; }
+    removeShelfCover();
+    shelfAnimBusy = true;
+    var cover = makeBookCover(book);
+    card.appendChild(cover);
+    card.style.perspective = "1500px";
+    var a1 = cover.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1)" }],
+      { duration: 170, easing: "ease-out", fill: "both" });
+    var started = false;
+    function openIt() {
+      if (started) return; started = true;
+      render();
+      var a2 = cover.animate([
+        { transform: "rotateY(0deg)", opacity: 1, offset: 0 },
+        { transform: "rotateY(-85deg)", opacity: 1, offset: 0.5 },
+        { transform: "rotateY(-160deg)", opacity: 0, offset: 1 }
+      ], { duration: 760, easing: "cubic-bezier(.45,.05,.3,1)", fill: "forwards" });
+      onAnimsDone([a2], 760, function () { removeShelfCover(); shelfAnimBusy = false; });
+    }
+    onAnimsDone([a1], 170, openIt);
+  }
+  // hideAfter가 true면(✕로 닫을 때) 책이 덮인 뒤 책장 창 자체를 닫는다
+  function playBookClose(book, render, hideAfter) {
+    var card = shelfCardEl();
+    if (!card || !card.animate) { render(); if (hideAfter) closeBibleShelfNow(); return; }
+    removeShelfCover();
+    shelfAnimBusy = true;
+    var cover = makeBookCover(book);
+    card.appendChild(cover);
+    card.style.perspective = "1500px";
+    var a1 = cover.animate([
+      { transform: "rotateY(-160deg)", opacity: 0, offset: 0 },
+      { transform: "rotateY(-85deg)", opacity: 1, offset: 0.5 },
+      { transform: "rotateY(0deg)", opacity: 1, offset: 1 }
+    ], { duration: 560, easing: "cubic-bezier(.45,.05,.3,1)", fill: "both" });
+    onAnimsDone([a1], 560, function () {
+      if (hideAfter) { closeBibleShelfNow(); return; }
+      render();
+      var a2 = cover.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.94)" }],
+        { duration: 240, easing: "ease-in", fill: "forwards" });
+      onAnimsDone([a2], 240, function () { removeShelfCover(); shelfAnimBusy = false; });
+    });
+  }
   function openBibleShelf() {
+    removeShelfCover(); shelfAnimBusy = false;
     bibleShelfState = { mode: "list", bookId: null };
     renderBibleShelf();
     document.getElementById("bibleShelfOverlay").classList.remove("hidden");
   }
-  function closeBibleShelf() { document.getElementById("bibleShelfOverlay").classList.add("hidden"); }
-  function openBibleShelfBook(bookId) { bibleShelfState = { mode: "book", bookId: bookId }; renderBibleShelf(); }
-  function backToBibleShelfList() { bibleShelfState = { mode: "list", bookId: null }; renderBibleShelf(); }
-  function renderBibleShelf() {
+  function closeBibleShelfNow() {
+    removeShelfCover(); shelfAnimBusy = false;
+    document.getElementById("bibleShelfOverlay").classList.add("hidden");
+  }
+  function closeBibleShelf() {
+    if (shelfAnimBusy) return;
+    var book = bibleShelfState.mode === "book" ? BIBLE_BOOKS.filter(function (b) { return b.id === bibleShelfState.bookId; })[0] : null;
+    if (book && bookUnlocked(book)) { playBookClose(book, function () {}, true); return; }
+    closeBibleShelfNow();
+  }
+  // 축하 화면에서 메달이 들어갈 칸이 보이도록, 표지 연출 없이 바로 해당 권을 펼친 상태로 연다
+  function openBibleShelfAtBook(bookId) {
+    removeShelfCover(); shelfAnimBusy = false;
+    bibleShelfState = { mode: "book", bookId: bookId };
+    renderBibleShelf(false);
+    document.getElementById("bibleShelfOverlay").classList.remove("hidden");
+    var b = shelfBodyEl(); if (b) b.scrollTop = 0;
+  }
+  function openBibleShelfBook(bookId) {
+    if (shelfAnimBusy) return;
+    var book = BIBLE_BOOKS.filter(function (b) { return b.id === bookId; })[0];
+    if (!book) return;
+    function render() {
+      bibleShelfState = { mode: "book", bookId: bookId };
+      renderBibleShelf(true);
+      var b = shelfBodyEl(); if (b) b.scrollTop = 0;
+    }
+    if (!bookUnlocked(book)) { render(); return; }
+    playBookOpen(book, render);
+  }
+  function backToBibleShelfList() {
+    if (shelfAnimBusy) return;
+    var bookId = bibleShelfState.bookId;
+    var book = BIBLE_BOOKS.filter(function (b) { return b.id === bookId; })[0];
+    function render() {
+      bibleShelfState = { mode: "list", bookId: null };
+      renderBibleShelf();
+      var row = document.querySelector('#bibleShelfBody [data-action="bible-shelf-open-book"][data-id="' + bookId + '"]');
+      if (row) shelfRevealSlot(row, true);
+    }
+    if (book && bibleShelfState.mode === "book" && bookUnlocked(book)) { playBookClose(book, render, false); return; }
+    render();
+  }
+  function renderBibleShelf(animate) {
     var points = computeGamification().points;
     var g = computeGrowth(points);
     var titleEl = document.getElementById("bibleShelfTitle");
@@ -2318,6 +2486,7 @@
         return;
       }
       var scenes = scenesForBook(book);
+      shelfPop = { on: !!animate, base: 330, i: 0 };
       var into = Math.min(points - book.cumStart, book.points);
       var html = '<div class="btn" data-action="bible-shelf-back" style="margin-bottom:12px;">← 목록으로</div>';
       scenes.forEach(function (sc) {
@@ -2329,6 +2498,7 @@
             '<div style="text-align:center;font-size:11.5px;color:var(--ink-dim);padding:14px 0;">아직 시작 전이에요</div>') + '</div>';
       });
       body.innerHTML = html;
+      shelfPop.on = false;
     }
   }
 
@@ -7376,14 +7546,17 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
       var col = i % cols, row = Math.floor(i / cols), tx = col * cellW, ty = row * cellH;
       var m = ms[scene.startIdx + i];
       var tappable = i < filledCount;
-      content += '<g' + (tappable ? ' data-action="open-milestone-detail" data-id="' + m.id + '" style="cursor:pointer;"' : '') +
+      var pop = shelfPop.on, delay = pop ? shelfPop.base + Math.min(shelfPop.i++, 14) * 45 : 0;
+      content += '<g' + (tappable ? ' data-action="open-milestone-detail" data-id="' + m.id + '" style="cursor:pointer;"'
+        : ' data-action="locked-milestone-tap" data-id="' + m.id + '" style="cursor:pointer;"') +
         ' transform="translate(' + tx + ',' + ty + ')">' +
         '<rect x="1" y="1" width="48" height="48" fill="transparent"/>' +
+        '<g class="ms-cell' + (pop ? ' ms-cellin' : '') + '"' + (pop ? ' style="animation-delay:' + delay + 'ms"' : '') + '>' +
         '<g transform="scale(0.5)">' +
         (tappable ? (medalGroup(m.icon) || (BIBLE_ICONS[m.icon] || BIBLE_ICONS.scroll)())
           : (MEDAL_ART[m.icon] ? medalLockedGroup()
             : '<circle cx="50" cy="50" r="32" fill="none" stroke="#9a9a9a" stroke-width="2.5" stroke-dasharray="5 5" opacity=".35"/>')) +
-        '</g></g>';
+        '</g></g></g>';
     }
     size = size || 200;
     return '<svg width="' + size + '" height="' + Math.round(size * vh / vw) + '" viewBox="0 0 ' + vw + ' ' + vh +
@@ -7402,16 +7575,281 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
     }
     return null;
   }
-  function openMilestoneDetail(mid) {
+  // ---- 메달 동전(3D) 연출 ----
+  // 성경 여정 칸의 메달을 탭하면: 그 자리에서 메달이 세로축으로 회전하며 커져 상세 창 위에 큼직하게 자리잡고,
+  // 그 밑에 제목과 말씀이 떠오른다. 닫으면 창은 사라지고 메달은 회전하며 원래 칸으로 들어간다.
+  // 처음 메달을 받는 축하 화면에서 [확인]을 누를 때도 같은 방식으로 해당 칸에 들어간다.
+  var COIN_EASE_OUT = "cubic-bezier(.22,.78,.26,1)";
+  var COIN_EASE_IO = "cubic-bezier(.5,0,.25,1)";
+  var COIN_PERSP = "perspective(1000px) ";
+  var msd = { mid: null, busy: false, open: false, angle: 0, src: null, fly: null, coin: null };
+  var celebFlying = false;
+  var celebAnims = [];
+
+  function cancelAnimsIn(root) {
+    if (!root || !root.getAnimations) return;
+    try { root.getAnimations({ subtree: true }).forEach(function (a) { a.cancel(); }); } catch (e) {}
+  }
+  function svgTextEl(txt, x, y, fs, fill, weight, maxW) {
+    var est = 0, i;
+    for (i = 0; i < txt.length; i++) est += fs * (txt.charCodeAt(i) > 0x2E80 ? 1 : 0.58);
+    var fit = est > maxW ? ' textLength="' + maxW + '" lengthAdjust="spacingAndGlyphs"' : '';
+    return '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="' + fs + '" font-weight="' + weight + '" fill="' + fill +
+      '" font-family="Fraunces, \'Apple SD Gothic Neo\', \'Noto Sans KR\', serif"' + fit + '>' + escapeHtml(txt) + '</text>';
+  }
+  // 동전 뒷면: 권 이름, 본문 위치, 몇 번째 메달인지, 열린 누적 포인트
+  function medalBackSVG(found) {
+    var b = found.book, m = found.milestone, list = milestonesForBook(b);
+    var idx = list.indexOf(m) + 1;
+    var refShort = m.ref.indexOf(b.name) === 0 ? m.ref.slice(b.name.length).replace(/^\s+/, "") : m.ref;
+    var tot = b.cumStart + m.need;
+    var nfs = Math.min(11, 58 / Math.max(b.name.length, 1));
+    return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><use href="#fr1"/><circle cx="50" cy="50" r="41" fill="#EADBB5"/>' +
+      '<circle cx="50" cy="50" r="38" fill="none" stroke="#C2A25E" stroke-width=".6"/><use href="#fr2"/>' +
+      '<use href="#st" transform="translate(50 25) scale(1.7)"/>' +
+      svgTextEl(b.name, 50, 42, nfs, "#5A4626", 700, 60) +
+      svgTextEl(refShort, 50, 53, 6.4, "#7A6738", 500, 56) +
+      '<path d="M36 59H64" stroke="#C2A25E" stroke-width=".7"/>' +
+      svgTextEl(idx + " / " + list.length, 50, 68, 6, "#7A6738", 600, 40) +
+      svgTextEl(tot > 0 ? tot.toLocaleString() + "P 달성" : "여정의 시작", 50, 77, 5.4, "#8A7B57", 500, 40) +
+      '</svg>';
+  }
+  function buildMedalCoin(size, icon, backSvg, fixedRect) {
+    var fly = document.createElement("div");
+    fly.className = "coin-fly" + (fixedRect ? " fixed" : "");
+    if (fixedRect) { fly.style.left = fixedRect.left + "px"; fly.style.top = fixedRect.top + "px"; }
+    fly.style.width = size + "px"; fly.style.height = size + "px";
+    var coin = document.createElement("div");
+    coin.className = "coin";
+    coin.innerHTML = '<div class="coin-face coin-front">' + bibleIconSVG(icon, 100) + '<div class="coin-shine"></div></div>' +
+      (backSvg ? '<div class="coin-face coin-back">' + backSvg + '</div>' : "");
+    fly.appendChild(coin);
+    return { fly: fly, coin: coin };
+  }
+  // 칸에서 창 위로: 작은 크기·칸 위치에서 시작해 회전하며 커진다(도착 직전 살짝 튀어 오름)
+  function coinAnimIn(fly, coin, dx, dy, s, dur) {
+    var a = fly.animate([
+      { transform: "translate(" + dx + "px," + dy + "px) scale(" + s + ")", offset: 0 },
+      { transform: "translate(" + (dx * 0.05) + "px," + (dy * 0.05) + "px) scale(1.07)", offset: 0.82 },
+      { transform: "translate(0px,0px) scale(1)", offset: 1 }
+    ], { duration: dur, easing: COIN_EASE_OUT, fill: "both" });
+    var r = coin.animate([
+      { transform: COIN_PERSP + "rotateY(0deg)" }, { transform: COIN_PERSP + "rotateY(360deg)" }
+    ], { duration: dur, easing: COIN_EASE_OUT, fill: "both" });
+    return [a, r];
+  }
+  // 창 위에서 칸으로: 살짝 떠올랐다가 회전하며 작아져 들어간다. 항상 앞면으로 끝난다.
+  function coinAnimOut(fly, coin, dx, dy, s, a0, dur) {
+    var a1 = a0 === 0 ? 360 : 720;
+    var a = fly.animate([
+      { transform: "translate(0px,0px) scale(1)", offset: 0 },
+      { transform: "translate(0px,-12px) scale(1.08)", offset: 0.16 },
+      { transform: "translate(" + dx + "px," + dy + "px) scale(" + s + ")", offset: 1 }
+    ], { duration: dur, easing: COIN_EASE_IO, fill: "forwards" });
+    var r = coin.animate([
+      { transform: COIN_PERSP + "rotateY(" + a0 + "deg)" }, { transform: COIN_PERSP + "rotateY(" + a1 + "deg)" }
+    ], { duration: dur, easing: COIN_EASE_IO, fill: "forwards" });
+    return [a, r];
+  }
+  function onAnimsDone(anims, dur, cb) {
+    var fired = false;
+    function go() { if (fired) return; fired = true; cb(); }
+    anims[0].onfinish = go;
+    setTimeout(go, dur + 300);
+  }
+  function coinShine(coin) {
+    var sh = coin && coin.querySelector(".coin-shine");
+    if (sh && sh.animate) sh.animate([{ transform: "translateX(-130%)" }, { transform: "translateX(130%)" }], { duration: 950, easing: "ease-in-out" });
+  }
+  function landingRing(rect) {
+    if (!rect || !document.body.animate) return;
+    var r = document.createElement("div");
+    r.className = "medal-ring";
+    r.style.left = rect.left + "px"; r.style.top = rect.top + "px"; r.style.width = rect.width + "px"; r.style.height = rect.height + "px";
+    document.body.appendChild(r);
+    var a = r.animate([{ transform: "scale(.92)", opacity: 0.95 }, { transform: "scale(1.7)", opacity: 0 }], { duration: 520, easing: "ease-out" });
+    a.onfinish = function () { r.remove(); };
+    setTimeout(function () { if (r.parentNode) r.remove(); }, 800);
+  }
+
+  function openMilestoneDetail(mid, srcEl) {
+    if (msd.busy || msd.open) return;
     var found = findMilestoneById(mid);
     if (!found) return;
-    document.getElementById("msDetailIcon").innerHTML = bibleIconSVG(found.milestone.icon, 64);
-    document.getElementById("msDetailTitle").textContent = found.milestone.title;
-    document.getElementById("msDetailRef").textContent = found.book.name + " · " + found.milestone.ref;
-    document.getElementById("msDetailVerse").textContent = found.milestone.verse || "";
-    document.getElementById("milestoneDetailOverlay").classList.remove("hidden");
+    var m = found.milestone, ov = document.getElementById("milestoneDetailOverlay");
+    cancelAnimsIn(ov);
+    document.getElementById("msDetailTitle").textContent = m.title;
+    document.getElementById("msDetailRef").textContent = m.ref;
+    var verseEl = document.getElementById("msDetailVerse");
+    verseEl.textContent = m.verse || "";
+    verseEl.style.display = m.verse ? "" : "none";
+    document.getElementById("msdGlow").classList.remove("on");
+    ov.classList.remove("hidden");
+    var slot = document.getElementById("msdCoinSlot");
+    var size = Math.round(slot.getBoundingClientRect().width) || 200;
+    var c = buildMedalCoin(size, m.icon, medalBackSVG(found));
+    slot.innerHTML = "";
+    slot.appendChild(c.fly);
+    msd.mid = mid; msd.angle = 0; msd.fly = c.fly; msd.coin = c.coin;
+    msd.src = (srcEl && srcEl.isConnected) ? srcEl : null;
+    var to = c.fly.getBoundingClientRect();
+    var from = msd.src ? msd.src.getBoundingClientRect() : null;
+    var dx = 0, dy = 60, s = 0.3;
+    if (from && from.width > 0) {
+      dx = from.left + from.width / 2 - (to.left + to.width / 2);
+      dy = from.top + from.height / 2 - (to.top + to.height / 2);
+      s = Math.max(0.05, from.width / to.width);
+    }
+    if (msd.src) msd.src.style.opacity = "0";
+    msd.busy = true;
+    var DUR = 780;
+    if (!c.fly.animate) { msd.busy = false; msd.open = true; return; }
+    document.getElementById("msdBackdrop").animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, fill: "both" });
+    document.getElementById("msdCard").animate(
+      [{ opacity: 0, transform: "translateY(26px) scale(.94)" }, { opacity: 1, transform: "none" }],
+      { duration: 420, delay: 200, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
+    ["msDetailTitle", "msDetailRef", "msDetailVerse"].forEach(function (id, i) {
+      document.getElementById(id).animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
+        { duration: 360, delay: 520 + i * 90, easing: "ease-out", fill: "both" });
+    });
+    [".msd-hint", "#msdCloseBtn"].forEach(function (sel, i) {
+      document.querySelector("#milestoneDetailOverlay " + sel).animate([{ opacity: 0 }, { opacity: 1 }],
+        { duration: 360, delay: 760 + i * 80, fill: "both" });
+    });
+    var anims = coinAnimIn(c.fly, c.coin, dx, dy, s, DUR);
+    setTimeout(function () { var gl = document.getElementById("msdGlow"); if (gl) gl.classList.add("on"); }, DUR - 320);
+    onAnimsDone(anims, DUR, function () {
+      anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
+      msd.busy = false; msd.open = true;
+      coinShine(c.coin);
+    });
   }
-  function closeMilestoneDetail() { document.getElementById("milestoneDetailOverlay").classList.add("hidden"); }
+
+  // 메달을 탭하면 동전처럼 뒤집혀 뒷면(권·위치·몇 번째·누적 포인트)이 보인다
+  function msdFlip() {
+    if (msd.busy || !msd.open || !msd.coin) return;
+    msd.busy = true;
+    var from = msd.angle, to = from === 0 ? 180 : 0, coin = msd.coin, fly = msd.fly;
+    coin.style.transform = COIN_PERSP + "rotateY(" + to + "deg)";
+    var a = coin.animate([
+      { transform: COIN_PERSP + "rotateY(" + from + "deg)" }, { transform: COIN_PERSP + "rotateY(" + to + "deg)" }
+    ], { duration: 560, easing: "cubic-bezier(.4,.1,.2,1)" });
+    fly.animate([{ transform: "scale(1)" }, { transform: "scale(1.07)", offset: 0.5 }, { transform: "scale(1)" }], { duration: 560, easing: "ease-in-out" });
+    onAnimsDone([a], 560, function () { msd.angle = to; msd.busy = false; });
+  }
+
+  function msdReset() {
+    var ov = document.getElementById("milestoneDetailOverlay");
+    cancelAnimsIn(ov);
+    ov.classList.add("hidden");
+    document.getElementById("msdCoinSlot").innerHTML = "";
+    document.getElementById("msdGlow").classList.remove("on");
+    if (msd.src) msd.src.style.opacity = "";
+    msd.busy = false; msd.open = false; msd.mid = null; msd.src = null; msd.fly = null; msd.coin = null;
+  }
+  function closeMilestoneDetail() {
+    if (msd.busy) return;
+    if (!msd.open) { msdReset(); return; }
+    msd.busy = true;
+    var ov = document.getElementById("milestoneDetailOverlay");
+    var src = msd.mid ? shelfSlotEl(msd.mid) : null;
+    if (src) shelfRevealSlot(src);
+    var cur = msd.fly.getBoundingClientRect();
+    var to = src ? src.getBoundingClientRect() : null;
+    var DUR = 760;
+    var srcOld = msd.src;
+    function finish(landed) {
+      if (src) src.style.opacity = "";
+      if (srcOld) srcOld.style.opacity = "";
+      if (landed) landingRing(to);
+      msdReset();
+    }
+    if (!msd.fly.animate) { finish(false); return; }
+    document.getElementById("msdGlow").classList.remove("on");
+    document.getElementById("msdBackdrop").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 480, delay: 220, easing: "ease-in", fill: "forwards" });
+    document.getElementById("msdCard").animate(
+      [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(18px) scale(.96)" }],
+      { duration: 280, easing: "ease-in", fill: "forwards" });
+    var anims;
+    if (to && to.width > 0) {
+      var dx = to.left + to.width / 2 - (cur.left + cur.width / 2), dy = to.top + to.height / 2 - (cur.top + cur.height / 2);
+      anims = coinAnimOut(msd.fly, msd.coin, dx, dy, to.width / cur.width, msd.angle, DUR);
+    } else {
+      anims = [msd.fly.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(.4)", opacity: 0 }], { duration: 420, easing: "ease-in", fill: "forwards" })];
+      DUR = 420;
+    }
+    onAnimsDone(anims, DUR, function () { finish(!!(to && to.width > 0)); });
+  }
+  // 아래로 쓸어내려도 닫기
+  (function initMsdSwipe() {
+    var ov = document.getElementById("milestoneDetailOverlay"), sx = 0, sy = 0, tgt = null;
+    if (!ov) return;
+    ov.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; tgt = e.target;
+    }, { passive: true });
+    ov.addEventListener("touchend", function (e) {
+      var t = e.changedTouches[0], dy = t.clientY - sy, dx = t.clientX - sx;
+      if (dy < 90 || Math.abs(dx) > 70) return;
+      var v = tgt && tgt.closest ? tgt.closest(".msd-verse") : null;
+      if (v && v.scrollHeight > v.clientHeight + 1) return;
+      closeMilestoneDetail();
+    }, { passive: true });
+  })();
+
+  // 아직 열리지 않은 칸을 탭하면 자물쇠가 흔들리고 남은 포인트를 알려준다
+  function lockedMilestoneTap(mid, el) {
+    var found = findMilestoneById(mid);
+    if (!found) return;
+    var remain = found.book.cumStart + found.milestone.need - computeGamification().points;
+    var cell = el ? el.querySelector(".ms-cell") : null;
+    if (cell && cell.animate) {
+      cell.animate([
+        { transform: "rotate(0deg)" }, { transform: "rotate(-9deg)" }, { transform: "rotate(8deg)" },
+        { transform: "rotate(-6deg)" }, { transform: "rotate(4deg)" }, { transform: "rotate(0deg)" }
+      ], { duration: 460, easing: "ease-in-out" });
+    }
+    if (remain > 0) toast("🔒 " + remain.toLocaleString() + "P 더 모으면 열려요");
+  }
+
+  // 획득 축하 화면에서 [확인]: 메달이 회전하며 작아져 성경 여정의 해당 칸으로 들어간다
+  function celebConfirm() {
+    if (celebFlying) return;
+    var ev = celebQueue[0];
+    if (ev && ev.type === "milestone" && celebFlyHome(ev)) return;
+    celebNext();
+  }
+  function celebFlyHome(ev) {
+    var st = celebEl(), svg = st.querySelector(".celeb-plate svg"), g = ev.g;
+    if (!svg || !g || !g.milestone || !st.animate) return false;
+    openBibleShelfAtBook(g.book.id);
+    var slot = shelfSlotEl(g.milestone.id);
+    if (!slot) { closeBibleShelfNow(); return false; }
+    shelfRevealSlot(slot);
+    var to = slot.getBoundingClientRect(), from = svg.getBoundingClientRect();
+    if (!to.width || !from.width) { closeBibleShelfNow(); return false; }
+    celebFlying = true;
+    celebClearTimers();
+    var c = buildMedalCoin(from.width, g.milestone.icon, null, from);
+    document.body.appendChild(c.fly);
+    svg.style.visibility = "hidden";
+    slot.style.opacity = "0";
+    var DUR = 880;
+    var dx = to.left + to.width / 2 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    var main = st.querySelector(".celeb-main"), acts = st.querySelector(".celeb-actions");
+    if (main) celebAnims.push(main.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: "ease-in", fill: "forwards" }));
+    if (acts) celebAnims.push(acts.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" }));
+    celebAnims.push(st.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 620, delay: 200, easing: "ease-in", fill: "forwards" }));
+    var anims = coinAnimOut(c.fly, c.coin, dx, dy, to.width / from.width, 0, DUR);
+    onAnimsDone(anims, DUR, function () {
+      c.fly.remove();
+      slot.style.opacity = "";
+      landingRing(to);
+      celebFlying = false;
+      celebNext();
+    });
+    return true;
+  }
 
   // ---- 재사용 SVG 부품 (매번 새로 그리지 않고 조합) ----
   var SVG_P = {
@@ -7750,6 +8188,8 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
   }
   function celebNext() {
     celebClearTimers();
+    celebAnims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
+    celebAnims = [];
     celebQueue.shift();
     var st = celebEl();
     st.classList.add("hidden");
@@ -7814,7 +8254,7 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
         : (g.milestone.ref + (g.isBookEnd ? " · " + g.book.name + " 완결" : ""));
       st.innerHTML = celebFrame(
         '<div class="celeb-kicker">' + escapeHtml(kicker) + '</div>' +
-        '<div class="celeb-plate' + (ev.newBook ? ' book' : '') + '">' + bibleIconSVG(g.milestone.icon, 96) + '</div>' +
+        '<div class="celeb-plate' + (ev.newBook ? ' book' : '') + '">' + bibleIconSVG(g.milestone.icon, 96) + '<div class="coin-shine"></div></div>' +
         '<div class="celeb-title">' + escapeHtml(title) + '</div>' +
         '<div class="celeb-sub">' + escapeHtml(sub) + '</div>' +
         (g.milestone.verse ? '<div class="celeb-verse">' + escapeHtml(g.milestone.verse) + '</div>' : ''), okBtn);
@@ -10024,9 +10464,12 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
     else if (action === "bible-shelf-close") { closeBibleShelf(); }
     else if (action === "bible-shelf-open-book") { openBibleShelfBook(id); }
     else if (action === "bible-shelf-back") { backToBibleShelfList(); }
-    else if (action === "open-milestone-detail") { openMilestoneDetail(id); }
+    else if (action === "open-milestone-detail") { openMilestoneDetail(id, el); }
     else if (action === "milestone-detail-close") { closeMilestoneDetail(); }
-    else if (action === "celeb-next") { celebNext(); }
+    else if (action === "msd-backdrop") { closeMilestoneDetail(); }
+    else if (action === "msd-flip") { msdFlip(); }
+    else if (action === "locked-milestone-tap") { lockedMilestoneTap(id, el); }
+    else if (action === "celeb-next") { celebConfirm(); }
     else if (action === "celeb-open-daily") { celebOpenDaily(); }
     else if (action === "celeb-daily-later") { celebDailyLater(); }
     else if (action === "celeb-badge-ok") { celebBadgeOk(); }
