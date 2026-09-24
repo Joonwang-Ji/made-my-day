@@ -818,6 +818,11 @@
     <div class="theme-option" data-action="threshold-select" data-id="80"><span>웬만큼 (80% 이상)</span><span class="dot"></span></div>
     <div class="theme-option" data-action="threshold-select" data-id="70"><span>느슨하게 (70% 이상)</span><span class="dot"></span></div>
   </div>
+  <div class="section-label">알람 소리</div>
+  <div class="theme-option-row">
+    <div class="theme-option" id="alarmForceToggle" data-action="toggle-alarm-force"><span>무음 스위치가 켜져 있어도 울리기</span><span class="dot"></span></div>
+    <div class="btn" data-action="alarm-preview" style="margin:0;">🔔 알람 소리 미리듣기</div>
+  </div>
   <div class="section-label">분기 목표 포인트 (큰 보상 기준)</div>
   <div class="quarter-goal-row">
     <input type="number" id="quarterGoalInput" inputmode="numeric" placeholder="예: 6000">
@@ -1188,6 +1193,7 @@
     Array.prototype.forEach.call(thOpts, function (o) {
       o.classList.toggle("active", o.getAttribute("data-id") === curTh);
     });
+    updateAlarmSettingUI();
     var adminBtn = document.getElementById("adminApprovalBtn");
     if (adminBtn) adminBtn.classList.toggle("hidden", !isAdminUser);
     var qgInput = document.getElementById("quarterGoalInput");
@@ -7541,21 +7547,49 @@ attachSceneMeta("rev");
       if (audioCtx.state === "suspended") audioCtx.resume();
     } catch (e) { /* audio unavailable, ignore */ }
   }
+  // 알람 소리: 상승하는 3음 차임을 두 번(약 2.3초). 짧지만 주방 소음 속에서도 들리도록 예전(0.45초 단음)보다
+  // 길고 크게 만들었다. 기본 오디오 세션이 "ambient"라 iPhone 무음 스위치를 켜면 웹 오디오도 같이 죽는데,
+  // 알람이 울리는 동안만 세션을 "playback"으로 바꿔 무음 스위치를 무시하고 끝나면 "auto"로 되돌린다
+  // (iOS 16.4+ Safari의 navigator.audioSession). 기기별 설정(localStorage)으로 끌 수 있다.
+  var alarmForce = true;
+  try { alarmForce = localStorage.getItem("mmd_alarm_force") !== "0"; } catch (e) {}
+  var alarmSessionTimer = null;
+  function setAudioSessionType(t) {
+    try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) {}
+  }
+  function alarmNote(ctx, freq, t0) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.9, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+    g.connect(ctx.destination);
+    [["sine", freq, 0.42], ["triangle", freq * 2, 0.14]].forEach(function (p) {
+      var o = ctx.createOscillator(), og = ctx.createGain();
+      o.type = p[0]; o.frequency.value = p[1]; og.gain.value = p[2];
+      o.connect(og); og.connect(g);
+      o.start(t0); o.stop(t0 + 0.58);
+    });
+  }
   function playCompleteAlarm() {
     try {
       if (!audioCtx) unlockAudioCtx();
       if (!audioCtx) return;
+      if (alarmForce) {
+        setAudioSessionType("playback");
+        if (alarmSessionTimer) clearTimeout(alarmSessionTimer);
+        alarmSessionTimer = setTimeout(function () { setAudioSessionType("auto"); alarmSessionTimer = null; }, 3200);
+      }
       if (audioCtx.state === "suspended") audioCtx.resume();
-      var ctx = audioCtx;
-      var o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine"; o.frequency.value = 880;
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(); o.stop(ctx.currentTime + 0.45);
+      var ctx = audioCtx, base = ctx.currentTime + 0.05;
+      [0, 1.25].forEach(function (rep) {
+        [880, 1108.7, 1318.5].forEach(function (f, i) { alarmNote(ctx, f, base + rep + i * 0.22); });
+      });
     } catch (e) { /* audio unavailable, ignore */ }
-    try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (e) {}
+  }
+  function updateAlarmSettingUI() {
+    var el = document.getElementById("alarmForceToggle");
+    if (el) el.classList.toggle("active", alarmForce);
   }
 
   // ---- tags ----
@@ -8440,6 +8474,12 @@ attachSceneMeta("rev");
     else if (action === "day-confirm") { confirmDayPicker(); }
     else if (action === "toggle-keep-on-rest") { if (dpFlex) return; dpKeepOnRest = !dpKeepOnRest; updateKeepOnRestToggleUI(); }
     else if (action === "toggle-no-suggest") { if (dpFlex) return; dpNoSug = !dpNoSug; updateAlarmToggleUI(); }
+    else if (action === "toggle-alarm-force") {
+      alarmForce = !alarmForce;
+      try { localStorage.setItem("mmd_alarm_force", alarmForce ? "1" : "0"); } catch (e) {}
+      updateAlarmSettingUI();
+    }
+    else if (action === "alarm-preview") { unlockAudioCtx(); playCompleteAlarm(); }
     else if (action === "toggle-alarm") { if (dpFlex) return; dpMuted = !dpMuted; updateAlarmToggleUI(); }
     else if (action === "day-toggle") {
       if (dpFlex) return;
