@@ -433,6 +433,24 @@
   .badge-cell .emoji { font-size: 22px; }
   .badge-cell .label { font-size: 10px; color: var(--ink-dim); text-align: center; }
   .reward-ideas { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .fr-note { font-size: 11.5px; color: var(--ink-dim); line-height: 1.6; margin: 4px 0 10px; }
+  .fr-input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); font-size: 14px; font-family: inherit; margin-bottom: 8px; }
+  .fr-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .fr-opt { font-size: 11.5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-dim); cursor: pointer; }
+  .fr-opt.on { background: var(--sage-soft); color: var(--ink); border-color: transparent; font-weight: 700; }
+  .fr-code { text-align: center; font-size: 22px; font-weight: 800; letter-spacing: 3px; padding: 10px 0; background: var(--ring-track); border-radius: 12px; margin-bottom: 8px; }
+  .fr-btns { display: flex; gap: 8px; margin-bottom: 8px; }
+  .fr-btns .btn { margin: 0; padding: 10px 6px; font-size: 12.5px; }
+  .fr-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .fr-row:last-child { border-bottom: none; }
+  .fr-main { flex: 1; min-width: 0; }
+  .fr-name { font-size: 13.5px; font-weight: 800; }
+  .fr-name .fr-title { font-size: 11.5px; font-weight: 600; color: var(--ink-dim); margin-left: 4px; }
+  .fr-stat { font-size: 11.5px; color: var(--ink); margin-top: 3px; line-height: 1.5; }
+  .fr-upd { font-size: 10.5px; color: var(--ink-dim); margin-top: 2px; }
+  .fr-end { flex: none; font-size: 11.5px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); color: var(--ink-dim); cursor: pointer; }
+  .fr-end.go { background: var(--sage-soft); color: var(--ink); border-color: transparent; font-weight: 700; }
   .reward-idea-chip { font-size: 11px; padding: 5px 9px; border-radius: 999px; background: var(--sage-soft); color: var(--ink); }
   .reward-note-input { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
     background: var(--bg-soft); color: var(--ink); font-size: 13px; font-family: inherit; margin-bottom: 12px; }
@@ -898,7 +916,8 @@
     </div>
     <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 14px;"></div>
     <div class="btn" data-action="open-bible-shelf" style="margin-bottom:10px;">📖 성경 여정 전체보기</div>
-    <div class="btn" data-action="open-pending-rewards" style="margin-bottom:16px;">🎀 내 선물함 열기</div>
+    <div class="btn" data-action="open-pending-rewards" style="margin-bottom:10px;">🎀 내 선물함 열기</div>
+    <div class="btn" data-action="open-friends" style="margin-bottom:16px;">👥 지인</div>
     <div class="section-label">배지 (최장 연속일 기준)</div>
     <div class="badge-grid" id="badgeGrid"></div>
     <div class="section-label" style="margin-top:16px;">족보 트랙</div>
@@ -916,6 +935,16 @@
       <span class="tp-close-x" data-action="bible-shelf-close">✕</span>
     </div>
     <div class="tp-card-body" id="bibleShelfBody"></div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="friendsOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title">지인</div>
+      <span class="tp-close-x" data-action="friends-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="friendsBody"></div>
   </div>
 </div>
 
@@ -1054,7 +1083,7 @@
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction,
-    enableIndexedDbPersistence, collection, query, where, getDocs, updateDoc
+    enableIndexedDbPersistence, collection, query, where, getDocs, updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   var firebaseConfig = {
@@ -1131,7 +1160,33 @@
     },
     approveUser: function (uid) {
       return updateDoc(doc(db, "users", uid), { approved: true });
-    }
+    },
+    // ---- 지인(7차): 공개 프로필 / 초대 코드 / 연결 ----
+    pubSet: function (uid, data) { return setDoc(doc(db, "profiles", uid), data); },
+    pubDelete: function (uid) { return deleteDoc(doc(db, "profiles", uid)); },
+    getProfile: function (uid) {
+      return getDoc(doc(db, "profiles", uid)).then(function (s) { return s.exists() ? s.data() : null; });
+    },
+    codeSet: function (code, uid, nick) { return setDoc(doc(db, "inviteCodes", code), { uid: uid, nick: nick }); },
+    codeGet: function (code) {
+      return getDoc(doc(db, "inviteCodes", code)).then(function (s) { return s.exists() ? s.data() : null; });
+    },
+    codeDelete: function (code) { return deleteDoc(doc(db, "inviteCodes", code)); },
+    listLinks: function (uid) {
+      var q = query(collection(db, "friendLinks"), where("members", "array-contains", uid));
+      return getDocs(q).then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) { out.push({ id: d.id, data: d.data() }); });
+        return out;
+      });
+    },
+    linkCreate: function (pair, data) { return setDoc(doc(db, "friendLinks", pair), data); },
+    linkAccept: function (pair, uid, nick) {
+      var upd = { status: "accepted" };
+      upd["names." + uid] = nick;
+      return updateDoc(doc(db, "friendLinks", pair), upd);
+    },
+    linkDelete: function (pair) { return deleteDoc(doc(db, "friendLinks", pair)); }
   };
   window.dispatchEvent(new Event("fb-ready"));
 </script>
@@ -1244,6 +1299,292 @@
       console.error("approve failed", err);
       if (btnEl) { btnEl.textContent = "승인"; btnEl.removeAttribute("disabled"); }
     });
+  }
+
+  // ---- 지인(7차): 공개 프로필 · 초대 코드 · 연결 ----
+  // 공개용 요약은 profiles/{uid}에 따로 복사해 둔다(users/{uid}는 누구에게도 열지 않는다).
+  // 서로 수락한 지인(friendLinks/{a_b} status=accepted)만 읽을 수 있고, 규칙은 서버(Firestore Rules)가 강제한다.
+  var CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  var pubTimer = null, lastPubJson = null;
+  var friendsForm = { today: false, count: false };
+  var friendsPending = null, friendsData = null;
+  var friendsArmKey = null, friendsArmTimer = null;
+  function makeInviteCode() {
+    var a = new Uint32Array(8), out = "";
+    crypto.getRandomValues(a);
+    for (var i = 0; i < 8; i++) out += CODE_ALPHABET.charAt(a[i] % CODE_ALPHABET.length);
+    return out;
+  }
+  function fmtCode(c) { return c ? c.slice(0, 4) + "-" + c.slice(4) : ""; }
+  function normCode(s) { return (s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  function pairId(a, b) { return a < b ? a + "_" + b : b + "_" + a; }
+  function otherUid(link, me) { return (link.members || []).filter(function (u) { return u !== me; })[0]; }
+
+  function buildPublicProfile() {
+    var sc = state.social || {};
+    var gam = computeGamification();
+    var g = computeGrowth(gam.points);
+    var t = state.personalTitle || { emoji: "", text: "" };
+    var tk = todayKey(), due = 0, done = 0, rc = 0;
+    state.categories.forEach(function (c) {
+      rc += c.items.length;
+      due += catItemsDueOn(c, tk).length;
+      done += catDoneCount(c, tk);
+    });
+    return {
+      nickname: sc.nickname || "",
+      titleEmoji: t.emoji || "", titleText: t.text || "",
+      level: gam.level, points: gam.points,
+      streak: computeStreakGeneric(overallStreakStatus), longest: computeLongestStreak(),
+      bookIcon: g.book.icon || "", bookName: g.book.name, milestoneTitle: g.milestone.title,
+      bookIndex: g.bookIndex + 1, totalBooks: g.totalBooks, gen: g.gen,
+      showToday: !!sc.showToday, todayDone: sc.showToday ? done : null, todayDue: sc.showToday ? due : null,
+      showCount: !!sc.showCount, routineCount: sc.showCount ? rc : null,
+      dateKey: tk
+    };
+  }
+  function publishProfile(force) {
+    var uid = currentUid;
+    if (!uid || !synced || !state.social || !state.social.shareOn) return Promise.resolve();
+    var p = buildPublicProfile();
+    var j = uid + "|" + JSON.stringify(p);
+    if (!force && j === lastPubJson) return Promise.resolve();
+    p.updatedAt = new Date().toISOString();
+    return window.__fb.pubSet(uid, p).then(function () {
+      if (uid === currentUid) lastPubJson = j;
+    }).catch(function (err) { console.warn("publish failed", err && err.code); });
+  }
+  function schedulePublish(delay) {
+    if (!currentUid || !state.social || !state.social.shareOn) return;
+    clearTimeout(pubTimer);
+    pubTimer = setTimeout(function () { publishProfile(false); }, delay || 20000);
+  }
+  function socialOnFirstSync() {
+    lastPubJson = null;
+    if (!state.social || !state.social.shareOn) return;
+    schedulePublish(3000);
+    var uid = currentUid;
+    window.__fb.listLinks(uid).then(function (links) {
+      var n = links.filter(function (l) { return l.data.status === "pending" && l.data.requester !== uid; }).length;
+      if (n) toast("지인 요청이 " + n + "건 와 있어요 · 업적 → 지인");
+    }).catch(function () {});
+  }
+
+  function friendError(err) {
+    console.warn("friends error", err);
+    if (err && err.code === "permission-denied") toast("서버 권한이 아직 열리지 않았어요 · Firebase 규칙 적용을 확인해주세요");
+    else toast("문제가 생겼어요 · 잠시 후 다시 시도해주세요");
+  }
+  function friendTwoTap(el, key, label) {
+    if (friendsArmKey === key) { clearTimeout(friendsArmTimer); friendsArmKey = null; return true; }
+    friendsArmKey = key;
+    el.setAttribute("data-orig", el.textContent);
+    el.textContent = label;
+    clearTimeout(friendsArmTimer);
+    friendsArmTimer = setTimeout(function () {
+      friendsArmKey = null;
+      if (el.isConnected) el.textContent = el.getAttribute("data-orig");
+    }, 3500);
+    return false;
+  }
+
+  function openFriends() {
+    friendsPending = null;
+    friendsForm = { today: !!state.social.showToday, count: !!state.social.showCount };
+    document.getElementById("friendsOverlay").classList.remove("hidden");
+    loadFriends();
+  }
+  function closeFriends() { document.getElementById("friendsOverlay").classList.add("hidden"); }
+  function loadFriends() {
+    var body = document.getElementById("friendsBody");
+    body.innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">불러오는 중…</div>';
+    var uid = currentUid;
+    window.__fb.listLinks(uid).then(function (links) {
+      friendsData = { links: links, profiles: {} };
+      var acc = links.filter(function (l) { return l.data.status === "accepted"; });
+      return Promise.all(acc.map(function (l) {
+        var o = otherUid(l.data, uid);
+        return window.__fb.getProfile(o).then(function (pr) { friendsData.profiles[o] = pr; })
+          .catch(function () { friendsData.profiles[o] = null; });
+      }));
+    }).then(function () {
+      if (uid === currentUid) renderFriends();
+    }).catch(function (err) {
+      body.innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">' +
+        (err && err.code === "permission-denied" ? "서버 규칙이 아직 적용되지 않았어요.<br>Firebase 콘솔에서 규칙을 적용한 뒤 다시 열어주세요." : "불러오지 못했어요. 잠시 후 다시 시도해주세요.") + '</div>';
+    });
+  }
+  function fmtMD(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : (d.getMonth() + 1) + "/" + d.getDate();
+  }
+  function renderFriends() {
+    var body = document.getElementById("friendsBody");
+    var sc = state.social, uid = currentUid;
+    var links = (friendsData && friendsData.links) || [];
+    var h = '';
+    h += '<div class="section-label">내 공개 설정</div>';
+    h += '<div class="fr-note">공개를 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 레벨 · 누적P · 연속일 · 성경 진행이 보여요. 루틴 이름, 메모, 선물함, 이메일은 공개되지 않아요.</div>';
+    h += '<input class="fr-input" id="friendNickInput" maxlength="12" placeholder="닉네임 (1~12자)" value="' + escapeHtml(sc.nickname || "") + '">';
+    h += '<div class="fr-opts">' +
+      '<span class="fr-opt' + (friendsForm.today ? ' on' : '') + '" data-action="friend-opt" data-id="today">오늘 진행률도 공개</span>' +
+      '<span class="fr-opt' + (friendsForm.count ? ' on' : '') + '" data-action="friend-opt" data-id="count">루틴 개수도 공개</span></div>';
+    h += '<div class="btn primary" data-action="friend-save" style="margin:0 0 8px;">' + (sc.shareOn ? '저장' : '공개 켜기') + '</div>';
+    if (sc.shareOn) h += '<div class="btn" data-action="friend-off" style="margin:0;">공개 끄기</div>';
+
+    if (sc.shareOn) {
+      h += '<div class="section-label" style="margin-top:18px;">내 초대 코드</div>';
+      h += '<div class="fr-code">' + escapeHtml(fmtCode(sc.code)) + '</div>';
+      h += '<div class="fr-btns"><div class="btn" data-action="friend-copy">복사</div><div class="btn" data-action="friend-newcode">새 코드 만들기</div></div>';
+      h += '<div class="fr-note">이 코드를 지인에게 알려 주세요. 지인이 코드를 입력해 요청을 보내면, 내가 수락한 사람만 연결돼요.</div>';
+
+      h += '<div class="section-label" style="margin-top:14px;">지인 코드로 요청하기</div>';
+      if (friendsPending) {
+        h += '<div class="fr-note" style="font-size:13px;color:var(--ink);"><b>' + escapeHtml(friendsPending.nick || "이 코드의 주인") + '</b>님에게 지인 요청을 보낼까요?</div>';
+        h += '<div class="fr-btns"><div class="btn primary" data-action="friend-send">보내기</div><div class="btn" data-action="friend-send-cancel">취소</div></div>';
+      } else {
+        h += '<input class="fr-input" id="friendCodeInput" maxlength="9" placeholder="지인의 코드 8자리" autocapitalize="characters" autocomplete="off">';
+        h += '<div class="btn" data-action="friend-lookup" style="margin:0;">확인</div>';
+      }
+
+      var incoming = links.filter(function (l) { return l.data.status === "pending" && l.data.requester !== uid; });
+      var outgoing = links.filter(function (l) { return l.data.status === "pending" && l.data.requester === uid; });
+      if (incoming.length) {
+        h += '<div class="section-label" style="margin-top:18px;">받은 요청</div>';
+        incoming.forEach(function (l) {
+          var nm = (l.data.names || {})[l.data.requester] || "이름 없음";
+          h += '<div class="fr-row"><div class="fr-main"><div class="fr-name">' + escapeHtml(nm) + '</div></div>' +
+            '<div class="fr-end go" data-action="friend-accept" data-id="' + l.id + '">수락</div>' +
+            '<div class="fr-end" data-action="friend-reject" data-id="' + l.id + '">거절</div></div>';
+        });
+      }
+      if (outgoing.length) {
+        h += '<div class="section-label" style="margin-top:18px;">보낸 요청 · 수락 대기 중</div>';
+        outgoing.forEach(function (l) {
+          var o = otherUid(l.data, uid);
+          var nm = (l.data.names || {})[o] || "이름 없음";
+          h += '<div class="fr-row"><div class="fr-main"><div class="fr-name">' + escapeHtml(nm) + '</div></div>' +
+            '<div class="fr-end" data-action="friend-cancel-req" data-id="' + l.id + '">취소</div></div>';
+        });
+      }
+      var acc = links.filter(function (l) { return l.data.status === "accepted"; });
+      h += '<div class="section-label" style="margin-top:18px;">내 지인 (' + acc.length + ')</div>';
+      if (!acc.length) h += '<div class="fr-note">아직 연결된 지인이 없어요</div>';
+      var tk = todayKey();
+      acc.forEach(function (l) {
+        var o = otherUid(l.data, uid);
+        var pr = friendsData.profiles[o];
+        var nm = (pr && pr.nickname) || (l.data.names || {})[o] || "이름 없음";
+        h += '<div class="fr-row"><div class="fr-main">';
+        if (pr) {
+          h += '<div class="fr-name">' + escapeHtml((pr.titleEmoji ? pr.titleEmoji + " " : "") + nm) +
+            (pr.titleText ? '<span class="fr-title">' + escapeHtml(pr.titleText) + '</span>' : '') + '</div>';
+          var parts = ["Lv." + pr.level + " · " + pr.points + "P", "🔥 " + pr.streak + "일 (최장 " + pr.longest + "일)"];
+          h += '<div class="fr-stat">' + parts.join("<br>") + '</div>';
+          h += '<div class="fr-stat">' + escapeHtml((pr.bookIcon ? pr.bookIcon + " " : "") + pr.bookName + " · " + pr.milestoneTitle +
+            " (" + pr.bookIndex + "/" + pr.totalBooks + "권" + (pr.gen > 1 ? " · " + pr.gen + "회독" : "") + ")") + '</div>';
+          var extra = [];
+          if (pr.showToday && pr.dateKey === tk && pr.todayDue != null) extra.push("오늘 " + pr.todayDone + "/" + pr.todayDue);
+          if (pr.showCount && pr.routineCount != null) extra.push("루틴 " + pr.routineCount + "개");
+          if (extra.length) h += '<div class="fr-stat">' + extra.join(" · ") + '</div>';
+          h += '<div class="fr-upd">' + (fmtMD(pr.updatedAt) ? fmtMD(pr.updatedAt) + " 기준" : "") + '</div>';
+        } else {
+          h += '<div class="fr-name">' + escapeHtml(nm) + '</div><div class="fr-stat" style="color:var(--ink-dim);">아직 공개 전이에요 · 상대가 공개를 켜면 보여요</div>';
+        }
+        h += '</div><div class="fr-end" data-action="friend-cut" data-id="' + l.id + '">끊기</div></div>';
+      });
+    } else {
+      h += '<div class="fr-note" style="margin-top:14px;">공개를 켜면 초대 코드가 만들어지고, 지인과 연결할 수 있어요.</div>';
+    }
+    body.innerHTML = h;
+  }
+
+  function claimNewCode(uid, nick, tries) {
+    var code = makeInviteCode();
+    return window.__fb.codeSet(code, uid, nick).then(function () { return code; }).catch(function (err) {
+      if (tries < 3 && err && err.code === "permission-denied") return claimNewCode(uid, nick, tries + 1);
+      throw err;
+    });
+  }
+  function saveFriendSettings() {
+    var nick = (document.getElementById("friendNickInput").value || "").trim().replace(/\s+/g, " ");
+    if (!nick) { toast("닉네임을 입력해주세요"); return; }
+    if (nick.length > 12) { toast("닉네임은 12자까지예요"); return; }
+    var uid = currentUid, sc = state.social;
+    var codeP = sc.code ? window.__fb.codeSet(sc.code, uid, nick).then(function () { return sc.code; }) : claimNewCode(uid, nick, 0);
+    codeP.then(function (code) {
+      sc.nickname = nick; sc.showToday = friendsForm.today; sc.showCount = friendsForm.count;
+      sc.code = code; sc.shareOn = true;
+      saveState();
+      return publishProfile(true);
+    }).then(function () {
+      toast("공개 설정을 저장했어요");
+      loadFriends();
+    }).catch(friendError);
+  }
+  function turnOffSharing() {
+    var uid = currentUid, sc = state.social, old = sc.code;
+    Promise.all([window.__fb.pubDelete(uid), old ? window.__fb.codeDelete(old) : null]).then(function () {
+      sc.shareOn = false; sc.code = ""; lastPubJson = null;
+      clearTimeout(pubTimer);
+      saveState();
+      toast("공개를 껐어요");
+      loadFriends();
+    }).catch(friendError);
+  }
+  function regenerateCode() {
+    var uid = currentUid, sc = state.social, old = sc.code;
+    claimNewCode(uid, sc.nickname, 0).then(function (code) {
+      sc.code = code; saveState();
+      return old ? window.__fb.codeDelete(old).catch(function () {}) : null;
+    }).then(function () { toast("새 코드를 만들었어요"); renderFriends(); }).catch(friendError);
+  }
+  function copyInviteCode() {
+    var code = fmtCode(state.social.code), ok = false;
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(code); ok = true; } } catch (e) {}
+    if (!ok) {
+      try {
+        var ta = document.createElement("textarea"); ta.value = code; document.body.appendChild(ta);
+        ta.select(); ok = document.execCommand("copy"); document.body.removeChild(ta);
+      } catch (e) {}
+    }
+    toast(ok ? "코드를 복사했어요" : "복사에 실패했어요 · 직접 적어주세요");
+  }
+  function lookupFriendCode() {
+    var raw = normCode(document.getElementById("friendCodeInput").value);
+    if (raw.length !== 8) { toast("코드는 8자리예요"); return; }
+    var uid = currentUid;
+    window.__fb.codeGet(raw).then(function (d) {
+      if (!d) { toast("코드를 찾을 수 없어요"); return; }
+      if (d.uid === uid) { toast("내 코드예요"); return; }
+      var ex = ((friendsData && friendsData.links) || []).filter(function (l) { return l.id === pairId(uid, d.uid); })[0];
+      if (ex) { toast(ex.data.status === "accepted" ? "이미 연결된 지인이에요" : "이미 요청이 진행 중이에요"); return; }
+      friendsPending = { uid: d.uid, nick: d.nick || "" };
+      renderFriends();
+    }).catch(friendError);
+  }
+  function sendFriendRequest() {
+    var fp = friendsPending, uid = currentUid;
+    if (!fp) return;
+    var names = {}; names[uid] = state.social.nickname; names[fp.uid] = fp.nick || "";
+    window.__fb.linkCreate(pairId(uid, fp.uid), {
+      members: [uid, fp.uid], requester: uid, status: "pending", names: names, createdAt: new Date().toISOString()
+    }).then(function () {
+      friendsPending = null;
+      toast("요청을 보냈어요 · 상대가 수락하면 연결돼요");
+      loadFriends();
+    }).catch(friendError);
+  }
+  function acceptFriend(pair) {
+    window.__fb.linkAccept(pair, currentUid, state.social.nickname).then(function () {
+      publishProfile(true);
+      toast("연결됐어요");
+      loadFriends();
+    }).catch(friendError);
+  }
+  function deleteFriendLink(pair, msg) {
+    window.__fb.linkDelete(pair).then(function () { toast(msg); loadFriends(); }).catch(friendError);
   }
 
   // ---- achievements ----
@@ -1718,6 +2059,7 @@
       holidayPromptSeen: false,
       holidayBannerDismissedYear: null,
       personalTitle: { emoji: "", text: "" },
+      social: { nickname: "", shareOn: false, showToday: false, showCount: false, code: "" },
       approved: false,
       email: "",
       requestedAt: null
@@ -1792,6 +2134,14 @@
     if (!p.personalTitle || typeof p.personalTitle !== "object") p.personalTitle = { emoji: "", text: "" };
     if (typeof p.personalTitle.emoji !== "string") p.personalTitle.emoji = "";
     if (typeof p.personalTitle.text !== "string") p.personalTitle.text = "";
+    if (!p.social || typeof p.social !== "object") p.social = {};
+    p.social = {
+      nickname: typeof p.social.nickname === "string" ? p.social.nickname : "",
+      shareOn: p.social.shareOn === true,
+      showToday: p.social.showToday === true,
+      showCount: p.social.showCount === true,
+      code: typeof p.social.code === "string" ? p.social.code : ""
+    };
     if (typeof p.approved !== "boolean") p.approved = false;
     if (typeof p.email !== "string") p.email = "";
     if (typeof p.requestedAt === "undefined") p.requestedAt = null;
@@ -1974,6 +2324,7 @@
     if (currentUid && !synced) return;   // 서버 확정 전에는 캐시로 그린 화면에서 아무것도 저장하지 않는다
     saveToLocalStorage(state);
     if (!currentUid) return;
+    schedulePublish(20000);
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(function () {
       saveDebounceTimer = null;
@@ -2090,6 +2441,7 @@
           var doneBk = false; try { doneBk = !!localStorage.getItem(bk); } catch (e) {}
           if (!doneBk) window.__fb.saveSnapshot(uid, todayKey(), JSON.parse(JSON.stringify(syncedBase))).then(function () { try { localStorage.setItem(bk, "1"); } catch (e) {} }).catch(function (err) { console.warn("daily snapshot skipped", err && err.code); });
         }
+        if (!wasSynced) socialOnFirstSync();
         if (firstLoad && (JSON.stringify(state.history) !== rawHistoryJson || JSON.stringify(state.categories) !== rawCategoriesJson || state.approved !== rawApproved)) {
           saveState();   // 항목 정리(migration) 결과를 서버에 반영 — 서버 확정값 기준이라 안전하고, 병합 저장 경로를 탄다
         }
@@ -8534,6 +8886,23 @@ attachSceneMeta("rev");
     else if (action === "title-edit-cancel") { closeTitleEditOverlay(); }
     else if (action === "title-edit-save") { saveTitleEditOverlay(); }
     else if (action === "title-emoji-pick") { pickTitleEmoji(el.getAttribute("data-emoji")); }
+    else if (action === "open-friends") { openFriends(); }
+    else if (action === "friends-close") { closeFriends(); }
+    else if (action === "friend-opt") {
+      friendsForm[id] = !friendsForm[id];
+      el.classList.toggle("on", !!friendsForm[id]);
+    }
+    else if (action === "friend-save") { saveFriendSettings(); }
+    else if (action === "friend-off") { if (friendTwoTap(el, "off", "한 번 더 눌러 끄기")) turnOffSharing(); }
+    else if (action === "friend-copy") { copyInviteCode(); }
+    else if (action === "friend-newcode") { if (friendTwoTap(el, "newcode", "한 번 더 눌러 바꾸기")) regenerateCode(); }
+    else if (action === "friend-lookup") { lookupFriendCode(); }
+    else if (action === "friend-send") { sendFriendRequest(); }
+    else if (action === "friend-send-cancel") { friendsPending = null; renderFriends(); }
+    else if (action === "friend-accept") { acceptFriend(id); }
+    else if (action === "friend-reject") { deleteFriendLink(id, "거절했어요"); }
+    else if (action === "friend-cancel-req") { deleteFriendLink(id, "요청을 취소했어요"); }
+    else if (action === "friend-cut") { if (friendTwoTap(el, "cut" + id, "한 번 더")) deleteFriendLink(id, "연결을 끊었어요"); }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
     else if (action === "open-bible-shelf") { openBibleShelf(); }
