@@ -591,6 +591,7 @@
     border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain; max-height: calc(100vh - var(--s) * .58 - 300px); min-height: 56px; }
   .msd-hint { font-size: 11px; color: var(--ink-dim); margin-bottom: 12px; }
+  .msd-date { font-size: 11.5px; font-weight: 700; color: var(--gold, #B8963F); margin: 3px 0 12px; min-height: 14px; }
 
   #bibleShelfOverlay .tp-card { position: relative; }
   .book-cover { position: absolute; inset: 0; z-index: 5; transform-origin: 0 50%; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; pointer-events: none; }
@@ -1153,7 +1154,8 @@
     <div class="msd-coinslot" id="msdCoinSlot" data-action="msd-flip"></div>
     <div class="msd-card" id="msdCard">
       <div class="tp-title" id="msDetailTitle" style="font-family:'Fraunces',serif;font-size:17px;font-weight:650;margin-bottom:2px;"></div>
-      <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);margin-bottom:12px;"></div>
+      <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);"></div>
+      <div id="msDetailDate" class="msd-date"></div>
       <div id="msDetailVerse" class="msd-verse"></div>
       <div class="msd-hint">메달을 탭하면 뒷면이 보여요</div>
       <div class="btn primary" id="msdCloseBtn" data-action="milestone-detail-close">닫기</div>
@@ -2292,13 +2294,19 @@
     var g = computeGrowth(gam.points);
     var totalEl = document.getElementById("achieveTotalPoints");
     if (totalEl) totalEl.textContent = "누적 " + gam.points + "P";
-    document.getElementById("achieveLevelNum").innerHTML = bibleIconSVG(g.milestone.icon, 34);
+    var lvlEl = document.getElementById("achieveLevelNum");
+    lvlEl.innerHTML = bibleIconSVG(g.milestone.icon, 46);
+    lvlEl.setAttribute("data-action", "open-milestone-detail");
+    lvlEl.setAttribute("data-id", g.milestone.id);
+    lvlEl.style.cursor = "pointer";
     document.getElementById("achieveGrowthLabel").textContent = growthFullLabel(g);
     document.getElementById("achieveLevelPts").textContent = g.ptsIntoStage + "/" + g.ptsForNext + "P";
     document.getElementById("achieveLevelFill").style.width = Math.round(g.ptsIntoStage / g.ptsForNext * 100) + "%";
     var bookProgEl = document.getElementById("achieveBookProgress");
-    if (bookProgEl) bookProgEl.textContent = g.milestone.ref + (g.milestone.verse ? " · " + g.milestone.verse : "") +
-      "  (" + (g.bookIndex + 1) + "/" + g.totalBooks + "권 · " + g.book.section + ")";
+    if (bookProgEl) {
+      bookProgEl.style.whiteSpace = "pre-line";
+      bookProgEl.textContent = g.milestone.ref + "  (" + (g.bookIndex + 1) + "/" + g.totalBooks + "권 · " + g.book.section + ")\n메달을 탭하면 말씀이 열려요";
+    }
     var genEl = document.getElementById("achieveGenealogy");
     if (genEl) {
       var gen = bibleUnlockedGenealogy();
@@ -3901,6 +3909,8 @@ var MP = {
     var hair = o.hair || '#4A3428', skin = o.skin || c;
     var A = { d: [-7.6, 56, 7.6, 56], u: [-11, 30, 11, 30], r: [-7.6, 56, 14, 41], l: [-14, 41, 7.6, 56], f: [-3, 50, 3, 50], h: [-9.5, 47, 9.5, 47] }[o.arms || 'd'];
     var g = '<g transform="translate(' + x + ' ' + foot + ') scale(' + s + ') translate(0 -72.5)" stroke="none">';
+    // 여성의 머리카락은 얼굴·목·몸보다 먼저(뒤에) 그려서 머리 뒤로 늘어지게 한다
+    if (o.f && !o.scarf) g += '<path d="M-4.6 31Q0 27.6 4.6 31L5.2 44L3.6 42L-3.6 42L-5.2 44Z" fill="' + hair + '"/>';
     g += '<rect x="-1.4" y="36.8" width="2.8" height="3.4" fill="' + skin + '"/>';
     if (o.robe) {
       g += '<path d="M-6.2 40.4Q0 38.2 6.2 40.4L9.4 72.5Q0 74.2 -9.4 72.5Z" fill="' + c + '"/>';
@@ -3914,7 +3924,7 @@ var MP = {
     g += '<path d="M-5.8 41L' + A[0] + ' ' + A[1] + 'M5.8 41L' + A[2] + ' ' + A[3] + '" fill="none" stroke="' + c + '" stroke-width="2.4" stroke-linecap="round"/>';
     g += '<circle cy="33.6" r="3.6" fill="' + skin + '"/>';
     if (o.scarf) g += '<path d="M-4.6 33.6Q-4.6 28.4 0 28.4Q4.6 28.4 4.6 33.6L5.8 44L-5.8 44Z" fill="' + o.scarf + '"/><circle cx="0" cy="34.2" r="2.6" fill="' + skin + '"/>';
-    else if (o.f) g += '<path d="M-4.6 31Q0 27.6 4.6 31L5.2 44L3.6 42L-3.6 42L-5.2 44Z" fill="' + hair + '"/><circle cy="33.8" r="3.3" fill="' + skin + '"/>';
+    else if (o.f) { /* 머리카락은 위에서 먼저 그렸다 */ }
     else g += '<path d="M-3.8 33.2Q-4 29.4 0 29.4Q4 29.4 3.8 33.2Q0 31.2 -3.8 33.2Z" fill="' + hair + '"/>';
     if (o.staff !== undefined) g += '<path d="M' + o.staff + ' 27V74" stroke="#7A5A3E" stroke-width="1.5" stroke-linecap="round"/>';
     return g + '</g>';
@@ -7531,6 +7541,56 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
   DF.ram(50, 84, 1.45, '#F4EBD5') +
   MP.line('M49 70L44 62M62 66L66 60M56 64L56 56', '#4F6B44', 1.3);
 // <<END MEDALS fix=1>>
+// <<MEDALS fix=2>>
+// 창세기 메달 개선(2026-09-25): eden(생명나무·선악을 알게 하는 나무 + 사람), fall(쫓겨나는 아담과 하와), beasts(동물 추가).
+// 돕는 배필(eve)은 MP.person의 여성 머리카락을 뒤로 보낸 수정으로 함께 고쳐졌다. 원래 그림은 day1 블록에 그대로 남아 있고 여기서 덮어쓴다.
+var BEASTS_BASE = MEDAL_ART.beasts;
+var G2 = {
+  flipX: function (inner) { return '<g transform="translate(100 0) scale(-1 1)">' + inner + '</g>'; },
+  glow: function (x, y, r, c, o) { return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + c + '" opacity="' + o + '"/>'; }
+};
+
+// 8 에덴 — 동산 중앙의 두 나무(왼쪽 생명나무: 금빛 열매, 오른쪽 선악을 알게 하는 나무: 붉은 열매)와 그 사이에 선 사람
+MEDAL_ART.eden = MP.bg('#CFDCBE') + G2.glow(50, 40, 36, '#E6EED0', 0.9) +
+  MP.path('M-6 68Q20 56 46 62T106 58V100H-6Z', '#9DB584') + MP.line('M-2 74Q28 66 52 72T104 68', '#7FA3B5', 3.6) + MP.ground(82, '#86976A') +
+  // 생명나무: 밝은 초록 + 금빛 후광 + 금빛 열매
+  G2.glow(32, 38, 19, '#F3E3AA', 0.55) +
+  MP.path('M29 82L30.4 52H33.6L35 82Z', '#7A5A3E') +
+  MP.circle(32, 34, 11.5, '#5E8F62') + MP.circle(23.5, 43, 8, '#6B9C6E') + MP.circle(40.5, 43, 8, '#6B9C6E') + MP.circle(32, 45, 7, '#5E8F62') +
+  MP.circle(27, 32, 1.9, '#E9C36B') + MP.circle(37, 36, 1.9, '#E9C36B') + MP.circle(32, 25, 1.9, '#E9C36B') + MP.circle(23, 43, 1.7, '#E9C36B') + MP.circle(41, 44, 1.7, '#E9C36B') + MP.circle(32, 43, 1.7, '#E9C36B') +
+  // 선악을 알게 하는 나무: 짙은 초록 + 붉은 열매
+  MP.path('M65.4 82L66.6 52H70.6L71.8 82Z', '#6B4F3A') +
+  MP.circle(68, 33, 11.5, '#3F6A4C') + MP.circle(59.5, 43, 8, '#4B7857') + MP.circle(76.5, 43, 8, '#4B7857') + MP.circle(68, 44, 7, '#3F6A4C') +
+  MP.circle(63, 31, 1.9, '#C0554B') + MP.circle(73, 35, 1.9, '#C0554B') + MP.circle(68, 24, 1.9, '#C0554B') + MP.circle(59, 43, 1.7, '#C0554B') + MP.circle(77, 44, 1.7, '#C0554B') + MP.circle(68, 42, 1.7, '#C0554B') +
+  // 두 나무 사이에 선 사람(아담)
+  '<ellipse cx="50" cy="84" rx="9" ry="2" fill="#647A52" opacity=".6"/>' +
+  MP.person(50, 84, 0.8, '#B06B54', { arms: 'd', hair: '#5A3B2E' });
+
+// 10 선악과, 타락 — 선악을 알게 하는 나무와 뱀, 동산 문을 지키는 불 칼, 쫓겨나 걸어가는 아담과 하와
+MEDAL_ART.fall = MP.bg('#3B2F4A') + G2.glow(44, 62, 22, '#8A5A3E', 0.3) + MP.ground(82, '#2A2236') +
+  MP.path('M22 84L23.6 48H26.4L28 84Z', '#6B4F3A') +
+  MP.circle(25, 33, 12, '#4B5B48') + MP.circle(15, 42, 8, '#4B5B48') + MP.circle(35, 42, 8, '#4B5B48') +
+  MP.circle(19, 31, 2.4, '#C0554B') + MP.circle(31, 34, 2.4, '#C0554B') + MP.circle(25, 41, 2.4, '#C0554B') + MP.circle(25, 23, 2.4, '#C0554B') +
+  '<g transform="translate(-26 0)">' + MP.line('M52 80C40 74 60 68 47 62S58 54 49 48', '#A9C49A', 2.6) + MP.circle(47.6, 46.6, 2.3, '#A9C49A') + MP.line('M45.8 46L44 44.8M45.8 46L44.2 47.4', '#C0554B', 0.7) + '</g>' +
+  // 동산 문을 지키는 불 칼
+  MP.flame(38, 80, 1.0, '#D98A3A', '#F0D080') + MP.flame(46, 81, 0.8, '#D98A3A', '#F0D080') + D7.sword(42, 72, 0.6, '#E9C36B', 0) +
+  // 쫓겨나는 아담과 하와: 짐승 가죽옷을 입고 앞으로 기울어 걸어간다
+  D2.tilt(5, 58, 82, MP.person(58, 82, 0.8, '#9A7A4E', { robe: true, skin: '#B06B54', hair: '#4A3428', arms: 'd' })) +
+  D2.tilt(5, 72, 82, MP.person(72, 82, 0.76, '#7A5C6A', { robe: true, f: 1, skin: '#BE7A63', hair: '#4A3428', arms: 'd' })) +
+  MP.stars([[14, 20, 0.6], [86, 24, 0.7], [56, 14, 0.5]]);
+
+// 6 창조 여섯째 날 — 남자와 여자(기존 그대로) + 땅의 짐승들(말·사자·양·소)과 하늘의 새
+var beastCut = BEASTS_BASE.indexOf('<ellipse cx="17" cy="73"');
+var beastMan = BEASTS_BASE.indexOf('<g transform="translate(39 0)"');
+MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
+  // 뒷줄(사람 뒤): 왼쪽 말, 오른쪽 사자
+  DF.horse(22, 71, 0.36, '#8B6A4A', '#4E3B2B') + G2.flipX(DF.lion(27, 70, 0.34, '#C9955A', '#8A5A2E')) +
+  BEASTS_BASE.slice(beastMan, beastCut) +
+  // 앞줄(사람 앞): 왼쪽 양, 오른쪽 소
+  MP.lamb(34, 82, 0.7, '#F4EBD5') + G2.flipX(MP.calf(31, 83, 0.52, '#A8734A')) +
+  // 하늘의 새
+  MP.bird(24, 36, 0.8, '#6B5A48') + MP.bird(31, 30, 0.6, '#6B5A48') + MP.bird(52, 20, 0.7, '#6B5A48');
+// <<END MEDALS fix=2>>
 
   function scenesForBook(book) {
     milestonesForBook(book); // 아직 캐시되지 않은 책이면 자리표시자 생성 + 장면 부여를 트리거
@@ -7597,8 +7657,34 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
     return '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="' + fs + '" font-weight="' + weight + '" fill="' + fill +
       '" font-family="Fraunces, \'Apple SD Gothic Neo\', \'Noto Sans KR\', serif"' + fit + '>' + escapeHtml(txt) + '</text>';
   }
-  // 동전 뒷면: 권 이름, 본문 위치, 몇 번째 메달인지, 열린 누적 포인트
-  function medalBackSVG(found) {
+  // 메달을 처음 얻은 날: 기록(history)과 선물 상자 개봉일을 날짜순으로 포인트를 쌓아 가며,
+  // 그 메달에 필요한 누적 포인트에 처음 닿은 날을 찾는다(포인트 계산 규칙은 computeGamification과 같다).
+  function medalEarnedDate(found) {
+    var need = found.book.cumStart + found.milestone.need;
+    var keys = {};
+    Object.keys(state.history || {}).forEach(function (d) { keys[d] = 1; });
+    Object.keys(state.openedBoxes || {}).forEach(function (d) { keys[d] = 1; });
+    var dates = Object.keys(keys).sort();
+    if (!dates.length) return null;
+    var cum = 0, i;
+    function addDay(d) {
+      var entry = state.history[d];
+      var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
+      cum += completed.length;
+      state.categories.forEach(function (cat) {
+        var due = catItemsDueOn(cat, d);
+        if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) cum += 3;
+      });
+      if (state.openedBoxes && state.openedBoxes[d]) cum += DAILY_BOX_BONUS;
+    }
+    for (i = 0; i < dates.length; i++) {
+      addDay(dates[i]);
+      if (cum >= need) return dates[i];
+    }
+    return dates[dates.length - 1];
+  }
+  // 동전 뒷면: 권 이름, 본문 위치, 몇 번째 메달인지, 얻은 날
+  function medalBackSVG(found, dateKey) {
     var b = found.book, m = found.milestone, list = milestonesForBook(b);
     var idx = list.indexOf(m) + 1;
     var refShort = m.ref.indexOf(b.name) === 0 ? m.ref.slice(b.name.length).replace(/^\s+/, "") : m.ref;
@@ -7610,8 +7696,8 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
       svgTextEl(b.name, 50, 42, nfs, "#5A4626", 700, 60) +
       svgTextEl(refShort, 50, 53, 6.4, "#7A6738", 500, 56) +
       '<path d="M36 59H64" stroke="#C2A25E" stroke-width=".7"/>' +
-      svgTextEl(idx + " / " + list.length, 50, 68, 6, "#7A6738", 600, 40) +
-      svgTextEl(tot > 0 ? tot.toLocaleString() + "P 달성" : "여정의 시작", 50, 77, 5.4, "#8A7B57", 500, 40) +
+      svgTextEl(idx + " / " + list.length + (tot > 0 ? " · " + tot.toLocaleString() + "P" : ""), 50, 67, 5.6, "#7A6738", 600, 52) +
+      (dateKey ? svgTextEl(dateKey.replace(/-/g, "."), 50, 77, 6.4, "#5A4626", 700, 40) + svgTextEl("획득", 50, 84, 4.6, "#8A7B57", 500, 20) : "") +
       '</svg>';
   }
   function buildMedalCoin(size, icon, backSvg, fixedRect) {
@@ -7680,6 +7766,8 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
     cancelAnimsIn(ov);
     document.getElementById("msDetailTitle").textContent = m.title;
     document.getElementById("msDetailRef").textContent = m.ref;
+    var earned = medalEarnedDate(found);
+    document.getElementById("msDetailDate").textContent = earned ? "🏅 " + earned.replace(/-/g, ".") + " 획득" : "";
     var verseEl = document.getElementById("msDetailVerse");
     verseEl.textContent = m.verse || "";
     verseEl.style.display = m.verse ? "" : "none";
@@ -7687,7 +7775,7 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
     ov.classList.remove("hidden");
     var slot = document.getElementById("msdCoinSlot");
     var size = Math.round(slot.getBoundingClientRect().width) || 200;
-    var c = buildMedalCoin(size, m.icon, medalBackSVG(found));
+    var c = buildMedalCoin(size, m.icon, medalBackSVG(found, earned));
     slot.innerHTML = "";
     slot.appendChild(c.fly);
     msd.mid = mid; msd.angle = 0; msd.fly = c.fly; msd.coin = c.coin;
@@ -7708,7 +7796,7 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
     document.getElementById("msdCard").animate(
       [{ opacity: 0, transform: "translateY(26px) scale(.94)" }, { opacity: 1, transform: "none" }],
       { duration: 420, delay: 200, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
-    ["msDetailTitle", "msDetailRef", "msDetailVerse"].forEach(function (id, i) {
+    ["msDetailTitle", "msDetailRef", "msDetailDate", "msDetailVerse"].forEach(function (id, i) {
       document.getElementById(id).animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
         { duration: 360, delay: 520 + i * 90, easing: "ease-out", fill: "both" });
     });
@@ -7752,8 +7840,10 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
     if (!msd.open) { msdReset(); return; }
     msd.busy = true;
     var ov = document.getElementById("milestoneDetailOverlay");
-    var src = msd.mid ? shelfSlotEl(msd.mid) : null;
-    if (src) shelfRevealSlot(src);
+    // 열었던 자리(업적 화면의 메달 또는 성경 여정의 칸)로 돌아간다. 그 자리가 사라졌으면 책장에서 같은 메달을 찾는다.
+    var src = (msd.src && msd.src.isConnected) ? msd.src : (msd.mid ? shelfSlotEl(msd.mid) : null);
+    var shelfBody = shelfBodyEl();
+    if (src && shelfBody && shelfBody.contains(src)) shelfRevealSlot(src);
     var cur = msd.fly.getBoundingClientRect();
     var to = src ? src.getBoundingClientRect() : null;
     var DUR = 760;
