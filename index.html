@@ -4042,6 +4042,466 @@ BOOK_SCENES["ecc"] = [
 attachSceneMeta("ecc");
 
 // <<END MEDALS day=3>>
+// <<MEDALS day=4>>
+// 4일차: 아가(5) 이사야(12) 예레미야(10) 예레미야애가(5) 에스겔(10) 다니엘(6) 호세아(7) 요엘(4) = 59개 메달.
+// 2일차 D2(crown, jar, altar, scroll, lamp, moon, tilt)와 3일차 D3(cup, seated, bread, ring)를 전제로 한다. 4일차 전용 부품 D4.
+// 하나님·예수님은 그리지 않고 빛·구름·불·바퀴·어린양·별 등 상징으로만 표현한다.
+// ---- 4일차 부품 D4 ----
+var D4 = {
+  heart: function (x, y, s, c) { return '<path transform="translate(' + x + ' ' + y + ') scale(' + s + ')" d="M0 8C-13-2-10-12-4.5-12C-1.6-12 0-9.6 0-8C0-9.6 1.6-12 4.5-12C10-12 13-2 0 8Z" fill="' + c + '"/>'; },
+  wing: function (x, y, s, c, dir, c2) { // 날개 한 쪽: (x,y)가 붙는 자리, dir=1 오른쪽 -1 왼쪽
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + (s * dir) + ' ' + s + ')"><path d="M0 0C6-9 20-11 30-6C25-5 24-3 21-2C25-1 23 2 18 3C20 5 16 7 11 6C13 9 6 9 0 4Z" fill="' + c + '"/><path d="M4-1C12-6 20-7 27-5M5 2C12-1 18-2 22-1" fill="none" stroke="' + (c2 || '#C2A25E') + '" stroke-width=".8" stroke-linecap="round"/></g>';
+  },
+  flower: function (x, y, s, c, c2) { // 줄기 위의 꽃
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M0 0V-14" stroke="#5F8A5A" stroke-width="1.2" stroke-linecap="round"/><path d="M0-6q-5-1-6-5q5 0 6 5z" fill="#5F8A5A"/>' +
+      '<g fill="' + c + '"><circle cx="0" cy="-19" r="3.4"/><circle cx="-3.6" cy="-15.6" r="3.4"/><circle cx="3.6" cy="-15.6" r="3.4"/></g><circle cx="0" cy="-16" r="2" fill="' + c2 + '"/></g>';
+  },
+  dove: function (x, y, s, c, dir) { // 비둘기(날개 든 모습)
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + (s * (dir || 1)) + ' ' + s + ')"><path d="M-9 1C-9-4-2-6 4-3C6-6 10-6 11-3L14-2L11-1C10 3 2 6-4 4L-11 6Z" fill="' + c + '"/>' +
+      '<path d="M-2-3C-6-13 4-17 11-12C7-10 5-6 3-3Z" fill="' + c + '" stroke="#B9B29C" stroke-width=".6"/><circle cx="9" cy="-3.2" r=".7" fill="#3B3324"/></g>';
+  },
+  eagle: function (x, y, s, c) { // 정면, 날개를 위로 펼친 독수리(깃털 부채꼴)
+    var o = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')" fill="' + c + '">', i, a, L;
+    for (i = 0; i < 7; i++) {
+      a = 24 + i * 11.5; L = [17, 21, 25, 27, 26, 23, 19][i];
+      o += '<g transform="translate(5 2) rotate(' + a + ')"><ellipse cx="0" cy="' + (-L / 2 - 2) + '" rx="3.5" ry="' + (L / 2 + 1) + '"/></g><g transform="translate(-5 2) rotate(' + (-a) + ')"><ellipse cx="0" cy="' + (-L / 2 - 2) + '" rx="3.5" ry="' + (L / 2 + 1) + '"/></g>';
+    }
+    return o + '<path d="M0-6C-5-6-6 0-5 6L-3 14L0 22L3 14L5 6C6 0 5-6 0-6Z"/><path d="M-4 18L-7 28L0 24L7 28L4 18Z"/><circle cy="-9" r="3.6"/><path d="M-1.8-7.8L0-4.2L1.8-7.8Z" fill="#D2AE72"/></g>';
+  },
+  lion: function (x, y, s, c, mane) { // 옆모습, 오른쪽을 봄, 웅크림
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-14-4Q-20-5-20-11" fill="none" stroke="' + c + '" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="-2" cy="-7" rx="14" ry="6.6" fill="' + c + '"/>' +
+      '<path d="M-8-2v2M2-2v2" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/><circle cx="11" cy="-10" r="7.6" fill="' + mane + '"/><ellipse cx="15" cy="-8.4" rx="4.6" ry="3.6" fill="' + c + '"/><circle cx="13" cy="-11.6" r="0.9" fill="#3B3324"/></g>';
+  },
+  locust: function (x, y, s, rot, c) {
+    return '<g transform="translate(' + x + ' ' + y + ') rotate(' + rot + ') scale(' + s + ')"><ellipse rx="9" ry="2.6" fill="' + c + '"/><circle cx="10" cy="-0.5" r="2.4" fill="' + c + '"/><path d="M-3-1Q4-9 10-7Q6-3 0 0Z" fill="#B08D5E"/><path d="M-4 1L-9 6L-5 6M0 1L-2 6M3 1L6 5" fill="none" stroke="' + c + '" stroke-width="1" stroke-linecap="round"/><path d="M11-2L15-6" stroke="' + c + '" stroke-width=".7"/></g>';
+  },
+  basket: function (x, y, s, c) { return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-14-14H14L10 0H-10Z" fill="' + c + '"/><path d="M-13-9H13M-12-4.5H12" stroke="#7A5A3E" stroke-width=".8"/><path d="M-4-14V0M4-14V0" stroke="#7A5A3E" stroke-width=".8"/></g>'; },
+  seraph: function (x, y, s) { // 여섯 날개 세라핌(얼굴 없음): 위 한 쌍 펼침, 가운데 한 쌍 가림, 아래 한 쌍 접음
+    return D4.wing(x, y - 10 * s, s * 0.95, '#E2C77E', 1) + D4.wing(x, y - 10 * s, s * 0.95, '#E2C77E', -1) +
+      MP.rect(x - 2 * s, y - 12 * s, 4 * s, 28 * s, '#F4EBD5', 2 * s) +
+      D4.wing(x, y + 2 * s, s * 0.7, '#F4EBD5', 1, '#C2A25E') + D4.wing(x, y + 2 * s, s * 0.7, '#F4EBD5', -1, '#C2A25E');
+  }
+};
+
+// ---- 아가 ----
+MEDAL_ART.sng_nard = MP.bg('#E8D3C2') + MP.ground(90, '#C9AE94') + MP.circle(50, 46, 24, '#F0DEC8') +
+  MP.line('M42 40C36 32 46 28 40 20M50 38C44 28 56 24 50 14M58 40C52 32 62 28 56 20', '#C2A25E', 1.5, 0.9) +
+  D2.jar(50, 86, 2.5, '#F4EBD5', '#C2A25E') + MP.rect(40.5, 62, 19, 2.2, '#C2A25E') + MP.circle(24, 78, 3, '#B8756A') + MP.circle(29, 74, 2.4, '#B8756A') + MP.circle(78, 76, 3, '#B8756A') + MP.circle(73, 80, 2.4, '#B8756A') +
+  MP.line('M24 84Q26 78 24 78M78 84Q76 80 78 76', '#6E9873', 1.2);
+MEDAL_ART.sng_spring = MP.bg('#DCE6D0') + MP.circle(24, 24, 7, '#EBC46C') + MP.rays(24, 24, 10, 15, 10, '#E2C77E', 1.1) + MP.cloud(82, 20, 1.2, '#C9D2D6') +
+  MP.path('M0 68Q30 56 60 66T100 62V100H0Z', '#8FB07E') + MP.path('M0 82Q40 72 100 80V100H0Z', '#6E9873') +
+  D4.flower(20, 86, 1.1, '#C98A8A', '#EBC46C') + D4.flower(38, 90, 1.2, '#F4EBD5', '#EBC46C') + D4.flower(62, 88, 1.1, '#C98A8A', '#EBC46C') + D4.flower(80, 84, 1.2, '#F4EBD5', '#EBC46C') +
+  D4.dove(58, 46, 1.5, '#F4EBD5') + MP.line('M40 54Q46 50 52 52', '#6E9873', 1.2) + MP.path('M44 54q-3-3 0-5q3 2 0 5z', '#6E9873');
+MEDAL_ART.sng_night = MP.bg('#2B3558') + MP.stars([[16, 22, 0.7], [76, 18, 0.7], [90, 40, 0.5], [40, 14, 0.5]]) + D2.moon(72, 30, 8, '#EFE6D0', '#2B3558') + MP.ground(90, '#1B2440') +
+  MP.rect(14, 50, 72, 40, '#3B4568') + MP.rect(10, 42, 12, 48, '#46507A') + MP.rect(78, 42, 12, 48, '#46507A') + MP.rect(9, 38, 14, 5, '#5A6490') + MP.rect(77, 38, 14, 5, '#5A6490') +
+  MP.path('M38 90V70Q38 60 50 60Q62 60 62 70V90Z', '#141B33') + MP.line('M14 60H86M14 72H36M64 72H86', '#2B3558', 0.8) +
+  MP.person(50, 90, 0.5, '#D9C6A0', { robe: 1, f: 1, arms: 'r', scarf: '#8A7B57', skin: '#C08A6A' }) + D2.lamp(60, 86, 0.9, '#E2C77E');
+MEDAL_ART.sng_garden = MP.bg('#D2DEC2') + MP.ground(92, '#A9BE94') + MP.tree(26, 58, 1, '#7A5A3E', '#4F7A56', '#D98A3A') + MP.tree(50, 56, 1.25, '#7A5A3E', '#3E6B4A', '#F4EBD5') + MP.tree(75, 58, 1, '#7A5A3E', '#4F7A56', '#D98A3A') +
+  MP.rect(12, 54, 76, 34, '#D8C9A6') + MP.rect(10, 51, 80, 4, '#B9A88A') + MP.line('M12 62H88M12 72H88M12 82H88', '#B9A88A', 0.8) +
+  MP.path('M40 88V68Q40 58 50 58Q60 58 60 68V88Z', '#5A4030') + MP.circle(50, 74, 3.4, '#E2C77E') + MP.line('M50 70V78M46.6 74H53.4', '#5A4030', 0.9);
+MEDAL_ART.sng_seal = MP.bg('#3A4A5C') + MP.wave(74, '#5D8A8F', 1.6) + MP.wave(84, '#5D8A8F', 1.3) + MP.wave(64, '#4C6A78', 1) +
+  MP.circle(50, 46, 22, '#4A5D70') + D4.heart(50, 46, 2.4, '#C2A25E') + MP.flame(50, 56, 1.1, '#D98A3A', '#F6E7B4') +
+  '<circle cx="50" cy="46" r="25" fill="none" stroke="#E2C77E" stroke-width="1.2"/>' + MP.stars([[16, 24, 0.6], [84, 28, 0.6]]);
+
+BOOK_MILESTONES["sng"] = [
+  { id: "sng01", need: 0, ref: "아가 1장", title: "향유보다 향기로운 이름", icon: "sng_nard",
+    text: "포도주보다 진한 사랑의 노래.",
+    verse: "노래 중의 노래는 사랑하는 이의 입맞춤을 간절히 구하며 시작한다. 그의 이름은 부어 놓은 향유 같아서 처녀들이 그에게 끌린다고 신부는 고백한다." },
+  { id: "sng02", need: 10, ref: "아가 2장", title: "겨울이 지나갔다, 일어나 나오라", icon: "sng_spring",
+    text: "꽃이 피고 비둘기가 우는 봄.",
+    verse: "겨울은 가고 비도 그쳤으며 땅에는 꽃이 피고 산비둘기 소리가 들린다고 연인은 부른다. 무화과 열매가 익어 가니 일어나 함께 가자고 바위틈에 숨은 사랑하는 이를 재촉한다." },
+  { id: "sng03", need: 20, ref: "아가 3장", title: "밤새 찾던 그를 붙들었다", icon: "sng_night",
+    text: "성 안을 헤매다 만난 사람.",
+    verse: "밤마다 침상에서 사랑하는 이를 찾지 못한 신부는 일어나 거리와 광장을 돌아다닌다. 순찰꾼을 지나치자마자 그를 만나 붙잡고, 어머니 집으로 데려가기 전에는 놓지 않겠다고 다짐한다." },
+  { id: "sng04", need: 30, ref: "아가 4장", title: "잠근 동산, 봉한 샘", icon: "sng_garden",
+    text: "오직 한 사람만을 위한 동산.",
+    verse: "신랑은 신부를 담장 안의 잠근 동산이요 인을 친 샘이라 부른다. 석류와 향품이 가득한 이 동산에 북풍과 남풍이 불어와 향기가 흘러나가기를 신부가 청한다." },
+  { id: "sng05", need: 71, ref: "아가 8장", title: "죽음처럼 강한 사랑", icon: "sng_seal",
+    text: "많은 물도 끄지 못하는 불꽃.",
+    verse: "나를 도장처럼 네 마음에 새기라고 신부는 말한다. 사랑은 죽음처럼 강하고 그 불길은 여호와의 불꽃이어서, 많은 물도 이 사랑을 끄지 못하고 강물도 삼키지 못한다." }
+];
+BOOK_SCENES["sng"] = [
+  { id: "sng_s0", title: "사랑의 노래", milestoneIds: ["sng01", "sng02", "sng03", "sng04", "sng05"] }
+];
+attachSceneMeta("sng");
+
+// ---- 이사야 ----
+MEDAL_ART.isa_scarlet = MP.rect(0, 0, 50, 100, '#7A3538') + MP.rect(50, 0, 50, 100, '#ECE7DA') +
+  MP.circle(14, 30, 3, '#A84A48') + MP.circle(34, 20, 2.4, '#A84A48') + MP.circle(24, 50, 3.4, '#A84A48') + MP.circle(38, 66, 2.6, '#A84A48') + MP.circle(14, 74, 3, '#A84A48') +
+  MP.star(64, 28, 1.3) + MP.star(84, 44, 1) + MP.star(70, 62, 1.5) + MP.star(88, 78, 0.9) + MP.star(58, 82, 0.8) +
+  MP.line('M50 8V92', '#C2A25E', 1.6) + '<path d="M22 46C34 38 44 54 50 48C56 42 66 56 80 48" fill="none" stroke="#C2A25E" stroke-width="2.6" stroke-linecap="round"/>';
+MEDAL_ART.isa_plow = MP.bg('#D2DEC2') + MP.path('M0 56L24 36L44 52L68 30L100 58V100H0Z', '#98AC8E') + MP.circle(78, 22, 6, '#EBC46C') + MP.ground(76, '#8C7A55') + MP.path('M0 90Q50 82 100 88V100H0Z', '#6F5E42') +
+  MP.line('M0 84Q30 80 60 84T100 82', '#A08C64', 1) + MP.line('M0 92Q30 89 60 92T100 90', '#A08C64', 1) +
+  MP.path('M30 26L34 26L35 66L32 72L29 66Z', '#B8BCC4') + MP.rect(22, 66, 20, 3.6, '#C2A25E', 1.6) + MP.rect(30, 69, 4, 10, '#7A5A3E', 1.4) + MP.line('M46 60H56M52 56L56 60L52 64', '#7A6A4A', 1.6) +
+  MP.path('M56 82C56 70 68 60 84 58C82 70 74 80 66 82Z', '#6B7280') + MP.line('M60 79C66 71 74 66 80 62', '#B8BCC4', 1) + MP.circle(67, 74, 1.5, '#3E4C6C');
+MEDAL_ART.isa_temple = MP.bg('#2C3A55') + MP.rect(6, 12, 9, 76, '#3E4C6C') + MP.rect(85, 12, 9, 76, '#3E4C6C') + MP.rect(3, 10, 15, 4, '#5A6890') + MP.rect(82, 10, 15, 4, '#5A6890') +
+  MP.line('M22 22C30 14 26 8 34 4M76 26C68 18 74 12 66 6', '#8A93A8', 2, 0.6) + MP.line('M18 40C26 34 22 28 30 24M82 44C74 38 78 32 70 28', '#8A93A8', 1.4, 0.5) +
+  D4.seraph(50, 38, 1) + D2.altar(50, 90, 1.1, '#8C8676', '#A29C8A') + MP.flame(50, 70, 1, '#D98A3A', '#F6E7B4');
+MEDAL_ART.isa_child = MP.bg('#1E2A44') + MP.circle(50, 32, 26, '#2B3A5C') + MP.circle(50, 32, 18, '#3C4C72') + MP.rays(50, 32, 22, 34, 16, '#E2C77E', 1.1) +
+  '<use href="#st" transform="translate(50 32) scale(3.6)"/>' + MP.path('M0 100V78Q24 66 50 76T100 72V100Z', '#141B33') +
+  MP.path('M34 84L38 72H62L66 84Z', '#8C6E48') + MP.path('M40 72Q50 64 60 72Z', '#E2C77E') + MP.line('M34 84L28 92M66 84L72 92M38 72L62 84M62 72L38 84', '#6B5238', 1.4) + MP.circle(50, 68, 4, '#F4EBD5');
+MEDAL_ART.isa_shoot = MP.bg('#D2DEC2') + MP.circle(74, 20, 6, '#EBC46C') + MP.ground(90, '#8FB07E') + MP.path('M0 96Q50 88 100 94V100H0Z', '#6E9873') +
+  MP.path('M34 90L36 66H54L58 90Z', '#7A5A3E') + '<ellipse cx="45" cy="66" rx="10" ry="3" fill="#A88462"/>' +
+  MP.line('M46 66C46 54 52 48 50 36', '#5F9A5A', 2.4) + MP.path('M50 44Q38 42 36 32Q46 32 50 44Z', '#7FB06E') + MP.path('M50 52Q62 50 66 40Q54 40 50 52Z', '#7FB06E') + MP.path('M50 36Q56 28 52 20Q46 28 50 36Z', '#8FC07E') +
+  MP.lamb(72, 84, 0.95, '#F4EBD5');
+MEDAL_ART.isa_star = MP.bg('#3A3650') + MP.stars([[18, 22, 0.7], [86, 46, 0.6], [30, 48, 0.5], [70, 16, 0.6]]) + MP.line('M78 8L62 34M84 14L66 40M70 6L56 28', '#E2C77E', 1.2, 0.7) +
+  '<use href="#st" transform="translate(58 42) scale(3.8) rotate(20)"/>' + MP.ground(88, '#22202F') + '<ellipse cx="50" cy="90" rx="24" ry="5" fill="#141322"/>' +
+  D2.tilt(-24, 32, 82, D2.crown(32, 84, 1.7, '#B8A05C'));
+MEDAL_ART.isa_bloom = MP.bg('#E9D6AE') + MP.circle(78, 22, 7, '#EBC46C') + MP.rays(78, 22, 10, 15, 10, '#E2C77E', 1.1) + MP.path('M0 66Q30 54 60 64T100 58V100H0Z', '#D8BF8C') + MP.path('M0 86Q40 76 100 84V100H0Z', '#C9AE7E') +
+  MP.path('M30 100Q40 78 54 70T90 62L100 64V100Z', '#6F9BB8') + MP.line('M42 96Q52 80 62 74T86 68', '#DDE8EC', 1.1) +
+  D4.flower(28, 86, 1.3, '#C98AA0', '#EBC46C') + D4.flower(42, 78, 1, '#F4EBD5', '#EBC46C') + D4.flower(26, 70, 0.9, '#F4EBD5', '#EBC46C') + D4.flower(66, 88, 1.1, '#C98AA0', '#EBC46C') + D4.flower(76, 76, 0.9, '#F4EBD5', '#EBC46C');
+MEDAL_ART.isa_eagle = MP.bg('#6C7FA3') + MP.circle(50, 46, 18, '#E7C980') + MP.rays(50, 46, 22, 30, 16, '#F0DDB0', 1.2) + MP.cloud(18, 74, 1.3, '#DDE3EC') + MP.cloud(84, 66, 1.1, '#DDE3EC') +
+  D4.eagle(50, 50, 1.05, '#3B3324');
+MEDAL_ART.isa_waters = MP.rect(0, 0, 50, 100, '#4C7A85') + MP.rect(50, 0, 50, 100, '#4A2B2E') + MP.wave(20, '#8FBBBB', 1.1) + MP.wave(34, '#8FBBBB', 1) + MP.wave(48, '#8FBBBB', 1) + MP.wave(62, '#8FBBBB', 1) +
+  MP.flame(62, 34, 0.9, '#D98A3A', '#F6E7B4') + MP.flame(82, 40, 1.1, '#D98A3A', '#F6E7B4') + MP.flame(70, 56, 0.9, '#D98A3A', '#F6E7B4') + MP.flame(90, 62, 0.9, '#D98A3A', '#F6E7B4') + MP.flame(64, 76, 0.9, '#D98A3A', '#F6E7B4') +
+  MP.path('M36 100L46 8H54L64 100Z', '#DCCBA8') + MP.person(50, 90, 0.55, '#3B3324', { robe: 1, skin: '#C08A6A', arms: 'd' });
+MEDAL_ART.isa_lamb = MP.bg('#4A4658') + MP.circle(50, 24, 18, '#5C566E') + MP.circle(50, 24, 11, '#6E6884') + MP.path('M0 74Q40 62 100 72V100H0Z', '#2E2A38') +
+  MP.rect(49, 34, 2.6, 22, '#1E1B28') + MP.rect(42.6, 39.5, 15, 2.6, '#1E1B28') + MP.lamb(48, 88, 2.2, '#F4EBD5', '#A29580') + MP.circle(24, 76, 1.7, '#B8493F') + MP.circle(30, 84, 1.4, '#B8493F') + MP.circle(76, 78, 1.7, '#B8493F');
+MEDAL_ART.isa_thirst = MP.bg('#DCE4D2') + MP.cloud(50, 20, 2.4, '#F4EBD5') + MP.line('M26 32V46M36 34V52M46 36V54M56 36V52M66 34V50M76 32V44', '#6F9BB8', 1.6) + MP.ground(78, '#C9B48C') +
+  D2.jar(50, 82, 1.9, '#B9714F', '#8C4A32') + MP.line('M50 48V54', '#6F9BB8', 1.6) + D3.cup(29, 80, 0.85, '#C2A25E', '#7A2E3A') + D3.bread(70, 78, 1.2, '#D2AE72');
+MEDAL_ART.isa_newsky = MP.bg('#E4EAD6') + MP.circle(50, 56, 22, '#EBC46C') + MP.rays(50, 56, 26, 40, 18, '#E2C77E', 1.2, -1.57) + MP.path('M0 66Q30 54 60 64T100 58V100H0Z', '#8FB07E') + MP.path('M0 84Q40 74 100 82V100H0Z', '#6E9873') +
+  MP.tree(28, 78, 1.3, '#7A5A3E', '#4F7A56', '#D98A3A') + MP.lamb(60, 84, 1.3, '#F4EBD5') + MP.stars([[14, 18, 0.7], [86, 20, 0.7], [50, 12, 0.6]]) + D4.dove(74, 34, 0.8, '#F4EBD5');
+
+BOOK_MILESTONES["isa"] = [
+  { id: "isa01", need: 0, ref: "이사야 1장", title: "주홍 같은 죄가 눈처럼 희어지리라", icon: "isa_scarlet",
+    text: "와서 함께 따져 보자는 초대.",
+    verse: "예루살렘의 제사와 절기가 헛되다고 책망하시던 하나님이 돌아서서 말씀하신다. 와서 함께 따져 보자, 너희 죄가 진홍처럼 붉어도 눈같이 희게 되고 주홍 같아도 양털처럼 깨끗해지리라." },
+  { id: "isa02", need: 10, ref: "이사야 2장", title: "칼을 쳐서 보습을", icon: "isa_plow",
+    text: "민족들이 다시는 전쟁을 배우지 않는 날.",
+    verse: "마지막 날에 여호와의 산이 산꼭대기에 세워지고 모든 민족이 그리로 몰려온다고 이사야는 본다. 그들은 칼을 쳐서 쟁기 날로, 창을 쳐서 낫으로 만들고 다시는 전쟁을 배우지 않는다." },
+  { id: "isa03", need: 50, ref: "이사야 6장", title: "성전에 가득한 옷자락", icon: "isa_temple",
+    text: "누가 우리를 위해 가겠느냐는 물음.",
+    verse: "웃시야 왕이 죽던 해에 이사야는 높이 들린 보좌와 성전을 가득 채운 옷자락을 본다. 여섯 날개를 가진 스랍들이 거룩하다 외치고, 숯불이 입술에 닿아 깨끗해진 그는 내가 여기 있으니 나를 보내소서 하고 답한다." },
+  { id: "isa04", need: 81, ref: "이사야 9장", title: "흑암 속을 걷던 백성이 본 큰 빛", icon: "isa_child",
+    text: "우리에게 한 아기가 주어졌다.",
+    verse: "어둠에서 걷던 백성이 큰 빛을 보고 사망의 그늘진 땅에 빛이 비친다. 한 아기가 우리에게 태어나 그의 어깨에 정사가 놓이고, 그 이름은 기묘자, 평강의 왕이라 불린다고 예언자는 노래한다." },
+  { id: "isa05", need: 101, ref: "이사야 11장", title: "그루터기에서 돋은 새싹", icon: "isa_shoot",
+    text: "이리가 어린양과 함께 지내는 나라.",
+    verse: "베어진 이새의 그루터기에서 새싹이 나고 그 뿌리에서 가지가 열매를 맺는다. 그의 통치 아래에서는 이리가 어린양과 함께 살고 젖먹이가 뱀 굴 곁에서 놀며, 바다가 물로 덮이듯 땅이 여호와의 지식으로 가득 찬다." },
+  { id: "isa06", need: 131, ref: "이사야 14장", title: "새벽별아, 어찌 떨어졌느냐", icon: "isa_star",
+    text: "하늘에 오르려던 교만이 무너지다.",
+    verse: "바벨론 왕의 몰락을 두고 이사야는 조롱 섞인 노래를 부른다. 하늘로 올라 하나님의 별들 위에 내 보좌를 높이겠다던 새벽별이 스올의 맨 밑바닥으로 굴러 떨어졌다는 것이다." },
+  { id: "isa07", need: 343, ref: "이사야 35장", title: "광야가 꽃처럼 피어나리라", icon: "isa_bloom",
+    text: "메마른 땅이 노래하는 날.",
+    verse: "광야와 메마른 땅이 기뻐하고 사프란 꽃처럼 피어나며 사막에 물이 솟는다. 약한 손을 굳세게 하고 떨리는 무릎을 붙들라, 하나님이 오셔서 구원하실 것이라 하며 이사야는 귀 먼 자와 저는 자가 다시 뛰는 날을 그린다." },
+  { id: "isa08", need: 394, ref: "이사야 40장", title: "독수리처럼 날개 치며 오르리라", icon: "isa_eagle",
+    text: "여호와를 기다리는 자의 새 힘.",
+    verse: "위로하라 내 백성을 위로하라는 명령으로 시작하는 장은, 젊은이도 피곤해 쓰러지지만 여호와를 바라는 사람은 새 힘을 얻는다고 말한다. 그들은 독수리처럼 날개를 치며 올라가고 달려도 지치지 않고 걸어도 곤비하지 않다." },
+  { id: "isa09", need: 424, ref: "이사야 43장", title: "물을 지날 때에도, 불 속을 걸을 때에도", icon: "isa_waters",
+    text: "내가 너와 함께 있으리라.",
+    verse: "두려워 말라, 내가 너를 구속하였고 네 이름을 불렀으니 너는 내 것이라고 하나님은 말씀하신다. 네가 물을 건널 때에도 강물이 너를 덮지 못하고 불 가운데 걸어도 그 불꽃이 너를 태우지 못하리라." },
+  { id: "isa10", need: 525, ref: "이사야 53장", title: "도살장으로 끌려가는 어린양", icon: "isa_lamb",
+    text: "상함으로 우리가 나음을 입었다.",
+    verse: "그는 멸시받고 버림받아 질고를 아는 사람이었으며, 우리의 허물 때문에 찔리고 죄악 때문에 상했다고 예언자는 말한다. 털 깎는 자 앞의 양처럼 잠잠했던 그의 채찍 자국으로 우리가 나음을 얻었다." },
+  { id: "isa11", need: 545, ref: "이사야 55장", title: "목마른 자여, 물로 나아오라", icon: "isa_thirst",
+    text: "돈 없이 값 없이 받는 잔치.",
+    verse: "목마른 사람들아 모두 물가로 오라, 돈이 없어도 와서 사고 먹으라고 하나님은 부르신다. 하늘에서 내린 비와 눈이 땅을 적셔 싹을 내고 돌아가지 않듯, 내 입에서 나간 말도 헛되이 돌아오지 않고 뜻하는 바를 이룬다." },
+  { id: "isa12", need: 646, ref: "이사야 65장", title: "새 하늘과 새 땅", icon: "isa_newsky",
+    text: "지난 일들이 다시 생각나지 않는 날.",
+    verse: "보라, 내가 새 하늘과 새 땅을 창조하리니 이전 것은 기억되지도 마음에 떠오르지도 않으리라고 하나님은 말씀하신다. 그곳에서는 울음소리가 다시 들리지 않고 이리와 어린양이 함께 먹으며 내 거룩한 산에서 해함이 없다." }
+];
+BOOK_SCENES["isa"] = [
+  { id: "isa_s0", title: "성전의 환상", milestoneIds: ["isa01", "isa02", "isa03", "isa04"] },
+  { id: "isa_s1", title: "심판과 소망", milestoneIds: ["isa05", "isa06", "isa07", "isa08"] },
+  { id: "isa_s2", title: "위로의 노래", milestoneIds: ["isa09", "isa10", "isa11", "isa12"] }
+];
+attachSceneMeta("isa");
+
+// ---- 예레미야 ----
+MEDAL_ART.jer_almond = MP.bg('#B9C7C4') + MP.circle(22, 20, 6, '#EBC46C') + MP.line('M-4 74C20 66 40 60 58 50S84 34 104 32', '#7A5A3E', 3.4) + MP.line('M40 58C44 70 46 76 52 82M64 46C70 40 76 34 80 24', '#7A5A3E', 2) +
+  MP.path('M28 66Q20 56 30 52Q34 60 28 66Z', '#7FB06E') + MP.path('M52 54Q56 44 66 46Q62 54 52 54Z', '#7FB06E') +
+  (function () { var o = '', p = [[34, 62], [48, 56], [60, 48], [74, 40], [82, 28], [50, 74], [46, 66]], i, j, a; for (i = 0; i < p.length; i++) { for (j = 0; j < 5; j++) { a = j * 1.2566; o += MP.circle((p[i][0] + 3.2 * Math.cos(a)).toFixed(1), (p[i][1] + 3.2 * Math.sin(a)).toFixed(1), 2.6, '#F4EBD5'); } o += MP.circle(p[i][0], p[i][1], 1.8, '#D9A3A0'); } return o; })();
+MEDAL_ART.jer_cistern = MP.bg('#DCCBA8') + MP.circle(80, 20, 6, '#EBC46C') + MP.ground(90, '#C4AE84') +
+  MP.path('M6 90Q10 60 30 54Q44 52 46 90Z', '#A8967A') + MP.path('M18 62Q28 56 36 62L34 90H20Z', '#98866A') + MP.line('M30 64Q28 74 32 84M26 66Q26 78 24 88', '#6F9BB8', 2.6) + MP.path('M18 90Q30 84 46 90Z', '#6F9BB8') +
+  D2.jar(70, 90, 2.6, '#B08D5E', '#8C6E48') + MP.line('M64 70L68 76L64 80L70 88', '#4A3A2E', 1.1) + MP.circle(78, 92, 1.4, '#6F9BB8') + MP.circle(84, 94, 1.1, '#6F9BB8');
+MEDAL_ART.jer_belt = MP.bg('#D9C6A0') + MP.ground(88, '#B8A278') + MP.path('M8 90L14 50L30 34L44 44L52 30L70 40L84 58L92 90Z', '#8C8676') + MP.path('M44 90L46 60L52 54L58 90Z', '#3A2A20') +
+  MP.path('M10 54C28 40 46 62 64 46S86 50 92 42L94 52C84 60 66 58 50 68S26 58 8 66Z', '#B8B0A0') + MP.line('M26 52L30 58M46 58L50 64M68 48L72 54', '#8C8676', 0.9) + MP.rect(76, 44, 8, 8, '#C2A25E', 1.5) + MP.circle(58, 56, 3, '#8C8676') + MP.circle(34, 60, 2.2, '#8C8676');
+MEDAL_ART.jer_potter = MP.bg('#E6D2AE') + MP.circle(80, 22, 6, '#EBC46C') + MP.ground(88, '#C4AE84') +
+  MP.path('M62 86L64 70H82L84 86Z', '#8C6E48') + '<ellipse cx="73" cy="70" rx="17" ry="4" fill="#A88462"/>' + D2.jar(73, 68, 2, '#B9714F', '#8C4A32') + MP.line('M64 60Q73 54 82 60', '#D9A78A', 1, 0.8) +
+  D3.seated(28, 88, 1.15, '#7A5A8C', '#C08A6A') + MP.line('M34 76L58 68', '#7A5A8C', 3);
+MEDAL_ART.jer_fire = MP.bg('#4A2B2E') + MP.circle(50, 56, 30, '#5C3436') + MP.rays(50, 58, 30, 44, 16, '#D98A3A', 1.2) + MP.ground(94, '#2A1B1E') +
+  MP.person(50, 92, 1.05, '#D8C7A0', { robe: 1, arms: 'f', skin: '#C08A6A', hair: '#3E2C1E' }) + MP.flame(50, 62, 1.1, '#E88A3A', '#F6E7B4');
+MEDAL_ART.jer_figs = MP.bg('#E4D2B0') + MP.ground(90, '#C4AE84') + D4.basket(28, 86, 1.6, '#B08D5E') + D4.basket(72, 86, 1.6, '#8C7A5E') +
+  MP.circle(20, 60, 5, '#7A4A82') + MP.circle(30, 58, 5, '#8A5A92') + MP.circle(38, 62, 4.6, '#7A4A82') + MP.circle(25, 66, 4.4, '#9A6AA2') + MP.line('M20 55Q22 50 24 51M30 53Q31 48 33 49', '#4E633F', 1) +
+  MP.circle(62, 62, 5, '#5A4A3A') + MP.circle(72, 60, 5, '#4A3E30') + MP.circle(80, 63, 4.6, '#5A4A3A') + MP.circle(68, 67, 4.4, '#3E342A') + MP.line('M60 58l3-2M74 55l2-3', '#8C8676', 0.9) + MP.circle(78, 52, 1.2, '#8C8676') + MP.circle(64, 50, 1, '#8C8676');
+MEDAL_ART.jer_yoke = MP.bg('#DCCBA8') + MP.circle(50, 32, 12, '#EBC46C') + MP.ground(88, '#C4AE84') + MP.rays(50, 32, 16, 24, 14, '#E2C77E', 1.1) +
+  D2.tilt(-6, 50, 50, MP.line('M12 50Q50 42 88 50', '#7A5A3E', 4.4) + MP.line('M28 48V62Q28 70 36 70Q44 70 44 62V47M56 47V62Q56 70 64 70Q72 70 72 62V48', '#7A5A3E', 3) + MP.line('M28 72Q30 82 22 90M72 72Q70 82 78 90', '#8C6E48', 1.4));
+MEDAL_ART.jer_letter = MP.bg('#EAD9B8') + MP.ground(90, '#B4C49C') + MP.rect(12, 62, 26, 28, '#D8C9A6') + MP.path('M8 62L25 46L42 62Z', '#B9714F') + MP.rect(22, 76, 7, 14, '#5A4030') +
+  MP.line('M56 90V78M66 90V76M76 90V78M86 90V80', '#5F8A5A', 1.6) + MP.path('M56 78q-4-4 0-7q4 3 0 7zM66 76q-4-4 0-7q4 3 0 7zM76 78q-4-4 0-7q4 3 0 7zM86 80q-4-4 0-7q4 3 0 7z', '#7FB06E') +
+  D2.scroll(36, 18, 32, 24, '#F4EBD5') + MP.circle(52, 44, 3.6, '#B8493F') + MP.circle(80, 22, 5, '#EBC46C');
+MEDAL_ART.jer_covenant = MP.bg('#2C3A55') + MP.rays(50, 44, 24, 36, 18, '#E2C77E', 1, 0.1) + MP.path('M18 90L22 74L30 70L36 78L44 76L46 90Z', '#8C8676') + MP.path('M54 90L56 76L66 72L70 80L80 78L82 90Z', '#9A9484') + MP.line('M30 76L36 84M66 78L70 86', '#6F6A5C', 0.9) +
+  D4.heart(50, 46, 2.5, '#F4EBD5') + MP.line('M43 41H57M41 46H59M44 51H56', '#C2A25E', 1.1) + MP.stars([[16, 20, 0.7], [84, 24, 0.7]]);
+MEDAL_ART.jer_field = MP.bg('#E4D2B0') + MP.circle(78, 20, 6, '#EBC46C') + MP.rect(8, 34, 84, 16, '#B9A88A') + MP.rect(8, 28, 8, 7, '#A29C8A') + MP.rect(30, 28, 8, 7, '#A29C8A') + MP.rect(52, 28, 8, 7, '#A29C8A') + MP.rect(74, 28, 8, 7, '#A29C8A') + MP.line('M8 42H92', '#8C8676', 0.8) +
+  MP.path('M0 60Q50 54 100 60V100H0Z', '#B4C49C') + MP.line('M0 70Q50 64 100 70M0 80Q50 74 100 80M0 90Q50 84 100 90', '#8FA87E', 1.2) + D2.jar(50, 92, 2.4, '#B9714F', '#8C4A32') + MP.rect(42, 50, 16, 10, '#F4EBD5', 2) + MP.circle(50, 56, 2.2, '#B8493F');
+
+BOOK_MILESTONES["jer"] = [
+  { id: "jer01", need: 0, ref: "예레미야 1장", title: "아몬드 가지가 보이느냐", icon: "jer_almond",
+    text: "나는 아이라 말하지 말라는 부르심.",
+    verse: "태어나기 전부터 너를 알았다고 하나님은 어린 예레미야를 부르신다. 나는 아이라서 말할 줄 모른다고 하자 네가 가야 할 곳으로 가고 내가 명하는 것을 말하라 하시며, 이른 봄에 먼저 피는 아몬드 가지를 보이신다." },
+  { id: "jer02", need: 10, ref: "예레미야 2장", title: "터진 웅덩이를 판 백성", icon: "jer_cistern",
+    text: "생수의 샘을 버리고 물이 새는 웅덩이를 팠다.",
+    verse: "내 백성이 두 가지 악을 저질렀으니 생수의 근원인 나를 버리고, 물을 담지 못하는 터진 웅덩이를 스스로 팠다고 하나님은 한탄하신다." },
+  { id: "jer03", need: 121, ref: "예레미야 13장", title: "썩어 버린 베 띠", icon: "jer_belt",
+    text: "바위 틈에 숨겨 둔 띠가 못 쓰게 되다.",
+    verse: "하나님은 예레미야에게 새 베 띠를 사서 허리에 매다가 유프라테스 강가 바위틈에 숨기라 하신다. 여러 날 뒤에 찾아 보니 띠는 썩어 쓸모가 없었고, 교만한 유다도 그와 같이 되리라는 말씀이었다." },
+  { id: "jer04", need: 172, ref: "예레미야 18장", title: "토기장이의 물레 곁에서", icon: "jer_potter",
+    text: "그릇이 뒤틀리면 다시 빚으신다.",
+    verse: "예레미야가 토기장이 집으로 내려가 보니 그가 물레 위에서 빚던 그릇이 손 안에서 상하자 마음대로 다시 다른 그릇을 만든다. 이스라엘이 내 손 안에 있음은 진흙과 같다고 하나님이 말씀하신다." },
+  { id: "jer05", need: 192, ref: "예레미야 20장", title: "뼛속에서 타오르는 불", icon: "jer_fire",
+    text: "말하지 않으려 해도 참을 수 없는 말씀.",
+    verse: "조롱과 매질을 당한 예레미야는 다시는 그 이름으로 말하지 않겠다고 다짐하지만 말씀이 가슴에 불처럼 타올라 뼛속에 갇힌다. 참으려다 지쳐 도저히 견딜 수가 없었다고 그는 고백한다." },
+  { id: "jer06", need: 232, ref: "예레미야 24장", title: "무화과 두 광주리", icon: "jer_figs",
+    text: "좋은 무화과와 먹지 못할 무화과.",
+    verse: "성전 앞에 놓인 두 광주리 중 하나에는 처음 익은 것 같은 좋은 무화과가, 다른 하나에는 너무 나빠 먹을 수 없는 무화과가 담겨 있다. 하나님은 바벨론으로 끌려간 이들을 좋은 무화과처럼 돌아보아 다시 세우겠다고 하신다." },
+  { id: "jer07", need: 263, ref: "예레미야 27장", title: "목에 멍에를 걸고", icon: "jer_yoke",
+    text: "바벨론을 섬기라는 굴욕의 말씀.",
+    verse: "예레미야는 줄과 나무 멍에를 만들어 자기 목에 걸고 왕들의 사신들 앞에 선다. 바벨론의 멍에를 메고 그를 섬기는 나라는 자기 땅에 남게 되리라는 뜻을 전하려는 것이었다." },
+  { id: "jer08", need: 283, ref: "예레미야 29장", title: "집을 짓고 성읍의 평안을 구하라", icon: "jer_letter",
+    text: "포로에게 보낸 편지.",
+    verse: "예레미야는 바벨론에 끌려간 이들에게 편지를 보내 집을 짓고 밭을 일구고 결혼하며 그 성읍의 평안을 위해 기도하라고 명한다. 칠십 년이 차면 너희를 돌아보아, 재앙이 아니라 평안과 미래와 희망을 주는 계획을 이루겠다는 약속이 담겼다." },
+  { id: "jer09", need: 303, ref: "예레미야 31장", title: "마음에 새기는 새 언약", icon: "jer_covenant",
+    text: "돌판이 아니라 마음판에 쓰인 법.",
+    verse: "날이 이르면 이스라엘과 새 언약을 맺겠다고 하나님은 말씀하신다. 이제는 법을 돌판이 아니라 그들의 속에 두고 마음에 기록하시며, 작은 자부터 큰 자까지 모두 나를 알고 그들의 죄를 다시 기억하지 않겠다고 하신다." },
+  { id: "jer10", need: 313, ref: "예레미야 32장", title: "적군이 서 있는 성 앞에서 밭을 사다", icon: "jer_field",
+    text: "다시 돌아올 날을 위해 문서를 봉하다.",
+    verse: "바벨론 군대가 예루살렘을 에워싼 때 예레미야는 사촌의 밭을 은으로 사서 증서를 만들고 토기 항아리에 넣어 오래 보관하게 한다. 이 땅에서 다시 집과 밭과 포도원을 사고팔 날이 오리라는 표징이었다." }
+];
+BOOK_SCENES["jer"] = [
+  { id: "jer_s0", title: "부르심과 비유들", milestoneIds: ["jer01", "jer02", "jer03", "jer04", "jer05"] },
+  { id: "jer_s1", title: "포로와 새 언약", milestoneIds: ["jer06", "jer07", "jer08", "jer09", "jer10"] }
+];
+attachSceneMeta("jer");
+
+// ---- 예레미야애가 ----
+MEDAL_ART.lam_lonely = MP.bg('#4A4658') + D2.moon(76, 22, 7, '#EFE6D0', '#4A4658') + MP.stars([[20, 20, 0.6], [40, 14, 0.5]]) + MP.rect(10, 56, 10, 34, '#2E2A38') + MP.rect(24, 64, 8, 26, '#2E2A38') + MP.rect(66, 60, 10, 30, '#2E2A38') + MP.rect(80, 50, 10, 40, '#2E2A38') + MP.path('M8 56L15 48L22 56Z', '#2E2A38') + MP.band(88, 12, '#2A2836') +
+  D3.seated(50, 90, 1.3, '#8C8676', '#B8987A');
+MEDAL_ART.lam_tears = MP.bg('#3A4A5C') + MP.wave(78, '#5D8A8F', 1.2) + MP.wave(88, '#5D8A8F', 1) +
+  MP.path('M50 18C50 18 32 42 32 56A18 18 0 0 0 68 56C68 42 50 18 50 18Z', '#DDE6E0') + MP.line('M40 56Q40 66 48 70', '#9FC4C4', 2) + '<ellipse cx="50" cy="84" rx="22" ry="4" fill="none" stroke="#8FBBBB" stroke-width="1"/><ellipse cx="50" cy="84" rx="12" ry="2.4" fill="none" stroke="#8FBBBB" stroke-width="1"/>' +
+  MP.path('M20 30C20 30 14 38 14 42A6 6 0 0 0 26 42C26 38 20 30 20 30Z', '#9FC4C4') + MP.path('M82 40C82 40 76 48 76 52A6 6 0 0 0 88 52C88 48 82 40 82 40Z', '#9FC4C4');
+MEDAL_ART.lam_mornings = MP.bg('#E5C9A0') + MP.circle(50, 64, 20, '#E2A94F') + MP.rays(50, 64, 24, 40, 20, '#F0DDB0', 1.3, -3.14) + MP.ground(84, '#5A4A48') +
+  MP.rect(12, 62, 9, 24, '#4A3C3C') + MP.rect(26, 72, 8, 14, '#5A4A48') + MP.rect(68, 68, 9, 18, '#4A3C3C') + MP.rect(82, 58, 8, 28, '#5A4A48') + MP.path('M10 62L16 56L23 62Z', '#4A3C3C') + MP.path('M80 58L86 50L92 58Z', '#5A4A48') + MP.band(88, 12, '#3E3232') +
+  MP.bird(30, 34, 1.2, '#7A5A48') + MP.bird(70, 28, 1, '#7A5A48');
+MEDAL_ART.lam_stones = MP.bg('#3B3A52') + D2.moon(78, 20, 6, '#EFE6D0', '#3B3A52') + MP.path('M0 58L100 58L100 100L0 100Z', '#2A2A3C') + MP.path('M40 100L47 58H53L60 100Z', '#34344A') + MP.line('M50 60V70M50 76V84', '#4A4A62', 1.4) +
+  D2.tilt(-10, 34, 70, MP.rect(24, 64, 20, 10, '#8C7A4A', 2)) + D2.tilt(14, 68, 70, MP.rect(58, 64, 20, 10, '#9A8650', 2)) + D2.tilt(8, 36, 84, MP.rect(28, 79, 18, 8, '#7A6A40', 2)) + D2.tilt(-6, 62, 84, MP.rect(54, 79, 18, 8, '#8C7A4A', 2)) +
+  MP.rect(43, 66, 14, 8, '#C2A25E', 2) + MP.line('M46 68H54', '#E2C77E', 1);
+MEDAL_ART.lam_return = MP.bg('#4A4658') + MP.cloud(50, 18, 2.2, '#8A8A9C') + MP.path('M40 24L60 24L84 100H16Z', '#5C566E') + MP.line('M50 26V90M44 26L36 90M56 26L64 90', '#E2C77E', 1, 0.6) + MP.ground(90, '#2E2A38') +
+  MP.person(60, 90, 1.0, '#D9C6A0', { robe: 1, arms: 'u', skin: '#C08A6A', hair: '#3E2C1E' }) + D2.tilt(-20, 34, 84, D2.crown(34, 86, 1.5, '#8C7A4A'));
+
+BOOK_MILESTONES["lam"] = [
+  { id: "lam01", need: 0, ref: "예레미야애가 1장", title: "홀로 앉은 성읍", icon: "lam_lonely",
+    text: "사람으로 가득하던 도성이 과부처럼 앉았다.",
+    verse: "사람으로 붐비던 성읍이 어찌 이렇게 홀로 앉았는가 하고 시인은 탄식한다. 한때 열국 중에 컸던 도성이 과부 같이 되었고, 밤새 울어 뺨에 눈물이 흘러도 위로하는 이가 없다." },
+  { id: "lam02", need: 10, ref: "예레미야애가 2장", title: "눈물로 쇠해진 눈", icon: "lam_tears",
+    text: "시내처럼 쏟아 내라는 울음.",
+    verse: "내 눈은 눈물로 다하고 내 창자가 끓으며 성읍의 어린 것들이 거리에서 기력을 잃는다고 시인은 운다. 그러니 성벽아, 밤낮 눈물을 시내처럼 쏟고 새벽에 일어나 물처럼 마음을 주 앞에 쏟으라고 외친다." },
+  { id: "lam03", need: 20, ref: "예레미야애가 3장", title: "아침마다 새로워지는 인자", icon: "lam_mornings",
+    text: "무너진 자리에서 터져 나오는 소망.",
+    verse: "고난 한복판에서 시인은 이것을 마음에 두고 다시 희망을 얻겠다고 말한다. 여호와의 인자가 다하지 않았고 긍휼이 끝나지 않았으며, 그것은 아침마다 새롭고 주의 성실하심은 크다고 고백한다." },
+  { id: "lam04", need: 30, ref: "예레미야애가 4장", title: "빛을 잃은 순금", icon: "lam_stones",
+    text: "성소의 돌들이 거리 모퉁이에 흩어졌다.",
+    verse: "어찌하여 금이 빛을 잃고 순금이 변했으며 성소의 돌들이 거리 어귀마다 쏟아졌는가 하고 시인은 묻는다. 고운 금과 같이 귀하던 시온의 자녀들이 이제 토기장이의 손으로 빚은 질항아리처럼 여겨진다." },
+  { id: "lam05", need: 40, ref: "예레미야애가 5장", title: "우리를 주께로 돌이키소서", icon: "lam_return",
+    text: "면류관이 떨어진 자리에서 드리는 기도.",
+    verse: "우리 머리의 면류관이 떨어졌다고 백성은 통곡하며 지난날을 기억해 달라고 여호와께 호소한다. 주는 영원히 다스리시는 분이니 우리를 주께로 돌이켜 주소서, 그러면 우리가 돌아가겠나이다, 우리의 날들을 옛적처럼 새롭게 하소서 하고 간구한다." }
+];
+BOOK_SCENES["lam"] = [
+  { id: "lam_s0", title: "무너진 성읍의 애가", milestoneIds: ["lam01", "lam02", "lam03", "lam04", "lam05"] }
+];
+attachSceneMeta("lam");
+
+// ---- 에스겔 ----
+MEDAL_ART.ezk_wheel = MP.bg('#3A4A5C') + MP.cloud(50, 22, 3, '#8A93A8') + MP.cloud(24, 30, 1.6, '#6E7890') + MP.cloud(80, 30, 1.6, '#6E7890') + MP.flame(50, 34, 1.4, '#D98A3A', '#F6E7B4') +
+  '<circle cx="50" cy="60" r="25" fill="none" stroke="#C2A25E" stroke-width="3"/><circle cx="50" cy="60" r="17" fill="none" stroke="#E2C77E" stroke-width="1.6"/><circle cx="50" cy="60" r="4" fill="#E2C77E"/>' +
+  MP.rays(50, 60, 4, 17, 8, '#E2C77E', 1.1, 0.4) +
+  (function () { var o = '', i, a; for (i = 0; i < 10; i++) { a = i * 0.6283; o += MP.circle((50 + 25 * Math.cos(a)).toFixed(1), (60 + 25 * Math.sin(a)).toFixed(1), 2.6, '#F4EBD5') + MP.circle((50 + 25 * Math.cos(a)).toFixed(1), (60 + 25 * Math.sin(a)).toFixed(1), 1.1, '#3A4A5C'); } return o; })();
+MEDAL_ART.ezk_scroll = MP.bg('#E6D2AE') + MP.circle(80, 20, 6, '#EBC46C') + D2.scroll(24, 26, 52, 36, '#F4EBD5') + MP.line('M34 40H66M34 46H66M34 52H58', '#8A7B57', 1.2) +
+  MP.path('M50 64C50 64 44 72 44 76A6 6 0 0 0 56 76C56 72 50 64 50 64Z', '#E2A94F') + MP.path('M22 64C22 64 18 70 18 73A4 4 0 0 0 26 73C26 70 22 64 22 64Z', '#E2A94F') + MP.path('M78 64C78 64 74 70 74 73A4 4 0 0 0 82 73C82 70 78 64 78 64Z', '#E2A94F') + MP.ground(94, '#C4AE84');
+MEDAL_ART.ezk_brick = MP.bg('#D9C6A0') + MP.ground(90, '#B8A278') + MP.rect(20, 28, 60, 44, '#B9714F', 2) + MP.rect(24, 32, 52, 36, '#C9865E', 1.5) +
+  MP.line('M32 62H68', '#6B4030', 1.3) + MP.line('M38 62V50H62V62M38 50L42 46H58L62 50M46 62V56H54V62', '#4A3020', 1.3) + MP.line('M30 66H70M28 40Q36 36 44 40T60 40', '#6B4030', 0.9) +
+  MP.line('M30 38L34 34M70 38L66 34', '#6B4030', 1) + MP.rect(30, 78, 40, 6, '#6B7280', 1);
+MEDAL_ART.ezk_depart = MP.bg('#2C3A55') + MP.stars([[14, 20, 0.6], [30, 12, 0.5]]) + MP.ground(90, '#1F2A44') + MP.rect(12, 44, 46, 46, '#8C8676') + MP.path('M8 44L35 28L62 44Z', '#A29C8A') + MP.rect(12, 44, 6, 46, '#A29C8A') + MP.rect(52, 44, 6, 46, '#A29C8A') +
+  MP.path('M27 90V64Q27 56 35 56Q43 56 43 64V90Z', '#141B33') + MP.cloud(76, 30, 2, '#DDE2E8') + MP.rays(76, 34, 18, 26, 9, '#E2C77E', 1.2, 0.4) + MP.line('M60 56Q66 48 70 42', '#E2C77E', 1.2, 0.7);
+MEDAL_ART.ezk_shepherd = MP.bg('#D2DEC2') + MP.circle(78, 20, 6, '#EBC46C') + MP.path('M0 62Q30 50 60 60T100 56V100H0Z', '#8FB07E') + MP.path('M0 84Q40 74 100 82V100H0Z', '#6E9873') +
+  MP.person(50, 90, 1, '#7A6A9A', { robe: 1, arms: 'r', skin: '#C08A6A', hair: '#3E2C1E', staff: 12 }) + MP.lamb(28, 88, 1.1, '#F4EBD5') + MP.lamb(72, 88, 1.0, '#F4EBD5') + MP.lamb(34, 72, 0.7, '#EFE6D0');
+MEDAL_ART.ezk_heart = MP.bg('#E4DED0') + MP.cloud(50, 18, 1.8, '#C9D2D6') + MP.line('M40 26V34M50 28V38M60 26V34', '#6F9BB8', 1.6) +
+  D4.heart(30, 62, 2, '#8C8676') + MP.line('M29 54L32 62L28 66L33 72', '#4A463C', 1.1) + D4.heart(70, 62, 2, '#B8564F') + MP.line('M42 62H56M52 58L56 62L52 66', '#C2A25E', 1.6);
+MEDAL_ART.ezk_bones = MP.bg('#D9C6A0') + MP.path('M0 60L26 46L46 58L70 40L100 56V100H0Z', '#B8A278') + MP.ground(78, '#A89264') + MP.path('M0 92Q50 84 100 90V100H0Z', '#8C7A55') +
+  MP.circle(26, 76, 6, '#F0E8D4') + MP.circle(23.5, 76, 1.6, '#8C7A55') + MP.circle(28.5, 76, 1.6, '#8C7A55') + MP.rect(22, 80, 8, 3, '#F0E8D4', 1.4) +
+  MP.line('M46 70Q52 66 58 70M46 76Q52 72 58 76M46 82Q52 78 58 82', '#F0E8D4', 2) + MP.line('M52 66V88', '#F0E8D4', 2) +
+  MP.line('M66 86L86 76', '#F0E8D4', 2.6) + MP.circle(66, 86, 2.2, '#F0E8D4') + MP.circle(86, 76, 2.2, '#F0E8D4') + MP.line('M62 74L78 70', '#F0E8D4', 2.2) +
+  MP.line('M10 30Q30 20 50 30T90 26M18 40Q40 32 62 40', '#F4EBD5', 1.4, 0.8) + MP.path('M80 92q-3-6 0-9q3 3 0 9z', '#6E9873');
+MEDAL_ART.ezk_measure = MP.bg('#D9E0D0') + MP.circle(78, 20, 6, '#EBC46C') + MP.ground(92, '#B4C49C') + MP.rect(16, 36, 68, 54, '#D8C9A6') + MP.rect(12, 28, 20, 62, '#C4B48E') + MP.rect(68, 28, 20, 62, '#C4B48E') + MP.rect(10, 24, 24, 5, '#A88462') + MP.rect(66, 24, 24, 5, '#A88462') +
+  MP.path('M38 90V60Q38 48 50 48Q62 48 62 60V90Z', '#3A2A20') + MP.line('M36 92L70 32', '#7A5A3E', 2.6) + MP.line('M42 82L46 84M48 72L52 74M54 62L58 64M60 52L64 54', '#E2C77E', 1.4);
+MEDAL_ART.ezk_river = MP.bg('#DDE6D0') + MP.rect(34, 12, 32, 20, '#D8C9A6') + MP.path('M30 12L50 2L70 12Z', '#A88462') + MP.path('M44 32V22Q44 18 50 18Q56 18 56 22V32Z', '#3A2A20') + MP.ground(96, '#B4C49C') +
+  MP.path('M46 32L54 32L86 100H14Z', '#5D8A8F') + MP.wave(50, '#DDE8EC', 1) + MP.wave(64, '#DDE8EC', 1.1) + MP.wave(80, '#DDE8EC', 1.2) + MP.wave(94, '#DDE8EC', 1.2) +
+  MP.tree(24, 60, 0.9, '#7A5A3E', '#4F7A56', '#D98A3A') + MP.tree(78, 62, 0.9, '#7A5A3E', '#4F7A56', '#D98A3A') + MP.tree(12, 90, 1.1, '#7A5A3E', '#3E6B4A', '#D98A3A') + MP.tree(90, 92, 1.1, '#7A5A3E', '#3E6B4A', '#D98A3A');
+MEDAL_ART.ezk_city = MP.bg('#E9D2A8') + MP.circle(50, 50, 40, '#DFC594') + MP.rect(20, 20, 60, 60, '#F0DDB8') + '<rect x="20" y="20" width="60" height="60" fill="none" stroke="#B08D5E" stroke-width="2"/>' +
+  (function () { var o = '', i, p = [24.5, 44, 63.5]; for (i = 0; i < 3; i++) o += MP.rect(p[i], 18.4, 12, 3.6, '#7A5A3E') + MP.rect(p[i], 78, 12, 3.6, '#7A5A3E') + MP.rect(18.4, p[i], 3.6, 12, '#7A5A3E') + MP.rect(78, p[i], 3.6, 12, '#7A5A3E'); return o; })() +
+  MP.circle(50, 50, 13, '#E9C36B') + MP.rays(50, 50, 15, 22, 12, '#C2A25E', 1.4, 0.26) + '<use href="#st" transform="translate(50 50) scale(3)"/>';
+
+BOOK_MILESTONES["ezk"] = [
+  { id: "ezk01", need: 0, ref: "에스겔 1장", title: "그발 강가의 폭풍과 바퀴", icon: "ezk_wheel",
+    text: "눈이 가득한 바퀴와 타오르는 불.",
+    verse: "포로로 잡혀간 그발 강가에서 하늘이 열리고 에스겔은 북쪽에서 불어오는 폭풍과 불덩이를 본다. 그 곁에는 바퀴 안에 바퀴가 있는 듯한 형상이 굴러가고, 바퀴테마다 눈이 가득했으며 그 위로 영광의 광채가 있었다." },
+  { id: "ezk02", need: 10, ref: "에스겔 2-3장", title: "꿀처럼 단 두루마리", icon: "ezk_scroll",
+    text: "말씀을 먹고 파수꾼이 되다.",
+    verse: "에스겔은 안팎으로 애가와 탄식이 적힌 두루마리를 받아 그것을 먹으라는 명령을 듣는다. 입에 넣으니 꿀같이 달았으나, 그는 반역하는 백성에게 가서 경고하는 파수꾼으로 세움을 받는다." },
+  { id: "ezk03", need: 30, ref: "에스겔 4장", title: "토판 위에 그린 예루살렘", icon: "ezk_brick",
+    text: "벽돌 위에 새긴 포위의 표적.",
+    verse: "에스겔은 벽돌 한 장을 놓고 그 위에 예루살렘 성을 그려 놓은 뒤 포위하는 모습을 만든다. 성 사이에 쇠 판을 세워 담을 삼게 하고 좌우로 누워 백성이 짊어질 죄의 기간을 몸으로 보여 주라고 명령받는다." },
+  { id: "ezk04", need: 91, ref: "에스겔 10장", title: "성전을 떠나는 영광", icon: "ezk_depart",
+    text: "구름과 빛이 문지방을 넘어 떠나가다.",
+    verse: "성전 안뜰에는 구름이 가득하고 광채가 문지방 위에 머물다 마침내 그곳을 떠난다. 바퀴와 함께 솟아오르는 하나님의 영광이 동쪽 문 어귀에 멈췄다가 성 위로 올라가는 것을 에스겔은 무겁게 지켜본다." },
+  { id: "ezk05", need: 333, ref: "에스겔 34장", title: "내가 친히 내 양을 찾으리라", icon: "ezk_shepherd",
+    text: "양 떼를 잡아먹은 목자들을 향한 책망.",
+    verse: "자기만 먹고 양 떼를 돌보지 않은 목자들에게 하나님은 진노하시며, 흩어진 양들을 내가 친히 찾아 먹이겠다고 선언하신다. 잃은 자를 찾고 상한 자를 싸매며 병든 자를 강하게 하는 참 목자를 세우겠다는 약속이다." },
+  { id: "ezk06", need: 353, ref: "에스겔 36장", title: "돌 같은 마음을 부드러운 마음으로", icon: "ezk_heart",
+    text: "맑은 물을 뿌려 새 영을 주리라.",
+    verse: "하나님은 흩어진 백성을 다시 모으시고 맑은 물을 뿌려 모든 더러움에서 깨끗하게 하겠다고 하신다. 그들의 굳은 돌 같은 마음을 도려내고 살같이 부드러운 마음과 새 영을 넣어 내 규례를 지키게 하리라는 약속이다." },
+  { id: "ezk07", need: 363, ref: "에스겔 37장", title: "마른 뼈들이 일어나다", icon: "ezk_bones",
+    text: "생기를 불어넣으면 군대가 일어선다.",
+    verse: "뼈들이 가득한 골짜기에서 에스겔은 이 뼈들이 살 수 있겠느냐는 물음을 받고, 하나님이 아십니다 하고 답한다. 말씀을 외치자 뼈가 서로 이어지고 힘줄과 살이 붙으며, 사방에서 부는 생기가 그들을 큰 군대로 일으켜 세운다." },
+  { id: "ezk08", need: 393, ref: "에스겔 40장", title: "측량 줄과 갈대를 든 성전", icon: "ezk_measure",
+    text: "새 성전의 문과 뜰을 재는 이.",
+    verse: "포로 생활 이십오 년째에 에스겔은 환상 중에 아주 높은 산으로 인도되어 성읍 같은 건축물을 본다. 손에 삼줄과 측량 갈대를 든 이가 문과 뜰과 문지방의 치수를 하나하나 재어 보이며 눈여겨보라고 말한다." },
+  { id: "ezk09", need: 464, ref: "에스겔 47장", title: "성전 문지방에서 흐르는 강", icon: "ezk_river",
+    text: "발목에서 무릎으로, 허리로, 헤엄칠 강.",
+    verse: "성전 문지방 밑에서 동쪽으로 물이 흘러나오고 재어 볼수록 발목에서 무릎으로, 허리로, 마침내 건너지 못할 강이 된다. 그 물이 닿는 곳마다 죽은 바다가 살아나고 양쪽 강가에는 다달이 열매 맺는 나무가 자란다." },
+  { id: "ezk10", need: 474, ref: "에스겔 48장", title: "그 성읍의 이름은 '여호와께서 거기 계신다'", icon: "ezk_city",
+    text: "열두 문을 가진 새 성읍.",
+    verse: "책의 마지막 환상은 열두 지파의 이름을 붙인 열두 문을 가진 성읍을 보여 준다. 그 성읍의 이름이 이제부터 여호와께서 거기 계신다는 뜻으로 불릴 것이라는 말씀으로 에스겔서는 끝난다." }
+];
+BOOK_SCENES["ezk"] = [
+  { id: "ezk_s0", title: "폭풍과 영광", milestoneIds: ["ezk01", "ezk02", "ezk03", "ezk04", "ezk05"] },
+  { id: "ezk_s1", title: "새 마음과 새 성전", milestoneIds: ["ezk06", "ezk07", "ezk08", "ezk09", "ezk10"] }
+];
+attachSceneMeta("ezk");
+
+// ---- 다니엘 ----
+MEDAL_ART.dan_pulse = MP.bg('#E6D6B8') + MP.ground(88, '#C9B48C') + MP.path('M24 62H76Q74 82 50 84Q26 82 24 62Z', '#B9714F') + MP.rect(22, 59, 56, 5, '#8C4A32', 2) +
+  MP.circle(34, 58, 6, '#6E9873') + MP.circle(44, 55, 6.5, '#5F8A5A') + MP.circle(55, 56, 6, '#7FB06E') + MP.circle(65, 58, 5.6, '#6E9873') + MP.circle(50, 52, 5.6, '#8FC07E') + MP.line('M40 48Q44 44 48 48M56 50Q60 44 64 48', '#4E633F', 1.2) +
+  D2.jar(84, 88, 1.4, '#8C6E48', '#6B5238') + MP.circle(20, 34, 6, '#EBC46C') + MP.rays(20, 34, 9, 13, 10, '#E2C77E', 1.1);
+MEDAL_ART.dan_statue = MP.bg('#2B3558') + MP.stars([[16, 22, 0.6], [86, 16, 0.6], [80, 58, 0.5]]) + MP.ground(94, '#1B2440') +
+  MP.circle(44, 18, 6.4, '#D2AE72') + MP.rect(38, 24, 12, 4, '#D2AE72') + MP.path('M30 28H58L56 48H32Z', '#B8BCC4') + MP.rect(31, 48, 26, 12, '#B9714F') + MP.rect(32, 60, 10, 22, '#6B7280') + MP.rect(46, 60, 10, 22, '#6B7280') + MP.path('M30 82H43V90H28Z', '#8A7A6A') + MP.path('M45 82H58L60 90H45Z', '#9A8A70') +
+  MP.circle(80, 68, 9, '#9AA0AA') + MP.line('M70 56Q76 60 78 62M64 68Q68 70 70 72', '#E2C77E', 1.4, 0.8) + MP.path('M66 90L72 78L88 84L92 90Z', '#3A4468');
+MEDAL_ART.dan_furnace = MP.bg('#4A2B2E') + MP.ground(94, '#2A1B1E') + MP.rect(14, 30, 72, 64, '#3A2224') + MP.path('M26 94V54Q26 38 50 38Q74 38 74 54V94Z', '#E9A65B') + MP.path('M32 94V56Q32 44 50 44Q68 44 68 56V94Z', '#F0C580') +
+  MP.rect(46.6, 46, 6.8, 46, '#FFF6D6', 3) + MP.person(36, 90, 0.5, '#5A3A32', { robe: 1, skin: '#5A3A32', hair: '#5A3A32', arms: 'u' }) + MP.person(64, 90, 0.5, '#5A3A32', { robe: 1, skin: '#5A3A32', hair: '#5A3A32', arms: 'u' }) + MP.person(50, 92, 0.5, '#5A3A32', { robe: 1, skin: '#5A3A32', hair: '#5A3A32', arms: 'u' }) +
+  MP.flame(20, 30, 1.1, '#D98A3A', '#F6E7B4') + MP.flame(80, 30, 1.1, '#D98A3A', '#F6E7B4') + MP.flame(50, 34, 1.4, '#D98A3A', '#F6E7B4');
+MEDAL_ART.dan_hand = MP.bg('#2C3A55') + MP.rect(8, 8, 84, 62, '#46507A') + MP.line('M8 24H92M8 40H92M8 56H92M30 8V24M60 24V40M22 40V56M70 40V56M44 56V70', '#3A4468', 1) + MP.band(70, 30, '#1F2A44') +
+  '<g transform="translate(72 30) rotate(35)"><rect x="2" y="-6" width="22" height="12" fill="#7A6A9A"/><rect x="-9" y="-6" width="12" height="12" rx="3" fill="#F4EBD5"/><rect x="-22" y="-5.4" width="14" height="3.4" rx="1.7" fill="#F4EBD5"/><rect x="-13" y="-1.4" width="6" height="3" rx="1.5" fill="#F4EBD5"/><rect x="-13" y="2" width="6" height="3" rx="1.5" fill="#F4EBD5"/></g>' +
+  MP.line('M20 34L26 28M32 34V26M40 32L46 26M34 46H44M52 46V38M58 46L64 40M22 58H30M38 60L44 54', '#E2C77E', 1.6) + D3.cup(30, 92, 0.9, '#C2A25E', '#7A2E3A') + D3.cup(70, 92, 0.9, '#C2A25E', '#7A2E3A') + D2.lamp(50, 92, 0.9, '#E2C77E');
+MEDAL_ART.dan_lions = MP.bg('#2B3558') + MP.path('M0 100V20Q0 0 20 0H80Q100 0 100 20V100Z', '#3A4468') + MP.path('M30 0H70L86 100H14Z', '#2B3558') + MP.circle(50, 6, 10, '#EFE6D0') + MP.path('M40 8H60L74 100H26Z', '#4A557A') + MP.ground(90, '#2A2836') +
+  D4.lion(34, 84, 0.85, '#B08D5E', '#8C6E30') + '<g transform="translate(100 0) scale(-1 1)">' + D4.lion(34, 84, 0.85, '#B08D5E', '#8C6E30') + '</g>' + MP.person(50, 88, 0.95, '#F4EBD5', { robe: 1, arms: 'u', skin: '#C08A6A', hair: '#3E2C1E' }) + MP.stars([[26, 30, 0.6], [74, 34, 0.6]]);
+MEDAL_ART.dan_stars = MP.bg('#232049') + MP.circle(50, 44, 26, '#2E2B5C') + MP.circle(50, 44, 15, '#3A3770') +
+  '<use href="#st" transform="translate(50 42) scale(3.8)"/>' + MP.stars([[24, 24, 1.6], [76, 26, 1.6], [16, 48, 1.1], [86, 50, 1.1], [34, 14, 1], [66, 12, 1], [30, 62, 1.2], [70, 62, 1.2], [50, 68, 1]]) + MP.ground(94, '#151338') +
+  D2.scroll(32, 80, 36, 10, '#F4EBD5') + MP.circle(50, 84, 3.4, '#B8493F');
+
+BOOK_MILESTONES["dan"] = [
+  { id: "dan01", need: 0, ref: "다니엘 1장", title: "채소와 물로 버틴 열흘", icon: "dan_pulse",
+    text: "왕의 음식을 거절한 젊은이들.",
+    verse: "바벨론 궁정에 끌려간 다니엘과 세 친구는 왕의 진미와 포도주로 자신을 더럽히지 않기로 결심한다. 열흘 동안 채소와 물만 먹어 보게 해 달라고 청하고, 그 뒤에 그들의 얼굴이 왕의 음식을 먹은 자들보다 더 좋아 보이게 된다." },
+  { id: "dan02", need: 10, ref: "다니엘 2장", title: "손대지 않은 돌이 신상을 부수다", icon: "dan_statue",
+    text: "금과 은과 놋과 쇠와 진흙의 나라들.",
+    verse: "느부갓네살의 꿈에 머리는 금이고 가슴은 은이며 배는 놋이고 종아리는 쇠인 큰 신상이 나타난다. 사람 손대지 않고 산에서 떨어져 나온 돌이 그 발을 쳐 부수더니 산이 되어 온 땅을 가득 채운다." },
+  { id: "dan03", need: 20, ref: "다니엘 3장", title: "풀무불 속의 네 사람", icon: "dan_furnace",
+    text: "그렇지 않더라도 절하지 않겠다.",
+    verse: "금 신상에 절하지 않은 세 친구는 평소보다 일곱 배나 뜨거운 풀무불에 던져진다. 그렇지 않더라도 왕이여 우리는 신상에 절하지 않겠다고 말한 그들이 묶임 없이 걸어 다니고 그 곁에 네 번째 존재가 있는 것을 왕은 본다." },
+  { id: "dan04", need: 40, ref: "다니엘 5장", title: "벽에 나타난 손가락", icon: "dan_hand",
+    text: "저울에 달려 모자란 왕.",
+    verse: "벨사살 왕이 성전 그릇으로 잔치하며 술을 마시던 밤, 사람 손가락이 나타나 촛대 맞은편 벽에 글자를 쓴다. 다니엘은 그 글이 세어졌고 달려서 모자라며 나라가 나뉘어 주어진다는 뜻이라 풀고, 그 밤에 왕은 죽는다." },
+  { id: "dan05", need: 50, ref: "다니엘 6장", title: "사자 굴에서 잠든 밤", icon: "dan_lions",
+    text: "하나님이 천사를 보내 사자의 입을 막으셨다.",
+    verse: "다니엘은 삼십 일간 왕 외에는 누구에게도 기도하지 말라는 금령이 내려진 뒤에도 창을 열고 하루 세 번 기도한다. 사자 굴에 던져졌으나 하나님이 천사를 보내 사자의 입을 막으셔서 아침에 아무 해도 입지 않은 채 나온다." },
+  { id: "dan06", need: 111, ref: "다니엘 12장", title: "별처럼 영원히 빛나는 이들", icon: "dan_stars",
+    text: "지혜로운 자는 궁창의 빛같이 빛나리라.",
+    verse: "환상의 끝에서 천사는 티끌 속에 잠든 많은 자가 깨어나 영생을 얻는다고 알려 준다. 지혜로운 자는 하늘의 빛처럼 빛나고 많은 사람을 의로 돌아오게 한 이는 별처럼 영원히 빛난다고 하며 이 말을 봉하라 명한다." }
+];
+BOOK_SCENES["dan"] = [
+  { id: "dan_s0", title: "바벨론 궁정의 믿음", milestoneIds: ["dan01", "dan02", "dan03"] },
+  { id: "dan_s1", title: "벽, 굴, 그리고 별", milestoneIds: ["dan04", "dan05", "dan06"] }
+];
+attachSceneMeta("dan");
+
+// ---- 호세아 ----
+MEDAL_ART.hos_marriage = MP.bg('#E7D2B3') + MP.circle(78, 22, 6.5, '#EBC46C') + MP.path('M0 66Q30 58 60 65T100 61V100H0Z', '#9AA878') + MP.path('M0 82Q40 73 100 80V100H0Z', '#7A9060') +
+  MP.person(34, 90, 1.0, '#5F7A9A', { robe: 1, skin: '#C08A6A', hair: '#3E2C1E', arms: 'r' }) + MP.person(66, 90, 1.0, '#B8756A', { robe: 1, f: 1, skin: '#C08A6A', hair: '#3E2C1E', scarf: '#8A5A5A', arms: 'l' }) +
+  '<circle cx="50" cy="54" r="4.6" fill="none" stroke="#C2A25E" stroke-width="2"/><path d="M47.6 50.4L50 46.6L52.4 50.4Z" fill="#E2C77E"/>';
+MEDAL_ART.hos_redeem = MP.bg('#DCCBA8') + MP.circle(78, 24, 5, '#EBC46C') + MP.ground(90, '#C4AE84') + MP.path('M24 86Q20 68 33 62Q37 55 42 62Q55 68 52 86Z', '#B08D5E') + MP.wheat(31, 62, 0.7, '#D2AE72', -10) + MP.wheat(39, 62, 0.7, '#D2AE72', 12) + MP.line('M26 74Q38 78 50 74', '#8C6E48', 1) +
+  '<ellipse cx="68" cy="77" rx="10" ry="3.2" fill="#B8BCC4"/><ellipse cx="68" cy="72" rx="10" ry="3.2" fill="#D0D4DA"/><ellipse cx="68" cy="67" rx="10" ry="3.2" fill="#B8BCC4"/><ellipse cx="68" cy="62" rx="10" ry="3.2" fill="#D0D4DA"/><ellipse cx="68" cy="57" rx="10" ry="3.2" fill="#B8BCC4"/>';
+MEDAL_ART.hos_mercy = MP.bg('#2C3A55') + MP.circle(50, 38, 20, '#3E4C6C') + MP.rays(50, 38, 24, 36, 14, '#E2C77E', 1.1) + MP.ground(94, '#1F2A44') + D2.altar(50, 90, 1.9, '#8C8676', '#A29C8A') + D4.heart(50, 46, 2.1, '#B8564F') + MP.stars([[16, 22, 0.6], [86, 24, 0.6]]);
+MEDAL_ART.hos_wind = MP.bg('#7C8FA0') + MP.cloud(30, 22, 2, '#5A6478') + MP.cloud(72, 30, 2.2, '#5A6478') + MP.ground(90, '#4E633F') +
+  MP.wheat(16, 90, 1.2, '#D2AE72', 40) + MP.wheat(32, 92, 1.2, '#D2AE72', 44) + MP.wheat(48, 92, 1.2, '#D2AE72', 40) + MP.wheat(64, 92, 1.2, '#D2AE72', 46) + MP.wheat(80, 90, 1.2, '#D2AE72', 42) +
+  MP.line('M6 46C30 38 50 52 74 42S92 44 96 40M10 60C30 54 52 66 78 56', '#F4EBD5', 1.8, 0.85) + MP.line('M86 58L90 54M74 68L78 64', '#F4EBD5', 1.2);
+MEDAL_ART.hos_plow = MP.bg('#E4E8D0') + MP.cloud(50, 18, 2.4, '#F4EBD5') + MP.line('M28 30V42M38 32V48M50 34V52M62 32V48M72 30V42', '#E2C77E', 1.6) + MP.path('M0 60Q50 52 100 58V100H0Z', '#A8967A') +
+  MP.line('M0 68Q50 60 100 66M0 78Q50 70 100 76M0 88Q50 80 100 86', '#7A6A4A', 2) + MP.path('M24 62q-3-6 0-9q3 3 0 9zM50 66q-3-6 0-9q3 3 0 9zM76 62q-3-6 0-9q3 3 0 9z', '#7FB06E');
+MEDAL_ART.hos_cords = MP.bg('#E9D2A8') + MP.circle(50, 22, 14, '#F0DDB0') + MP.circle(50, 22, 8, '#EBC46C') + MP.rays(50, 22, 17, 26, 14, '#E2C77E', 1.1) + MP.ground(90, '#C9AE7E') +
+  MP.line('M44 32L46 56M56 32L54 56M50 32V52', '#C2A25E', 1.4) + MP.person(50, 90, 0.7, '#7A5A8C', { robe: 1, skin: '#C08A6A', hair: '#3E2C1E', arms: 'u' });
+MEDAL_ART.hos_lily = MP.bg('#B9CDC7') + MP.circle(20, 20, 6, '#EBC46C') + MP.ground(90, '#9AB88A') + MP.path('M0 94Q50 86 100 92V100H0Z', '#7A9C6E') +
+  MP.tree(80, 88, 1.3, '#7A5A3E', '#3E6B4A') + MP.line('M50 90C50 76 48 62 52 48', '#5F8A5A', 2.4) + MP.path('M50 78Q34 76 30 64Q42 66 50 78Z', '#5F8A5A') + MP.path('M50 72Q64 70 68 60Q56 60 50 72Z', '#5F8A5A') +
+  MP.path('M52 48C44 46 38 38 38 28C46 32 50 38 52 48Z', '#F4EBD5') + MP.path('M52 48C60 46 66 38 66 28C58 32 54 38 52 48Z', '#F4EBD5') + MP.path('M52 48C48 40 50 28 52 22C54 28 56 40 52 48Z', '#EFE6D0') +
+  MP.circle(30, 40, 1.6, '#9FC4C4') + MP.circle(72, 44, 1.6, '#9FC4C4') + MP.circle(24, 54, 1.3, '#9FC4C4') + MP.circle(76, 24, 1.3, '#9FC4C4');
+
+BOOK_MILESTONES["hos"] = [
+  { id: "hos01", need: 0, ref: "호세아 1장", title: "음란한 여인과의 결혼", icon: "hos_marriage",
+    text: "떠나는 이스라엘을 몸으로 보이신 표징.",
+    verse: "여호와는 호세아에게 음란한 여인을 아내로 맞아 아이들을 낳으라 명하신다. 나라가 여호와를 떠나 음란하게 행하고 있다는 사실을 호세아의 삶으로 온 백성에게 보이기 위해서였다." },
+  { id: "hos02", need: 20, ref: "호세아 3장", title: "은 열다섯 세겔과 보리 한 호멜 반", icon: "hos_redeem",
+    text: "사랑하는 여인을 값 주고 다시 데려오다.",
+    verse: "다른 사람의 사랑을 받는 음란한 여인을 다시 사랑하라는 명령을 받은 호세아는 은 열다섯 세겔과 보리 한 호멜 반으로 그를 사서 돌아오게 한다. 이스라엘이 다른 신들을 좇아도 하나님이 변함없이 사랑하시는 모습이다." },
+  { id: "hos03", need: 50, ref: "호세아 6장", title: "제사보다 인애를 원한다", icon: "hos_mercy",
+    text: "아침 구름 같은 사랑을 꾸짖으시다.",
+    verse: "돌아가자, 그분이 찢으셨으나 낫게 하시리라며 입술로만 고백하는 백성의 사랑은 아침 구름과 이슬처럼 사라진다. 하나님은 제사가 아니라 인애를 원하시고 번제보다 하나님을 아는 것을 기뻐하신다고 밝히신다." },
+  { id: "hos04", need: 71, ref: "호세아 8장", title: "바람을 뿌리고 폭풍을 거두다", icon: "hos_wind",
+    text: "우상의 씨앗이 돌아오는 값.",
+    verse: "이스라엘은 스스로 왕들을 세우고 은과 금으로 우상을 만들었다고 하나님은 책망하신다. 그들이 바람을 뿌렸으니 폭풍을 거두게 될 것이고, 이삭이 패지 않는 곡식은 가루를 내지 못하며 낟알이 있어도 이방인이 삼킬 것이다." },
+  { id: "hos05", need: 91, ref: "호세아 10장", title: "묵은 땅을 갈아엎어라", icon: "hos_plow",
+    text: "의를 심고 인자를 거두라는 초대.",
+    verse: "너희 자신을 위해 의를 뿌리고 인애를 거두라, 묵은 땅을 갈아엎어라고 하나님은 명하신다. 지금이 여호와를 찾을 때이니, 그분이 오셔서 의를 비처럼 내려 주실 때까지 땅을 일구라는 말씀이다." },
+  { id: "hos06", need: 101, ref: "호세아 11장", title: "사랑의 줄로 이끌던 아들", icon: "hos_cords",
+    text: "걸음마를 가르치던 팔을 기억하시다.",
+    verse: "이스라엘이 어렸을 때 내가 사랑하여 애굽에서 아들을 불러냈다고 하나님은 회상하신다. 걸음마를 가르치고 팔로 안았으며 인정의 줄과 사랑의 끈으로 이끌었는데도 그들은 몰랐다고, 그러나 어찌 너를 놓겠느냐고 하신다." },
+  { id: "hos07", need: 131, ref: "호세아 14장", title: "이슬처럼 내리시는 회복", icon: "hos_lily",
+    text: "백합화처럼 피어나고 백향목처럼 뿌리내리리라.",
+    verse: "이스라엘아 여호와께로 돌아오라, 우리의 말로 그분께 나아가 용서를 구하라고 예언자는 마지막으로 호소한다. 하나님은 그들의 거역을 고치고 기꺼이 사랑하시며 이슬처럼 내려 백합화 같이 피게 하고 레바논 백향목처럼 뿌리내리게 하신다." }
+];
+BOOK_SCENES["hos"] = [
+  { id: "hos_s0", title: "돌아온 아내", milestoneIds: ["hos01", "hos02", "hos03", "hos04"] },
+  { id: "hos_s1", title: "놓지 않는 사랑", milestoneIds: ["hos05", "hos06", "hos07"] }
+];
+attachSceneMeta("hos");
+
+// ---- 요엘 ----
+MEDAL_ART.jol_locust = MP.bg('#D9C6A0') + MP.circle(50, 26, 12, '#C9A860') + MP.ground(88, '#B8A278') +
+  MP.line('M28 88V62M28 72L20 64M28 66L38 58', '#7A5A3E', 2.2) + MP.line('M74 88V66M74 76L82 68M74 70L66 62', '#7A5A3E', 2.2) +
+  D4.locust(24, 34, 1.4, -14, '#5A4A32') + D4.locust(70, 30, 1.3, 10, '#6B5A3A') + D4.locust(46, 50, 1.6, -6, '#5A4A32') + D4.locust(78, 52, 1.2, 14, '#6B5A3A') + D4.locust(20, 56, 1.1, -20, '#6B5A3A') + D4.locust(56, 70, 1.5, 4, '#5A4A32') + D4.locust(34, 80, 1.1, -8, '#6B5A3A');
+MEDAL_ART.jol_tear = MP.bg('#4A4658') + MP.cloud(24, 24, 1.4, '#6E6884') + MP.cloud(78, 20, 1.2, '#6E6884') + MP.ground(90, '#2E2A38') + MP.circle(22, 84, 2, '#8A8A9C') + MP.circle(80, 82, 2.4, '#8A8A9C') +
+  '<g transform="translate(46 50) rotate(-7) scale(2.3)"><path d="M0 8C-13-2-10-12-4.5-12C-1.6-12 0-9.6 0-8L2-3L-1 1L2 5Z" fill="#B8564F"/></g><g transform="translate(54 50) rotate(7) scale(2.3)"><path d="M0-8C0-9.6 1.6-12 4.5-12C10-12 13-2 0 8L2 5L-1 1L2-3Z" fill="#B8564F"/></g>' +
+  MP.line('M50 32L47 44L52 52L48 62L51 70', '#E2C77E', 1.4, 0.9);
+MEDAL_ART.jol_rain = MP.bg('#DCE8D4') + MP.cloud(50, 18, 2.6, '#F4EBD5') + MP.line('M24 30V44M34 34V50M46 36V54M58 36V52M68 34V48M78 30V44', '#6F9BB8', 1.6) + MP.ground(84, '#9AB88A') + MP.path('M0 92Q50 84 100 90V100H0Z', '#6E9873') +
+  MP.wheat(20, 92, 1.3, '#D2AE72', -6) + MP.wheat(32, 92, 1.4, '#D2AE72', 4) + MP.wheat(68, 92, 1.4, '#D2AE72', -4) + MP.wheat(80, 92, 1.3, '#D2AE72', 6) + D2.jar(50, 92, 1.8, '#B9714F', '#8C4A32') + MP.line('M48 66V58', '#E2C77E', 1.4);
+MEDAL_ART.jol_spirit = MP.bg('#2C3A55') + MP.circle(50, 26, 16, '#3E4C6C') + MP.rays(50, 26, 20, 32, 14, '#E2C77E', 1.1) + D4.dove(50, 38, 1.4, '#F4EBD5') + MP.ground(94, '#1F2A44') +
+  MP.person(24, 92, 0.72, '#B9714F', { robe: 1, skin: '#C08A6A', arms: 'u', hair: '#3E2C1E' }) + MP.person(50, 94, 0.72, '#F4EBD5', { robe: 1, f: 1, skin: '#C08A6A', arms: 'u', hair: '#3E2C1E', scarf: '#8A7B57' }) + MP.person(76, 92, 0.72, '#7A5A8C', { robe: 1, skin: '#C08A6A', arms: 'd', hair: '#DDDAD0', staff: 11 }) +
+  MP.flame(24, 56, 0.55, '#E9A65B', '#F6E7B4') + MP.flame(50, 58, 0.55, '#E9A65B', '#F6E7B4') + MP.flame(76, 56, 0.55, '#E9A65B', '#F6E7B4');
+
+BOOK_MILESTONES["jol"] = [
+  { id: "jol01", need: 0, ref: "요엘 1장", title: "메뚜기가 먹어 치운 땅", icon: "jol_locust",
+    text: "이 일을 너희 자손에게 전하라.",
+    verse: "메뚜기와 누리와 황충이 차례로 밭을 갉아 먹고 포도나무와 무화과나무를 벗겨 흰 줄기만 남겼다고 요엘은 말한다. 노인들에게 이런 일이 전에도 있었느냐고 묻고 이 일을 자손에게 대대로 전하라고 명한다." },
+  { id: "jol02", need: 10, ref: "요엘 2:1-17", title: "옷이 아니라 마음을 찢으라", icon: "jol_tear",
+    text: "지금이라도 돌아오라는 부르심.",
+    verse: "시온에서 나팔을 불어 여호와의 날을 알리라고 요엘은 외친다. 지금이라도 금식하고 울며 온 마음으로 돌아오라, 옷을 찢지 말고 마음을 찢으라, 그분은 은혜롭고 자비로우며 재앙을 거두실 수 있는 분이시다." },
+  { id: "jol03", need: 15, ref: "요엘 2:18-27", title: "메뚜기가 먹은 해를 갚아 주마", icon: "jol_rain",
+    text: "이른 비와 늦은 비로 채워지는 타작마당.",
+    verse: "여호와가 그 땅을 위해 질투하시고 백성을 불쌍히 여겨 곡식과 포도주와 기름으로 만족하게 하겠다고 약속하신다. 이른 비와 늦은 비를 내리시고 메뚜기가 먹어 버린 해들을 갚아 주시리니, 타작마당에는 곡식이 가득 찬다." },
+  { id: "jol04", need: 20, ref: "요엘 2:28-3장", title: "내 영을 모든 육체에 부으리라", icon: "jol_spirit",
+    text: "아들딸이 예언하고 늙은이가 꿈을 꾸는 날.",
+    verse: "그 후에 내가 내 영을 모든 육체에 부어 너희 아들딸이 예언하고 늙은이는 꿈을 꾸며 젊은이는 환상을 보리라고 하나님은 약속하신다. 종들에게까지 영을 부으시는 그 날, 여호와의 이름을 부르는 자는 누구나 구원을 얻는다." }
+];
+BOOK_SCENES["jol"] = [
+  { id: "jol_s0", title: "회개와 회복", milestoneIds: ["jol01", "jol02", "jol03", "jol04"] }
+];
+attachSceneMeta("jol");
+// <<END MEDALS day=4>>
 
   function scenesForBook(book) {
     milestonesForBook(book); // 아직 캐시되지 않은 책이면 자리표시자 생성 + 장면 부여를 트리거
