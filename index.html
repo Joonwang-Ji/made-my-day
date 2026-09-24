@@ -451,6 +451,24 @@
   .fr-upd { font-size: 10.5px; color: var(--ink-dim); margin-top: 2px; }
   .fr-end { flex: none; font-size: 11.5px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); color: var(--ink-dim); cursor: pointer; }
   .fr-end.go { background: var(--sage-soft); color: var(--ink); border-color: transparent; font-weight: 700; }
+  .fr-cheer { display: inline-block; margin-top: 8px; font-size: 11.5px; padding: 6px 12px; border-radius: 999px;
+    background: var(--gold-soft); color: var(--gold); font-weight: 700; cursor: pointer; }
+  .cheer-dot { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: var(--gold);
+    color: var(--card); font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; vertical-align: middle; }
+  .cheer-dot.hidden { display: none; }
+  .sub-row .cheer-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 12px;
+    font-weight: 700; white-space: nowrap; background: var(--gold-soft); color: var(--gold); cursor: pointer; }
+  .cheer-day { font-size: 11px; font-weight: 800; color: var(--ink-dim); margin: 14px 0 6px; }
+  .cheer-item { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 6px; }
+  .cheer-item.new { background: var(--gold-soft); border-color: transparent; }
+  .cheer-item .cm { flex: 1; min-width: 0; }
+  .cheer-item .cw { font-size: 11px; color: var(--ink-dim); }
+  .cheer-item .ct { font-size: 13.5px; font-weight: 700; margin-top: 2px; line-height: 1.45; }
+  .cheer-msg { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--line);
+    margin-bottom: 6px; cursor: pointer; font-size: 14px; font-weight: 700; }
+  .cheer-msg .ce { font-size: 20px; }
+  .cheer-msg.on { background: var(--sage-soft); border-color: transparent; }
+  .cheer-off { opacity: 0.4; pointer-events: none; }
   .reward-idea-chip { font-size: 11px; padding: 5px 9px; border-radius: 999px; background: var(--sage-soft); color: var(--ink); }
   .reward-note-input { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
     background: var(--bg-soft); color: var(--ink); font-size: 13px; font-family: inherit; margin-bottom: 12px; }
@@ -917,7 +935,8 @@
     <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 14px;"></div>
     <div class="btn" data-action="open-bible-shelf" style="margin-bottom:10px;">📖 성경 여정 전체보기</div>
     <div class="btn" data-action="open-pending-rewards" style="margin-bottom:10px;">🎀 내 선물함 열기</div>
-    <div class="btn" data-action="open-friends" style="margin-bottom:16px;">👥 지인</div>
+    <div class="btn" data-action="open-friends" style="margin-bottom:10px;">👥 지인</div>
+    <div class="btn" data-action="open-cheers" style="margin-bottom:16px;">💌 응원함 <span class="cheer-dot hidden" id="cheerBadge">0</span></div>
     <div class="section-label">배지 (최장 연속일 기준)</div>
     <div class="badge-grid" id="badgeGrid"></div>
     <div class="section-label" style="margin-top:16px;">족보 트랙</div>
@@ -945,6 +964,26 @@
       <span class="tp-close-x" data-action="friends-close">✕</span>
     </div>
     <div class="tp-card-body" id="friendsBody"></div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="cheersOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title">💌 응원함</div>
+      <span class="tp-close-x" data-action="cheers-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="cheersBody"></div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="cheerPickOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title" id="cheerPickTitle">응원 보내기</div>
+      <span class="tp-close-x" data-action="cheer-pick-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="cheerPickBody"></div>
   </div>
 </div>
 
@@ -1186,7 +1225,27 @@
       upd["names." + uid] = nick;
       return updateDoc(doc(db, "friendLinks", pair), upd);
     },
-    linkDelete: function (pair) { return deleteDoc(doc(db, "friendLinks", pair)); }
+    linkDelete: function (pair) { return deleteDoc(doc(db, "friendLinks", pair)); },
+    // ---- 응원(8차): 정해진 문구만 주고받는다 ----
+    cheerSend: function (id, data) { return setDoc(doc(db, "cheers", id), data); },
+    cheerInbox: function (uid) {
+      var q = query(collection(db, "cheers"), where("to", "==", uid));
+      return getDocs(q).then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) { out.push({ id: d.id, data: d.data() }); });
+        return out;
+      });
+    },
+    cheerOutbox: function (uid) {
+      var q = query(collection(db, "cheers"), where("from", "==", uid));
+      return getDocs(q).then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) { out.push({ id: d.id, data: d.data() }); });
+        return out;
+      });
+    },
+    cheerSeen: function (id) { return updateDoc(doc(db, "cheers", id), { seen: true }); },
+    cheerDelete: function (id) { return deleteDoc(doc(db, "cheers", id)); }
   };
   window.dispatchEvent(new Event("fb-ready"));
 </script>
@@ -1361,6 +1420,8 @@
   }
   function socialOnFirstSync() {
     lastPubJson = null;
+    cheerInbox = null; cheerUnread = 0; cheerLastFetch = 0;
+    refreshCheers(true);
     if (!state.social || !state.social.shareOn) return;
     schedulePublish(3000);
     var uid = currentUid;
@@ -1424,6 +1485,7 @@
     var sc = state.social, uid = currentUid;
     var links = (friendsData && friendsData.links) || [];
     var h = '';
+    h += '<div class="btn" data-action="open-cheers" style="margin:0 0 14px;">💌 응원함 <span class="cheer-dot' + (cheerUnread ? '' : ' hidden') + '">' + cheerUnread + '</span></div>';
     h += '<div class="section-label">내 공개 설정</div>';
     h += '<div class="fr-note">공개를 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 레벨 · 누적P · 연속일 · 성경 진행이 보여요. 루틴 이름, 메모, 선물함, 이메일은 공개되지 않아요.</div>';
     h += '<input class="fr-input" id="friendNickInput" maxlength="12" placeholder="닉네임 (1~12자)" value="' + escapeHtml(sc.nickname || "") + '">';
@@ -1492,6 +1554,7 @@
         } else {
           h += '<div class="fr-name">' + escapeHtml(nm) + '</div><div class="fr-stat" style="color:var(--ink-dim);">아직 공개 전이에요 · 상대가 공개를 켜면 보여요</div>';
         }
+        h += '<div class="fr-cheer" data-action="cheer-open" data-id="' + o + '">💌 응원 보내기</div>';
         h += '</div><div class="fr-end" data-action="friend-cut" data-id="' + l.id + '">끊기</div></div>';
       });
     } else {
@@ -1587,6 +1650,229 @@
     window.__fb.linkDelete(pair).then(function () { toast(msg); loadFriends(); }).catch(friendError);
   }
 
+  // ---- 응원(8차): 정해진 문구만 · 지인끼리만 · 하루 한 사람에게 최대 3번 ----
+  var CHEER_MSGS = [
+    { id: "c1", kind: "cheer", emoji: "💪", text: "오늘도 힘내요!" },
+    { id: "c2", kind: "cheer", emoji: "🌿", text: "천천히 해도 괜찮아요" },
+    { id: "c3", kind: "cheer", emoji: "🤝", text: "끝까지 함께해요" },
+    { id: "c4", kind: "cheer", emoji: "🙏", text: "기도하고 있어요" },
+    { id: "c5", kind: "cheer", emoji: "🌅", text: "내일은 더 좋을 거예요" },
+    { id: "p1", kind: "praise", emoji: "👏", text: "오늘 정말 잘했어요" },
+    { id: "p2", kind: "praise", emoji: "🔥", text: "꾸준함이 멋져요" },
+    { id: "p3", kind: "praise", emoji: "🏆", text: "연속 기록 대단해요" },
+    { id: "p4", kind: "praise", emoji: "🌱", text: "조금씩 자라고 있어요" },
+    { id: "p5", kind: "praise", emoji: "✨", text: "덕분에 힘이 나요" }
+  ];
+  var CHEER_DAILY_MAX = 3, CHEER_KEEP = 60;
+  var cheerInbox = null, cheerOutbox = null, cheerUnread = 0, cheerLastFetch = 0;
+  var cheerTab = "in", cheerNewIds = {};
+  var cheerTo = null, cheerPick = null, cheerKind = "cheer", cheerUsed = [], cheerSending = false;
+
+  function cheerMsg(id) { return CHEER_MSGS.filter(function (m) { return m.id === id; })[0] || null; }
+  function cheerText(id) { var m = cheerMsg(id); return m ? m.emoji + " " + m.text : "💌 응원"; }
+  function cheerSortDesc(list) {
+    return list.slice().sort(function (a, b) { return (a.data.createdAt || "") < (b.data.createdAt || "") ? 1 : -1; });
+  }
+  function cheerDayLabel(dk) {
+    if (!dk || dk.length !== 10) return dk || "";
+    var d = parseKeyToDate(dk), w = ["일", "월", "화", "수", "목", "금", "토"];
+    if (isNaN(d.getTime())) return dk;
+    return (d.getMonth() + 1) + "/" + d.getDate() + " (" + w[d.getDay()] + ")" + (dk === todayKey() ? " · 오늘" : "");
+  }
+  function renderCheerBadges() {
+    var b = document.getElementById("cheerBadge");
+    if (b) { b.textContent = cheerUnread; b.classList.toggle("hidden", !cheerUnread); }
+    // 홈 전체를 다시 그리지 않고 배지 한 개만 맞춘다(홈 재렌더는 상자 초대 같은 부수 동작이 있어서).
+    var row = document.getElementById("subRow");
+    if (row) {
+      var cb = row.querySelector(".cheer-badge");
+      if (cheerUnread > 0) {
+        if (!cb) { cb = document.createElement("span"); cb.className = "cheer-badge"; cb.setAttribute("data-action", "open-cheers"); row.appendChild(cb); }
+        cb.textContent = "💌 새 응원 " + cheerUnread;
+      } else if (cb) { cb.remove(); }
+    }
+  }
+  function refreshCheers(first) {
+    var uid = currentUid;
+    if (!uid || !state.approved) return Promise.resolve();
+    if (!first && Date.now() - cheerLastFetch < 60000) return Promise.resolve();
+    cheerLastFetch = Date.now();
+    return window.__fb.cheerInbox(uid).then(function (list) {
+      if (uid !== currentUid) return;
+      cheerInbox = list;
+      var prev = cheerUnread;
+      cheerUnread = list.filter(function (c) { return !c.data.seen; }).length;
+      renderCheerBadges();
+      if (cheerUnread > 0 && (first || cheerUnread > prev)) {
+        setTimeout(function () { toast("💌 새 응원 " + cheerUnread + "개가 왔어요"); }, first ? 2200 : 0);
+      }
+      pruneCheers(list);
+    }).catch(function (err) { console.warn("cheers refresh skipped", err && err.code); });
+  }
+  // 받은 응원이 너무 쌓이면, 이미 읽은 것 중 오래된 것부터 정리한다(받은 사람만 지울 수 있다).
+  function pruneCheers(list) {
+    if (list.length <= CHEER_KEEP) return;
+    var old = list.slice().sort(function (a, b) { return (a.data.createdAt || "") < (b.data.createdAt || "") ? -1 : 1; })
+      .slice(0, list.length - CHEER_KEEP).filter(function (c) { return c.data.seen; });
+    old.forEach(function (c) { window.__fb.cheerDelete(c.id).catch(function () {}); });
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") refreshCheers(false);
+  });
+
+  function openCheers() {
+    cheerTab = "in"; cheerNewIds = {};
+    document.getElementById("toast").classList.remove("show");
+    document.getElementById("cheersOverlay").classList.remove("hidden");
+    loadCheers();
+  }
+  function closeCheers() {
+    document.getElementById("cheersOverlay").classList.add("hidden");
+    cheerNewIds = {};
+  }
+  function ensureFriendsData() {
+    var uid = currentUid;
+    return window.__fb.listLinks(uid).then(function (links) {
+      var fd = { links: links, profiles: {} };
+      var acc = links.filter(function (l) { return l.data.status === "accepted"; });
+      return Promise.all(acc.map(function (l) {
+        var o = otherUid(l.data, uid);
+        return window.__fb.getProfile(o).then(function (pr) { fd.profiles[o] = pr; }).catch(function () { fd.profiles[o] = null; });
+      })).then(function () { friendsData = fd; });
+    }).catch(function () {});
+  }
+  function loadCheers() {
+    var body = document.getElementById("cheersBody"), uid = currentUid;
+    body.innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">불러오는 중…</div>';
+    Promise.all([window.__fb.cheerInbox(uid), window.__fb.cheerOutbox(uid), ensureFriendsData()]).then(function (r) {
+      if (uid !== currentUid) return;
+      cheerInbox = r[0]; cheerOutbox = r[1];
+      cheerNewIds = {};
+      r[0].forEach(function (c) { if (!c.data.seen) cheerNewIds[c.id] = true; });
+      renderCheers();
+      markCheersSeen();
+    }).catch(function (err) {
+      body.innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">' +
+        (err && err.code === "permission-denied" ? "서버 규칙이 아직 적용되지 않았어요.<br>Firebase 콘솔에서 규칙을 적용한 뒤 다시 열어주세요." : "불러오지 못했어요. 잠시 후 다시 시도해주세요.") + '</div>';
+    });
+  }
+  function markCheersSeen() {
+    var un = (cheerInbox || []).filter(function (c) { return !c.data.seen; });
+    if (!un.length) return;
+    Promise.all(un.map(function (c) {
+      return window.__fb.cheerSeen(c.id).then(function () { c.data.seen = true; }).catch(function () {});
+    })).then(function () {
+      cheerUnread = (cheerInbox || []).filter(function (c) { return !c.data.seen; }).length;
+      renderCheerBadges();
+    });
+  }
+  function renderCheers() {
+    var body = document.getElementById("cheersBody");
+    var inn = cheerInbox || [], out = cheerOutbox || [];
+    var h = '';
+    var accL = ((friendsData && friendsData.links) || []).filter(function (l) { return l.data.status === "accepted"; });
+    if (accL.length) {
+      h += '<div class="section-label">지인에게 보내기</div><div class="fr-opts">' + accL.map(function (l) {
+        var o = otherUid(l.data, currentUid), pr = friendsData.profiles[o];
+        var nm = (pr && pr.nickname) || (l.data.names || {})[o] || "지인";
+        return '<span class="fr-opt" data-action="cheer-open" data-id="' + o + '">💌 ' + escapeHtml(nm) + '</span>';
+      }).join("") + '</div>';
+    }
+    h += '<div class="fr-opts">' +
+      '<span class="fr-opt' + (cheerTab === "in" ? ' on' : '') + '" data-action="cheers-tab" data-id="in">받은 응원 ' + inn.length + '</span>' +
+      '<span class="fr-opt' + (cheerTab === "out" ? ' on' : '') + '" data-action="cheers-tab" data-id="out">보낸 응원 ' + out.length + '</span></div>';
+    var list = cheerSortDesc(cheerTab === "in" ? inn : out);
+    if (!list.length) {
+      h += '<div class="fr-note" style="text-align:center;padding:14px 0;">' + (cheerTab === "in"
+        ? "아직 받은 응원이 없어요.<br>지인 카드의 '💌 응원 보내기'로 먼저 마음을 전해 보세요."
+        : "아직 보낸 응원이 없어요.") + '</div>';
+    }
+    var lastDay = null;
+    list.forEach(function (c) {
+      var d = c.data;
+      if (d.date !== lastDay) { h += '<div class="cheer-day">' + escapeHtml(cheerDayLabel(d.date)) + '</div>'; lastDay = d.date; }
+      var isNew = cheerTab === "in" && cheerNewIds[c.id];
+      h += '<div class="cheer-item' + (isNew ? ' new' : '') + '"><div class="cm">';
+      if (cheerTab === "in") {
+        h += '<div class="cw">' + escapeHtml(d.fromName || "지인") + (d.kind === "praise" ? " · 칭찬" : " · 응원") + (isNew ? " · NEW" : "") + '</div>';
+      } else {
+        h += '<div class="cw">→ ' + escapeHtml(d.toName || "지인") + (d.kind === "praise" ? " · 칭찬" : " · 응원") + " · " + (d.seen ? "읽었어요" : "아직 안 읽었어요") + '</div>';
+      }
+      h += '<div class="ct">' + escapeHtml(cheerText(d.msg)) + '</div></div>';
+      if (cheerTab === "in") {
+        h += '<div class="fr-end go" data-action="cheer-reply" data-id="' + c.id + '">답장</div>' +
+          '<div class="fr-end" data-action="cheer-del" data-id="' + c.id + '">지우기</div>';
+      }
+      h += '</div>';
+    });
+    if (cheerTab === "in" && list.length) h += '<div class="fr-note">받은 응원은 최근 ' + CHEER_KEEP + '개까지 보관돼요. 오래되어 읽은 것부터 자동으로 정리돼요.</div>';
+    body.innerHTML = h;
+  }
+  function deleteCheer(id) {
+    window.__fb.cheerDelete(id).then(function () {
+      cheerInbox = (cheerInbox || []).filter(function (c) { return c.id !== id; });
+      cheerUnread = cheerInbox.filter(function (c) { return !c.data.seen; }).length;
+      renderCheers(); renderCheerBadges();
+    }).catch(friendError);
+  }
+
+  // 보내기: 지인 카드 / 받은 응원의 '답장'에서 열린다
+  function openCheerPickerFor(uid) {
+    var l = ((friendsData && friendsData.links) || []).filter(function (x) { return x.data.status === "accepted" && otherUid(x.data, currentUid) === uid; })[0];
+    if (!l) { toast("연결된 지인이 아니에요"); return; }
+    var pr = friendsData.profiles[uid];
+    openCheerPicker(uid, (pr && pr.nickname) || (l.data.names || {})[uid] || "지인");
+  }
+  function openCheerPicker(toUid, nick) {
+    if (!state.social || !state.social.nickname) { toast("닉네임을 먼저 정해주세요 · 지인 → 공개 설정"); return; }
+    cheerTo = { uid: toUid, nick: nick || "지인" }; cheerPick = null; cheerKind = "cheer"; cheerUsed = null;
+    document.getElementById("cheerPickTitle").textContent = "💌 " + cheerTo.nick + "님께";
+    document.getElementById("cheerPickOverlay").classList.remove("hidden");
+    document.getElementById("cheerPickBody").innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">불러오는 중…</div>';
+    var uid = currentUid, tk = todayKey();
+    window.__fb.cheerOutbox(uid).then(function (list) {
+      if (!cheerTo || cheerTo.uid !== toUid) return;
+      cheerUsed = list.filter(function (c) { return c.data.to === toUid && c.data.date === tk; }).map(function (c) { return String(c.data.slot); });
+      renderCheerPicker();
+    }).catch(function (err) { closeCheerPicker(); friendError(err); });
+  }
+  function closeCheerPicker() {
+    document.getElementById("cheerPickOverlay").classList.add("hidden");
+    cheerTo = null; cheerPick = null;
+  }
+  function renderCheerPicker() {
+    var body = document.getElementById("cheerPickBody");
+    var used = (cheerUsed || []).length, full = used >= CHEER_DAILY_MAX;
+    var h = '<div class="fr-note">정해진 문구만 보낼 수 있어요. 하루에 한 사람에게 최대 ' + CHEER_DAILY_MAX + '번 · 오늘 ' + used + '/' + CHEER_DAILY_MAX + '</div>';
+    h += '<div class="fr-opts">' +
+      '<span class="fr-opt' + (cheerKind === "cheer" ? ' on' : '') + '" data-action="cheer-kind" data-id="cheer">응원</span>' +
+      '<span class="fr-opt' + (cheerKind === "praise" ? ' on' : '') + '" data-action="cheer-kind" data-id="praise">칭찬</span></div>';
+    CHEER_MSGS.filter(function (m) { return m.kind === cheerKind; }).forEach(function (m) {
+      h += '<div class="cheer-msg' + (cheerPick === m.id ? ' on' : '') + '" data-action="cheer-pick" data-id="' + m.id + '"><span class="ce">' + m.emoji + '</span><span>' + escapeHtml(m.text) + '</span></div>';
+    });
+    if (full) h += '<div class="fr-note" style="margin-top:8px;">오늘은 이 지인에게 다 보냈어요. 내일 또 보내요 🌙</div>';
+    h += '<div class="btn primary' + ((!cheerPick || full) ? ' cheer-off' : '') + '" data-action="cheer-send" style="margin:10px 0 0;">보내기</div>';
+    body.innerHTML = h;
+  }
+  function sendCheer() {
+    if (cheerSending || !cheerTo || !cheerPick) return;
+    var uid = currentUid, m = cheerMsg(cheerPick), t = cheerTo, tk = todayKey(), slot = null, i;
+    for (i = 1; i <= CHEER_DAILY_MAX; i++) { if ((cheerUsed || []).indexOf(String(i)) < 0) { slot = String(i); break; } }
+    if (!m || !slot) return;
+    var data = {
+      from: uid, to: t.uid, fromName: (state.social.nickname || "").slice(0, 12), toName: (t.nick || "").slice(0, 12),
+      kind: m.kind, msg: m.id, date: tk, slot: slot, createdAt: new Date().toISOString(), seen: false
+    };
+    cheerSending = true;
+    window.__fb.cheerSend(t.uid + "_" + uid + "_" + tk + "_" + slot, data).then(function () {
+      cheerSending = false;
+      cheerOutbox = null;
+      closeCheerPicker();
+      toast("💌 " + t.nick + "님께 보냈어요");
+      if (!document.getElementById("cheersOverlay").classList.contains("hidden")) loadCheers();
+    }).catch(function (err) { cheerSending = false; friendError(err); });
+  }
+
   // ---- achievements ----
   function openAchievements() {
     var gam = computeGamification();
@@ -1619,7 +1905,10 @@
       var tag = r.type === "badge" ? (r.badgeDays + "일 연속") : ("Lv." + r.level);
       return '<div class="reward-log-item"><div class="reward-log-date">' + r.date + ' · ' + tag + '</div><div class="reward-log-note">' + escapeHtml(r.note) + '</div></div>';
     }).join("") : '<div class="reward-log-empty">아직 기록한 선물이 없어요</div>';
+    var cb = document.getElementById("cheerBadge");
+    if (cb) { cb.textContent = cheerUnread; cb.classList.toggle("hidden", !cheerUnread); }
     document.getElementById("achieveOverlay").classList.remove("hidden");
+    refreshCheers(false);
   }
   function closeAchievements() { document.getElementById("achieveOverlay").classList.add("hidden"); }
 
@@ -2478,6 +2767,7 @@
         onUserLoaded(user.uid, user.email || "");
       } else {
         currentUid = null;
+        cheerInbox = null; cheerUnread = 0; cheerLastFetch = 0;
         isAdminUser = false;
         synced = false; syncedRaw = null; syncedBase = null; stopSyncNotice();
         if (stateUnsub) { stateUnsub(); stateUnsub = null; }
@@ -2794,8 +3084,9 @@
     toast("저장했어요");
   }
   function computeStreakGeneric(statusFn) {
-    var streak = 0, d = new Date(), first = true;
+    var streak = 0, d = new Date(), first = true, guard = 0;
     while (true) {
+      if (++guard > 4000) break;   // 오늘 할 항목이 하나도 없는 계정에서 무한 반복으로 멈추는 것을 막는 안전장치
       var k = keyFor(d);
       var s = statusFn(k); // true = success, false = fail, null = skip (doesn't break or count)
       if (first && k === todayKey() && s === false) { first = false; d.setDate(d.getDate() - 1); continue; }
@@ -7271,6 +7562,7 @@ attachSceneMeta("rev");
       var timeSugN = timeSuggestionCount();
       if (timeSugN > 0) badges.push('<span class="time-badge" data-action="open-time-suggest">⏱ 시간 조정 제안 ' + timeSugN + '</span>');
     }
+    if (cheerUnread > 0) badges.push('<span class="cheer-badge" data-action="open-cheers">💌 새 응원 ' + cheerUnread + '</span>');
     document.getElementById("subRow").innerHTML = badges.join("");
 
     var yKey = keyFor(new Date(Date.now() - 86400000));
@@ -8888,6 +9180,19 @@ attachSceneMeta("rev");
     else if (action === "title-emoji-pick") { pickTitleEmoji(el.getAttribute("data-emoji")); }
     else if (action === "open-friends") { openFriends(); }
     else if (action === "friends-close") { closeFriends(); }
+    else if (action === "open-cheers") { openCheers(); }
+    else if (action === "cheers-close") { closeCheers(); }
+    else if (action === "cheers-tab") { cheerTab = id; renderCheers(); }
+    else if (action === "cheer-del") { if (friendTwoTap(el, "cd" + id, "한 번 더")) deleteCheer(id); }
+    else if (action === "cheer-reply") {
+      var rc = (cheerInbox || []).filter(function (c) { return c.id === id; })[0];
+      if (rc) openCheerPicker(rc.data.from, rc.data.fromName);
+    }
+    else if (action === "cheer-open") { openCheerPickerFor(id); }
+    else if (action === "cheer-pick-close") { closeCheerPicker(); }
+    else if (action === "cheer-kind") { cheerKind = id; cheerPick = null; renderCheerPicker(); }
+    else if (action === "cheer-pick") { cheerPick = id; renderCheerPicker(); }
+    else if (action === "cheer-send") { sendCheer(); }
     else if (action === "friend-opt") {
       friendsForm[id] = !friendsForm[id];
       el.classList.toggle("on", !!friendsForm[id]);
