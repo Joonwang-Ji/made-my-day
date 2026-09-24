@@ -7080,6 +7080,287 @@ BOOK_SCENES["rev"] = [
 ];
 attachSceneMeta("rev");
 // <<END MEDALS day=7>>
+// <<MEDALS fix=1>>
+// ===== 메달 그림 개선판 (1차 개선: 후보 28개) =====
+// 원본 day 블록 뒤에 두어 같은 키의 MEDAL_ART를 덮어쓴다. 부품 DF는 이 블록에서만 쓰는 새 부품.
+var DF = {
+  // 내려오는 비둘기(정면): 날개를 V로 펼치고 머리가 아래. (x,y)=몸통 중심, 높이 약 45*s
+  dove: function (x, y, s, c, c2) {
+    c2 = c2 || '#B9B29C';
+    var wing = 'M3-3C10-14 24-28 40-36C38-31 37-28 35-25L41-25C38-21 36-19 33-17L38-15C34-12 31-11 28-11L32-7C27-6 23-5 19-5L21 0C15 0 10 0 3 2Z';
+    var one = '<path d="' + wing + '" fill="' + c + '" stroke="' + c2 + '" stroke-width=".9" stroke-linejoin="round"/><path d="M7-4C15-12 25-19 35-27M7 0C15-6 23-10 31-13" fill="none" stroke="' + c2 + '" stroke-width=".8" stroke-linecap="round"/>';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><g transform="translate(0 -6)">' + one + '<g transform="scale(-1 1)">' + one + '</g></g>' +
+      '<path d="M-4-8L-7-21L-2-17L0-24L2-17L7-21L4-8Z" fill="' + c + '" stroke="' + c2 + '" stroke-width=".7" stroke-linejoin="round"/>' +
+      '<ellipse cy="3" rx="6.4" ry="11" fill="' + c + '" stroke="' + c2 + '" stroke-width=".7"/><circle cy="16" r="4.2" fill="' + c + '" stroke="' + c2 + '" stroke-width=".7"/>' +
+      '<path d="M-1.8 19L0 23.4L1.8 19Z" fill="#D2AE72"/><circle cx="-1.7" cy="15" r=".8" fill="#3B3324"/><circle cx="1.7" cy="15" r=".8" fill="#3B3324"/></g>';
+  },
+  // 말: 옆모습, 오른쪽을 봄, y=발. lift=true면 앞다리 하나를 듦
+  horse: function (x, y, s, c, mane, lift) {
+    mane = mane || c;
+    var fl = lift ? 'M10-14L15-9L19-10' : 'M10-14L11-7L10.4 0';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<path d="M-19-23C-26-22-29-13-26-4" fill="none" stroke="' + mane + '" stroke-width="3.4" stroke-linecap="round"/>' +
+      '<path d="M-14-13L-17-7L-15 0M-8-13L-8.4-7L-9.4 0M5-13L4.4-7L3.6 0" fill="none" stroke="' + c + '" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="' + fl + '" fill="none" stroke="' + c + '" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M-15.4-1L-14.6 0M-9.4-1L-9.4 0M3.6-1L3.6 0" stroke="#3B3324" stroke-width="3.6" stroke-linecap="round"/>' +
+      '<path d="M-19-24C-17-29-6-29 5-28C8-32 11-38 14-42L16-47L18.6-42C23-40 27-35 29-30.6C29.6-28.6 28-27.4 26.4-28C24-29.4 21.6-29.6 19.4-30C18-26 16.4-22 14.6-19.4C12-12-6-9-14-11C-18-13-20.6-18-19-24Z" fill="' + c + '"/>' +
+      '<path d="M5-28C8-32 11-38 14-42L16.6-41C14-36 12-31 9-26.4Z" fill="' + mane + '"/>' +
+      '<circle cx="22.4" cy="-35.4" r=".95" fill="#3B3324"/></g>';
+  },
+  // 나귀: 옆모습, 오른쪽을 봄, y=발. 긴 귀, 긴 얼굴, 술 달린 꼬리
+  donkey: function (x, y, s, c, dark) {
+    dark = dark || '#54493C';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<path d="M-15-21C-19-19-19-12-18-8" fill="none" stroke="' + dark + '" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="-18" cy="-6.6" rx="1.6" ry="3" fill="' + dark + '"/>' +
+      '<path d="M-11-14L-12-7L-11.4 0M-7-13L-6.6-6L-7 0M5-13L4.6-6L4 0M9-14L9-7L8.6 0" fill="none" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<path d="M-11.6-2.4V0M-7-2.4V0M4-2.4V0M8.6-2.4V0" stroke="' + dark + '" stroke-width="2.8" stroke-linecap="round"/>' +
+      '<path d="M-15-22C-14-27-4-27 6-26C9-27 12-30 14-32C18-32.6 24-29.6 27-23.6C28-21.4 27-19.6 25-19.6C22-20 20-21 17-22C15-20 14-18 13-16C8-12-8-12-14-15C-17-17-17.4-20-15-22Z" fill="' + c + '"/>' +
+      '<path d="M12-31L10.4-42L15.6-32Z" fill="' + c + '"/><path d="M15-31.4L19-41L19.4-30Z" fill="' + dark + '"/>' +
+      '<path d="M6-26.4C9-27.4 12-30.4 14-32.4L16.4-30C14-27.6 11-25.4 8-24.6Z" fill="' + dark + '"/>' +
+      '<ellipse cx="25" cy="-21.4" rx="2.6" ry="2" fill="' + dark + '"/><circle cx="19.4" cy="-27" r=".9" fill="#2A241C"/></g>';
+  },
+  // 숫양: 옆모습, 오른쪽을 봄, 말린 뿔
+  ram: function (x, y, s, c, dark, horn) {
+    dark = dark || '#6B5A48'; horn = horn || '#B08D5E';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<path d="M-7-9V-1M-3-8V-1M5-8V-1M9-9V-1" stroke="' + dark + '" stroke-width="2.2" stroke-linecap="round"/>' +
+      '<path d="M-7-1.4V0M-3-1.4V0M5-1.4V0M9-1.4V0" stroke="#3B3324" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<ellipse cy="-14" rx="12" ry="7.6" fill="' + c + '"/><ellipse cx="-9.6" cy="-15.6" rx="4" ry="4.4" fill="' + c + '"/><ellipse cx="-5" cy="-19" rx="5" ry="3.6" fill="' + c + '"/><ellipse cx="4" cy="-20" rx="5" ry="3.4" fill="' + c + '"/>' +
+      '<path d="M7-17L11-24L18-23L20-17L17-11L9-11Z" fill="' + c + '"/><path d="M14-21.4C20-22 23-19 23-16.4C23-14 20-13 17-14Z" fill="' + dark + '"/>' +
+      '<path d="M11-22C5.4-26 5-34 12-33.4C18-33 18.4-26 13.6-25.4C10.4-25 10-28.6 12.6-29" fill="none" stroke="' + horn + '" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M8.6-19.6C5-20-1-19-3-16" fill="none" stroke="' + dark + '" stroke-width=".8" opacity=".5"/><circle cx="17.6" cy="-18.6" r=".8" fill="#2A241C"/></g>';
+  },
+  // 어린양: 옆모습, 오른쪽을 봄, y=발. 구름 같은 털
+  lamb: function (x, y, s, c, dark) {
+    dark = dark || '#5A4A3A';
+    var o = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<path d="M-6-8V-1M-2-7V-1M3-7V-1M7-8V-1" stroke="' + dark + '" stroke-width="1.7" stroke-linecap="round"/>' +
+      '<path d="M-6-1.6V0M-2-1.6V0M3-1.6V0M7-1.6V0" stroke="#2A2018" stroke-width="2" stroke-linecap="round"/>' +
+      '<g fill="' + c + '">', a = [[-6, -11, 5], [-1, -13.4, 5.6], [4.4, -12, 5], [-9, -7.6, 4], [-4, -7.6, 5], [2, -7.4, 5], [7, -8.4, 4], [8.6, -12.4, 3.6]], i;
+    for (i = 0; i < a.length; i++) o += '<circle cx="' + a[i][0] + '" cy="' + a[i][1] + '" r="' + a[i][2] + '"/>';
+    return o + '</g><ellipse cx="12" cy="-11" rx="3.4" ry="3.9" fill="' + dark + '" transform="rotate(-12 12 -11)"/><ellipse cx="8.6" cy="-15.6" rx="2.6" ry="1.1" transform="rotate(38 8.6 -15.6)" fill="' + dark + '"/></g>';
+  },
+  // 사자: 엎드린 옆모습(오른쪽을 봄), y=바닥
+  lion: function (x, y, s, c, mane) {
+    var o = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<path d="M-17-6C-24-6-25-13-22-17" fill="none" stroke="' + c + '" stroke-width="1.8" stroke-linecap="round"/><circle cx="-22" cy="-18" r="2.2" fill="' + mane + '"/>' +
+      '<path d="M-17-13C-15-18 0-19 6-15L10-8L10 0H-18C-21-4-20-10-17-13Z" fill="' + c + '"/>' +
+      '<path d="M6-5H19Q21-5 21-2.6Q21 0 18 0H6Z" fill="' + c + '"/><path d="M13-2.4H19" stroke="' + mane + '" stroke-width=".6"/>' +
+      '<g fill="' + mane + '">', i, a;
+    for (i = 0; i < 11; i++) { a = i / 11 * Math.PI * 2; o += '<circle cx="' + (11 + 8.4 * Math.cos(a)).toFixed(1) + '" cy="' + (-15 + 8.4 * Math.sin(a)).toFixed(1) + '" r="3.4"/>'; }
+    return o + '<circle cx="11" cy="-15" r="8.6"/></g><ellipse cx="13.6" cy="-14" rx="5.6" ry="5" fill="' + c + '"/><ellipse cx="17.6" cy="-12.4" rx="3" ry="2.3" fill="#EAD7B0"/><path d="M17-13.6l2 .6" stroke="#3B3324" stroke-width=".9" stroke-linecap="round"/><circle cx="14.6" cy="-16" r=".8" fill="#3B3324"/><path d="M10-21.4L12-24.6L14.4-21.6Z" fill="' + c + '"/></g>';
+  },
+  // 독수리: 정면, 긴 날개를 위로 쳐든 모습
+  eagle: function (x, y, s, c, c2) {
+    var wing = 'M3-3C10-14 24-28 40-36C38-31 37-28 35-25L41-25C38-21 36-19 33-17L38-15C34-12 31-11 28-11L32-7C27-6 23-5 19-5L21 0C15 0 10 0 3 2Z';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')" fill="' + c + '">' +
+      '<path d="' + wing + '"/><g transform="scale(-1 1)"><path d="' + wing + '"/></g>' +
+      '<path d="M6-4C14-12 24-20 34-28M6 0C14-6 22-10 30-14" fill="none" stroke="' + c2 + '" stroke-width="1" stroke-linecap="round"/><path d="M-6-4C-14-12-24-20-34-28M-6 0C-14-6-22-10-30-14" fill="none" stroke="' + c2 + '" stroke-width="1" stroke-linecap="round"/>' +
+      '<path d="M0-8C-6.4-8-7.4-1-6.4 6L-4 16L0 24L4 16L6.4 6C7.4-1 6.4-8 0-8Z"/><path d="M-5 20L-10 33L0 28L10 33L5 20Z"/><path d="M-3 14L-4 26M3 14L4 26M0 16V28" stroke="' + c2 + '" stroke-width=".8"/>' +
+      '<circle cy="-11.6" r="4.8" fill="#EFE3C4"/><path d="M-2.6-10.4Q0-4 2.6-10.4L0-8.4Z" fill="#D2AE72"/><path d="M-2.6-10.4Q0-3 2.6-10.4Q0-7.6-2.6-10.4Z" fill="#C79A4A"/><circle cx="-1.9" cy="-12.6" r=".85" fill="#3B3324"/><circle cx="1.9" cy="-12.6" r=".85" fill="#3B3324"/></g>';
+  },
+  // 날개 한 쌍(정면): (x,y)=어깨, rot=아래로 처지는 각도(0이면 위로 치켜듦)
+  wings: function (x, y, s, rot, c, c2) {
+    var wing = 'M3-3C10-14 24-28 40-36C38-31 37-28 35-25L41-25C38-21 36-19 33-17L38-15C34-12 31-11 28-11L32-7C27-6 23-5 19-5L21 0C15 0 10 0 3 2Z';
+    var one = '<path d="' + wing + '" fill="' + c + '" stroke="' + c2 + '" stroke-width=".8" stroke-linejoin="round"/><path d="M6-4C14-12 24-20 34-28M6 0C14-6 22-10 30-14" fill="none" stroke="' + c2 + '" stroke-width=".8" stroke-linecap="round"/>';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><g transform="rotate(' + rot + ')">' + one + '</g><g transform="scale(-1 1)"><g transform="rotate(' + rot + ')">' + one + '</g></g></g>';
+  },
+  // 무릎 꿇고 손을 든 사람(옆모습, 오른쪽을 봄). y=바닥, 높이 약 42*s
+  kneel: function (x, y, s, robe, skin, hair) {
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<ellipse cx="-12" cy="-2.8" rx="2.6" ry="1.5" fill="' + skin + '"/>' +
+      '<path d="M-6-27Q-2-30 3-27L5-16Q10-11 9-3L-10-3Q-9-9-7-13Q-8-20-6-27Z" fill="' + robe + '"/>' +
+      '<path d="M5-14Q9-10 8-4" fill="none" stroke="#C9BFA4" stroke-width=".8" stroke-linecap="round"/>' +
+      '<path d="M-1-26L3-42M1-26L7-41" stroke="' + robe + '" stroke-width="2.4" stroke-linecap="round"/><circle cx="3.4" cy="-43" r="1.6" fill="' + skin + '"/><circle cx="7.4" cy="-42" r="1.6" fill="' + skin + '"/>' +
+      '<circle cx="-1" cy="-32" r="3.6" fill="' + skin + '"/><path d="M-4.6-32Q-4.6-36.4-0.6-36.6Q3-36.4 2.8-33Q-1-34.4-4.6-32Z" fill="' + hair + '"/></g>';
+  },
+  // 갑옷 입은 거인 골리앗(정면). (x,y)=발, 높이 약 43*s. bare=true면 투구·방패·창 없이(쓰러지는 장면), arms로 팔 모양
+  giant: function (x, y, s, bare, arms) {
+    var L = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ') translate(0 -72.5)">', i, j, sx = -19, sy = 43;
+    var o = MP.person(x, y, s, '#B08D5E', { arms: arms || 'l', skin: '#C08A6A', hair: '#2A1F1A' }) + L;
+    o += '<path d="M-6.2 57L6.2 57L8.4 65L-8.4 65Z" fill="#8C6E48"/><rect x="-5.6" y="54.4" width="11.2" height="2.6" fill="#6B4F3A"/>';
+    for (i = 0; i < 4; i++) for (j = 0; j < 3; j++) o += '<circle cx="' + (-3.4 + j * 3.4 + (i % 2) * 1.6) + '" cy="' + (43.4 + i * 2.8) + '" r="1.3" fill="#C9A96E"/>';
+    o += '<rect x="-4.6" y="64" width="3.4" height="7" fill="#C9A96E"/><rect x="1.2" y="64" width="3.4" height="7" fill="#C9A96E"/><path d="M-2.6 36.4Q0 41 2.6 36.4Z" fill="#2A1F1A"/>';
+    if (!bare) o += '<path d="M-4.6 33.6A4.6 4.6 0 0 1 4.6 33.6Z" fill="#8C6E48"/><rect x="-0.9" y="32.4" width="1.8" height="4.6" fill="#8C6E48"/><path d="M0 29C2 26 4 26 4.6 29Z" fill="#A6444F"/>' +
+      '<circle cx="' + sx + '" cy="' + sy + '" r="11" fill="#A88462"/><circle cx="' + sx + '" cy="' + sy + '" r="8.6" fill="none" stroke="#8C6E48" stroke-width=".9"/><circle cx="' + sx + '" cy="' + sy + '" r="3" fill="#C2A25E"/>' +
+      '<rect x="8.2" y="20" width="2.2" height="54" fill="#6B4F3A"/><path d="M9.3 10L12.2 21H6.4Z" fill="#C9C9C0"/>';
+    return o + '</g>';
+  },
+  // 둥근 방패(비스듬히 놓임)
+  shield: function (x, y, r, rot) {
+    return '<g transform="translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(1 .72)"><circle r="' + r + '" fill="#A88462"/><circle r="' + (r * 0.78) + '" fill="none" stroke="#8C6E48" stroke-width=".9"/><circle r="' + (r * 0.27) + '" fill="#C2A25E"/></g>';
+  },
+  // 쟁기: 옆모습(오른쪽으로 감), y=땅
+  plow: function (x, y, s, wood, iron) {
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<path d="M-18-26L-6-5" stroke="' + wood + '" stroke-width="2.6" stroke-linecap="round"/><path d="M-21-27L-15-27" stroke="' + wood + '" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<path d="M-6-5L22-16" stroke="' + wood + '" stroke-width="3" stroke-linecap="round"/><path d="M4-10V-2" stroke="' + wood + '" stroke-width="2.2"/>' +
+      '<path d="M-8 1C-8-3-4-6 2-6L6-6L24 0L2 0Z" fill="' + iron + '"/><path d="M6-6L24 0" stroke="#E4E4EA" stroke-width=".8" opacity=".8"/></g>';
+  },
+  // 나팔: 곧은 관과 벌어진 종구, 소리 나가는 쪽이 오른쪽
+  trumpet: function (x, y, s, c, rot) {
+    return '<g transform="translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(' + s + ')">' +
+      '<rect x="-30" y="-2.4" width="34" height="4.8" rx="2.4" fill="' + c + '"/><rect x="-33" y="-3.8" width="4" height="7.6" rx="1.8" fill="' + c + '"/>' +
+      '<path d="M2-2.4Q14-3.4 24-12L26-12L26 12L24 12Q14 3.4 2 2.4Z" fill="' + c + '"/><ellipse cx="26" rx="2.6" ry="12" fill="#E2C77E"/><ellipse cx="26" rx="1.4" ry="9.6" fill="#8C6E3A"/>' +
+      '<rect x="-14" y="-3.6" width="2.4" height="7.2" fill="#F4EBD5"/><rect x="-6" y="-3.6" width="2.4" height="7.2" fill="#F4EBD5"/></g>';
+  },
+  // 배의 키(조타륜)
+  wheel: function (x, y, s, c, hub) {
+    var o = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><circle r="14" fill="none" stroke="' + c + '" stroke-width="3.2"/>', i, a;
+    for (i = 0; i < 8; i++) { a = i * Math.PI / 4; o += '<path d="M' + (5 * Math.cos(a)).toFixed(1) + ' ' + (5 * Math.sin(a)).toFixed(1) + 'L' + (23 * Math.cos(a)).toFixed(1) + ' ' + (23 * Math.sin(a)).toFixed(1) + '" stroke="' + c + '" stroke-width="2.4" stroke-linecap="round"/><circle cx="' + (23 * Math.cos(a)).toFixed(1) + '" cy="' + (23 * Math.sin(a)).toFixed(1) + '" r="2.3" fill="' + c + '"/>'; }
+    return o + '<circle r="5" fill="' + (hub || c) + '"/><circle r="1.8" fill="' + c + '"/></g>';
+  },
+  // 수금(리라)
+  lyre: function (x, y, s, c, c2) {
+    var o = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-9-16C-17-30-13-40-8-43M9-16C17-30 13-40 8-43" fill="none" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<path d="M-10 0C-15-6-14-12-11-16L11-16C14-12 15-6 10 0Z" fill="' + c + '"/><rect x="-11" y="-46" width="22" height="3" rx="1.4" fill="' + c2 + '"/>';
+    [-5.6, -1.9, 1.9, 5.6].forEach(function (k) { o += '<path d="M' + k + '-43V-14" stroke="#8C6E3A" stroke-width=".8"/>'; });
+    return o + '<ellipse cx="0" cy="-8" rx="4" ry="2.4" fill="' + c2 + '" opacity=".6"/></g>';
+  },
+  // 그리스식 기둥. broken=true면 위가 부러짐
+  column: function (x, y, s, c, c2, broken) {
+    var o = '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><rect x="-9" y="-4" width="18" height="4" fill="' + c2 + '"/><rect x="-7.4" y="-7" width="14.8" height="3" fill="' + c + '"/>';
+    if (broken) o += '<path d="M-6-7H6V-30L3-33L1-28L-2-36L-4-30L-6-32Z" fill="' + c + '"/>';
+    else o += '<rect x="-6" y="-38" width="12" height="31" fill="' + c + '"/><rect x="-9" y="-42" width="18" height="4" fill="' + c2 + '"/><rect x="-11" y="-45" width="22" height="3" fill="' + c2 + '"/>';
+    return o + '<path d="M-3-8V-30M0-8V-32M3-8V-30" stroke="' + c2 + '" stroke-width=".7"/></g>';
+  },
+  // 밀랍 인장
+  seal: function (x, y, r, c, c2) {
+    var o = '<g fill="' + c + '">', i, a;
+    for (i = 0; i < 14; i++) { a = i / 14 * Math.PI * 2; o += '<circle cx="' + (x + r * 0.86 * Math.cos(a)).toFixed(1) + '" cy="' + (y + r * 0.86 * Math.sin(a)).toFixed(1) + '" r="' + (r * 0.24).toFixed(1) + '"/>'; }
+    return o + '<circle cx="' + x + '" cy="' + y + '" r="' + (r * 0.86).toFixed(1) + '"/></g><circle cx="' + x + '" cy="' + y + '" r="' + (r * 0.6).toFixed(1) + '" fill="none" stroke="' + c2 + '" stroke-width="1"/>' +
+      '<path d="M' + x + ' ' + (y - r * 0.36) + 'V' + (y + r * 0.36) + 'M' + (x - r * 0.3) + ' ' + (y - r * 0.1) + 'H' + (x + r * 0.3) + '" stroke="' + c2 + '" stroke-width="1.6" stroke-linecap="round"/>';
+  }
+};
+
+// ---------- 7일차 ----------
+MEDAL_ART.rev_lamb = MP.bg('#3A3648') + MP.rays(50, 60, 16, 48, 24, '#E2C77E', 1, 0.1) + D2.scroll(24, 14, 52, 18, '#F4EBD5') +
+  (function () { var o = '', i; for (i = 0; i < 7; i++) o += MP.circle(30 + i * 6.7, 36, 2.5, '#A65058') + MP.line('M' + (30 + i * 6.7) + ' 38.5V42', '#A65058', 0.8); return o; })() +
+  MP.ground(96, '#2A2838') + '<circle cx="63" cy="65" r="8.4" fill="none" stroke="#E2C77E" stroke-width="1.6"/>' + DF.lamb(44, 86, 1.7, '#F4EBD5', '#3A2A20');
+
+MEDAL_ART.rev_woman = MP.bg('#2B3558') + MP.rays(50, 44, 26, 44, 24, '#E2C77E', 1.1, 0.1) + MP.circle(50, 44, 25, '#E7BE5F') + MP.circle(50, 44, 21, '#EDCB78') +
+  MP.stars([[50, 18, 0.6], [56, 19, 0.6], [61, 22, 0.6], [64, 27, 0.6], [44, 19, 0.6], [39, 22, 0.6], [36, 27, 0.6], [35, 33, 0.5], [65, 33, 0.5]]) +
+  D2.moon(50, 80, 10, '#EFE6D0', '#2B3558') + MP.person(50, 74, 0.9, '#5D8A9F', { f: 1, robe: 1, arms: 'f', skin: '#C08A6A' }) +
+  MP.line('M28 76C24 84 32 92 48 92C64 92 76 88 80 78C83 72 82 66 78 62', '#8C3A44', 6.4) +
+  '<g fill="#8C3A44"><path d="M34 80L30 72L40 78Z"/><path d="M46 84L46 76L54 82Z"/><path d="M60 84L64 76L68 84Z"/><path d="M73 78L79 71L79 80Z"/></g>' +
+  '<path d="M16 72L22 60L30 56L38 60L32 66L38 71L30 76L22 78Z" fill="#A6444F"/><path d="M22 60L19 50L27 57Z M30 56L32 47L36 59Z" fill="#8C3A44"/><circle cx="27" cy="64" r="1.5" fill="#F6E7B4"/><path d="M30 70L34 72L31 67Z" fill="#F6E7B4"/>';
+
+MEDAL_ART.rev_horse = MP.bg('#1F2A4A') + MP.rays(50, 52, 10, 46, 22, '#E2C77E', 1.2, 0.1) + MP.circle(50, 52, 30, '#3E4C6C') +
+  D2.crown(28, 30, 1.1, '#E2C77E') + D2.crown(50, 20, 1.4, '#E2C77E') + D2.crown(72, 30, 1.1, '#E2C77E') + MP.ground(96, '#1B2440') + DF.horse(44, 86, 1.2, '#F4EBD5', '#D9D0BC', 1);
+
+MEDAL_ART.jas_helm = MP.bg('#B9CFC9') + MP.line('M8 28Q26 22 44 30M58 20Q76 14 92 22M10 46Q24 42 34 48', '#F4EBD5', 1.4, 0.85) +
+  MP.band(62, 38, '#3E6B86') + MP.wave(66, '#F4EBD5', 1.1, 0.8) + MP.wave(84, '#7FB3C2', 1.2) + D5.boat(70, 66, 1.05, '#8A6E4E', '#F4EBD5') + DF.wheel(38, 56, 1.05, '#7A5A3E', '#C2A25E');
+
+MEDAL_ART.jn1_anoint = MP.bg('#EBD9B4') + MP.rays(58, 64, 12, 46, 18, '#E2C77E', 1, 0.2) + MP.ground(94, '#C4B085') +
+  D2.tilt(112, 34, 36, D2.jar(34, 36, 1.5, '#C9955A', '#8A6E4E')) + MP.line('M61 46C62 54 62 60 62 66', '#E2B94E', 1.8) + D7.drop(62, 71, 0.8, '#E2B94E') + D7.drop(62, 80, 0.5, '#E2B94E') +
+  MP.rect(46, 90, 32, 5, '#C2A25E', 1.6) + D2.lamp(62, 92, 1.5, '#E2C77E');
+
+MEDAL_ART.tit_wash = MP.bg('#B9CFC9') + MP.rays(50, 14, 8, 46, 16, '#F4EBD5', 1, 0.3) + MP.cloud(50, 16, 2.6, '#F4EBD5') + DF.dove(50, 46, 0.62, '#F4EBD5') +
+  D7.drop(45, 66, 0.8, '#7FB3C2') + D7.drop(56, 68, 0.8, '#7FB3C2') + D7.drop(50, 74, 0.7, '#7FB3C2') +
+  MP.path('M24 80C24 92 36 96 50 96C64 96 76 92 76 80Z', '#8A6E4E') + '<ellipse cx="50" cy="80" rx="26" ry="5" fill="#6B4F3A"/><ellipse cx="50" cy="80.4" rx="23" ry="3.6" fill="#7FB3C2"/>' + MP.line('M38 80Q50 78 62 80', '#F4EBD5', 1, 0.8);
+
+MEDAL_ART.luk_samaritan = MP.bg('#E4D2AE') + MP.circle(78, 22, 6, '#EBC46C') + MP.path('M0 58Q30 48 60 56T100 52V100H0Z', '#C9B98C') + MP.path('M0 84Q50 74 100 82V100H0Z', '#B29A74') +
+  DF.donkey(24, 68, 0.95, '#A8977A') + D2.tilt(90, 24, 82, MP.person(24, 82, 0.8, '#8A6A7A', { robe: 1, arms: 'd', skin: '#C08A6A' })) + MP.person(66, 80, 0.95, '#5F7A8C', { robe: 1, arms: 'l', skin: '#C08A6A' }) + D2.jar(76, 84, 0.7, '#E2C77E', '#C2A25E');
+
+MEDAL_ART.act_damascus = MP.bg('#5A5368') + MP.circle(50, 6, 34, '#F6E7B4') + MP.circle(50, 6, 20, '#FFF7DC') + MP.rays(50, 6, 24, 90, 22, '#F6E7B4', 2.4, 0.1) + MP.rays(50, 6, 24, 90, 22, '#FFF7DC', 1, 0.28) + MP.path('M0 80Q30 72 60 78T100 74V100H0Z', '#8A7B57') +
+  D2.tilt(-84, 62, 84, MP.person(62, 84, 0.9, '#4A3A6A', { robe: 1, arms: 'u', skin: '#C08A6A', hair: '#2A1F1A' })) + MP.path('M76 92L84 90L86 94L76 96Z', '#6B4F3A');
+
+MEDAL_ART.th1_trumpet = MP.bg('#3E4C6C') + MP.rays(50, 44, 16, 46, 20, '#E2C77E', 1.1, 0.1) + MP.circle(50, 44, 14, '#F6E7B4') + MP.cloud(50, 80, 3.6, '#F4EBD5') + MP.cloud(18, 62, 1.5, '#C9D2E0') + MP.cloud(84, 58, 1.5, '#C9D2E0') +
+  DF.trumpet(44, 54, 1.3, '#C2A25E', -22) + MP.line('M78 36Q84 44 78 52M84 30Q94 44 84 58', '#F6E7B4', 1.4, 0.9);
+
+MEDAL_ART.co1_cross = MP.bg('#3E4C6C') + MP.rays(60, 40, 14, 46, 18, '#E2C77E', 1, 0.2) + MP.ground(92, '#2E3A56') + D5.cross(62, 88, 1.8, '#F4EBD5') +
+  DF.column(28, 90, 1.5, '#8A93A8', '#A0A8B8', true) + '<ellipse cx="46" cy="90" rx="7" ry="2.8" fill="#8A93A8"/>';
+
+MEDAL_ART.eph_seal = MP.bg('#B9CFC9') + MP.rays(50, 28, 12, 46, 16, '#F4EBD5', 1.1, 0.1) + MP.cloud(50, 18, 2.6, '#F4EBD5') + DF.dove(50, 44, 0.66, '#F4EBD5') + MP.band(82, 18, '#5D8A8F') +
+  MP.path('M42 84L36 98L44 94L50 100Z', '#8C3A44') + MP.path('M58 84L64 98L56 94L50 100Z', '#8C3A44') + DF.seal(50, 76, 13, '#B8493F', '#E2C77E');
+
+// ---------- 4일차 ----------
+MEDAL_ART.isa_eagle = MP.bg('#6C7FA3') + MP.circle(50, 44, 20, '#E7C980') + MP.rays(50, 44, 24, 34, 16, '#F0DDB0', 1.2) + MP.cloud(18, 78, 1.3, '#DDE3EC') + MP.cloud(84, 72, 1.1, '#DDE3EC') +
+  DF.eagle(50, 56, 0.85, '#5A3E26', '#B08D5E');
+
+MEDAL_ART.dan_lions = MP.bg('#2B3558') + MP.path('M0 100V20Q0 0 20 0H80Q100 0 100 20V100Z', '#3A4468') + MP.path('M30 0H70L86 100H14Z', '#2B3558') + MP.circle(50, 6, 10, '#EFE6D0') + MP.path('M40 8H60L74 100H26Z', '#4A557A') + MP.ground(90, '#2A2836') +
+  DF.lion(27, 82, 0.72, '#B08D5E', '#8C6E30') + '<g transform="translate(100 0) scale(-1 1)">' + DF.lion(27, 82, 0.72, '#B08D5E', '#8C6E30') + '</g>' + MP.person(50, 88, 0.95, '#F4EBD5', { robe: 1, arms: 'u', skin: '#C08A6A', hair: '#3E2C1E' }) + MP.stars([[26, 30, 0.6], [74, 34, 0.6]]);
+
+MEDAL_ART.isa_plow = MP.bg('#D2DEC2') + MP.path('M0 56L24 36L44 52L68 30L100 58V100H0Z', '#98AC8E') + MP.circle(78, 22, 6, '#EBC46C') + MP.ground(78, '#8C7A55') + MP.path('M0 90Q50 82 100 88V100H0Z', '#6F5E42') +
+  MP.line('M0 84Q30 80 60 84T100 82', '#A08C64', 1) + MP.line('M0 92Q30 89 60 92T100 90', '#A08C64', 1) +
+  D7.sword(24, 60, 0.95, '#B8BCC4', 0) + D6.arrow(36, 50, 48, 50, '#7A6A4A') + DF.plow(60, 80, 0.85, '#7A5A3E', '#8A93A8');
+
+MEDAL_ART.hos_lily = MP.bg('#B9CDC7') + MP.circle(20, 20, 6, '#EBC46C') + MP.ground(90, '#9AB88A') + MP.path('M0 94Q50 86 100 92V100H0Z', '#7A9C6E') +
+  MP.tree(82, 90, 1.3, '#7A5A3E', '#3E6B4A') + MP.tree(16, 90, 1.0, '#7A5A3E', '#4C7C56') +
+  MP.line('M50 92C50 80 48 66 50 52', '#5F8A5A', 2.4) + MP.path('M50 82Q34 80 28 66Q42 68 50 82Z', '#5F8A5A') + MP.path('M50 76Q64 74 70 62Q56 62 50 76Z', '#5F8A5A') +
+  (function () { var o = '<g transform="translate(50 52)">', i, ang = [-64, -34, 34, 64, 0], len = [0.8, 0.95, 0.95, 0.8, 1.05]; for (i = 0; i < 5; i++) o += '<g transform="rotate(' + ang[i] + ') scale(' + len[i] + ')"><path d="M0 0C-6-7-6-18 0-27C1.4-28 2-28 3-26C7-17 6-7 0 0Z" fill="' + (i === 4 ? '#EFE6D0' : '#F4EBD5') + '" stroke="#E2C77E" stroke-width=".5"/><path d="M0-2V-22" stroke="#E2C77E" stroke-width=".6" opacity=".7"/></g>'; o += '<path d="M0 0L-7-24M0 0L0-30M0 0L7-24" stroke="#C9955A" stroke-width=".7"/><circle cx="-7" cy="-24" r="1.5" fill="#C9955A"/><circle cy="-30" r="1.5" fill="#C9955A"/><circle cx="7" cy="-24" r="1.5" fill="#C9955A"/></g>'; return o; })() +
+  D7.drop(28, 34, 0.7, '#9FC4C4') + D7.drop(72, 40, 0.7, '#9FC4C4') + D7.drop(22, 54, 0.6, '#9FC4C4') + D7.drop(76, 22, 0.6, '#9FC4C4');
+
+// ---------- 5일차 ----------
+MEDAL_ART.mat_line = MP.bg('#2B3558') + MP.stars([[16, 24, 0.6], [84, 26, 0.6], [20, 68, 0.5], [82, 72, 0.5]]) + MP.ground(94, '#1B2440') +
+  MP.line('M50 96C50 88 49 80 50 72M50 82C42 78 34 74 28 66M50 82C58 78 66 74 72 66M50 72C46 62 42 54 36 46M50 72C54 62 58 54 64 46M50 72V40', '#C2A25E', 2.4) +
+  (function () { var o = '', L = [[38, 78, -30], [62, 78, 30], [42, 60, -35], [58, 60, 35], [32, 52, -30], [68, 52, 30], [44, 88, -50], [56, 88, 50]], i; for (i = 0; i < L.length; i++) o += '<ellipse cx="' + L[i][0] + '" cy="' + L[i][1] + '" rx="4" ry="1.8" transform="rotate(' + L[i][2] + ' ' + L[i][0] + ' ' + L[i][1] + ')" fill="#8C7A3E"/>'; return o; })() +
+  '<g fill="#F4EBD5" stroke="#C2A25E" stroke-width="1.1"><circle cx="28" cy="64" r="4.2"/><circle cx="72" cy="64" r="4.2"/><circle cx="36" cy="44" r="4.2"/><circle cx="64" cy="44" r="4.2"/><circle cx="50" cy="72" r="3.6"/><circle cx="50" cy="56" r="3.6"/></g>' +
+  D2.crown(50, 36, 1.8, '#E2C77E') + MP.rays(50, 24, 10, 17, 12, '#E2C77E', 1) + MP.star(50, 22, 1.4);
+
+MEDAL_ART.mrk_baptism = MP.bg('#B9CFC9') + MP.cloud(50, 16, 2.6, '#F4EBD5') + MP.line('M50 24V34M42 24L36 34M58 24L64 34M34 22L24 32M66 22L76 32', '#E2C77E', 1.4) + MP.band(64, 36, '#5D8A8F') + MP.path('M0 62Q10 56 20 62L14 100H0Z', '#C9B98C') + MP.path('M100 62Q90 56 80 62L86 100H100Z', '#C9B98C') +
+  MP.wave(70, '#F4EBD5', 1.2) + MP.wave(80, '#9FC4C4', 1.2) + MP.wave(90, '#9FC4C4', 1.2) + DF.dove(50, 46, 0.68, '#F4EBD5') + MP.line('M88 62V48M92 62V52M84 62V54M12 62V50M8 62V54', '#6E9873', 1.4);
+
+MEDAL_ART.zec_king = MP.bg('#E4EAD8') + MP.rays(50, 30, 16, 32, 20, '#E2C77E', 1.1, 0.6) + D2.crown(50, 28, 2.2, '#E2C77E') + MP.path('M0 74Q30 66 60 72T100 68V100H0Z', '#B7C4A0') + MP.path('M0 86Q40 80 100 86V100H0Z', '#8FB07E') +
+  MP.path('M10 90Q40 82 90 90Z', '#C98A8A') + MP.path('M16 92Q50 84 86 92Z', '#F4EBD5') + DF.donkey(46, 86, 1.45, '#A9A18C') +
+  MP.line('M10 76L22 88M18 72L28 88M80 72L72 88M90 76L78 88', '#5F8A5A', 1.6);
+
+MEDAL_ART.mic_plow = MP.bg('#E8DDBE') + MP.circle(78, 22, 6, '#EBC46C') + MP.path('M0 60Q30 50 60 58T100 54V100H0Z', '#B7C4A0') + MP.path('M0 76Q40 66 100 74V100H0Z', '#8FB07E') +
+  MP.line('M6 88Q50 80 94 88M10 95Q50 89 90 95', '#6E9873', 1) + DF.plow(44, 84, 0.85, '#7A5A3E', '#8A93A8') +
+  MP.line('M74 88V52', '#7A5A3E', 2.6) + MP.circle(74, 46, 12, '#4C7C56') + MP.circle(66, 52, 8, '#4C7C56') + MP.circle(82, 52, 8, '#4C7C56') +
+  '<g fill="#7A4A8A"><circle cx="68" cy="56" r="2.2"/><circle cx="72" cy="60" r="2.2"/><circle cx="76" cy="56" r="2.2"/><circle cx="80" cy="60" r="2.2"/><circle cx="72" cy="52" r="2.2"/></g>';
+
+MEDAL_ART.jon_fish = MP.bg('#21525C') + MP.path('M0 22H100V0H0Z', '#6FA0A6') + MP.wave(22, '#F4EBD5', 1, 0.7) + MP.wave(27, '#8FC0C4', 1, 0.6) +
+  MP.path('M46 36C50 24 60 21 68 25C62 27 60 32 60 38Z', '#2E4658') +
+  MP.path('M11 56C12 42 28 34 48 35C64 36 74 44 79 52L90 42L86 55L90 68L79 60C74 71 62 78 46 78C28 78 12 70 11 56Z', '#3E5A6E') +
+  MP.path('M14 62C26 74 48 78 72 66C64 76 50 80 40 80C28 80 18 72 14 62Z', '#8FA9B2') +
+  MP.path('M30 76C26 86 32 90 42 88C40 84 36 80 30 76Z', '#2E4658') +
+  MP.line('M11 56C17 61 24 63 31 61', '#12232A', 1.6) + MP.line('M27 44Q25 50 27 56M31 43Q29 50 31 57', '#2E4658', 1.2) + '<circle cx="19" cy="47" r="2.8" fill="#F4EBD5"/><circle cx="18.4" cy="47" r="1.4" fill="#12232A"/>' +
+  '<ellipse cx="50" cy="57" rx="19" ry="15" fill="#17303A"/><ellipse cx="50" cy="57" rx="19" ry="15" fill="none" stroke="#5E7F8C" stroke-width="1.2"/>' +
+  DF.kneel(50, 71, 0.68, '#F4EBD5', '#C08A6A', '#3E2C1E') + MP.circle(12, 32, 1.6, '#9FC4C4') + MP.circle(20, 27, 1.2, '#9FC4C4') + MP.circle(78, 88, 1.6, '#9FC4C4') + MP.circle(66, 90, 1.2, '#9FC4C4');
+
+// ---------- 2·3일차, 동물 ----------
+MEDAL_ART.jdg_bramble = MP.bg('#D9C6A0') + MP.ground(86, '#A8865A') + MP.circle(20, 24, 5, '#EBC46C') + MP.rays(50, 46, 20, 30, 12, '#E2C77E', 1.1) +
+  MP.path('M22 88C22 66 34 54 49 54C64 54 76 66 76 88Z', '#5A4630') +
+  (function () { var o = '<g fill="#5A4630">', i, a, cx = 49, cy = 88, rx = 27, ry = 34, x, y, nx, ny; for (i = 0; i < 15; i++) { a = Math.PI * (1.08 + i * 0.84 / 14); x = cx + rx * Math.cos(a); y = cy + ry * Math.sin(a); nx = Math.cos(a); ny = Math.sin(a); o += '<path d="M' + (x - ny * 2.4).toFixed(1) + ' ' + (y + nx * 2.4).toFixed(1) + 'L' + (x + nx * 6.6).toFixed(1) + ' ' + (y + ny * 6.6).toFixed(1) + 'L' + (x + ny * 2.4).toFixed(1) + ' ' + (y - nx * 2.4).toFixed(1) + 'Z"/>'; } return o + '</g>'; })() +
+  MP.line('M30 82L44 62M52 84L54 60M70 82L60 62M36 70L60 74', '#7A6040', 1.4) + D2.crown(49, 58, 2.1, '#E2C77E') + MP.flame(78, 86, 0.95, '#D98A3A', '#F0D080') + MP.flame(22, 88, 0.75, '#D98A3A', '#F0D080');
+
+MEDAL_ART.sa2_bow = MP.bg('#4A4658') + MP.path('M-6 70L20 46L40 62L66 40L106 70V100H-6Z', '#3A3644') + MP.band(86, 14, '#2E2A38') +
+  MP.line('M36 16C62 30 62 70 36 84', '#B08D5E', 3.6) + MP.line('M36 16L36 84', '#F4EBD5', 0.9) + MP.line('M28 50H74', '#8C6E48', 1.6) + MP.path('M74 50L66 46.4V53.6Z', '#C9C9C0') + MP.path('M28 50L24 46L32 47.6ZM28 50L24 54L32 52.4Z', '#F4EBD5') +
+  MP.circle(68, 82, 13, '#8C8676') + '<circle cx="68" cy="82" r="10" fill="none" stroke="#A29C8A" stroke-width="1.2"/>' + MP.circle(68, 82, 3.6, '#A29C8A') + MP.star(22, 30, 1) + MP.star(78, 26, 0.8);
+
+MEDAL_ART.sa1_goliath = MP.bg('#DCCBA8') + MP.path('M0 60Q30 50 60 58T100 54V100H0Z', '#C9B98C') + MP.circle(22, 22, 5, '#EBC46C') + MP.path('M-6 82Q30 74 60 80T106 76V100H-6Z', '#B8A278') +
+  DF.shield(78, 78, 9, -18) +
+  '<rect x="0" y="0" width="2.2" height="46" fill="#6B4F3A" transform="translate(88 44) rotate(38)"/><path d="M0 -10L3 1H-3Z" fill="#C9C9C0" transform="translate(89 44) rotate(38)"/>' +
+  '<g transform="translate(74 27) rotate(28)"><path d="M-4.6 0A4.6 4.6 0 0 1 4.6 0Z" fill="#8C6E48"/><path d="M0 -4.4C2 -7 4 -7 4.6 -4.6Z" fill="#A6444F"/></g>' +
+  D2.tilt(20, 56, 80, DF.giant(56, 80, 1.1, true, 'u')) +
+  MP.person(26, 80, 0.68, '#9A5B40', { arms: 'r', skin: '#C08A6A', hair: '#8A4A2A', staff: -11 }) +
+  '<path d="M35.5 58.6C32 57 29 59 28 63M35.5 58.6C33 61 31 64 30 67" fill="none" stroke="#6B4F3A" stroke-width="1" stroke-linecap="round"/>' +
+  '<path d="M39 53Q50 45 62 39" fill="none" stroke="#B08D5E" stroke-width="1.1" stroke-dasharray="1.6 2" stroke-linecap="round"/><path d="M44 58L48 56M46 52L50 50" stroke="#B08D5E" stroke-width=".9" stroke-linecap="round"/>' +
+  '<g transform="translate(67.8 37.6)"><path d="M0-6L1.4-2L5.6-3L2.6 0L5-3.6L1 -1.6L0 3.2L-1.2-1.6L-5-3.6L-2.6 0L-5.6-3L-1.4-2Z" fill="#F6D67E"/><path d="M0-6L1.4-2L5.6-3L2.6 0L1.2 1.2L-1.2 1.2L-2.6 0L-5.6-3L-1.4-2Z" fill="#F6D67E"/></g><circle cx="66" cy="37.8" r="1.9" fill="#8C8676"/>';
+
+MEDAL_ART.psa_wings = MP.bg('#4A5A7C') + MP.stars([[16, 24, 0.7], [84, 22, 0.7], [50, 12, 0.6]]) + MP.circle(50, 70, 24, '#5E6E90') + MP.circle(50, 70, 16, '#F0E4C0') +
+  MP.ground(94, '#3A4664') + DF.lamb(46, 92, 1.1, '#F4EBD5') + DF.wings(50, 24, 0.85, 82, '#F4EBD5', '#B9A56E');
+
+MEDAL_ART.psa_praise = MP.bg('#E4D0B8') + MP.stars([[16, 22, 0.8], [86, 20, 0.8], [50, 12, 0.7]]) + MP.ground(94, '#C9AE7E') +
+  DF.lyre(36, 88, 1.15, '#C2A25E', '#8C6E48') +
+  MP.circle(72, 38, 13, '#F1E2C6') + '<circle cx="72" cy="38" r="13" fill="none" stroke="#8C6E48" stroke-width="2.6"/>' + MP.circle(72, 25, 2, '#C2A25E') + MP.circle(72, 51, 2, '#C2A25E') + MP.circle(59, 38, 2, '#C2A25E') + MP.circle(85, 38, 2, '#C2A25E') + MP.circle(72, 38, 3, '#C9955A') +
+  DF.trumpet(66, 74, 0.55, '#C2A25E', -18) + MP.line('M56 20Q60 14 66 12M84 62Q90 58 92 52', '#8C6E48', 1.2, 0.7);
+
+MEDAL_ART.ecc_wind = MP.bg('#D2CDBE') + MP.circle(50, 46, 9, '#EBC46C') + MP.rays(50, 46, 12, 16, 12, '#E7C980', 1.2) + (function () { var o = '', i, a0, a1, r = 27, x1, y1, tx, ty, nx, ny; for (i = 0; i < 3; i++) { a0 = (Math.PI * 2 / 3) * i - 1.3; a1 = a0 + 1.6; x1 = 50 + r * Math.cos(a1); y1 = 46 + r * Math.sin(a1); o += '<path d="M' + (50 + r * Math.cos(a0)).toFixed(1) + ' ' + (46 + r * Math.sin(a0)).toFixed(1) + 'A' + r + ' ' + r + ' 0 0 1 ' + x1.toFixed(1) + ' ' + y1.toFixed(1) + '" fill="none" stroke="#8C7A5A" stroke-width="1.8" stroke-linecap="round"/>'; tx = -Math.sin(a1); ty = Math.cos(a1); nx = Math.cos(a1); ny = Math.sin(a1); o += '<path d="M' + (x1 + tx * 6.4).toFixed(1) + ' ' + (y1 + ty * 6.4).toFixed(1) + 'L' + (x1 + nx * 3.6).toFixed(1) + ' ' + (y1 + ny * 3.6).toFixed(1) + 'L' + (x1 - nx * 3.6).toFixed(1) + ' ' + (y1 - ny * 3.6).toFixed(1) + 'Z" fill="#8C7A5A"/>'; } return o; })() +
+  MP.wave(88, '#7FA8AC', 1.4) + MP.wave(94, '#7FA8AC', 1.4, 0.7) + MP.line('M8 22Q18 16 28 22T44 20M62 18Q72 12 82 18T96 16', '#A9A390', 1.3);
+
+MEDAL_ART.num_donkey = MP.bg('#D8C4A0') + MP.ground(84, '#B8A278') + MP.band(90, 10, '#A08A62') +
+  DF.donkey(32, 86, 1.5, '#7A6E60') +
+  MP.path('M78 24L82 24L83 64H77Z', '#EFE6D0') + MP.rect(70, 64, 20, 3.2, '#E2C77E', 1.4) + MP.rect(78.4, 67, 3.2, 9, '#E2C77E', 1) + MP.circle(80, 78, 2.4, '#E2C77E') + MP.line('M80 24V14', '#E2C77E', 1) +
+  MP.line('M71 36L75 36M87 36L91 36M71 50L75 50M87 50L91 50', '#E2C77E', 1.1) + MP.star(60, 22, 0.9) + MP.star(16, 24, 0.7);
+
+MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path('M-6 82L40 36L64 56L84 42L106 82Z', '#A8977A') + MP.path('M40 36L52 48L46 52L38 46Z', '#B9A88A') +
+  MP.ground(86, '#8C7A5A') + MP.rect(12, 74, 14, 5, '#8C8676') + MP.rect(15, 69, 10, 5, '#A29C8A') +
+  MP.line('M40 84C44 78 50 72 56 74M52 84C54 76 60 70 66 72M64 84C64 78 72 74 78 76M46 72C54 76 58 84 64 82', '#4F6B44', 1.4) +
+  DF.ram(50, 84, 1.45, '#F4EBD5') +
+  MP.line('M49 70L44 62M62 66L66 60M56 64L56 56', '#4F6B44', 1.3);
+// <<END MEDALS fix=1>>
 
   function scenesForBook(book) {
     milestonesForBook(book); // 아직 캐시되지 않은 책이면 자리표시자 생성 + 장면 부여를 트리거
