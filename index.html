@@ -591,7 +591,6 @@
     border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain; max-height: calc(100vh - var(--s) * .58 - 300px); min-height: 56px; }
   .msd-hint { font-size: 11px; color: var(--ink-dim); margin-bottom: 12px; }
-  .msd-date { font-size: 11.5px; font-weight: 700; color: var(--gold, #B8963F); margin: 3px 0 12px; min-height: 14px; }
 
   #bibleShelfOverlay .tp-card { position: relative; }
   .book-cover { position: absolute; inset: 0; z-index: 5; transform-origin: 0 50%; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; pointer-events: none; }
@@ -1154,8 +1153,7 @@
     <div class="msd-coinslot" id="msdCoinSlot" data-action="msd-flip"></div>
     <div class="msd-card" id="msdCard">
       <div class="tp-title" id="msDetailTitle" style="font-family:'Fraunces',serif;font-size:17px;font-weight:650;margin-bottom:2px;"></div>
-      <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);"></div>
-      <div id="msDetailDate" class="msd-date"></div>
+      <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);margin-bottom:12px;"></div>
       <div id="msDetailVerse" class="msd-verse"></div>
       <div class="msd-hint">메달을 탭하면 뒷면이 보여요</div>
       <div class="btn primary" id="msdCloseBtn" data-action="milestone-detail-close">닫기</div>
@@ -7542,7 +7540,7 @@ MEDAL_ART.akedah = MP.bg('#DCCBA8') + MP.circle(78, 22, 7, '#EBC46C') + MP.path(
   MP.line('M49 70L44 62M62 66L66 60M56 64L56 56', '#4F6B44', 1.3);
 // <<END MEDALS fix=1>>
 // <<MEDALS fix=2>>
-// 창세기 메달 개선(2026-09-25): eden(생명나무·선악을 알게 하는 나무 + 사람), fall(쫓겨나는 아담과 하와), beasts(동물 추가).
+// 창세기 메달 개선(2026-09-25): eden(생명나무·선악을 알게 하는 나무 + 사람), fall(뱀이 하와를 유혹하는 장면), beasts(동물 추가).
 // 돕는 배필(eve)은 MP.person의 여성 머리카락을 뒤로 보낸 수정으로 함께 고쳐졌다. 원래 그림은 day1 블록에 그대로 남아 있고 여기서 덮어쓴다.
 var BEASTS_BASE = MEDAL_ART.beasts;
 var G2 = {
@@ -7566,18 +7564,20 @@ MEDAL_ART.eden = MP.bg('#CFDCBE') + G2.glow(50, 40, 36, '#E6EED0', 0.9) +
   '<ellipse cx="50" cy="84" rx="9" ry="2" fill="#647A52" opacity=".6"/>' +
   MP.person(50, 84, 0.8, '#B06B54', { arms: 'd', hair: '#5A3B2E' });
 
-// 10 선악과, 타락 — 선악을 알게 하는 나무와 뱀, 동산 문을 지키는 불 칼, 쫓겨나 걸어가는 아담과 하와
-MEDAL_ART.fall = MP.bg('#3B2F4A') + G2.glow(44, 62, 22, '#8A5A3E', 0.3) + MP.ground(82, '#2A2236') +
-  MP.path('M22 84L23.6 48H26.4L28 84Z', '#6B4F3A') +
-  MP.circle(25, 33, 12, '#4B5B48') + MP.circle(15, 42, 8, '#4B5B48') + MP.circle(35, 42, 8, '#4B5B48') +
-  MP.circle(19, 31, 2.4, '#C0554B') + MP.circle(31, 34, 2.4, '#C0554B') + MP.circle(25, 41, 2.4, '#C0554B') + MP.circle(25, 23, 2.4, '#C0554B') +
-  '<g transform="translate(-26 0)">' + MP.line('M52 80C40 74 60 68 47 62S58 54 49 48', '#A9C49A', 2.6) + MP.circle(47.6, 46.6, 2.3, '#A9C49A') + MP.line('M45.8 46L44 44.8M45.8 46L44.2 47.4', '#C0554B', 0.7) + '</g>' +
-  // 동산 문을 지키는 불 칼
-  MP.flame(38, 80, 1.0, '#D98A3A', '#F0D080') + MP.flame(46, 81, 0.8, '#D98A3A', '#F0D080') + D7.sword(42, 72, 0.6, '#E9C36B', 0) +
-  // 쫓겨나는 아담과 하와: 짐승 가죽옷을 입고 앞으로 기울어 걸어간다
-  D2.tilt(5, 58, 82, MP.person(58, 82, 0.8, '#9A7A4E', { robe: true, skin: '#B06B54', hair: '#4A3428', arms: 'd' })) +
-  D2.tilt(5, 72, 82, MP.person(72, 82, 0.76, '#7A5C6A', { robe: true, f: 1, skin: '#BE7A63', hair: '#4A3428', arms: 'd' })) +
-  MP.stars([[14, 20, 0.6], [86, 24, 0.7], [56, 14, 0.5]]);
+// 10 선악과, 타락 — 뱀이 하와를 유혹하는 순간: 벌거벗은 하와가 선악을 알게 하는 나무의 열매에 손을 뻗고, 곁에 아담이 서 있다
+MEDAL_ART.fall = MP.bg('#3B2F4A') + G2.glow(60, 44, 30, '#6A4F63', 0.35) + MP.ground(82, '#2A2236') +
+  // 나무(오른쪽): 굵은 줄기와 붉은 열매, 하와 쪽으로 뻗은 가지 끝의 열매
+  MP.path('M66.4 84L68 46H72L73.6 84Z', '#6B4F3A') + MP.line('M68.6 58Q62 55 56 52.4', '#6B4F3A', 2.2) +
+  MP.circle(70, 32, 13, '#4B5B48') + MP.circle(60, 42, 9, '#4B5B48') + MP.circle(80, 42, 9, '#4B5B48') +
+  MP.circle(64, 30, 2.4, '#C0554B') + MP.circle(76, 34, 2.4, '#C0554B') + MP.circle(70, 42, 2.4, '#C0554B') + MP.circle(70, 22, 2.4, '#C0554B') +
+  MP.circle(55, 53, 3.2, '#C0554B') + MP.line('M55 50.4L55.8 48.6', '#A9C49A', 1) +
+  // 아담(뒤쪽 왼쪽)과 하와(앞): 둘 다 벌거벗은 모습
+  MP.person(21, 80, 0.72, '#B06B54', { arms: 'd', hair: '#5A3B2E' }) +
+  MP.person(41, 84, 0.86, '#BE7A63', { f: 1, arms: 'r', hair: '#4A3428' }) +
+  // 나무를 휘감은 뱀이 하와 쪽으로 머리를 내밀어 유혹한다
+  '<path d="M72 84C60 78 84 72 68 66S82 58 71 54C66 51.6 61 47 58 44.6" fill="none" stroke="#A9C49A" stroke-width="2.8" stroke-linecap="round"/>' +
+  MP.circle(57, 44, 2.9, '#A9C49A') + MP.circle(56.2, 43.4, 0.6, '#2A2236') + MP.line('M54.4 45L51.4 45.8M54.4 45L52 47', '#C0554B', 0.8) +
+  MP.stars([[12, 22, 0.6], [86, 20, 0.7], [44, 14, 0.5]]);
 
 // 6 창조 여섯째 날 — 남자와 여자(기존 그대로) + 땅의 짐승들(말·사자·양·소)과 하늘의 새
 var beastCut = BEASTS_BASE.indexOf('<ellipse cx="17" cy="73"');
@@ -7688,7 +7688,6 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var b = found.book, m = found.milestone, list = milestonesForBook(b);
     var idx = list.indexOf(m) + 1;
     var refShort = m.ref.indexOf(b.name) === 0 ? m.ref.slice(b.name.length).replace(/^\s+/, "") : m.ref;
-    var tot = b.cumStart + m.need;
     var nfs = Math.min(11, 58 / Math.max(b.name.length, 1));
     return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><use href="#fr1"/><circle cx="50" cy="50" r="41" fill="#EADBB5"/>' +
       '<circle cx="50" cy="50" r="38" fill="none" stroke="#C2A25E" stroke-width=".6"/><use href="#fr2"/>' +
@@ -7696,7 +7695,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       svgTextEl(b.name, 50, 42, nfs, "#5A4626", 700, 60) +
       svgTextEl(refShort, 50, 53, 6.4, "#7A6738", 500, 56) +
       '<path d="M36 59H64" stroke="#C2A25E" stroke-width=".7"/>' +
-      svgTextEl(idx + " / " + list.length + (tot > 0 ? " · " + tot.toLocaleString() + "P" : ""), 50, 67, 5.6, "#7A6738", 600, 52) +
+      svgTextEl(idx + " / " + list.length, 50, 68, 6.2, "#7A6738", 600, 40) +
       (dateKey ? svgTextEl(dateKey.replace(/-/g, "."), 50, 77, 6.4, "#5A4626", 700, 40) + svgTextEl("획득", 50, 84, 4.6, "#8A7B57", 500, 20) : "") +
       '</svg>';
   }
@@ -7767,7 +7766,6 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     document.getElementById("msDetailTitle").textContent = m.title;
     document.getElementById("msDetailRef").textContent = m.ref;
     var earned = medalEarnedDate(found);
-    document.getElementById("msDetailDate").textContent = earned ? "🏅 " + earned.replace(/-/g, ".") + " 획득" : "";
     var verseEl = document.getElementById("msDetailVerse");
     verseEl.textContent = m.verse || "";
     verseEl.style.display = m.verse ? "" : "none";
@@ -7796,7 +7794,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     document.getElementById("msdCard").animate(
       [{ opacity: 0, transform: "translateY(26px) scale(.94)" }, { opacity: 1, transform: "none" }],
       { duration: 420, delay: 200, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
-    ["msDetailTitle", "msDetailRef", "msDetailDate", "msDetailVerse"].forEach(function (id, i) {
+    ["msDetailTitle", "msDetailRef", "msDetailVerse"].forEach(function (id, i) {
       document.getElementById(id).animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
         { duration: 360, delay: 520 + i * 90, easing: "ease-out", fill: "both" });
     });
@@ -7818,6 +7816,8 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (msd.busy || !msd.open || !msd.coin) return;
     msd.busy = true;
     var from = msd.angle, to = from === 0 ? 180 : 0, coin = msd.coin, fly = msd.fly;
+    // 뒷면에 권·구절 위치가 나오므로, 뒷면을 보는 동안은 카드의 구절 위치 줄을 감춘다
+    document.getElementById("msDetailRef").animate([{ opacity: to === 180 ? 1 : 0 }, { opacity: to === 180 ? 0 : 1 }], { duration: 300, fill: "forwards" });
     coin.style.transform = COIN_PERSP + "rotateY(" + to + "deg)";
     var a = coin.animate([
       { transform: COIN_PERSP + "rotateY(" + from + "deg)" }, { transform: COIN_PERSP + "rotateY(" + to + "deg)" }
