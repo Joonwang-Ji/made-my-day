@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-23-17";
+  var BUILD_VERSION = "2026-09-25-1";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -534,6 +534,9 @@
   .chat-off { opacity: 0.35; pointer-events: none; }
   .chat-count { font-size: 10.5px; color: var(--ink-dim); margin: 5px 4px 0; display: flex; justify-content: space-between; }
   .reward-idea-chip { font-size: 11px; padding: 5px 9px; border-radius: 999px; background: var(--sage-soft); color: var(--ink); }
+  .rc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .rc-chip { font-size: 12px; padding: 6px 11px; border-radius: 999px; background: var(--sage-soft); color: var(--ink);
+    font-weight: 700; cursor: pointer; }
   .reward-note-input { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
     background: var(--bg-soft); color: var(--ink); font-size: 13px; font-family: inherit; margin-bottom: 12px; }
   .reward-note-input:focus { outline: none; border-color: var(--gold); }
@@ -654,7 +657,7 @@
     border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; animation: celebRise .6s ease .8s both; }
   @keyframes celebRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .celeb-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 12px; animation: celebRise .6s ease .75s both; }
-  .celeb-chips span { font-size: 11px; padding: 5px 10px; border-radius: 999px; background: rgba(255,248,225,.14); color: #FFF8E1; }
+  .celeb-chips span { font-size: 11px; padding: 5px 10px; border-radius: 999px; background: rgba(255,248,225,.14); color: #FFF8E1; cursor: pointer; }
   .celeb-input { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,248,225,.3); background: rgba(255,248,225,.1);
     color: #FFF8E1; font-size: 14px; font-family: inherit; margin-bottom: 6px; animation: celebRise .6s ease .9s both; }
   .celeb-input::placeholder { color: rgba(255,248,225,.5); }
@@ -792,6 +795,7 @@
   <div id="pendingRewardBanner" class="pending-banner hidden" data-action="open-pending-rewards">
     <span class="emoji">🎀</span><span id="pendingRewardBannerText"></span>
   </div>
+  <div id="weeklyProgressBanner" class="weekly-card hidden"></div>
   <div id="nudgeBanner" class="nudge-banner hidden" data-action="open-missed-overlay"></div>
   <div id="holidayBanner" class="nudge-banner hidden" data-action="open-holiday-banner-year"></div>
   <div id="todayRingCard" class="today-ring-card hidden" data-action="open-achievements">
@@ -1100,7 +1104,7 @@
 <div class="wrap hidden" id="view-friends">
   <div class="top-bar">
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2 style="flex:1;">지인<span class="help-q" data-action="help" data-id="friends">?</span></h2>
+    <h2 style="flex:1;">지인<span class="help-q" data-action="help" data-id="friends" style="margin-left:6px;">?</span></h2>
     <span class="fr-ico" data-action="friends-refresh" title="새로고침">↻</span>
   </div>
   <div id="friendsBody"></div>
@@ -1277,7 +1281,8 @@
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title" id="rewardClaimTitle">보상 기록</div>
     <div id="rewardClaimBody" style="font-size:12.5px;color:var(--ink-dim);text-align:center;margin-bottom:12px;"></div>
-    <input type="text" class="reward-note-input" id="rewardClaimInput" placeholder="무엇으로 보상했나요? (나중에 다시 눌러 수정 가능)" maxlength="60">
+    <div id="rewardClaimChips" class="rc-chips"></div>
+    <input type="text" class="reward-note-input" id="rewardClaimInput" placeholder="원하는 보상 혹은 이미 준 보상을 적어보세요" maxlength="60">
     <div class="tp-actions">
       <div class="btn" data-action="reward-claim-cancel">취소</div>
       <div class="btn primary" data-action="reward-claim-save">저장</div>
@@ -2680,6 +2685,17 @@
     var el = document.getElementById("holidayBanner");
     var y = el ? el.getAttribute("data-year") : null;
     if (y) openHolidayFirstPrompt(y);
+  }
+  // 금요일 홈 화면: 이번 주 주말 보상까지 남은 조건을 미리 보여준다(토요일 아침부터 실제로 열림)
+  function renderWeeklyProgressBanner() {
+    var el = document.getElementById("weeklyProgressBanner");
+    if (!el) return;
+    var fw = weeklyFridayStatus();
+    if (!fw) { el.classList.add("hidden"); return; }
+    el.classList.remove("hidden");
+    el.innerHTML = fw.remaining <= 0
+      ? ('이번 주 <b>' + fw.success + '/' + fw.counted + '일</b> 성공 — 조건을 채웠어요! 내일 아침 주말 보상이 열려요 🎀')
+      : ('이번 주 <b>' + fw.success + '/' + fw.counted + '일</b> 성공 — 주말 보상까지 <b>' + fw.remaining + '일</b> 더 필요해요');
   }
   function checkHolidayFirstPrompt() {
     if (state.holidayPromptSeen) return;
@@ -8359,8 +8375,8 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
         '<div class="celeb-icon">' + b.emoji + '</div>' +
         '<div class="celeb-title">' + b.days + '일 연속 달성!</div>' +
         '<div class="celeb-sub">정말 대단해요 — 자신에게 특별한 선물을 해보는 건 어때요?</div>' +
-        '<div class="celeb-chips">' + CELEB_CHIPS.map(function (t) { return '<span>' + t + '</span>'; }).join("") + '</div>' +
-        '<input type="text" class="celeb-input" id="celebNote" maxlength="60" placeholder="이번엔 뭘로 나에게 선물할까요? (선택)">',
+        '<div class="celeb-chips">' + CELEB_CHIPS.map(function (t) { return '<span data-action="celeb-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>'; }).join("") + '</div>' +
+        '<input type="text" class="celeb-input" id="celebNote" maxlength="60" placeholder="원하는 보상 혹은 이미 준 보상을 적어보세요">',
         '<div class="celeb-btn" data-action="celeb-badge-ok">확인</div>');
       celebLater(function () { celebFlash(); celebConfetti(36); }, 400);
       celebLater(celebReady, 1500);
@@ -8396,6 +8412,18 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (ev && ev.badge && note) {
       if (!Array.isArray(state.rewards)) state.rewards = [];
       state.rewards.unshift({ id: uid(), type: "badge", level: null, badgeDays: ev.badge.days, date: todayKey(), note: note });
+      if (state.rewards.length > 200) state.rewards.length = 200;
+      saveState();
+      toast("기록했어요 🎁");
+    }
+    celebNext();
+  }
+  // 배지 팝업의 추천 칩을 탭하면 입력 없이 바로 그 텍스트로 저장(celebBadgeOk와 같은 저장 로직, 입력창 대신 칩 텍스트 사용)
+  function celebChipTap(text) {
+    var ev = celebQueue[0];
+    if (ev && ev.badge && text) {
+      if (!Array.isArray(state.rewards)) state.rewards = [];
+      state.rewards.unshift({ id: uid(), type: "badge", level: null, badgeDays: ev.badge.days, date: todayKey(), note: text });
       if (state.rewards.length > 200) state.rewards.length = 200;
       saveState();
       toast("기록했어요 🎁");
@@ -8468,7 +8496,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   function checkWeeklyReward() {
     var today = new Date(); today.setHours(0, 0, 0, 0);
     var dow = today.getDay();
-    if (dow !== 5 && dow !== 6 && dow !== 0) return; // 금/토/일에만 판정
+    if (dow !== 6 && dow !== 0) return; // 토/일에만 판정(주말 시작과 함께 열리도록 — 금요일엔 진행 상황만 안내, weeklyFridayStatus() 참고)
     var monday = mondayOf(today);
     var mondayKey = keyFor(monday);
     if (!Array.isArray(state.celebratedWeeks)) state.celebratedWeeks = [];
@@ -8486,6 +8514,21 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       state.pendingRewards.unshift(wRec);
       queueCeleb({ type: "weekly", id: wRec.id, success: info.success, counted: info.counted });
     }
+  }
+  // 금요일 홈 화면 안내용: 아직 확정(토요일부터 판정)은 아니지만 지금까지의 월~금 성공 현황과
+  // 남은 조건을 미리 보여준다. 금요일이 아니거나 이번 주가 이미 지난 판정에서 열렸으면 null.
+  function weeklyFridayStatus() {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    if (today.getDay() !== 5) return null;
+    var monday = mondayOf(today);
+    var mondayKey = keyFor(monday);
+    if (!Array.isArray(state.celebratedWeeks)) state.celebratedWeeks = [];
+    if (state.celebratedWeeks.indexOf(mondayKey) !== -1) return null;
+    var info = weekdaySuccessInfo(monday); // 오늘(금)의 현재 진행 상태도 5일 중 하나로 포함됨
+    if (info.counted === 0) return null;
+    var needed = info.counted >= 5 ? 4 : info.counted;
+    var remaining = Math.max(0, needed - info.success);
+    return { success: info.success, counted: info.counted, needed: needed, remaining: remaining };
   }
 
   // ---- 분기 보상(누적 3000포인트 돌파 · 목표는 고정값, 설정에서 바꿀 수 없음) ----
@@ -8529,7 +8572,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var el = document.getElementById("pendingRewardsList");
     if (!list.length) { el.innerHTML = '<div class="reward-log-empty">아직 열린 보상이 없어요</div>'; return; }
     el.innerHTML = list.map(function (r) {
-      var title = r.kind === "quarter" ? ("🎉 " + r.goalPoints + "P 돌파") : ("🎀 주간 보상 · " + r.periodKey.slice(5) + " 주");
+      var title = r.kind === "quarter" ? ("🎉 " + r.goalPoints + "P 돌파") : ("🎀 주간 보상 · " + weeklyPeriodLabel(r.periodKey));
       var noteTxt = r.status === "pending" ? "탭해서 기록하기" : escapeHtml(r.note || "");
       return '<div class="pending-reward-item" data-action="open-reward-claim" data-id="' + r.id + '">' +
         '<div class="pending-reward-main"><div class="pending-reward-title">' + title + '</div>' +
@@ -8538,14 +8581,27 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     }).join("");
   }
   var claimingRewardId = null;
+  function weeklyPeriodLabel(mondayKey) {
+    var m = new Date(mondayKey);
+    var f = new Date(m); f.setDate(f.getDate() + 4);
+    return fmtMD(mondayKey) + "~" + fmtMD(keyFor(f));
+  }
   function openRewardClaim(id) {
     var r = findReward(id);
     if (!r) return;
     claimingRewardId = id;
-    document.getElementById("rewardClaimTitle").textContent = r.kind === "quarter" ? (r.goalPoints + "P 돌파 보상!") : "이번 주 작은 보상";
-    document.getElementById("rewardClaimBody").textContent = r.kind === "quarter" ?
-      "꾸준히 3개월 가까이 애썼어요. 크게 하나 해보는 거 어때요?" :
-      "이번 주도 잘 보냈어요. 주말에 무얼 했는지(또는 할 건지) 적어보세요.";
+    var titleEl = document.getElementById("rewardClaimTitle");
+    if (r.kind === "quarter") {
+      titleEl.textContent = r.goalPoints + "P 돌파 보상!";
+      document.getElementById("rewardClaimBody").textContent = "꾸준히 3개월 가까이 애썼어요. 크게 하나 해보는 거 어때요?";
+    } else {
+      titleEl.textContent = "이번 주 작은 보상 · " + weeklyPeriodLabel(r.periodKey);
+      document.getElementById("rewardClaimBody").textContent = "이번 주도 잘 보냈어요. 어떤 보상을 원하시나요?";
+    }
+    var chipsEl = document.getElementById("rewardClaimChips");
+    chipsEl.innerHTML = CELEB_CHIPS.map(function (t) {
+      return '<span class="rc-chip" data-action="reward-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>';
+    }).join("");
     document.getElementById("rewardClaimInput").value = r.note || "";
     document.getElementById("rewardClaimOverlay").classList.remove("hidden");
   }
@@ -8554,18 +8610,24 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     claimingRewardId = null;
     if (celebAwaitClaim) { celebAwaitClaim = false; celebNext(); }
   }
+  function applyRewardNote(id, note) {
+    var r = findReward(id);
+    if (!r) return false;
+    r.note = note;
+    if (note) { r.status = "claimed"; if (!r.claimedAt) r.claimedAt = todayKey(); }
+    else { r.status = "pending"; r.claimedAt = null; }
+    saveState();
+    renderPendingRewardsList();
+    renderPendingIndicator();
+    return true;
+  }
   function saveRewardClaim() {
     var note = document.getElementById("rewardClaimInput").value.trim();
-    var r = findReward(claimingRewardId);
-    if (r) {
-      r.note = note;
-      if (note) { r.status = "claimed"; if (!r.claimedAt) r.claimedAt = todayKey(); }
-      else { r.status = "pending"; r.claimedAt = null; }
-      saveState();
-      renderPendingRewardsList();
-      renderPendingIndicator();
-      toast("기록했어요");
-    }
+    if (applyRewardNote(claimingRewardId, note)) toast("기록했어요");
+    closeRewardClaim();
+  }
+  function tapRewardChip(text) {
+    if (applyRewardNote(claimingRewardId, text)) toast("기록했어요 🎁");
     closeRewardClaim();
   }
 
@@ -8747,6 +8809,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       nudgeEl.classList.add("hidden");
     }
     renderHolidayBanner();
+    renderWeeklyProgressBanner();
 
     // ---- 오늘 진행률 링 (스트릭 기준과 직결) ----
     var withDueToday = state.categories.filter(function (c) { return catItemsDueOn(c, todayK).length > 0; });
@@ -10344,6 +10407,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (!el) return;
     var action = el.getAttribute("data-action");
     var id = el.getAttribute("data-id");
+    var dataText = el.getAttribute("data-text");
 
     if (action === "go-home") { goHomeAnimated(); }
     else if (action === "go-back") { goHomeAnimated(true); }
@@ -10563,6 +10627,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     else if (action === "celeb-open-daily") { celebOpenDaily(); }
     else if (action === "celeb-daily-later") { celebDailyLater(); }
     else if (action === "celeb-badge-ok") { celebBadgeOk(); }
+    else if (action === "celeb-chip-tap") { celebChipTap(dataText); }
     else if (action === "celeb-claim-now") { celebClaimNow(id); }
     else if (action === "open-daily-box") { if (!celebQueue.length) queueCeleb({ type: "dailyOpen" }); }
     else if (action === "open-pending-rewards") { openPendingRewardsOverlay(); }
@@ -10570,6 +10635,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     else if (action === "open-reward-claim") { openRewardClaim(id); }
     else if (action === "reward-claim-cancel") { closeRewardClaim(); }
     else if (action === "reward-claim-save") { saveRewardClaim(); }
+    else if (action === "reward-chip-tap") { tapRewardChip(dataText); }
     else if (action === "theme-select") { currentTheme = id; applyTheme(id); updateSettingsModalUI(); }
     else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
     else if (action === "open-rest-modal") { showView("view-restDays"); openRestModal(); }
