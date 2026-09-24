@@ -5603,6 +5603,430 @@ BOOK_SCENES["1th"] = [
 ];
 attachSceneMeta("1th");
 // <<END MEDALS day=6>>
+// <<MEDALS day=7>>
+// 7일차(마지막): 데살로니가후서(4) 디모데전서(5) 디모데후서(4) 디도서(4) 빌레몬서(3) 히브리서(6) 야고보서(5) 베드로전서(5) 베드로후서(4) 요한1서(5) 요한2서(3) 요한3서(3) 유다서(3) 요한계시록(8) = 62개 메달.
+// D2(crown, jar, altar, ark, scroll, lamp, moon, tilt), D3(cup, seated, bread, ring), D4(heart, wing, flower, dove, lion, basket), D5(cross, fish, boat, menorah, horse, scales, coin, tent, key, temple), D6(anchor, trumpet, flag, letter, gift, arrow)를 전제로 한다. 7일차 전용 부품 D7.
+// 하나님·예수님은 그리지 않고 빛·구름·불·손·어린양·빈 보좌·십자가 등 상징으로만 표현한다. 서신서는 사건이 아니라 핵심 가르침의 상징으로 그린다.
+// ---- 7일차 부품 D7 ----
+var D7 = {
+  hand: function (x, y, s, c) { // 펼친 오른손(손바닥 정면, 손가락 위). (x,y)=손목 아래 중심, 손끝은 약 y-43*s
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')" fill="' + c + '"><rect x="-6" y="-8" width="12" height="24"/><rect x="-9.5" y="-24" width="19" height="19" rx="5"/><rect x="-8.4" y="-42" width="3.8" height="22" rx="1.9"/><rect x="-4" y="-46" width="3.8" height="26" rx="1.9"/><rect x="0.4" y="-44" width="3.8" height="24" rx="1.9"/><rect x="4.8" y="-38" width="3.6" height="19" rx="1.8"/><path d="M-9-12L-17-26" stroke="' + c + '" stroke-width="4.2" stroke-linecap="round"/></g>';
+  },
+  throne: function (x, y, s, c, c2) { // 빈 보좌, y=바닥
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><rect x="-12" y="-44" width="24" height="32" rx="3.5" fill="' + c + '"/><rect x="-8" y="-40" width="16" height="22" rx="2" fill="' + c2 + '"/><rect x="-17" y="-14" width="34" height="8" rx="1.5" fill="' + c + '"/><rect x="-15" y="-7" width="4.4" height="7" fill="' + c + '"/><rect x="10.6" y="-7" width="4.4" height="7" fill="' + c + '"/></g>';
+  },
+  sword: function (x, y, s, c, rot) { // 검(끝이 위), y=날밑
+    return '<g transform="translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(' + s + ')"><path d="M-2.4-38L0-46L2.4-38V0H-2.4Z" fill="' + c + '"/><rect x="-8" y="0" width="16" height="3" rx="1.2" fill="#C2A25E"/><rect x="-1.6" y="3" width="3.2" height="9" fill="#8C6E48"/><circle cy="13.5" r="2.3" fill="#C2A25E"/></g>';
+  },
+  hourglass: function (x, y, s, c, sand) { // 모래시계, y=바닥
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-8-22H8C8-14 1.4-13 1.4-11C1.4-9 8-8 8-2H-8C-8-8-1.4-9-1.4-11C-1.4-13-8-14-8-22Z" fill="#EFE6D0"/><path d="M-6.4-3H6.4Q3-8 0-9Q-3-8-6.4-3Z" fill="' + sand + '"/><path d="M0-12V-5" stroke="' + sand + '" stroke-width=".9"/><rect x="-11" y="-25" width="22" height="3" rx="1" fill="' + c + '"/><rect x="-11" y="-2" width="22" height="3" rx="1" fill="' + c + '"/></g>';
+  },
+  drop: function (x, y, s, c) { return '<path transform="translate(' + x + ' ' + y + ') scale(' + s + ')" d="M0-9C4-3 6 1 6 4A6 6 0 0 1-6 4C-6 1-4-3 0-9Z" fill="' + c + '"/>'; },
+  door: function (x, y, s, c, c2) { // 아치 문, y=바닥
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-13 0V-30Q-13-43 0-43Q13-43 13-30V0Z" fill="' + c + '"/><path d="M0-42V0M-13-20H13" stroke="' + c2 + '" stroke-width=".9"/><circle cx="7" cy="-19" r="1.6" fill="#E2C77E"/></g>';
+  }
+};
+
+// ---- 데살로니가후서 ----
+MEDAL_ART.th2_flame = MP.bg('#4A2B2E') + MP.rays(50, 26, 14, 46, 18, '#E2C77E', 1, 0.1) + MP.cloud(50, 26, 2.6, '#F4EBD5') + MP.cloud(20, 40, 1.4, '#C9B9B0') + MP.cloud(80, 42, 1.4, '#C9B9B0') +
+  MP.flame(28, 90, 1.5, '#D98A3A', '#F6E7B4') + MP.flame(50, 92, 2.1, '#E9A65B', '#F6E7B4') + MP.flame(72, 90, 1.5, '#D98A3A', '#F6E7B4');
+MEDAL_ART.th2_deceive = MP.bg('#4A4658') + MP.cloud(46, 26, 3.6, '#2A2838') + MP.cloud(78, 36, 2.2, '#34304A') + MP.cloud(20, 38, 2, '#34304A') + MP.line('M58 34L50 48L57 48L48 62', '#E2C77E', 1.6) +
+  D5.temple(50, 90, 0.9, '#9A9AA8', '#7A7A8C') + D2.tilt(-14, 50, 40, D2.crown(50, 46, 1.4, '#B0A090'));
+MEDAL_ART.th2_hold = MP.bg('#B9CFC9') + MP.line('M6 30Q26 22 46 32M56 24Q76 18 94 28M8 50Q24 46 36 52M62 46Q80 42 94 48', '#F4EBD5', 1.3, 0.85) + MP.path('M18 100L34 72Q50 64 66 72L82 100Z', '#8A8A9C') + MP.path('M34 72Q50 64 66 72L60 76Q50 70 40 76Z', '#A9A9B8') +
+  MP.person(50, 72, 0.9, '#5F7A8C', { robe: 1, arms: 'u', skin: '#C08A6A' }) + D2.scroll(41, 20, 18, 12, '#F4EBD5');
+MEDAL_ART.th2_work = MP.bg('#EBD9B4') + MP.circle(78, 22, 6.5, '#EBC46C') + MP.ground(70, '#B7C4A0') + MP.path('M0 90Q40 80 100 86V100H0Z', '#8FA080') + MP.wheat(18, 84, 1.3, '#C2A25E', -6) + MP.wheat(28, 88, 1.3, '#C2A25E', 4) + MP.wheat(74, 86, 1.3, '#C2A25E', -4) + MP.wheat(84, 82, 1.3, '#C2A25E', 6) +
+  MP.person(50, 84, 0.95, '#8A6E4E', { arms: 'r', skin: '#C08A6A' }) + MP.line('M62 44Q70 38 66 34', '#8A8A9C', 1.4) + D3.bread(50, 92, 0.8, '#D9B36A');
+
+BOOK_MILESTONES["2th"] = [
+  { id: "2th01", need: 0, ref: "데살로니가후서 1장", title: "불꽃 가운데 나타나실 주", icon: "th2_flame",
+    text: "환난 속의 믿음을 자랑하다.",
+    verse: "핍박 속에서도 믿음이 자라고 사랑이 넘치는 것을 바울은 자랑한다. 지금의 환난은 끝이 아니어서, 주 예수가 능력의 천사들과 함께 타오르는 불꽃 가운데 하늘에서 나타나 악을 갚고 괴로운 이들에게 안식을 주시는 날이 온다고 말한다." },
+  { id: "2th02", need: 10, ref: "데살로니가후서 2장 1-12절", title: "쉽게 흔들리지 말라", icon: "th2_deceive",
+    text: "불법의 사람이 먼저 드러난다.",
+    verse: "주의 날이 벌써 왔다는 말과 편지에 마음이 쉽게 흔들리지 말라고 바울은 이른다. 먼저 배교가 일어나고 스스로를 신처럼 높이는 불법의 사람이 드러나겠지만, 주님이 입김으로 그를 쓰러뜨리신다고 못 박는다." },
+  { id: "2th03", need: 15, ref: "데살로니가후서 2장 13-17절", title: "전해 받은 가르침을 붙들라", icon: "th2_hold",
+    text: "굳게 서서 말씀을 지켜라.",
+    verse: "하나님이 처음부터 너희를 구원으로 택하셨다는 감사와 함께, 바울은 말과 편지로 전해 받은 가르침을 굳게 붙들라고 권한다. 영원한 위로와 좋은 소망을 주신 분이 마음을 위로하고 모든 선한 일과 말에 굳게 세우시기를 구한다." },
+  { id: "2th04", need: 20, ref: "데살로니가후서 3장", title: "일하지 않으면 먹지도 말라", icon: "th2_work",
+    text: "조용히 일하여 자기 양식을 먹으라.",
+    verse: "주의 말씀이 널리 퍼지도록 기도해 달라고 부탁한 바울은, 게으르게 지내며 남의 신세만 지는 이들을 꾸짖는다. 우리는 밤낮으로 수고하며 누구에게도 짐이 되지 않았으니 일하기 싫거든 먹지도 말라고, 조용히 일해 자기 양식을 먹으라고 명한다." }
+];
+BOOK_SCENES["2th"] = [
+  { id: "2th_s0", title: "주의 날을 기다리며", milestoneIds: ["2th01", "2th02", "2th03", "2th04"] }
+];
+attachSceneMeta("2th");
+
+// ---- 디모데전서 ----
+MEDAL_ART.ti1_mercy = MP.bg('#2C3A55') + MP.rays(50, 12, 10, 60, 14, '#E2C77E', 1.1, 0.4) + MP.circle(50, 12, 6, '#F6E7B4') + MP.ground(94, '#3A4A6C') + MP.person(50, 90, 0.95, '#B9A98A', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.stars([[18, 40, 0.6], [82, 44, 0.6]]);
+MEDAL_ART.ti1_prayer = MP.bg('#C9C3D6') + MP.rays(50, 8, 8, 60, 16, '#F4EBD5', 1.1, 0.2) + MP.ground(94, '#8A86A0') + MP.person(24, 82, 0.62, '#7A5A8C', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(76, 82, 0.62, '#5D8A8F', { f: 1, robe: 1, arms: 'u', scarf: '#F4EBD5', skin: '#C08A6A' }) +
+  MP.person(40, 88, 0.72, '#8A6E4E', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(60, 88, 0.72, '#6E5A6A', { robe: 1, arms: 'u', skin: '#C08A6A' }) + D5.cross(50, 60, 0.9, '#F4EBD5');
+MEDAL_ART.ti1_pillar = MP.bg('#E4D8C0') + MP.rays(50, 30, 20, 44, 16, '#E2C77E', 1, 0.1) + D5.temple(50, 88, 1.15, '#F4EBD5', '#C9B98C') + D5.cross(50, 32, 0.5, '#8A6E4E') + MP.rect(20, 88, 60, 5, '#B29A74');
+MEDAL_ART.ti1_example = MP.bg('#CFDCBE') + MP.circle(78, 22, 6, '#EBC46C') + MP.ground(92, '#8FB07E') + MP.line('M12 96Q30 84 46 88', '#C9B98C', 4, 0.8) + MP.person(52, 88, 1.0, '#7A5A3E', { robe: 1, arms: 'f', skin: '#C08A6A' }) + D2.scroll(46, 56, 12, 9, '#F4EBD5') + MP.person(24, 82, 0.55, '#B9714F', { arms: 'd' }) + MP.person(80, 82, 0.55, '#5D8A8F', { f: 1, robe: 1, arms: 'd', scarf: '#F4EBD5' });
+MEDAL_ART.ti1_root = MP.bg('#DCCBA8') + MP.path('M0 50H100V100H0Z', '#B29A74') + D5.coin(50, 38, 15, '#E2C77E', '#A9832E') + MP.line('M50 53Q44 66 30 74M50 53Q52 68 46 84M50 53Q58 66 72 72M40 63Q30 62 22 66M60 62Q70 62 78 60M48 76Q40 84 32 90', '#5A4A38', 1.7) + MP.line('M36 24Q30 12 20 14M64 24Q70 12 80 14', '#5F7A5A', 1.4, 0.6);
+
+BOOK_MILESTONES["1ti"] = [
+  { id: "1ti01", need: 0, ref: "디모데전서 1장", title: "죄인 중의 괴수가 입은 자비", icon: "ti1_mercy",
+    text: "그리스도 예수는 죄인을 구원하려고 오셨다.",
+    verse: "한때 교회를 모욕하고 핍박하던 바울은 자신이 죄인 중의 괴수였다고 고백한다. 그러나 믿지 않던 때 한 일이라 자비를 입었고, 그 자비가 오래 참으심의 본보기가 되었다고 말하며 디모데에게 선한 싸움을 싸우라고 당부한다." },
+  { id: "1ti02", need: 10, ref: "디모데전서 2장", title: "모든 사람을 위한 기도", icon: "ti1_prayer",
+    text: "하나님과 사람 사이에는 한 분 중보자.",
+    verse: "왕과 높은 사람들을 포함해 모든 사람을 위해 간구하고 감사하라고 바울은 권한다. 하나님은 모든 사람이 구원받기를 원하시며, 하나님과 사람 사이의 중보자도 한 분이라고 밝힌다." },
+  { id: "1ti03", need: 20, ref: "디모데전서 3장", title: "진리의 기둥과 터가 된 교회", icon: "ti1_pillar",
+    text: "하나님의 집에서 어떻게 행할지 알려 주다.",
+    verse: "감독과 집사가 될 이들의 자격을 바울은 흠 없는 삶과 절제와 가정을 잘 다스림으로 꼽는다. 하나님의 집인 교회는 살아 계신 하나님의 교회로서 진리의 기둥과 터라고 일러 준다." },
+  { id: "1ti04", need: 31, ref: "디모데전서 4장", title: "어리다고 업신여기지 못하게 본이 되라", icon: "ti1_example",
+    text: "말과 행실과 사랑과 믿음과 정결에 본이 되라.",
+    verse: "훗날 사람들이 미혹하는 영과 마귀의 가르침을 따를 것이라 미리 알린 바울은, 하나님이 지으신 모든 것은 감사함으로 받으면 선하다고 가르친다. 젊은 디모데에게 말과 행실과 사랑과 믿음과 순결에 본이 되고 성경 읽기와 권면과 가르침에 힘쓰라고 이른다." },
+  { id: "1ti05", need: 51, ref: "디모데전서 6장", title: "돈을 사랑하는 것은 온갖 악의 뿌리", icon: "ti1_root",
+    text: "믿음의 선한 싸움을 싸우라.",
+    verse: "부자가 되려는 욕심은 사람을 파멸의 덫에 빠뜨리고 돈에 대한 사랑은 모든 종류의 악의 뿌리라고 바울은 경고한다. 하나님의 사람은 이를 피해 의와 경건과 믿음과 사랑을 따르며 믿음의 선한 싸움을 싸워 영생을 붙잡으라고 이른다." }
+];
+BOOK_SCENES["1ti"] = [
+  { id: "1ti_s0", title: "교회를 세우는 가르침", milestoneIds: ["1ti01", "1ti02", "1ti03"] },
+  { id: "1ti_s1", title: "젊은 일꾼에게 준 당부", milestoneIds: ["1ti04", "1ti05"] }
+];
+attachSceneMeta("1ti");
+
+// ---- 디모데후서 ----
+MEDAL_ART.ti2_ember = MP.bg('#2B3558') + MP.stars([[16, 24, 0.7], [84, 22, 0.7], [70, 12, 0.5]]) + MP.path('M0 84Q30 74 60 82T100 78V100H0Z', '#1B2440') + MP.path('M34 90Q50 80 66 90Z', '#4A3A3A') + MP.flame(50, 86, 2.6, '#E9A65B', '#F6E7B4') + MP.flame(38, 88, 1, '#D98A3A', '#F6E7B4') + MP.flame(62, 88, 1, '#D98A3A', '#F6E7B4') + MP.circle(30, 60, 1.2, '#E9A65B') + MP.circle(70, 54, 1.2, '#E9A65B') + MP.circle(58, 40, 1, '#F6E7B4');
+MEDAL_ART.ti2_soldier = MP.bg('#DCCBA8') + MP.ground(90, '#C4B085') + MP.circle(78, 22, 6, '#EBC46C') + MP.line('M30 52V86', '#7A5A3E', 1.8) + MP.path('M30 44L36 54H24Z', '#A9A9B8') + MP.person(46, 88, 1.05, '#7A5A3E', { robe: 1, arms: 'r', skin: '#C08A6A' }) + MP.circle(66, 66, 11, '#8A6E4E') + MP.circle(66, 66, 7, '#C2A25E') + MP.circle(66, 66, 2.6, '#8A6E4E');
+MEDAL_ART.ti2_scripture = MP.bg('#2C3A55') + MP.rays(50, 44, 22, 46, 24, '#E2C77E', 1, 0.05) + MP.cloud(50, 16, 2.2, '#F4EBD5') + D2.scroll(28, 40, 44, 34, '#F4EBD5') + MP.path('M40 74Q50 82 60 74Q50 78 40 74Z', '#E2C77E');
+MEDAL_ART.ti2_crown = MP.bg('#EBC9A9') + MP.rays(50, 30, 14, 46, 20, '#F4EBD5', 1.1, 0.15) + MP.path('M0 66Q30 58 60 64T100 60V100H0Z', '#C4B085') + MP.path('M34 100L46 64H54L70 100Z', '#A8926A') + MP.line('M42 100L48 64M62 100L52 64', '#F4EBD5', 0.8, 0.6) + MP.circle(50, 40, 14, '#F6E7B4') + D2.crown(50, 46, 1.8, '#C2A25E');
+
+BOOK_MILESTONES["2ti"] = [
+  { id: "2ti01", need: 0, ref: "디모데후서 1장", title: "불씨를 다시 일으키라", icon: "ti2_ember",
+    text: "두려움이 아닌 능력의 영을 주셨다.",
+    verse: "할머니와 어머니에게서 이어 받은 디모데의 진실한 믿음을 바울은 기억한다. 감옥에 갇힌 자신을 부끄러워하지 말고 안에 있는 은사를 다시 불붙이라고, 하나님은 두려움이 아니라 능력과 사랑과 절제의 영을 주셨다고 말한다." },
+  { id: "2ti02", need: 10, ref: "디모데후서 2장", title: "그리스도 예수의 좋은 군사", icon: "ti2_soldier",
+    text: "복음을 위해 함께 고난을 받으라.",
+    verse: "바울은 디모데에게 그리스도 예수의 좋은 군사로서 고난을 함께 견디라고 한다. 군사는 일상의 얽매임에 매이지 않고, 경기자는 규칙대로 뛰어야 상을 받고, 수고한 농부가 첫 열매를 먹는 법이라고 비유로 일러 준다." },
+  { id: "2ti03", need: 20, ref: "디모데후서 3장", title: "하나님이 숨을 불어넣으신 성경", icon: "ti2_scripture",
+    text: "가르치고 바로잡고 온전케 하는 말씀.",
+    verse: "말세에는 자기 사랑과 쾌락에 빠져 경건의 모양만 남는 어려운 때가 온다고 바울은 경고한다. 어릴 때부터 알아 온 성경은 하나님이 숨을 불어넣으신 것으로, 가르치고 책망하고 바르게 하고 의로 훈련시켜 하나님의 사람을 온전하게 한다고 말한다." },
+  { id: "2ti04", need: 30, ref: "디모데후서 4장", title: "달려갈 길을 마치고 믿음을 지켰다", icon: "ti2_crown",
+    text: "의의 면류관이 예비되어 있다.",
+    verse: "떠날 때가 가까웠음을 아는 바울은 선한 싸움을 싸우고 달려갈 길을 마치고 믿음을 지켰다고 담담히 고백한다. 이제 자신을 위해 의의 면류관이 예비되어 있고 그날에 주님이 그를 비롯해 주의 나타나심을 사모하는 모든 이에게 주실 것이라고 한다." }
+];
+BOOK_SCENES["2ti"] = [
+  { id: "2ti_s0", title: "마지막 편지", milestoneIds: ["2ti01", "2ti02", "2ti03", "2ti04"] }
+];
+attachSceneMeta("2ti");
+
+// ---- 디도서 ----
+MEDAL_ART.tit_island = MP.bg('#B9CFC9') + MP.circle(20, 20, 6, '#EBC46C') + MP.band(56, 44, '#5D8A8F') + MP.wave(60, '#F4EBD5', 1.1, 0.8) + MP.wave(80, '#9FC4C4', 1.2) + MP.path('M20 62Q34 46 50 46Q66 46 80 62Q50 68 20 62Z', '#C9B98C') + MP.path('M30 60Q42 50 56 52Q66 54 72 60Z', '#8FB07E') +
+  D5.tent(38, 56, 0.8, '#F4EBD5') + D5.tent(62, 56, 0.8, '#F4EBD5') + MP.person(50, 56, 0.4, '#7A5A3E', { robe: 1, arms: 'u' });
+MEDAL_ART.tit_grace = MP.bg('#E8D3B8') + MP.path('M0 68Q30 54 60 64T100 58V100H0Z', '#B7C4A0') + MP.path('M0 84Q40 74 100 82V100H0Z', '#8FA080') + MP.rays(50, 62, 14, 46, 22, '#F4EBD5', 1.2, 0.05) + MP.circle(50, 62, 12, '#EBC46C') + MP.circle(50, 62, 8, '#F6E7B4') + MP.cloud(24, 32, 1.6, '#F4EBD5') + MP.cloud(78, 26, 1.4, '#F4EBD5');
+MEDAL_ART.tit_wash = MP.bg('#B9CFC9') + MP.rays(50, 10, 8, 40, 14, '#F4EBD5', 1, 0.3) + D4.dove(50, 30, 1.7, '#F4EBD5') + D2.jar(36, 64, 2.2, '#8A6E4E', '#6B4F3A') + MP.line('M42 52Q56 50 60 64Q62 72 58 76', '#7FB3C2', 3, 0.9) + MP.circle(60, 82, 1.8, '#7FB3C2') + MP.circle(56, 88, 1.4, '#7FB3C2') + MP.path('M30 96Q50 88 70 96V100H30Z', '#5D8A8F');
+MEDAL_ART.tit_fruit = MP.bg('#CFDCBE') + MP.circle(20, 20, 6, '#EBC46C') + MP.ground(92, '#8FB07E') + MP.tree(50, 90, 2.7, '#7A5A3E', '#3E6B4A', '#E9B45B') + MP.circle(36, 56, 2.2, '#E9B45B') + MP.circle(66, 60, 2.2, '#E9B45B') + MP.circle(50, 36, 2.2, '#E9B45B');
+
+BOOK_MILESTONES["tit"] = [
+  { id: "tit01", need: 0, ref: "디도서 1장", title: "그레데 섬에 남겨 둔 일꾼", icon: "tit_island",
+    text: "각 성에 장로를 세우라.",
+    verse: "바울은 디도를 그레데 섬에 남겨 두고 남은 일을 바로잡아 성마다 장로를 세우게 한다. 흠 없고 가정을 잘 다스리며 참된 말씀을 굳게 잡은 사람이라야 하고, 헛된 말로 미혹하는 자들의 입을 막아야 한다고 이른다." },
+  { id: "tit02", need: 10, ref: "디도서 2장", title: "은혜가 나타났다", icon: "tit_grace",
+    text: "경건하게 살며 복스러운 소망을 기다린다.",
+    verse: "노인과 젊은이와 종에 이르기까지 건전한 가르침에 어울리게 살라고 바울은 일러 준다. 모든 사람에게 구원을 가져오는 하나님의 은혜가 나타나 우리를 불경건을 버리고 신중하고 의롭고 경건하게 살도록 가르친다고 말한다." },
+  { id: "tit03", need: 20, ref: "디도서 3장 1-8절", title: "씻어 새롭게 하신 성령", icon: "tit_wash",
+    text: "우리의 의가 아니라 그분의 긍휼로.",
+    verse: "한때는 어리석고 순종하지 않던 우리를 하나님이 우리가 한 의로운 일 때문이 아니라 긍휼로 구원하셨다고 바울은 말한다. 거듭남의 씻음과 성령이 새롭게 하심으로 우리를 소망 가운데 상속자로 삼으셨다고 일러 준다." },
+  { id: "tit04", need: 25, ref: "디도서 3장 9-15절", title: "선한 일에 힘쓰는 삶", icon: "tit_fruit",
+    text: "열매 없는 사람이 되지 않게 하라.",
+    verse: "어리석은 논쟁과 족보 다툼과 분쟁은 무익하니 피하라고 바울은 이른다. 우리 사람들도 필요한 곳에서 선한 일에 힘쓰는 것을 배워 열매 없는 삶이 되지 않게 하라고 마무리하며 문안을 전한다." }
+];
+BOOK_SCENES["tit"] = [
+  { id: "tit_s0", title: "선한 일에 힘쓰라", milestoneIds: ["tit01", "tit02", "tit03", "tit04"] }
+];
+attachSceneMeta("tit");
+
+// ---- 빌레몬서 ----
+MEDAL_ART.phm_refresh = MP.bg('#EBD9C4') + MP.circle(50, 42, 30, '#F4E6D2') + D4.heart(50, 40, 2.2, '#C98A8A') + MP.ground(94, '#C9AE94') + MP.person(30, 88, 0.6, '#7A5A3E', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(50, 90, 0.6, '#6E7A8C', { arms: 'u', skin: '#C08A6A' }) + MP.person(70, 88, 0.6, '#8A6A7A', { f: 1, robe: 1, arms: 'u', scarf: '#F4EBD5', skin: '#C08A6A' });
+MEDAL_ART.phm_brother = MP.bg('#C9C3D6') + MP.ground(94, '#8A86A0') + MP.person(38, 90, 0.95, '#7A5A3E', { robe: 1, arms: 'h', skin: '#C08A6A' }) + MP.person(62, 90, 0.95, '#6E7A8C', { arms: 'h', skin: '#C08A6A' }) + D3.ring(22, 44, 4.4, '#8A8A9C') + D3.ring(31, 40, 4.4, '#8A8A9C') + D3.ring(69, 40, 4.4, '#8A8A9C') + D3.ring(78, 44, 4.4, '#8A8A9C') + MP.line('M44 42L56 42', '#E2C77E', 1.4) + D4.heart(50, 30, 0.9, '#C98A8A');
+MEDAL_ART.phm_debt = MP.bg('#E4D8C0') + D6.letter(50, 42, 1.6, '#F4EBD5', '#8C3A44') + D5.coin(30, 82, 5, '#E2C77E', '#C2A25E') + D5.coin(42, 86, 5, '#E2C77E', '#C2A25E') + D5.coin(58, 86, 5, '#E2C77E', '#C2A25E') + D5.coin(70, 82, 5, '#E2C77E', '#C2A25E') + MP.line('M34 68Q50 64 66 68', '#8A6E4E', 1.4);
+
+BOOK_MILESTONES["phm"] = [
+  { id: "phm01", need: 0, ref: "빌레몬서 1-7절", title: "성도의 마음을 시원하게 한 사랑", icon: "phm_refresh",
+    text: "네 사랑으로 큰 기쁨과 위로를 얻었다.",
+    verse: "감옥에서 바울이 벗 빌레몬에게 편지를 쓴다. 주 예수와 모든 성도를 향한 그의 사랑과 믿음을 들었고, 그 사랑이 성도들의 마음을 시원하게 했으니 큰 기쁨과 위로를 얻었다고 감사한다." },
+  { id: "phm02", need: 7, ref: "빌레몬서 8-16절", title: "종이 아니라 사랑받는 형제로", icon: "phm_brother",
+    text: "도망쳤던 오네시모를 돌려보내다.",
+    verse: "바울은 명령 대신 사랑으로 청한다. 옥중에서 아들처럼 얻은 오네시모는 전에는 쓸모없었으나 이제 참으로 쓸모 있는 사람이 되었으니, 돌아가는 그를 이제는 종이 아니라 종 이상으로 사랑받는 형제로 맞아 달라고 부탁한다." },
+  { id: "phm03", need: 14, ref: "빌레몬서 17-25절", title: "그의 빚은 내가 갚겠다", icon: "phm_debt",
+    text: "나를 영접하듯 그를 영접하라.",
+    verse: "바울은 나를 동무로 여기거든 나를 맞듯 오네시모를 맞으라고 한다. 그가 잘못했거나 빚진 것이 있으면 내 앞으로 계산하라고 자기 손으로 직접 써서 약속하고, 네가 내가 말한 것 이상으로 행할 줄 안다고 믿는다." }
+];
+BOOK_SCENES["phm"] = [
+  { id: "phm_s0", title: "한 통의 편지", milestoneIds: ["phm01", "phm02", "phm03"] }
+];
+attachSceneMeta("phm");
+
+// ---- 히브리서 ----
+MEDAL_ART.heb_radiance = MP.bg('#3E4C6C') + MP.rays(50, 50, 18, 42, 16, '#E2C77E', 1.2, 0.1) + MP.rays(50, 50, 18, 34, 16, '#F4EBD5', 0.8, 0.2) + '<circle cx="50" cy="50" r="17" fill="none" stroke="#E2C77E" stroke-width="1.1"/>' + MP.circle(50, 50, 13, '#F6E7B4') + MP.star(50, 50, 3.4) + MP.stars([[16, 24, 0.6], [84, 26, 0.6], [16, 76, 0.6], [84, 74, 0.6]]);
+MEDAL_ART.heb_sword = MP.bg('#3A4A5C') + MP.rays(50, 44, 10, 44, 18, '#E2C77E', 1, 0.1) + MP.circle(50, 44, 22, '#46586E') + D7.sword(50, 68, 1.05, '#E6EAEE', 0) + MP.line('M50 26V64', '#A9B0B8', 0.7) + MP.path('M40 86Q50 80 60 86Z', '#C2A25E');
+MEDAL_ART.heb_anchor = MP.bg('#3A4A5C') + MP.rect(0, 6, 100, 2.4, '#C2A25E', 1) + MP.path('M0 8H42Q37 22 43 42H0Z', '#8A4E56') + MP.path('M100 8H58Q63 22 57 42H100Z', '#8A4E56') + MP.rect(43, 8, 14, 34, '#F6E7B4') + MP.line('M50 10V40', '#E2C77E', 1.1) + MP.line('M14 14Q17 26 12 38M28 12Q31 26 27 40M86 14Q83 26 88 38M72 12Q69 26 73 40', '#6E3A44', 1) +
+  D6.anchor(50, 68, 1.25, '#F4EBD5') + MP.wave(88, '#7FB3C2', 1.2) + MP.wave(94, '#5D8A8F', 1.2);
+MEDAL_ART.heb_melchizedek = MP.bg('#EBD9C4') + MP.rays(50, 30, 14, 46, 18, '#E2C77E', 1, 0.1) + D2.crown(50, 34, 2.8, '#E2C77E') + MP.rect(18, 76, 64, 6, '#8A6E4E', 1.5) + MP.rect(24, 82, 6, 12, '#6B4F3A') + MP.rect(70, 82, 6, 12, '#6B4F3A') + D3.bread(36, 74, 1.5, '#D9B36A') + D3.bread(52, 75, 1.2, '#C9A25A') + D3.cup(68, 76, 1.2, '#E2C77E', '#8C3A44');
+MEDAL_ART.heb_tent = MP.bg('#232049') + MP.stars([[16, 22, 0.8], [40, 14, 0.7], [66, 20, 0.9], [84, 32, 0.6], [24, 44, 0.6], [56, 36, 0.6]]) + MP.path('M0 74Q30 66 60 72T100 68V100H0Z', '#3A3A5A') + MP.path('M0 88Q40 80 100 86V100H0Z', '#2E2E4A') +
+  MP.rect(62, 50, 24, 20, '#C2A25E') + MP.rect(60, 46, 6, 24, '#E2C77E') + MP.rect(82, 46, 6, 24, '#E2C77E') + MP.path('M66 50L74 42L82 50Z', '#E2C77E') + MP.rect(71, 58, 6, 12, '#F6E7B4') + D5.tent(32, 84, 1.7, '#D9C6A0') + MP.person(52, 86, 0.5, '#B9A98A', { robe: 1, arms: 'u', skin: '#C08A6A' });
+MEDAL_ART.heb_race = MP.bg('#E8D3B8') + MP.rays(50, 40, 10, 40, 18, '#F4EBD5', 1.1, 0.1) + MP.circle(50, 40, 7, '#EBC46C') + MP.cloud(16, 44, 1.9, '#F4EBD5') + MP.cloud(84, 44, 1.9, '#F4EBD5') + MP.path('M0 42H100V100H0Z', '#B7C4A0') + MP.path('M47 42H53L84 100H16Z', '#C9B98C') + MP.line('M50 42V100', '#F4EBD5', 1.2, 0.7) +
+  MP.person(14, 42, 0.32, '#7A5A8C', { robe: 1, arms: 'u' }) + MP.person(22, 44, 0.32, '#5D8A8F', { robe: 1, arms: 'u' }) + MP.person(78, 44, 0.32, '#B9714F', { robe: 1, arms: 'u' }) + MP.person(86, 42, 0.32, '#7A5A3E', { robe: 1, arms: 'u' }) + MP.person(50, 88, 0.85, '#7A5A3E', { arms: 'l', skin: '#C08A6A' });
+
+BOOK_MILESTONES["heb"] = [
+  { id: "heb01", need: 0, ref: "히브리서 1장", title: "영광의 광채이신 아들", icon: "heb_radiance",
+    text: "하나님이 마지막 날에 아들로 말씀하셨다.",
+    verse: "옛날 하나님은 여러 모양으로 선지자들을 통해 말씀하셨으나 마지막 날에는 아들을 통해 말씀하셨다고 저자는 시작한다. 그분은 하나님 영광의 광채이며 본체의 형상이요 능력의 말씀으로 만물을 붙드시며, 천사들보다 뛰어난 이름을 얻으셨다." },
+  { id: "heb02", need: 30, ref: "히브리서 4장", title: "두 날 선 검보다 예리한 말씀", icon: "heb_sword",
+    text: "마음의 생각과 뜻을 판단하는 말씀.",
+    verse: "약속된 안식이 아직 남아 있으니 굳은 마음으로 들어가지 못하는 일이 없게 하라고 저자는 권한다. 하나님의 말씀은 살아 있어 어떤 두 날 검보다 예리하게 혼과 영, 마음의 생각과 뜻까지 가르며, 은혜의 보좌 앞에 담대히 나아가라고 이른다." },
+  { id: "heb03", need: 50, ref: "히브리서 6장", title: "휘장 안에 닿은 영혼의 닻", icon: "heb_anchor",
+    text: "약속과 맹세는 바뀌지 않는다.",
+    verse: "하나님은 약속하신 것을 더 확실히 하려고 맹세로 보증하셨다. 그래서 그 소망은 우리 영혼에 안전하고 견고한 닻과 같아서, 앞서 가신 예수님이 계신 휘장 안 안쪽까지 이어져 있다고 저자는 말한다." },
+  { id: "heb04", need: 60, ref: "히브리서 7장", title: "살렘 왕 멜기세덱, 영원한 제사장", icon: "heb_melchizedek",
+    text: "영원히 사시므로 그분의 제사장직은 바뀌지 않는다.",
+    verse: "아브라함이 전쟁에서 돌아올 때 떡과 포도주를 들고 나와 그를 축복한 살렘 왕 멜기세덱을 저자는 떠올린다. 레위의 계보가 아닌 이 신비한 제사장의 반열을 따라 영원히 살아 계신 분이 우리 대제사장이 되셨다고 밝힌다." },
+  { id: "heb05", need: 101, ref: "히브리서 11장", title: "장막에서 본 터가 있는 성", icon: "heb_tent",
+    text: "믿음은 바라는 것들의 실상이다.",
+    verse: "믿음은 바라는 것들의 확신이요 보이지 않는 것들의 증거라고 저자는 정의한다. 아브라함은 갈 곳도 모른 채 나가 장막에서 살면서 하나님이 설계하고 지으신 터가 있는 성을 기다렸고, 많은 믿음의 사람들이 약속을 멀리서 보고 환영했다." },
+  { id: "heb06", need: 111, ref: "히브리서 12장", title: "허다한 증인 앞에서 달리는 경주", icon: "heb_race",
+    text: "믿음의 주를 바라보며 경주하라.",
+    verse: "구름처럼 둘러싼 허다한 증인들을 보며 모든 무거운 것과 얽매는 죄를 벗어 버리고 인내로 앞에 놓인 경주를 달리라고 저자는 권한다. 믿음의 시작이시요 완성이신 예수만 바라보라고, 그분은 십자가를 참으시고 하나님 보좌 우편에 앉으셨다고 이른다." }
+];
+BOOK_SCENES["heb"] = [
+  { id: "heb_s0", title: "아들의 우월함", milestoneIds: ["heb01", "heb02", "heb03", "heb04"] },
+  { id: "heb_s1", title: "믿음의 경주", milestoneIds: ["heb05", "heb06"] }
+];
+attachSceneMeta("heb");
+
+// ---- 야고보서 ----
+MEDAL_ART.jas_crucible = MP.bg('#4A2B2E') + D2.crown(50, 30, 1.9, '#E2C77E') + MP.rays(50, 28, 10, 22, 12, '#E2C77E', 0.9, 0.3) + MP.path('M30 58H70Q68 76 50 78Q32 76 30 58Z', '#8A8A9C') + MP.rect(28, 56, 44, 4, '#A9A9B8', 2) + MP.path('M40 56L44 47H56L60 56Z', '#E2C77E') + MP.flame(34, 94, 1.5, '#D98A3A', '#F6E7B4') + MP.flame(50, 96, 2.1, '#E9A65B', '#F6E7B4') + MP.flame(66, 94, 1.5, '#D98A3A', '#F6E7B4');
+MEDAL_ART.jas_bread = MP.bg('#DCCBA8') + MP.circle(80, 22, 6, '#EBC46C') + MP.ground(92, '#C4B085') + MP.person(32, 88, 1.0, '#7A5A3E', { robe: 1, arms: 'r', skin: '#C08A6A' }) + MP.person(70, 88, 0.85, '#6E7A8C', { arms: 'l', skin: '#C08A6A' }) + D3.bread(52, 54, 1.3, '#D9B36A') + D4.heart(50, 32, 0.8, '#C98A8A');
+MEDAL_ART.jas_helm = MP.bg('#B9CFC9') + MP.line('M8 30Q26 24 44 32M58 22Q76 16 92 24M10 48Q24 44 34 50', '#F4EBD5', 1.4, 0.85) + MP.band(56, 44, '#3E6B86') + MP.wave(60, '#F4EBD5', 1.1, 0.8) + MP.wave(78, '#7FB3C2', 1.2) + MP.wave(90, '#7FB3C2', 1.2) + D5.boat(54, 66, 1.5, '#8A6E4E', '#F4EBD5') + MP.path('M26 64L20 80L30 76Z', '#6B4F3A');
+MEDAL_ART.jas_mist = MP.bg('#C9D2E0') + MP.circle(50, 46, 12, '#EBC46C') + MP.rays(50, 46, 15, 24, 14, '#F4EBD5', 1.1, 0.1) + MP.path('M0 70Q30 62 60 68T100 64V100H0Z', '#8FA080') + MP.person(50, 88, 0.85, '#6E5A6A', { robe: 1, arms: 'd', skin: '#C08A6A' }) +
+  '<path d="M0 60Q25 54 50 60T100 58V70Q75 74 50 70T0 72Z" fill="#E6EBF0" opacity=".85"/><path d="M0 78Q25 72 50 78T100 76V88Q75 92 50 88T0 90Z" fill="#E6EBF0" opacity=".9"/>';
+MEDAL_ART.jas_rain = MP.bg('#9FB0BE') + MP.cloud(50, 26, 3.6, '#6E7A8C') + MP.cloud(22, 34, 1.8, '#7E8A9C') + MP.cloud(80, 36, 1.8, '#7E8A9C') + MP.line('M34 46L31 56M44 48L41 58M54 48L51 58M64 46L61 56M74 44L71 54M28 62L26 70M50 62L48 70M70 60L68 68', '#E4ECF2', 1.3) + MP.ground(90, '#8FA080') + MP.wheat(20, 90, 1.5, '#C2A25E') + MP.wheat(80, 90, 1.5, '#C2A25E') + MP.wheat(30, 92, 1.2, '#C2A25E') + MP.wheat(70, 92, 1.2, '#C2A25E') + MP.person(50, 90, 0.75, '#7A5A3E', { arms: 'u', skin: '#C08A6A' });
+
+BOOK_MILESTONES["jas"] = [
+  { id: "jas01", need: 0, ref: "야고보서 1장", title: "시련은 연단된 금이 되게 한다", icon: "jas_crucible",
+    text: "시험을 견디는 사람은 복이 있다.",
+    verse: "여러 가지 시험을 만나면 온전히 기쁘게 여기라고 야고보는 말한다. 믿음의 시련이 인내를 낳고 인내가 그 사람을 온전하게 하며, 견디어 낸 사람은 생명의 면류관을 받는다고 한다. 말씀은 듣기만 하지 말고 행하라고 이른다." },
+  { id: "jas02", need: 10, ref: "야고보서 2장", title: "행함이 없는 믿음은 죽은 것", icon: "jas_bread",
+    text: "벗은 형제에게 말만 하고 먹을 것을 주지 않으면 무슨 유익이 있는가.",
+    verse: "부자는 앞자리에, 가난한 사람은 뒷자리에 앉히는 차별을 야고보는 꾸짖는다. 헐벗고 굶주린 형제에게 평안히 가라고 말만 하고 필요한 것을 주지 않는다면 무슨 소용이냐며, 행함이 없는 믿음은 그 자체로 죽은 것이라고 잘라 말한다." },
+  { id: "jas03", need: 20, ref: "야고보서 3장", title: "작은 키가 큰 배를 돌린다", icon: "jas_helm",
+    text: "혀는 작지만 큰 것을 자랑한다.",
+    verse: "말에 실수가 없는 사람은 온몸을 다스릴 수 있는 사람이라고 야고보는 말한다. 작은 재갈이 말을 움직이고 작은 키가 큰 배를 돌리듯 혀는 작지만 온몸을 이끌고, 한 입에서 찬양과 저주가 함께 나와서는 안 된다고 이른다." },
+  { id: "jas04", need: 30, ref: "야고보서 4장", title: "잠깐 보이다 사라지는 안개", icon: "jas_mist",
+    text: "주님의 뜻이면 내일 우리가 살아 이것을 하리라.",
+    verse: "오늘이나 내일 어느 도시에 가서 돈을 벌겠다고 계획하는 이들에게 야고보는 묻는다. 너희 삶은 잠깐 보이다 사라지는 안개일 뿐이니 주님의 뜻이면 이렇게 하겠다고 말해야 하며, 하나님을 가까이하면 그분도 우리를 가까이하신다고 일러 준다." },
+  { id: "jas05", need: 40, ref: "야고보서 5장", title: "이른 비와 늦은 비를 기다리는 농부", icon: "jas_rain",
+    text: "주의 강림이 가까우니 참고 기다려라.",
+    verse: "농부가 땅의 귀한 열매를 바라며 이른 비와 늦은 비가 내리기까지 오래 참고 기다리듯 형제들도 주가 오실 때까지 인내하라고 야고보는 권한다. 고난 중에 있는 자는 기도하고, 믿음의 기도는 병든 자를 구원한다고 격려한다." }
+];
+BOOK_SCENES["jas"] = [
+  { id: "jas_s0", title: "믿음은 행함으로", milestoneIds: ["jas01", "jas02", "jas03"] },
+  { id: "jas_s1", title: "겸손과 인내", milestoneIds: ["jas04", "jas05"] }
+];
+attachSceneMeta("jas");
+
+// ---- 베드로전서 ----
+MEDAL_ART.pe1_pilgrim = MP.bg('#EBC9A9') + MP.rays(50, 52, 14, 46, 20, '#F4EBD5', 1.1, 0.1) + MP.circle(50, 52, 9, '#EBC46C') + MP.path('M0 60H100V100H0Z', '#C4B085') + MP.path('M48 60H52L74 100H26Z', '#A8926A') + MP.person(50, 84, 0.85, '#7A5A3E', { robe: 1, arms: 'r', staff: -12, skin: '#C08A6A' }) + MP.rect(42, 58, 7, 8, '#6B4F3A', 2);
+MEDAL_ART.pe1_stone = MP.bg('#DCCBA8') + MP.rays(50, 28, 10, 44, 16, '#F4EBD5', 1.2, 0.1) + MP.rect(18, 46, 32, 16, '#B9B29C') + MP.rect(50, 46, 32, 16, '#A9A18C') + MP.rect(18, 62, 22, 16, '#A9A18C') + MP.rect(40, 62, 42, 16, '#B9B29C') + MP.rect(18, 78, 46, 14, '#B9B29C') + MP.rect(64, 78, 18, 14, '#A9A18C') + MP.rect(18, 30, 22, 16, '#A9A18C') + MP.rect(40, 30, 20, 16, '#E2C77E') + MP.rect(60, 30, 22, 16, '#A9A18C') + MP.line('M40 30H60V46H40Z', '#C2A25E', 1);
+MEDAL_ART.pe1_flood = MP.bg('#B9CFC9') + MP.circle(80, 20, 6, '#EBC46C') + MP.band(66, 34, '#3E6B86') + MP.wave(68, '#F4EBD5', 1.1, 0.8) + MP.wave(84, '#7FB3C2', 1.2) + MP.path('M18 62H82L74 76H26Z', '#8A6E4E') + MP.rect(32, 46, 36, 16, '#B98E6E') + MP.path('M28 46L50 32L72 46Z', '#6B4F3A') + MP.rect(46, 52, 8, 10, '#3A2A20') + D4.dove(78, 34, 0.9, '#F4EBD5', -1) + MP.line('M70 32Q64 34 60 32', '#5F8A5A', 1.4);
+MEDAL_ART.pe1_cover = MP.bg('#EBD9C4') + MP.circle(50, 46, 32, '#F4E6D2') + D4.heart(50, 46, 2.7, '#C98A8A') + MP.path('M16 66Q50 50 84 66L88 88Q50 98 12 88Z', '#F4EBD5') + MP.line('M30 70Q34 82 28 92M50 62V94M70 70Q66 82 72 92', '#D9C6A0', 1.1);
+MEDAL_ART.pe1_flock = MP.bg('#CFDCBE') + MP.rays(50, 28, 12, 46, 18, '#F4EBD5', 1.1, 0.1) + D2.crown(50, 30, 2.4, '#E2C77E') + MP.ground(92, '#8FB07E') + MP.path('M0 74Q30 62 60 72T100 68V100H0Z', '#7BA06E') + MP.person(34, 88, 0.85, '#8A6E4E', { robe: 1, arms: 'r', staff: -12, skin: '#C08A6A' }) + MP.lamb(56, 86, 0.9, '#F4EBD5') + MP.lamb(72, 82, 0.75, '#F4EBD5');
+
+BOOK_MILESTONES["1pe"] = [
+  { id: "1pe01", need: 0, ref: "베드로전서 1장", title: "흩어진 나그네에게 준 산 소망", icon: "pe1_pilgrim",
+    text: "썩지 않는 유업이 하늘에 간직되어 있다.",
+    verse: "흩어져 나그네로 사는 성도들에게 베드로는 하나님이 죽은 자 가운데서 살리심으로 우리를 산 소망으로 새로 낳으셨다고 전한다. 썩지 않고 더럽혀지지 않는 유업이 하늘에 간직되어 있으니, 불로 연단된 금보다 귀한 믿음으로 지금은 기뻐하라고 한다." },
+  { id: "1pe02", need: 10, ref: "베드로전서 2장", title: "산 돌로 지어져 가는 집", icon: "pe1_stone",
+    text: "택하신 보배로운 모퉁이 돌.",
+    verse: "사람에게는 버림받았으나 하나님께는 택함받은 귀한 산 돌 되신 분께 나아오라고 베드로는 말한다. 그분 위에 성도들도 산 돌로 세워져 신령한 집이 되고, 어둠에서 빛으로 불러내신 이의 덕을 전하는 거룩한 백성이 된다고 이른다." },
+  { id: "1pe03", need: 20, ref: "베드로전서 3장", title: "물을 통과해 구원받은 방주", icon: "pe1_flood",
+    text: "온유와 두려움으로 소망의 이유를 답하라.",
+    verse: "너희 안에 있는 소망의 이유를 묻는 이에게 온유와 두려움으로 대답할 준비를 하라고 베드로는 권한다. 선을 행하다 고난을 받는 것이 낫다고 하며, 노아의 때 방주에서 물을 통과해 구원받은 여덟 사람의 이야기를 세례가 가리키는 구원의 모형으로 든다." },
+  { id: "1pe04", need: 30, ref: "베드로전서 4장", title: "사랑은 허다한 허물을 덮는다", icon: "pe1_cover",
+    text: "서로 뜨겁게 사랑하라.",
+    verse: "만물의 끝이 가까우니 정신을 차리고 기도하라고 베드로는 이른다. 무엇보다 서로 뜨겁게 사랑하라, 사랑은 허다한 죄를 덮는다고 하며, 원망 없이 서로 대접하고 각자가 받은 은사로 봉사하라고 권한다." },
+  { id: "1pe05", need: 40, ref: "베드로전서 5장", title: "시들지 않는 영광의 관", icon: "pe1_flock",
+    text: "하나님의 양 떼를 자원함으로 치라.",
+    verse: "장로들에게 베드로는 억지로가 아니라 기꺼이, 더러운 이익을 위해서가 아니라 열심으로 하나님의 양 떼를 돌보라고 권한다. 으뜸 목자장이 나타나실 때 시들지 않는 영광의 관을 얻을 것이며, 근신하고 깨어 마귀를 대적하라고 이른다." }
+];
+BOOK_SCENES["1pe"] = [
+  { id: "1pe_s0", title: "나그네와 산 돌", milestoneIds: ["1pe01", "1pe02", "1pe03"] },
+  { id: "1pe_s1", title: "고난 가운데 사랑과 돌봄", milestoneIds: ["1pe04", "1pe05"] }
+];
+attachSceneMeta("1pe");
+
+// ---- 베드로후서 ----
+MEDAL_ART.pe2_lamp = MP.bg('#2B3558') + MP.circle(78, 60, 22, '#3E4C6C') + MP.circle(78, 60, 14, '#5A5A7A') + MP.star(80, 44, 3.4) + MP.rays(80, 44, 8, 14, 8, '#E2C77E', 1, 0.2) + MP.path('M0 84Q30 76 60 82T100 78V100H0Z', '#1B2440') + D2.lamp(38, 84, 2.4, '#E2C77E') + MP.circle(38, 50, 14, '#3E4C6C') + MP.flame(38, 60, 1.6, '#E9A65B', '#F6E7B4') + MP.stars([[16, 24, 0.6], [30, 12, 0.5]]);
+MEDAL_ART.pe2_dry = MP.bg('#E4D2AE') + MP.circle(78, 20, 7, '#EBC46C') + MP.rays(78, 20, 10, 14, 10, '#E2C77E', 1.1) + MP.path('M0 66H100V100H0Z', '#C9B98C') + MP.line('M8 78L18 74L24 80M78 86L88 80L94 84M62 92L70 88', '#9A8A6A', 1) + MP.path('M30 62H70V84Q50 92 30 84Z', '#A8977A') + '<ellipse cx="50" cy="62" rx="20" ry="5" fill="#4A3E30"/>' + MP.rect(30, 44, 3, 20, '#6B4F3A') + MP.rect(67, 44, 3, 20, '#6B4F3A') + MP.rect(30, 42, 40, 3, '#6B4F3A') + MP.line('M50 45V60', '#6B4F3A', 1) + MP.path('M46 60H54L53 66H47Z', '#6B4F3A');
+MEDAL_ART.pe2_hourglass = MP.bg('#C9C3D6') + MP.circle(50, 50, 32, '#D8D3E2') + D2.moon(24, 30, 6, '#F4EBD5', '#D8D3E2') + MP.circle(78, 30, 5, '#EBC46C') + D7.hourglass(50, 82, 2.2, '#8A6E4E', '#C2A25E') + MP.ground(96, '#8A86A0');
+MEDAL_ART.pe2_hope = MP.bg('#3E4C6C') + MP.stars([[16, 20, 0.8], [34, 12, 0.6], [70, 14, 0.7], [86, 28, 0.6], [22, 42, 0.5]]) + MP.rays(50, 40, 8, 20, 16, '#E2C77E', 1, 0.1) + MP.star(50, 40, 3.8) + MP.path('M0 66Q30 56 60 64T100 60V100H0Z', '#7BA06E') + MP.path('M0 84Q40 76 100 82V100H0Z', '#5F8A5A') + D4.flower(34, 80, 1.5, '#F4EBD5', '#E2C77E') + D4.flower(66, 80, 1.5, '#F4EBD5', '#E2C77E') + MP.person(50, 80, 0.55, '#B9A98A', { robe: 1, arms: 'u', skin: '#C08A6A' });
+
+BOOK_MILESTONES["2pe"] = [
+  { id: "2pe01", need: 0, ref: "베드로후서 1장", title: "샛별이 떠오를 때까지 비추는 등불", icon: "pe2_lamp",
+    text: "예언의 말씀은 어두운 곳을 비추는 등불.",
+    verse: "귀하고 큰 약속들이 주어졌으니 믿음에 덕을, 덕에 지식을 더하며 마침내 사랑에 이르기까지 힘쓰라고 베드로는 말한다. 곧 떠날 것을 알기에 이 모든 것을 일깨우며, 예언의 말씀은 날이 새어 샛별이 너희 마음에 떠오를 때까지 어두운 곳을 비추는 등불이라고 한다." },
+  { id: "2pe02", need: 10, ref: "베드로후서 2장", title: "물 없는 샘 같은 거짓 선생들", icon: "pe2_dry",
+    text: "자유를 약속하나 그들 자신이 썩음의 종이다.",
+    verse: "백성 가운데 거짓 예언자가 있었듯 너희 가운데도 멸망의 이단을 몰래 끌어들이는 거짓 선생들이 있을 것이라고 베드로는 경고한다. 그들은 물 없는 샘이요 폭풍에 밀려가는 안개로서, 자유를 약속하면서 자신은 썩어질 것의 종이며 이미 그 심판은 잠들지 않았다고 말한다." },
+  { id: "2pe03", need: 20, ref: "베드로후서 3장 1-9절", title: "주는 더디지 않고 오래 참으신다", icon: "pe2_hourglass",
+    text: "하루가 천 년 같고 천 년이 하루 같다.",
+    verse: "마지막 날에 조롱하는 자들이 와서 조상들이 잠든 뒤로 모든 것이 그대로인데 주의 약속은 어디 있느냐고 비웃을 것이라고 베드로는 미리 알린다. 주께는 하루가 천 년 같고 천 년이 하루 같으며, 더딘 것이 아니라 아무도 망하지 않고 다 회개하기를 바라시어 오래 참으시는 것이라고 답한다." },
+  { id: "2pe04", need: 25, ref: "베드로후서 3장 10-18절", title: "새 하늘과 새 땅을 바라며", icon: "pe2_hope",
+    text: "은혜와 지식 안에서 자라 가라.",
+    verse: "주의 날은 밤의 도둑처럼 와서 하늘과 땅의 것이 불에 풀어질 것이라고 베드로는 말한다. 그러니 거룩하고 경건하게 살며 의가 거하는 새 하늘과 새 땅을 약속대로 기다리고, 우리 주 예수 그리스도의 은혜와 지식 안에서 자라 가라고 마무리한다." }
+];
+BOOK_SCENES["2pe"] = [
+  { id: "2pe_s0", title: "오래 참으시는 주", milestoneIds: ["2pe01", "2pe02", "2pe03", "2pe04"] }
+];
+attachSceneMeta("2pe");
+
+// ---- 요한1서 ----
+MEDAL_ART.jn1_walk = MP.bg('#2C3A55') + MP.stars([[16, 22, 0.7], [84, 20, 0.7]]) + MP.path('M0 74Q30 66 60 72T100 68V100H0Z', '#1B2440') + MP.path('M44 100L56 66H64L82 100Z', '#3E4C6C') + MP.circle(66, 52, 24, '#3E4C6C') + MP.circle(66, 52, 15, '#5A5A7A') + MP.person(42, 88, 0.95, '#B9A98A', { robe: 1, arms: 'r', skin: '#C08A6A' }) + D2.lamp(64, 66, 1.7, '#E2C77E');
+MEDAL_ART.jn1_anoint = MP.bg('#EBD9B4') + MP.rays(66, 44, 12, 40, 16, '#E2C77E', 1, 0.2) + MP.ground(94, '#C4B085') + D2.jar(34, 90, 2.5, '#C9955A', '#8A6E4E') + MP.line('M34 34Q30 40 34 48', '#C2A25E', 2.2) + MP.circle(34, 52, 2.4, '#C2A25E') + D2.lamp(68, 90, 2.2, '#E2C77E');
+MEDAL_ART.jn1_hand = MP.bg('#F0D9C0') + MP.rays(50, 46, 30, 44, 22, '#E2C77E', 1, 0.1) + D4.heart(50, 46, 2.6, '#C98A8A') + MP.person(50, 64, 0.62, '#F4EBD5', { arms: 'u', skin: '#C08A6A' }) + MP.ground(98, '#C9AE94');
+MEDAL_ART.jn1_love = MP.bg('#3A3648') + MP.rays(50, 46, 30, 44, 24, '#E2C77E', 1, 0.05) + D4.heart(50, 48, 2.7, '#C98A8A') + D5.cross(50, 66, 0.95, '#F4EBD5');
+MEDAL_ART.jn1_witness = MP.bg('#B9CFC9') + MP.rays(50, 26, 8, 36, 14, '#F4EBD5', 1.1, 0.2) + D4.dove(50, 34, 1.9, '#F4EBD5') + D7.drop(30, 76, 2.1, '#5D8AB0') + D7.drop(70, 76, 2.1, '#A65058') + MP.path('M0 92Q50 84 100 92V100H0Z', '#8FA080');
+
+BOOK_MILESTONES["1jn"] = [
+  { id: "1jn01", need: 0, ref: "요한1서 1장", title: "우리가 듣고 보고 손으로 만진 생명의 말씀", icon: "jn1_walk",
+    text: "빛 가운데 행하면 서로 사귐이 있다.",
+    verse: "태초부터 있던 생명의 말씀을 우리가 들었고 눈으로 보았고 손으로 만졌다고 요한은 증언한다. 하나님은 빛이시니 어둠 속에서 행하며 사귄다고 말할 수 없고, 빛 가운데 행하면 서로 사귀며 죄를 자백하는 이를 그분이 깨끗하게 하신다고 한다." },
+  { id: "1jn02", need: 10, ref: "요한1서 2장", title: "거룩하신 분께 받은 기름 부음", icon: "jn1_anoint",
+    text: "세상은 지나가도 하나님의 뜻을 행하는 이는 영원히 산다.",
+    verse: "누가 죄를 지어도 아버지 앞에서 변호해 주시는 의로운 분이 계신다고 요한은 말한다. 세상과 그 정욕은 지나가지만 하나님의 뜻을 행하는 이는 영원히 살며, 거룩하신 분께 받은 기름 부음이 너희 안에 있어 모든 것을 가르쳐 준다고 일러 준다." },
+  { id: "1jn03", need: 20, ref: "요한1서 3장", title: "아버지가 주신 큰 사랑, 하나님의 자녀", icon: "jn1_hand",
+    text: "말과 혀로만이 아니라 행함과 진실함으로 사랑하자.",
+    verse: "아버지께서 우리를 하나님의 자녀라 불리게 하시려고 얼마나 큰 사랑을 베푸셨는지 보라고 요한은 감탄한다. 그리스도가 우리를 위해 목숨을 버리셨으니 우리도 형제를 위해 그렇게 해야 하며, 궁핍한 형제를 보고 마음을 닫지 말고 말과 혀로만이 아니라 행함과 진실함으로 사랑하자고 한다." },
+  { id: "1jn04", need: 30, ref: "요한1서 4장", title: "하나님은 사랑이시다", icon: "jn1_love",
+    text: "온전한 사랑은 두려움을 내쫓는다.",
+    verse: "사랑은 하나님께 속했고 사랑하지 않는 사람은 하나님을 알지 못한다고 요한은 말한다. 하나님은 우리를 사랑하셔서 아들을 화목제물로 보내셨고, 우리가 사랑하는 것은 그분이 먼저 사랑하셨기 때문이며, 온전한 사랑은 두려움을 내쫓는다고 한다." },
+  { id: "1jn05", need: 40, ref: "요한1서 5장", title: "물과 피와 성령이 함께 증언하다", icon: "jn1_witness",
+    text: "아들이 있는 사람에게 생명이 있다.",
+    verse: "예수는 물과 피로 오신 분이며 성령이 이를 증언하니 증언하는 이가 셋이라고 요한은 밝힌다. 세상을 이기는 것은 예수가 하나님의 아들이심을 믿는 믿음이고, 아들이 있는 사람에게 생명이 있으며 이 편지는 너희가 영생을 가진 줄 알게 하려고 쓴 것이라고 한다." }
+];
+BOOK_SCENES["1jn"] = [
+  { id: "1jn_s0", title: "빛과 생명 가운데서", milestoneIds: ["1jn01", "1jn02", "1jn03"] },
+  { id: "1jn_s1", title: "사랑과 믿음의 증거", milestoneIds: ["1jn04", "1jn05"] }
+];
+attachSceneMeta("1jn");
+
+// ---- 요한2서 ----
+MEDAL_ART.jn2_walk = MP.bg('#E4D2AE') + MP.rays(50, 44, 10, 44, 20, '#F4EBD5', 1.1, 0.1) + MP.circle(50, 44, 8, '#EBC46C') + MP.path('M0 50H100V100H0Z', '#B7C4A0') + MP.path('M48 50H52L82 100H18Z', '#C9B98C') + MP.person(42, 88, 0.85, '#7A5A3E', { robe: 1, arms: 'h', skin: '#C08A6A' }) + MP.person(58, 88, 0.8, '#5D8A8F', { f: 1, robe: 1, arms: 'h', scarf: '#F4EBD5', skin: '#C08A6A' }) + D4.heart(50, 58, 0.6, '#C98A8A');
+MEDAL_ART.jn2_door = MP.bg('#2B3558') + MP.stars([[16, 22, 0.7], [84, 20, 0.7], [70, 34, 0.5]]) + MP.path('M0 84Q30 78 60 84T100 80V100H0Z', '#1B2440') + D7.door(50, 88, 1.5, '#8C6E48', '#5A4A38') + MP.rect(30, 62, 40, 4.4, '#3E2C1E', 1) + MP.circle(34, 64, 1.4, '#C2A25E') + MP.circle(66, 64, 1.4, '#C2A25E') + D2.lamp(80, 84, 1.3, '#E2C77E');
+MEDAL_ART.jn2_ink = MP.bg('#EBD9B4') + D2.scroll(24, 30, 42, 30, '#F4EBD5') + MP.rect(30, 68, 18, 16, '#3A3648', 3) + MP.rect(34, 62, 10, 7, '#3A3648', 2) + MP.path('M42 66L74 20Q86 26 80 40L52 66Z', '#F4EBD5') + MP.line('M44 66L76 22', '#B9A98A', 1.2) + MP.ground(94, '#C4B085');
+
+BOOK_MILESTONES["2jn"] = [
+  { id: "2jn01", need: 0, ref: "요한2서 1-6절", title: "처음부터 받은 계명, 서로 사랑하라", icon: "jn2_walk",
+    text: "진리 안에서 사랑 안에서 걸으라.",
+    verse: "장로 요한이 택하심을 입은 부녀와 그 자녀들에게 진리 안에서 편지를 쓴다. 자녀들 중 진리 안에서 행하는 이들을 보고 기뻐하며, 처음부터 받은 계명대로 서로 사랑하자고 하고 사랑이란 그분의 계명대로 행하는 것이라고 말한다." },
+  { id: "2jn02", need: 7, ref: "요한2서 7-11절", title: "속이는 자를 집에 들이지 말라", icon: "jn2_door",
+    text: "이 가르침을 가지지 않은 자에게 인사도 하지 말라.",
+    verse: "예수 그리스도가 육신으로 오심을 부인하며 세상에 나온 속이는 자가 많다고 요한은 경고한다. 스스로 살피어 수고의 열매를 잃지 말고, 그리스도의 가르침에 머물지 않는 자를 집에 들이거나 인사하지 말라고 이른다." },
+  { id: "2jn03", need: 14, ref: "요한2서 12-13절", title: "종이와 먹이 아닌 얼굴을 맞대고", icon: "jn2_ink",
+    text: "우리의 기쁨이 충만하도록.",
+    verse: "쓸 것이 많지만 종이와 먹으로 전하기보다 직접 가서 얼굴을 맞대고 이야기하기를 바란다고 요한은 말한다. 그렇게 해서 서로의 기쁨이 충만해지기를 소원하며, 택하신 자매의 자녀들이 문안한다는 말로 편지를 맺는다." }
+];
+BOOK_SCENES["2jn"] = [
+  { id: "2jn_s0", title: "진리 안의 사랑", milestoneIds: ["2jn01", "2jn02", "2jn03"] }
+];
+attachSceneMeta("2jn");
+
+// ---- 요한3서 ----
+MEDAL_ART.jn3_hospitality = MP.bg('#DCCBA8') + MP.ground(94, '#C4B085') + MP.rect(26, 44, 48, 44, '#B98E6E') + MP.path('M22 46L50 30L78 46Z', '#8A6E4E') + MP.path('M42 88V62Q42 54 50 54Q58 54 58 62V88Z', '#F6E7B4') + MP.rect(20, 82, 60, 6, '#8A6E4E', 1.5) + D3.bread(38, 80, 0.9, '#D9B36A') + D3.cup(62, 82, 0.6, '#E2C77E', '#8C3A44') + MP.person(20, 82, 0.55, '#6E5A6A', { robe: 1, arms: 'r', staff: -11, skin: '#C08A6A' });
+MEDAL_ART.jn3_first = MP.bg('#4A4658') + MP.rect(38, 56, 24, 40, '#8A8A9C') + MP.rect(34, 52, 32, 6, '#A9A9B8') + D2.crown(50, 26, 1.7, '#E2C77E') + MP.person(50, 52, 0.85, '#B9714F', { robe: 1, arms: 'h', skin: '#C08A6A' }) + MP.person(22, 84, 0.5, '#7A7A94', { robe: 1, arms: 'd' }) + MP.person(80, 84, 0.5, '#7A7A94', { robe: 1, arms: 'd' });
+MEDAL_ART.jn3_witness = MP.bg('#E4D8C0') + MP.rays(50, 46, 24, 44, 22, '#E2C77E', 1, 0.05) + D2.scroll(26, 30, 48, 32, '#F4EBD5') + MP.circle(50, 70, 7, '#8C3A44') + MP.circle(50, 70, 4.4, '#A65058') + MP.path('M45 76L42 88L50 82L58 88L55 76Z', '#8C3A44');
+
+BOOK_MILESTONES["3jn"] = [
+  { id: "3jn01", need: 0, ref: "요한3서 1-8절", title: "낯선 나그네를 대접한 가이오", icon: "jn3_hospitality",
+    text: "내 자녀들이 진리 안에서 행한다는 말보다 더 큰 기쁨이 없다.",
+    verse: "사랑하는 가이오에게 요한은 네 영혼이 잘됨같이 모든 일이 잘되기를 바란다고 인사한다. 그가 진리 안에서 행하며 낯선 나그네인 형제들까지 충성스럽게 대접한 것을 두고 이런 사람들을 돕는 것이 진리를 위한 동역이라고 칭찬한다." },
+  { id: "3jn02", need: 7, ref: "요한3서 9-11절", title: "으뜸이 되기를 좋아한 디오드레베", icon: "jn3_first",
+    text: "악을 본받지 말고 선을 본받으라.",
+    verse: "교회에서 으뜸이 되기를 좋아하는 디오드레베는 우리 말을 받아들이지 않고 악한 말로 헐뜯으며, 형제들을 영접하려는 이들까지 막고 교회에서 쫓아낸다고 요한은 고발한다. 그러니 악을 본받지 말고 선을 본받으라, 선을 행하는 이는 하나님께 속했다고 한다." },
+  { id: "3jn03", need: 14, ref: "요한3서 12-15절", title: "모든 사람에게 증거를 얻은 데메드리오", icon: "jn3_witness",
+    text: "우리의 증언이 참인 줄 너는 안다.",
+    verse: "데메드리오는 모든 사람에게서, 그리고 진리 자체에게서 좋은 증거를 얻었다고 요한은 전한다. 자신도 그렇게 증언하며 그것이 참됨을 가이오도 안다고 하고, 쓸 것이 많으나 곧 만나 얼굴을 대하고 이야기하자며 평안을 빈다." }
+];
+BOOK_SCENES["3jn"] = [
+  { id: "3jn_s0", title: "대접과 으뜸", milestoneIds: ["3jn01", "3jn02", "3jn03"] }
+];
+attachSceneMeta("3jn");
+
+// ---- 유다서 ----
+MEDAL_ART.jud_faith = MP.bg('#3A4A5C') + MP.rays(50, 50, 22, 44, 20, '#E2C77E', 1, 0.1) + D7.sword(50, 74, 1.0, '#E6EAEE', 38) + D7.sword(50, 74, 1.0, '#E6EAEE', -38) + MP.circle(50, 56, 17, '#8A6E4E') + MP.circle(50, 56, 12.5, '#C2A25E') + MP.circle(50, 56, 4.4, '#8A6E4E');
+MEDAL_ART.jud_stars = MP.bg('#232049') + MP.cloud(30, 22, 2.4, '#6E6E80') + MP.line('M8 34Q18 30 26 34M40 32Q50 28 60 32', '#8A8AA0', 1.1, 0.7) + MP.stars([[78, 20, 0.7], [66, 12, 0.5]]) + MP.line('M78 40L58 62M62 52L54 60', '#E2C77E', 1, 0.5) + MP.star(56, 64, 2) + MP.line('M50 26L34 50', '#E2C77E', 1, 0.5) + MP.star(32, 52, 1.6) + MP.line('M88 58L74 78', '#E2C77E', 1, 0.5) + MP.star(72, 80, 1.5) + MP.path('M0 90Q30 82 60 88T100 84V100H0Z', '#3A3A5A');
+MEDAL_ART.jud_glory = MP.bg('#4A4658') + MP.rays(50, 62, 12, 46, 24, '#E2C77E', 1.1, 0.05) + MP.circle(50, 62, 11, '#EBC46C') + MP.path('M0 66H100V100H0Z', '#2E2C3E') + MP.person(34, 88, 0.72, '#B9A98A', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(66, 88, 0.72, '#8A6E4E', { arms: 'u', skin: '#C08A6A' }) + MP.stars([[20, 26, 0.7], [80, 24, 0.7], [50, 16, 0.6]]);
+
+BOOK_MILESTONES["jud"] = [
+  { id: "jud01", need: 0, ref: "유다서 1-4절", title: "단번에 주신 믿음을 위해 싸우라", icon: "jud_faith",
+    text: "몰래 들어온 자들이 은혜를 방종의 구실로 삼는다.",
+    verse: "예수의 종이며 야고보의 형제인 유다는 구원에 관해 쓰려던 계획을 바꾸어, 성도에게 단번에 주신 믿음을 위해 힘써 싸우라고 부탁한다. 몰래 들어와 하나님의 은혜를 방탕의 구실로 삼는 경건하지 않은 사람들이 있기 때문이라고 한다." },
+  { id: "jud02", need: 7, ref: "유다서 5-16절", title: "본보기로 남은 심판과 떠도는 별", icon: "jud_stars",
+    text: "물 없는 구름, 유리하는 별들.",
+    verse: "애굽에서 구원받고도 믿지 않아 멸망한 이들, 제 자리를 떠난 천사들, 불의 심판을 받은 소돔과 고모라를 유다는 본보기로 든다. 거짓 교사들은 바람에 밀리는 물 없는 구름이요 캄캄한 어둠으로 영원히 예비된 떠도는 별이라고 통렬하게 꾸짖는다." },
+  { id: "jud03", need: 14, ref: "유다서 17-25절", title: "넘어지지 않게 지키시는 분께 영광", icon: "jud_glory",
+    text: "자신을 지켜 하나님의 사랑 안에 머물라.",
+    verse: "지극히 거룩한 믿음 위에 자신을 세우고 성령으로 기도하며 하나님의 사랑 안에 머물라고 유다는 권한다. 의심하는 이들을 긍휼히 여기고 불 속에서 건져 내라고 하며, 너희를 넘어지지 않게 지키시고 흠 없이 기쁨으로 세우실 유일하신 하나님께 영광과 권세가 영원히 있기를 송축한다." }
+];
+BOOK_SCENES["jud"] = [
+  { id: "jud_s0", title: "믿음을 위한 싸움", milestoneIds: ["jud01", "jud02", "jud03"] }
+];
+attachSceneMeta("jud");
+
+// ---- 요한계시록 ----
+MEDAL_ART.rev_lamps = MP.bg('#1F2A4A') + MP.stars([[16, 62, 0.6], [84, 24, 0.6], [80, 60, 0.5]]) + MP.rays(46, 34, 20, 34, 16, '#E2C77E', 0.9, 0.2) + D7.hand(36, 88, 0.85, '#C08A6A') + MP.stars([[24, 32, 0.8], [30, 22, 0.9], [40, 16, 0.9], [51, 22, 0.9], [56, 32, 0.8], [40, 30, 0.7], [30, 38, 0.6]]) + D5.menorah(70, 90, 0.9, '#C2A25E');
+MEDAL_ART.rev_knock = MP.bg('#2B3558') + MP.stars([[16, 24, 0.7], [84, 22, 0.7], [20, 60, 0.5]]) + MP.path('M0 86Q30 80 60 86T100 82V100H0Z', '#1B2440') + '<path d="M36 88V46Q36 32 50 32Q64 32 64 46V88Z" fill="none" stroke="#F6E7B4" stroke-width="3.4"/>' + D7.door(50, 88, 1.45, '#6B4F3A', '#3E2C1E') + MP.rect(38, 86, 24, 2.4, '#F6E7B4') + MP.line('M74 52Q80 56 74 60M78 48Q86 56 78 64', '#E2C77E', 1.3) + MP.line('M26 52Q20 56 26 60M22 48Q14 56 22 64', '#E2C77E', 1.3, 0.7);
+MEDAL_ART.rev_throne = MP.bg('#2C3A55') + '<g fill="none" stroke-width="2.2"><path d="M18 66A32 32 0 0 1 82 66" stroke="#8FB07E"/><path d="M23 66A27 27 0 0 1 77 66" stroke="#E2C77E"/><path d="M28 66A22 22 0 0 1 72 66" stroke="#7FB3C2"/></g>' + MP.rect(0, 74, 100, 26, '#3E6B86') + MP.wave(78, '#F4EBD5', 1, 0.7) + MP.wave(88, '#7FB3C2', 1.1) + D7.throne(50, 78, 1.2, '#E2C77E', '#C2A25E') +
+  D2.crown(18, 44, 0.9, '#E2C77E') + D2.crown(26, 56, 0.9, '#E2C77E') + D2.crown(82, 44, 0.9, '#E2C77E') + D2.crown(74, 56, 0.9, '#E2C77E') + MP.stars([[50, 12, 0.7], [16, 32, 0.5], [84, 32, 0.5]]);
+MEDAL_ART.rev_lamb = MP.bg('#3A3648') + MP.rays(50, 56, 16, 46, 22, '#E2C77E', 1, 0.1) + D2.scroll(26, 20, 48, 20, '#F4EBD5') + MP.circle(32, 42, 2.4, '#A65058') + MP.circle(38, 43, 2.4, '#A65058') + MP.circle(44, 43.6, 2.4, '#A65058') + MP.circle(50, 44, 2.4, '#A65058') + MP.circle(56, 43.6, 2.4, '#A65058') + MP.circle(62, 43, 2.4, '#A65058') + MP.circle(68, 42, 2.4, '#A65058') +
+  MP.ground(96, '#2A2838') + MP.circle(50, 70, 22, '#4A4658') + MP.lamb(42, 83, 1.9, '#F4EBD5', '#3A2A20');
+MEDAL_ART.rev_multitude = MP.bg('#8FB0C8') + MP.rays(50, 6, 8, 60, 16, '#F4EBD5', 1.1, 0.2) + MP.path('M0 70H100V100H0Z', '#B7C4A0') +
+  MP.person(18, 66, 0.4, '#F4EBD5', { robe: 1, arms: 'u', skin: '#8C5A44' }) + MP.person(32, 66, 0.4, '#F4EBD5', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(46, 66, 0.4, '#F4EBD5', { robe: 1, arms: 'u', skin: '#E0B090' }) + MP.person(60, 66, 0.4, '#F4EBD5', { robe: 1, arms: 'u', skin: '#8C5A44' }) + MP.person(74, 66, 0.4, '#F4EBD5', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(86, 66, 0.4, '#F4EBD5', { robe: 1, arms: 'u', skin: '#E0B090' }) +
+  MP.person(25, 78, 0.5, '#F4EBD5', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(41, 78, 0.5, '#F4EBD5', { robe: 1, arms: 'u', skin: '#8C5A44' }) + MP.person(57, 78, 0.5, '#F4EBD5', { robe: 1, arms: 'u', skin: '#E0B090' }) + MP.person(73, 78, 0.5, '#F4EBD5', { robe: 1, arms: 'u', skin: '#C08A6A' }) +
+  MP.person(34, 90, 0.6, '#F4EBD5', { robe: 1, arms: 'u', skin: '#E0B090' }) + MP.person(50, 90, 0.6, '#F4EBD5', { robe: 1, arms: 'u', skin: '#C08A6A' }) + MP.person(66, 90, 0.6, '#F4EBD5', { robe: 1, arms: 'u', skin: '#8C5A44' });
+MEDAL_ART.rev_woman = MP.bg('#2B3558') + MP.rays(50, 48, 26, 44, 24, '#E2C77E', 1.1, 0.1) + MP.circle(50, 48, 25, '#E7BE5F') + MP.circle(50, 48, 21, '#EDCB78') + D2.moon(50, 86, 11, '#EFE6D0', '#2B3558') + MP.person(50, 80, 0.95, '#5D8A8F', { f: 1, robe: 1, arms: 'f', skin: '#C08A6A' }) +
+  MP.stars([[50, 22, 0.6], [56, 23, 0.6], [61, 26, 0.6], [64, 31, 0.6], [44, 23, 0.6], [39, 26, 0.6], [36, 31, 0.6], [35, 37, 0.5], [65, 37, 0.5]]) + MP.line('M8 64Q16 48 30 58Q40 68 26 82', '#8C3A44', 4.4) + MP.path('M24 84L30 78L34 86Z', '#8C3A44');
+MEDAL_ART.rev_horse = MP.bg('#1F2A4A') + MP.rays(50, 44, 10, 46, 22, '#E2C77E', 1.2, 0.1) + MP.circle(50, 46, 26, '#3E4C6C') + D2.crown(32, 30, 1.1, '#E2C77E') + D2.crown(50, 22, 1.4, '#E2C77E') + D2.crown(68, 30, 1.1, '#E2C77E') + D5.horse(42, 84, 1.3, '#F4EBD5', '#D9D0BC');
+MEDAL_ART.rev_new = MP.bg('#DCE8E4') + MP.rays(50, 22, 12, 44, 26, '#E2C77E', 1.1, 0.05) + MP.circle(50, 22, 10, '#F6E7B4') + '<circle cx="50" cy="22" r="10" fill="none" stroke="#C2A25E" stroke-width="0.9"/>' +
+  MP.path('M0 58Q28 50 50 56T100 54V100H0Z', '#A9C79E') + MP.rect(32, 38, 36, 18, '#E2C77E') + MP.rect(30, 30, 6, 26, '#C2A25E') + MP.rect(64, 30, 6, 26, '#C2A25E') + MP.path('M30 30L33 22L36 30ZM64 30L67 22L70 30Z', '#C2A25E') + MP.path('M42 56V50Q42 46 45 46Q48 46 48 50V56ZM52 56V50Q52 46 55 46Q58 46 58 50V56Z', '#F6E7B4') + MP.path('M44 38H56L50 30Z', '#F6E7B4') + MP.rect(34, 52, 5, 4, '#7FB3C2') + MP.rect(41, 52, 3, 4, '#C98A8A') + MP.rect(56, 52, 3, 4, '#8FB07E') + MP.rect(61, 52, 5, 4, '#7FB3C2') +
+  MP.path('M0 66Q30 60 50 64T100 62V100H0Z', '#8FB07E') + MP.path('M48 64H52Q62 82 76 100H24Q38 82 48 64Z', '#7FB3C2') + MP.line('M50 68Q54 78 58 88M50 70Q46 80 42 90', '#F4EBD5', 1, 0.8) +
+  MP.tree(28, 80, 1.5, '#7A5A3E', '#3E6B4A', '#E9B45B') + MP.tree(74, 80, 1.5, '#7A5A3E', '#3E6B4A', '#E9B45B') + MP.bird(20, 34, 1, '#7A8A9C') + MP.bird(80, 32, 1, '#7A8A9C') + MP.bird(70, 44, 0.8, '#7A8A9C');
+
+BOOK_MILESTONES["rev"] = [
+  { id: "rev01", need: 0, ref: "요한계시록 1장", title: "오른손에 일곱 별을 쥐고 금 촛대 사이에 서신 분", icon: "rev_lamps",
+    text: "나는 처음이며 마지막이며 살아 있는 자다.",
+    verse: "밧모 섬에 갇힌 요한은 주일에 성령에 사로잡혀 나팔 같은 큰 음성을 듣는다. 돌아서 보니 일곱 금 촛대 사이에 사람의 아들 같은 분이 서서 오른손에 일곱 별을 쥐고 계셨다. 요한이 죽은 사람처럼 쓰러지자 그분이 손을 얹고 두려워 말라, 나는 처음이요 마지막이며 살아 있는 자라고 말씀하신다." },
+  { id: "rev02", need: 20, ref: "요한계시록 3장", title: "문 밖에 서서 두드리시는 분", icon: "rev_knock",
+    text: "누구든지 문을 열면 함께 먹으리라.",
+    verse: "미지근하여 차지도 뜨겁지도 않은 라오디게아 교회에 주님은 스스로 부요하다 하나 실상은 가난하고 눈멀고 벌거벗은 줄 모른다고 꾸짖으신다. 그러나 내가 문 밖에 서서 두드리니 누구든지 소리를 듣고 문을 열면 내가 들어가 그와 함께 먹고 그도 나와 함께 먹으리라고 약속하신다." },
+  { id: "rev03", need: 30, ref: "요한계시록 4장", title: "열린 하늘 문 안의 보좌", icon: "rev_throne",
+    text: "거룩하다 거룩하다, 전능하신 주 하나님.",
+    verse: "하늘에 열린 문을 보고 이리로 올라오라는 음성을 들은 요한이 성령에 이끌려 올라가 보니 보좌가 놓여 있고 그 위에 앉으신 분이 계셨다. 무지개가 보좌를 두르고 스물네 장로가 금관을 쓰고 앉았으며, 네 생물이 밤낮 쉬지 않고 거룩하시다 외치자 장로들은 관을 벗어 던지며 엎드려 경배한다." },
+  { id: "rev04", need: 40, ref: "요한계시록 5장", title: "일곱 인을 떼시기에 합당한 어린양", icon: "rev_lamb",
+    text: "죽임을 당하신 어린양이 합당하다.",
+    verse: "보좌에 앉으신 분의 손에 안팎으로 글이 쓰인 일곱 인으로 봉해진 두루마리가 있으나 열 수 있는 자가 없어 요한은 크게 운다. 장로 하나가 울지 말라, 유다 지파의 사자가 이겼다고 하는데 돌아보니 죽임을 당한 것 같은 어린양이 서 계셨고 온 하늘이 죽임당하신 그분을 합당하다고 새 노래로 찬양한다." },
+  { id: "rev05", need: 61, ref: "요한계시록 7장", title: "흰옷 입고 서 있는 셀 수 없는 큰 무리", icon: "rev_multitude",
+    text: "그들은 큰 환난에서 나온 자들이다.",
+    verse: "각 나라와 족속과 백성과 방언에서 나온 아무도 셀 수 없는 큰 무리가 흰옷을 입고 손에 종려 가지를 들고 보좌와 어린양 앞에 서서 구원이 우리 하나님과 어린양께 있다고 외친다. 그들은 큰 환난을 지나 어린양의 피에 옷을 씻어 희게 한 사람들이며, 다시는 주리지도 목마르지도 않고 하나님이 그 눈에서 모든 눈물을 닦아 주신다." },
+  { id: "rev06", need: 111, ref: "요한계시록 12장", title: "해를 입은 여자와 붉은 용", icon: "rev_woman",
+    text: "그들은 어린양의 피와 증언의 말씀으로 이겼다.",
+    verse: "하늘에 큰 표적이 나타난다. 해를 입고 발밑에 달을 밟고 머리에 열두 별의 관을 쓴 여자가 해산의 고통으로 부르짖는데, 붉은 큰 용이 그 아이를 삼키려고 기다린다. 아이는 하나님의 보좌로 올려지고 하늘에서 벌어진 전쟁에서 용은 땅으로 쫓겨나며, 성도들은 어린양의 피와 자기 증언의 말씀으로 그를 이긴다." },
+  { id: "rev07", need: 182, ref: "요한계시록 19장", title: "열린 하늘에서 나타난 흰 말", icon: "rev_horse",
+    text: "충신과 진실이라 일컫는 이.",
+    verse: "하늘에서 큰 무리가 할렐루야 외치며 어린양의 혼인 잔치가 이르렀다고 노래한다. 그때 하늘이 열리고 흰 말이 나타나 그 위에 탄 이는 충신과 진실이라 불리며 공의로 심판하고 싸우신다. 머리에는 많은 관이 있고 입에서 예리한 검이 나오며, 옷과 넓적다리에는 만왕의 왕, 만주의 주라는 이름이 쓰여 있다." },
+  { id: "rev08", need: 202, ref: "요한계시록 21-22장", title: "새 하늘과 새 땅, 생명수 강과 생명나무", icon: "rev_new",
+    text: "보라, 내가 만물을 새롭게 하노라.",
+    verse: "처음 하늘과 땅이 사라지고 바다도 더는 없으며, 신부처럼 단장한 거룩한 성 새 예루살렘이 하늘에서 내려온다. 하나님이 사람들 가운데 거하시며 그 눈의 모든 눈물을 닦으시니 사망도 애통도 곡하는 것도 아픔도 다시 없다. 보좌에서 생명수의 강이 흐르고 강 좌우에 열두 가지 열매를 맺는 생명나무가 서며, 밤이 없고 어린양이 그 등불이 되신다. 요한은 주 예수여, 오시옵소서 하고 기도하며 성경의 마지막 장을 닫는다." }
+];
+BOOK_SCENES["rev"] = [
+  { id: "rev_s0", title: "일곱 교회와 열린 하늘", milestoneIds: ["rev01", "rev02", "rev03", "rev04"] },
+  { id: "rev_s1", title: "큰 무리와 마지막 싸움", milestoneIds: ["rev05", "rev06", "rev07"] },
+  { id: "rev_s2", title: "새 하늘과 새 땅", milestoneIds: ["rev08"] }
+];
+attachSceneMeta("rev");
+// <<END MEDALS day=7>>
 
   function scenesForBook(book) {
     milestonesForBook(book); // 아직 캐시되지 않은 책이면 자리표시자 생성 + 장면 부여를 트리거
