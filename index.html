@@ -4712,7 +4712,7 @@ attachSceneMeta("deu");
   }
   // ---- 시간 점검 / 조정 제안 ----
   var statsTimeRange = 30;            // 7 / 30 / 90 / 0(전체)
-  var statsTimeOnlySuggest = false;
+  var statsTimeOnlySuggest = true;   // 기본: 조정 제안 항목만 보기
   var TS_MIN_N = 5, TS_MIN_N_KEPT = 10, TS_WINDOW = 10, TS_PCT = 0.2, TS_MIN_DIFF = 30, TS_SHARE = 0.6, TS_OUTLIER = 3;
   function niceSeconds(v) {
     if (v < 60) return Math.max(5, Math.round(v / 5) * 5);
@@ -4786,12 +4786,16 @@ attachSceneMeta("deu");
       rows.push({ it: it, cnt: cnt, meas: meas, planned: planned, avg: meas ? Math.round(sumMeas / meas) : null, sumAll: sumAll, ts: ts });
     });
     var rangeLabel = statsTimeRange ? ("최근 " + statsTimeRange + "일") : "전체 기간";
-    var html = '<div class="tabs">';
-    [[7, "7일"], [30, "30일"], [90, "90일"], [0, "전체"]].forEach(function (r) {
-      html += '<div class="tab' + (statsTimeRange === r[0] ? ' active' : '') + '" data-action="time-range" data-id="' + r[0] + '">' + r[1] + '</div>';
-    });
-    html += '<div class="tab' + (statsTimeOnlySuggest ? ' active' : '') + '" data-action="time-only-suggest">제안만</div></div>';
-    html += '<div class="time-summary">' + rangeLabel + ' 기록 시간 합계 ' + (totalSecs ? fmtDur(totalSecs) : "0초") + ' · 조정 제안 ' + sugN + '개</div>';
+    var html = '<div class="tabs">' +
+      '<div class="tab' + (statsTimeOnlySuggest ? ' active' : '') + '" data-action="time-only-suggest" data-id="1">제안만</div>' +
+      '<div class="tab' + (!statsTimeOnlySuggest ? ' active' : '') + '" data-action="time-only-suggest" data-id="0">전체</div>';
+    if (!statsTimeOnlySuggest) {
+      [[7, "7일"], [30, "30일"], [90, "90일"], [0, "전체 기간"]].forEach(function (r) {
+        html += '<div class="tab' + (statsTimeRange === r[0] ? ' active' : '') + '" data-action="time-range" data-id="' + r[0] + '">' + r[1] + '</div>';
+      });
+    }
+    html += '</div>';
+    html += '<div class="time-summary">' + (statsTimeOnlySuggest ? ('조정 제안 ' + sugN + '개') : (rangeLabel + ' 기록 시간 합계 ' + (totalSecs ? fmtDur(totalSecs) : "0초") + ' · 조정 제안 ' + sugN + '개')) + '</div>';
     if (statsTimeOnlySuggest) rows = rows.filter(function (r) { return !!r.ts.sug; });
     rows.sort(function (a, b) {
       var as = a.ts.sug ? 1 : 0, bs = b.ts.sug ? 1 : 0;
@@ -4824,10 +4828,12 @@ attachSceneMeta("deu");
             '<div class="btn" data-action="time-keep" data-id="' + it.id + '">지금 시간이 맞아요</div>' +
           '</div>' +
           '<div style="margin-top:8px;text-align:right;"><span data-action="time-off" data-id="' + it.id + '" style="font-size:11.5px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">이 항목은 제안 끄기</span></div></div>';
+      } else if (statsTimeOnlySuggest) {
+        extra = "";
       } else if (ts.off) {
         extra = '<div class="time-review-sub">시간 조정 제안 꺼짐 · <span data-action="time-on" data-id="' + it.id + '" style="text-decoration:underline;font-weight:700;cursor:pointer;">다시 켜기</span></div>';
       } else if (ts.n === 0) {
-        extra = '<div class="time-review-sub">카운트다운(▶)으로 ' + ts.need + '회 이상 재면 조정을 제안해드려요.</div>';
+        extra = "";
       } else if (ts.n < ts.need) {
         extra = '<div class="time-review-sub">' + (it.timeBasis ? '새 기준 ' : '실측 ') + ts.n + '/' + ts.need + '회 모으는 중</div>';
       }
@@ -4842,7 +4848,7 @@ attachSceneMeta("deu");
           '<span style="color:var(--ink-dim);flex:none;">' + r.cnt + '회' + (r.last ? ' · 마지막 ' + r.last.slice(5).replace("-", "/") : '') + '</span></div>';
       });
     }
-    html += '<div class="export-note" style="margin-top:14px;">실측 = 카운트다운(▶)으로 마친 기록, 지정시간 = 홈·기록에서 바로 체크해 지정 시간으로 저장된 기록이에요. 평균과 조정 제안은 실측 기록으로만 계산해요.</div>';
+    if (!statsTimeOnlySuggest) html += '<div class="export-note" style="margin-top:14px;">실측 = 카운트다운(▶)으로 마친 기록, 지정시간 = 홈·기록에서 바로 체크해 지정 시간으로 저장된 기록이에요. 평균과 조정 제안은 실측 기록으로만 계산해요.</div>';
     return html;
   }
   function monthlyStatsHtml(flat) {
@@ -5566,7 +5572,7 @@ attachSceneMeta("deu");
     else if (action === "holiday-first-prompt-accept") { closeHolidayFirstPrompt(true); }
     else if (action === "holiday-first-prompt-decline") { closeHolidayFirstPrompt(false); }
     else if (action === "toggle-rest-show-all") { restShowAllPast = !restShowAllPast; renderRestList(); }
-    else if (action === "open-stats") { statsView = "monthly"; statsTimeOnlySuggest = false; statsTagFilter = null; statsMonth = new Date(); statsMonth.setDate(1); statsWeekStart = startOfWeek(new Date()); showView("view-stats"); renderStats(); }
+    else if (action === "open-stats") { statsView = "monthly"; statsTimeOnlySuggest = true; statsTagFilter = null; statsMonth = new Date(); statsMonth.setDate(1); statsWeekStart = startOfWeek(new Date()); showView("view-stats"); renderStats(); }
     else if (action === "open-backfill") { openBackfill(); }
     else if (action === "toggle-backfill-item") {
       var wasD = isDone(backfillDate, id);
@@ -5624,7 +5630,7 @@ attachSceneMeta("deu");
     }
     else if (action === "stats-view") { statsView = id; renderStats(); }
     else if (action === "time-range") { statsTimeRange = parseInt(id, 10) || 0; renderStats(); }
-    else if (action === "time-only-suggest") { statsTimeOnlySuggest = !statsTimeOnlySuggest; renderStats(); }
+    else if (action === "time-only-suggest") { statsTimeOnlySuggest = (id === "1"); renderStats(); }
     else if (action === "time-adopt") {
       var taIt = findItem(id);
       var taSug = taIt ? timeSuggestion(taIt).sug : null;
