@@ -209,6 +209,10 @@
   .btn { flex: 1; text-align: center; padding: 13px 10px; border-radius: 12px; border: 1px solid var(--line);
     background: var(--bg-soft); color: var(--ink); font-size: 14px; font-weight: 700; cursor: pointer; }
   .btn.primary { background: var(--sage); border-color: var(--sage); color: var(--card); }
+  /* .btn은 가로 배치(버튼 줄)에서 균등 분배하려고 flex:1이 기본이다. 세로 배치(column)나 글자와 한 줄에 놓일 때는
+     남는 높이/너비를 다 먹어 길쭉해지므로, 그런 자리에서는 크기를 내용에 맞춘다. */
+  .tp-actions[style*="column"] > .btn { flex: none; }
+  .rest-item > .btn { flex: none; }
 
   #view-run { position: fixed; inset: 0; background: var(--bg); z-index: 50; overflow-y: auto; }
   .run-wrap { max-width: 480px; margin: 0 auto; padding: calc(env(safe-area-inset-top,0px) + 20px) 24px calc(env(safe-area-inset-bottom,0px) + 28px);
@@ -492,6 +496,11 @@
     text-overflow: ellipsis; white-space: nowrap; }
   .chat-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 14px 16px; }
   .chat-prof { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+  .chat-prof-head { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .chat-prof-head .fr-name { flex: 1; min-width: 0; }
+  .chat-prof-tog { flex: none; font-size: 11.5px; font-weight: 700; color: var(--ink-dim); padding: 5px 8px; border-radius: 999px;
+    border: 1px solid var(--line); white-space: nowrap; }
+  .chat-view.dragging { box-shadow: -10px 0 28px rgba(0,0,0,.16); }
   .cmp { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
   .cmp th, .cmp td { padding: 5px 4px; border-bottom: 1px solid var(--line); text-align: center; font-weight: 700; }
   .cmp th { color: var(--ink-dim); font-size: 11px; }
@@ -613,10 +622,6 @@
   .growth-bar-track { height: 8px; border-radius: 999px; background: var(--ring-track); overflow: hidden; margin: 4px 0 2px; }
   .growth-bar-fill { height: 100%; background: var(--sage); border-radius: 999px; transition: width .3s ease; }
   .growth-pts { font-size: 11px; color: var(--ink-dim); text-align: right; }
-  .quarter-goal-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
-  .quarter-goal-row input { flex: 1; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
-    background: var(--bg-soft); color: var(--ink); font-size: 13px; font-family: inherit; }
-  .quarter-goal-note { font-size: 11.5px; color: var(--ink-dim); margin-top: 6px; line-height: 1.5; }
   .pending-reward-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
     border-bottom: 1px solid var(--line); cursor: pointer; gap: 10px; }
   .pending-reward-item:last-child { border-bottom: none; }
@@ -685,7 +690,7 @@
     <div style="font-size:40px;margin-bottom:14px;">⏳</div>
     <div class="day" style="font-size:20px;">가입 승인 대기 중</div>
     <div class="sub" id="pendingSubText" style="margin-top:10px;max-width:260px;"></div>
-    <div class="btn" data-action="auth-logout" style="margin-top:28px;min-width:140px;">로그아웃</div>
+    <div class="btn" data-action="auth-logout" style="margin-top:28px;min-width:140px;flex:none;">로그아웃</div>
   </div>
 </div>
 
@@ -849,6 +854,7 @@
     <div class="theme-option" id="keepOnRestToggle" data-action="toggle-keep-on-rest"><span>쉬는 날로 표시된 날에도 유지</span><span class="dot"></span></div>
     <div class="section-label">타이머 종료음</div>
     <div class="theme-option" id="alarmToggle" data-action="toggle-alarm"><span>이 항목은 무음 (타이머 종료 시 소리 안 남)</span><span class="dot"></span></div>
+    <div class="section-label">시간 조정 제안</div>
     <div class="theme-option" id="noSuggestToggle" data-action="toggle-no-suggest"><span>이 항목은 시간 조정 제안 받지 않기</span><span class="dot"></span></div>
     <div class="tp-actions">
       <div class="btn" data-action="day-cancel">취소</div>
@@ -914,12 +920,6 @@
     <div class="theme-option" id="alarmForceToggle" data-action="toggle-alarm-force"><span>무음 스위치가 켜져 있어도 울리기</span><span class="dot"></span></div>
     <div class="btn" data-action="alarm-preview" style="margin:0;">🔔 알람 소리 미리듣기</div>
   </div>
-  <div class="section-label">분기 목표 포인트 (큰 보상 기준)</div>
-  <div class="quarter-goal-row">
-    <input type="number" id="quarterGoalInput" inputmode="numeric" placeholder="예: 6000">
-    <div class="btn primary" data-action="save-quarter-goal" style="margin:0;padding:9px 14px;">저장</div>
-  </div>
-  <div class="quarter-goal-note">이 포인트를 넘으면 '큰 보상'이 열려요. 최근 몇 주 평균 포인트를 보고 다음 목표를 직접 정해서 올려주세요.</div>
   <div class="btn" data-action="open-export" style="margin-top:16px;">💾 데이터 백업·복원</div>
   <div class="btn" data-action="open-rest-modal" style="margin-top:10px;">쉬는 날 관리</div>
   <div class="btn hidden" id="adminApprovalBtn" data-action="open-approval-overlay" style="margin-top:10px;">가입 승인 관리</div>
@@ -1025,6 +1025,7 @@
     <button class="back-btn" data-action="chat-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="chat-title" id="chatTitle"></div>
     <span class="fr-ico" data-action="chat-refresh" title="새로고침">↻</span>
+    <span class="fr-ico" data-action="chat-menu" title="더보기">⋯</span>
   </div>
   <div class="chat-scroll" id="chatScroll">
     <div id="chatProfile"></div>
@@ -1038,6 +1039,14 @@
       <div class="chat-send chat-off" id="chatSendBtn" data-action="chat-send">보내기</div>
     </div>
     <div class="chat-count"><span id="chatCountA"></span><span id="chatCountB"></span></div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="chatMenuOverlay" style="z-index:80;">
+  <div class="tp-card" style="max-width:280px;">
+    <div class="tp-title" id="chatMenuTitle">지인 관리</div>
+    <div class="btn" data-action="chat-menu-cut" style="margin:0 0 8px;color:var(--danger);flex:none;">지인 끊기…</div>
+    <div class="btn" data-action="chat-menu-close" style="margin:0;flex:none;">닫기</div>
   </div>
 </div>
 
@@ -1378,15 +1387,6 @@
     updateAlarmSettingUI();
     var adminBtn = document.getElementById("adminApprovalBtn");
     if (adminBtn) adminBtn.classList.toggle("hidden", !isAdminUser);
-    var qgInput = document.getElementById("quarterGoalInput");
-    if (qgInput) qgInput.value = state.quarterGoalPoints || "";
-  }
-  function saveQuarterGoal() {
-    var v = parseInt(document.getElementById("quarterGoalInput").value, 10);
-    state.quarterGoalPoints = (v && v > 0) ? v : null;
-    saveState();
-    toast(state.quarterGoalPoints ? "목표를 저장했어요" : "목표를 비웠어요");
-    checkRewardEvents();
   }
 
   // ---- 가입 승인 관리 (관리자 전용) ----
@@ -1407,7 +1407,7 @@
       body.innerHTML = list.map(function (u) {
         var email = escapeHtml(u.data.email || "(이메일 없음)");
         var dt = u.data.requestedAt ? escapeHtml(String(u.data.requestedAt).slice(0, 10)) : "";
-        return '<div class="rest-item"><span>' + email + (dt ? (' · ' + dt) : '') + '</span>' +
+        return '<div class="rest-item" style="gap:10px;"><span style="flex:1;min-width:0;overflow-wrap:anywhere;">' + email + (dt ? (' · ' + dt) : '') + '</span>' +
           '<button class="btn primary" data-action="approve-user" data-id="' + u.uid + '" style="margin:0;padding:7px 14px;font-size:12px;">승인</button></div>';
       }).join("");
     }).catch(function (err) {
@@ -1904,6 +1904,7 @@
     var v = document.getElementById("view-friend-chat");
     v.classList.add("hidden"); v.style.height = ""; v.style.top = "";
     chatWith = null; chatDocs = null; chatNew = {}; chatReactFor = null; chatCelebs = [];
+    closeChatMenu();
     var inp = document.getElementById("chatInput");
     if (inp) inp.blur();
     var fv = document.getElementById("view-friends");
@@ -1952,32 +1953,59 @@
     if (t && chatWith) t.textContent = chatWith.nick;
   }
   function cmpBook(p) { return (p.bookIcon ? p.bookIcon + " " : "") + p.bookName + " " + p.bookIndex + "/" + p.totalBooks; }
+  var chatProfCollapsed = false;
+  try { chatProfCollapsed = localStorage.getItem("mmd_chat_prof_collapsed") === "1"; } catch (e) {}
+  function toggleChatProfile() {
+    chatProfCollapsed = !chatProfCollapsed;
+    try { localStorage.setItem("mmd_chat_prof_collapsed", chatProfCollapsed ? "1" : "0"); } catch (e) {}
+    renderChatProfile();
+  }
   function renderChatProfile() {
     var box = document.getElementById("chatProfile");
     if (!chatWith) { box.innerHTML = ""; return; }
-    var pr = friendsData && friendsData.profiles[chatWith.uid], l = accLink(chatWith.uid);
+    var pr = friendsData && friendsData.profiles[chatWith.uid];
     var h = '<div class="chat-prof">';
     if (!pr) {
       h += '<div class="fr-name">' + escapeHtml(chatWith.nick) + '</div><div class="fr-stat" style="color:var(--ink-dim);">아직 공개 전이에요 · 상대가 공개를 켜면 보여요</div>';
     } else {
       var me = buildPublicProfile();
-      h += '<div class="fr-name">' + escapeHtml((pr.titleEmoji ? pr.titleEmoji + " " : "") + chatWith.nick) +
-        (pr.titleText ? '<span class="fr-title">' + escapeHtml(pr.titleText) + '</span>' : '') + '</div>';
-      h += '<table class="cmp"><tr><th></th><th>나</th><th>' + escapeHtml(chatWith.nick) + '</th></tr>' +
-        '<tr><td>레벨</td><td>Lv.' + me.level + '</td><td>Lv.' + pr.level + '</td></tr>' +
-        '<tr><td>누적</td><td>' + me.points + 'P</td><td>' + pr.points + 'P</td></tr>' +
-        '<tr><td>연속</td><td>🔥 ' + me.streak + '일</td><td>🔥 ' + pr.streak + '일</td></tr>' +
-        '<tr><td>최장</td><td>' + me.longest + '일</td><td>' + pr.longest + '일</td></tr>' +
-        '<tr><td>성경</td><td>' + escapeHtml(cmpBook(me)) + '</td><td>' + escapeHtml(cmpBook(pr)) + '</td></tr></table>';
-      var extra = [], tk = todayKey();
-      if (pr.showToday && pr.dateKey === tk && pr.todayDue != null) extra.push("오늘 " + pr.todayDone + "/" + pr.todayDue);
-      if (pr.showCount && pr.routineCount != null) extra.push("루틴 " + pr.routineCount + "개");
-      if (extra.length) h += '<div class="fr-stat" style="margin-top:8px;">' + extra.join(" · ") + '</div>';
-      h += '<div class="fr-upd">' + (fmtMD(pr.updatedAt) ? fmtMD(pr.updatedAt) + " 기준 · 우측 상단 ↻로 새로고침" : "") + '</div>';
+      h += '<div class="chat-prof-head" data-action="chat-prof-toggle"><div class="fr-name">' + escapeHtml((pr.titleEmoji ? pr.titleEmoji + " " : "") + chatWith.nick) +
+        (pr.titleText ? '<span class="fr-title">' + escapeHtml(pr.titleText) + '</span>' : '') + '</div>' +
+        '<span class="chat-prof-tog">' + (chatProfCollapsed ? '비교 펼치기 ▾' : '접기 ▴') + '</span></div>';
+      if (!chatProfCollapsed) {
+        h += '<table class="cmp"><tr><th></th><th>나</th><th>' + escapeHtml(chatWith.nick) + '</th></tr>' +
+          '<tr><td>레벨</td><td>Lv.' + me.level + '</td><td>Lv.' + pr.level + '</td></tr>' +
+          '<tr><td>누적</td><td>' + me.points + 'P</td><td>' + pr.points + 'P</td></tr>' +
+          '<tr><td>연속</td><td>🔥 ' + me.streak + '일</td><td>🔥 ' + pr.streak + '일</td></tr>' +
+          '<tr><td>최장</td><td>' + me.longest + '일</td><td>' + pr.longest + '일</td></tr>' +
+          '<tr><td>성경</td><td>' + escapeHtml(cmpBook(me)) + '</td><td>' + escapeHtml(cmpBook(pr)) + '</td></tr></table>';
+        var extra = [], tk = todayKey();
+        if (pr.showToday && pr.dateKey === tk && pr.todayDue != null) extra.push("오늘 " + pr.todayDone + "/" + pr.todayDue);
+        if (pr.showCount && pr.routineCount != null) extra.push("루틴 " + pr.routineCount + "개");
+        if (extra.length) h += '<div class="fr-stat" style="margin-top:8px;">' + extra.join(" · ") + '</div>';
+        h += '<div class="fr-upd">' + (fmtMD(pr.updatedAt) ? fmtMD(pr.updatedAt) + " 기준 · 우측 상단 ↻로 새로고침" : "") + '</div>';
+      }
     }
-    if (l) h += '<div class="fr-end" style="display:inline-block;margin-top:10px;" data-action="friend-cut" data-id="' + l.id + '">지인 끊기</div>';
     h += '</div>';
     box.innerHTML = h;
+  }
+  // 지인 끊기: 헤더 ⋯ 메뉴 → 안내 확인창까지 거쳐야만 실행된다(대화 화면에 바로 눌리는 버튼을 두지 않음)
+  function openChatMenu() {
+    if (!chatWith) return;
+    document.getElementById("chatMenuTitle").textContent = chatWith.nick;
+    document.getElementById("chatMenuOverlay").classList.remove("hidden");
+  }
+  function closeChatMenu() { document.getElementById("chatMenuOverlay").classList.add("hidden"); }
+  function askCutFriend() {
+    if (!chatWith) return;
+    var l = accLink(chatWith.uid);
+    if (!l) { closeChatMenu(); return; }
+    var lid = l.id, nick = chatWith.nick;
+    closeChatMenu();
+    askConfirm(nick + "님과 지인을 끊을까요?",
+      "끊으면 서로의 정보가 보이지 않게 돼요. 다시 연결하려면 새로 요청하고 상대가 수락해야 해요.",
+      "지인 끊기",
+      function () { deleteFriendLink(lid, "연결을 끊었어요"); });
   }
   function renderChatSuggest() {
     var box = document.getElementById("chatSuggest");
@@ -7600,10 +7628,10 @@ attachSceneMeta("rev");
     }
   }
 
-  // ---- 분기 보상(설정에서 정한 목표 포인트 돌파) ----
+  // ---- 분기 보상(누적 3000포인트 돌파 · 목표는 고정값, 설정에서 바꿀 수 없음) ----
+  var QUARTER_GOAL_POINTS = 3000;
   function checkQuarterReward() {
-    var goal = state.quarterGoalPoints;
-    if (!goal || goal <= 0) return;
+    var goal = QUARTER_GOAL_POINTS;
     var points = computeGamification().points;
     if (!Array.isArray(state.celebratedQuarterGoals)) state.celebratedQuarterGoals = [];
     if (state.celebratedQuarterGoals.indexOf(goal) !== -1) return;
@@ -9470,6 +9498,10 @@ attachSceneMeta("rev");
     else if (action === "chat-open") { openChat(id); }
     else if (action === "chat-close") { closeChat(); }
     else if (action === "chat-refresh") { refreshChat(); }
+    else if (action === "chat-prof-toggle") { toggleChatProfile(); }
+    else if (action === "chat-menu") { openChatMenu(); }
+    else if (action === "chat-menu-close") { closeChatMenu(); }
+    else if (action === "chat-menu-cut") { askCutFriend(); }
     else if (action === "chat-preset") { openCheerPicker(); }
     else if (action === "chat-send") { sendChatText(); }
     else if (action === "chat-sug") { useChatSuggestion(parseInt(el.getAttribute("data-i"), 10)); }
@@ -9495,7 +9527,6 @@ attachSceneMeta("rev");
     else if (action === "friend-accept") { acceptFriend(id); }
     else if (action === "friend-reject") { deleteFriendLink(id, "거절했어요"); }
     else if (action === "friend-cancel-req") { deleteFriendLink(id, "요청을 취소했어요"); }
-    else if (action === "friend-cut") { if (friendTwoTap(el, "cut" + id, "한 번 더")) deleteFriendLink(id, "연결을 끊었어요"); }
     else if (action === "open-achievements") { openAchievements(); }
     else if (action === "achieve-close") { closeAchievements(); }
     else if (action === "open-bible-shelf") { openBibleShelf(); }
@@ -9515,7 +9546,6 @@ attachSceneMeta("rev");
     else if (action === "open-reward-claim") { openRewardClaim(id); }
     else if (action === "reward-claim-cancel") { closeRewardClaim(); }
     else if (action === "reward-claim-save") { saveRewardClaim(); }
-    else if (action === "save-quarter-goal") { saveQuarterGoal(); }
     else if (action === "theme-select") { currentTheme = id; applyTheme(id); updateSettingsModalUI(); }
     else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
     else if (action === "open-rest-modal") { showView("view-restDays"); openRestModal(); }
@@ -9759,6 +9789,60 @@ attachSceneMeta("rev");
       cur.addEventListener("transitionend", finishCancel, { once: true });
       setTimeout(finishCancel, 360);
     }
+  }, { passive: true });
+
+  // ---- 대화 화면(지인 채팅)도 왼쪽 가장자리에서 오른쪽으로 밀어 뒤로가기 ----
+  // 대화 화면은 다른 화면 위에 덮인 별도 레이어라서 위의 전역 스와이프(edgeSwipe)와 따로 처리한다.
+  var chatSwipe = { active: false, dragging: false, startX: 0, startY: 0, width: 0, lastX: 0, lastT: 0, velocity: 0 };
+  document.addEventListener("touchstart", function (e) {
+    chatSwipe.active = false;
+    if (!chatWith || e.touches.length !== 1) return;
+    var t = e.touches[0];
+    if (t.clientX > EDGE_ZONE) return;
+    if (document.querySelector(".tp-overlay:not(.hidden), .celeb-stage:not(.hidden)")) return;
+    chatSwipe.active = true; chatSwipe.dragging = false;
+    chatSwipe.startX = t.clientX; chatSwipe.startY = t.clientY;
+    chatSwipe.width = window.innerWidth;
+    chatSwipe.lastX = t.clientX; chatSwipe.lastT = Date.now(); chatSwipe.velocity = 0;
+  }, { passive: true });
+  document.addEventListener("touchmove", function (e) {
+    if (!chatSwipe.active) return;
+    var v = document.getElementById("view-friend-chat");
+    var t = e.touches[0];
+    var dx = t.clientX - chatSwipe.startX, dy = t.clientY - chatSwipe.startY;
+    if (!chatSwipe.dragging) {
+      if (dx < 6) return;
+      if (Math.abs(dy) > MAX_VERTICAL && Math.abs(dy) > dx) { chatSwipe.active = false; return; }
+      chatSwipe.dragging = true;
+      var inp = document.getElementById("chatInput"); if (inp) inp.blur();
+      v.classList.add("dragging"); v.style.transition = "none";
+    }
+    if (dx < 0) dx = 0;
+    if (dx > chatSwipe.width) dx = chatSwipe.width;
+    v.style.transform = "translateX(" + dx + "px)";
+    var now = Date.now(), dt = now - chatSwipe.lastT;
+    if (dt > 0) chatSwipe.velocity = (t.clientX - chatSwipe.lastX) / dt;
+    chatSwipe.lastX = t.clientX; chatSwipe.lastT = now;
+  }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    if (!chatSwipe.active) return;
+    chatSwipe.active = false;
+    if (!chatSwipe.dragging) return;
+    var v = document.getElementById("view-friend-chat");
+    var dx = e.changedTouches[0].clientX - chatSwipe.startX;
+    if (dx < 0) dx = 0;
+    if (dx > chatSwipe.width) dx = chatSwipe.width;
+    var complete = dx > chatSwipe.width * COMPLETE_RATIO || chatSwipe.velocity > FLICK_VELOCITY;
+    var done = false;
+    function reset() { v.classList.remove("dragging"); v.style.transform = ""; v.style.transition = ""; }
+    function finish() {
+      if (done) return; done = true;
+      if (complete) { closeChat(); reset(); } else { reset(); }
+    }
+    v.style.transition = "transform .3s cubic-bezier(.32,.72,0,1)";
+    v.style.transform = "translateX(" + (complete ? chatSwipe.width : 0) + "px)";
+    v.addEventListener("transitionend", finish, { once: true });
+    setTimeout(finish, 360);
   }, { passive: true });
 
   // ---- 오버레이/전체화면이 열려 있을 때 뒤 화면 스크롤 막기 ----
