@@ -167,9 +167,11 @@
   .cat-progress-track { margin-top: 12px; height: 5px; border-radius: 999px; background: var(--ring-track); overflow: hidden; }
   .cat-progress-fill { height: 100%; background: var(--sage); border-radius: 999px; transition: width .3s ease; }
   .cat-itemline { margin-top: 10px; font-size: 11.5px; color: var(--ink-dim); }
-  .cat-items-preview { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-  .mini-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
-  .mini-item[data-action] { cursor: pointer; }
+  /* 탭 영역 확대: 줄 높이를 약 40px로 키우고(간격은 줄 안 패딩으로 흡수), 누르는 즉시 배경이 바뀌어 반응이 보이게 한다 */
+  .cat-items-preview { margin-top: 4px; display: flex; flex-direction: column; gap: 0; }
+  .mini-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; min-height: 40px; padding: 0 8px; margin: 0 -8px; border-radius: 10px; box-sizing: border-box; }
+  .mini-item[data-action] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .mini-item[data-action]:active { background: var(--line); }
   .mini-item.not-due { opacity: 0.45; }
   .mini-item.optional { opacity: 0.62; }
   .mini-item.optional.done { opacity: 1; }
@@ -3147,7 +3149,7 @@
           syncedBase = JSON.parse(JSON.stringify(res.out)); syncedRaw = canon(res.out);
           state = normalizeLoaded(JSON.parse(JSON.stringify(res.out)));
           saveToLocalStorage(state);
-          try { renderHome(); } catch (e) {}
+          try { renderHomeWhenIdle(); } catch (e) {}
           toast("다른 기기의 기록과 합쳤어요");
         }
       } else {
@@ -3302,7 +3304,7 @@
       if (firstLoad) { firstLoad = false; showView(effectiveApproved ? "view-home" : "view-pending"); }
       if (!effectiveApproved) { renderPendingView(); return; }
       if (!document.getElementById("view-pending").classList.contains("hidden")) { showView("view-home"); }
-      renderHome();
+      renderHomeWhenIdle();
       if (!window.__holidayPromptChecked) { window.__holidayPromptChecked = true; checkHolidayFirstPrompt(); }
     }, function (err) {
       console.error("subscribe failed", err);
@@ -3686,7 +3688,10 @@
   // 레벨업해서 보상 의미가 옅어졌는데, 이렇게 하면 초반엔 적당히 자주 오르다가 갈수록
   // 간격이 벌어져서 레벨업이 계속 뜻깊게 느껴진다.
   function pointsNeededForLevel(n) { return 100 * n; }
+  // checkRewardEvents 한 번 실행 동안만 같은 결과를 재사용한다(그 안에서 3번 부르던 전체 기록 훑기를 1번으로).
+  var gamifMemo = null;
   function computeGamification() {
+    if (gamifMemo) return gamifMemo;
     var points = 0;
     Object.keys(state.history).forEach(function (dateKey) {
       var entry = state.history[dateKey];
@@ -8227,6 +8232,12 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   // 연출이 끝나 [확인]을 누르면 다음 연출로 넘어감.
   // 1) 성경 마일스톤  2) 배지(스트릭 최장일수)  3) 주간 보상  4) 분기 보상  5) 오늘의 상자 도착 알림
   function checkRewardEvents() {
+    gamifMemo = null;
+    var gm = computeGamification();
+    gamifMemo = gm;   // 이 함수가 끝나면(finally) 반드시 해제
+    try { checkRewardEventsInner(); } finally { gamifMemo = null; }
+  }
+  function checkRewardEventsInner() {
     checkGrowthEvents();
     var longest = computeLongestStreak();
     if (!Array.isArray(state.celebratedBadgeDays)) state.celebratedBadgeDays = [];
@@ -8824,6 +8835,27 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   }
 
   // ---- home ----
+  // 손가락이 화면에 닿아 있는 동안에는(터치 시작~끝) 백그라운드 갱신(다른 기기 동기화·병합)이
+  // 홈을 통째로 다시 그리지 않게 미뤘다가, 손을 뗀 직후에 한 번만 그린다. 그려 버리면 누르던 요소가
+  // 교체되어 그 탭이 사라지기 때문이다. 사용자가 직접 일으킨 갱신(체크 등)은 이걸 거치지 않는다.
+  var touchDownAt = 0, homeRenderPending = false;
+  function isTouching() { return touchDownAt > 0 && Date.now() - touchDownAt < 1500; }   // 1.5초 넘으면 놓친 touchend로 보고 무시
+  function renderHomeWhenIdle() {
+    if (isTouching()) { homeRenderPending = true; return; }
+    renderHome();
+  }
+  function onTouchRelease(e) {
+    if (e.touches && e.touches.length > 0) return;
+    touchDownAt = 0;
+    if (homeRenderPending) {
+      homeRenderPending = false;
+      setTimeout(function () { if (!isTouching()) { try { renderHome(); } catch (err) {} } else homeRenderPending = true; }, 80);
+    }
+  }
+  document.addEventListener("touchstart", function () { touchDownAt = Date.now(); }, { passive: true, capture: true });
+  document.addEventListener("touchend", onTouchRelease, { passive: true, capture: true });
+  document.addEventListener("touchcancel", onTouchRelease, { passive: true, capture: true });
+
   function renderHome() {
     renderTitleRow();
     var d = new Date();
@@ -8988,7 +9020,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
         el.style.transition = "none";
         el.style.transform = "translateY(" + dy + "px)";
         requestAnimationFrame(function () {
-          el.style.transition = "transform .35s ease";
+          el.style.transition = "transform .2s ease";
           el.style.transform = "";
         });
       }
@@ -10499,16 +10531,26 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
         var doHomeToggle = function () {
           var wasFull = catFullyDone(tCat);
           markDone(tItemId, !wasDone);
-          if (!wasDone) checkRewardEvents();
-          renderHome();
-          if (!wasFull && catFullyDone(tCat)) {
-            var cardEl = document.querySelector('[data-cat-card="' + tCat.id + '"]');
-            if (cardEl) {
-              cardEl.classList.add("celebrate");
-              setTimeout(function () { cardEl.classList.remove("celebrate"); }, 550);
-            }
-            toast("카테고리 완료! 🎉");
+          // 즉시 반응: 눌린 줄의 점·이름 표시만 먼저 바꿔 화면에 바로 보이게 한다(나머지 계산은 아래에서 이어서).
+          if (el.isConnected) {
+            var dotEl = el.querySelector(".mini-dot");
+            if (dotEl) dotEl.classList.toggle("done", !wasDone);
+            el.classList.toggle("done", !wasDone);
           }
+          // 보상 검사(기록 전체를 훑음)와 화면 전체 다시 그리기는 첫 화면 갱신 뒤로 미룬다.
+          var finishToggle = function () {
+            if (!wasDone) checkRewardEvents();
+            renderHome();
+            if (!wasFull && catFullyDone(tCat)) {
+              var cardEl = document.querySelector('[data-cat-card="' + tCat.id + '"]');
+              if (cardEl) {
+                cardEl.classList.add("celebrate");
+                setTimeout(function () { cardEl.classList.remove("celebrate"); }, 550);
+              }
+              toast("카테고리 완료! 🎉");
+            }
+          };
+          requestAnimationFrame(function () { setTimeout(finishToggle, 0); });
         };
         if (wasDone) {
           // 글씨가 작고 간격이 좁아 실수로 해제하기 쉬우므로 한 번 확인한다
