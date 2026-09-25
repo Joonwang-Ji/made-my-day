@@ -11002,6 +11002,114 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     setTimeout(finish, 360);
   }, { passive: true });
 
+  // ---- 전체화면이 아닌 창(업적·가이드 등): 바깥을 탭하거나 아래로 쓸어내리면 닫기 ----
+  // 각 창의 기존 닫기/취소 버튼을 그대로 눌러 주므로, 창마다 있던 닫기 처리(연출·정리)가 똑같이 실행된다.
+  // 예/아니오를 골라야 하는 확인창(confirm·runExit·공휴일 첫 안내)은 실수로 닫히면 안 되어 제외한다.
+  (function initOverlayDismiss() {
+    var CLOSE_ACTION = {
+      tpOverlay: "tp-cancel", dayOverlay: "day-cancel", moveCatOverlay: "movecat-cancel", tagOverlay: "tag-cancel",
+      changePwOverlay: "changepw-cancel", achieveOverlay: "achieve-close", bibleShelfOverlay: "bible-shelf-close",
+      chatMenuOverlay: "chat-menu-close", cheerPickOverlay: "cheer-pick-close", todayMemoOverlay: "today-memo-cancel",
+      titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
+      missedOverlay: "missed-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
+      rewardClaimOverlay: "reward-claim-cancel", catOverlay: null
+    };
+    function forceDismiss(ov) {
+      var act = CLOSE_ACTION[ov.id];
+      var btn = act ? ov.querySelector('[data-action="' + act + '"]') : null;
+      if (btn) btn.click(); else ov.classList.add("hidden");
+    }
+    // 입력창이 있는 창은 글을 쓰기 시작했으면(입력 이벤트 발생) 닫기 전에 저장하지 않고 닫을지 물어본다
+    var TEXT_OVERLAYS = { changePwOverlay: 1, todayMemoOverlay: 1, titleEditOverlay: 1, catOverlay: 1, rewardClaimOverlay: 1, tagOverlay: 1 };
+    var dirty = {};
+    document.addEventListener("input", function (e) {
+      var ov = e.target && e.target.closest ? e.target.closest(".tp-overlay") : null;
+      if (ov && TEXT_OVERLAYS[ov.id]) dirty[ov.id] = true;
+    });
+    new MutationObserver(function () {
+      Object.keys(dirty).forEach(function (id) {
+        var o = document.getElementById(id);
+        if (!o || o.classList.contains("hidden")) delete dirty[id];
+      });
+    }).observe(document.body, { attributes: true, attributeFilter: ["class"], subtree: true });
+    function dismiss(ov) {
+      if (dirty[ov.id]) {
+        askConfirm("저장하지 않고 닫을까요?", "입력한 내용은 저장되지 않아요.", "닫기", function () { delete dirty[ov.id]; forceDismiss(ov); });
+        return;
+      }
+      forceDismiss(ov);
+    }
+    function topOverlay() {
+      var list = document.querySelectorAll(".tp-overlay:not(.hidden)"), top = null, z = -1;
+      for (var i = 0; i < list.length; i++) {
+        var zi = parseInt(getComputedStyle(list[i]).zIndex, 10) || 0;
+        if (zi >= z) { z = zi; top = list[i]; }
+      }
+      return top;
+    }
+    // 바깥(어두운 배경) 탭
+    document.addEventListener("click", function (e) {
+      var ov = e.target;
+      if (!ov || !ov.classList || !ov.classList.contains("tp-overlay")) return;
+      if (!(ov.id in CLOSE_ACTION) || ov.id === "helpOverlay") return; // helpOverlay는 기존 backdrop 처리가 있다
+      if (document.querySelector(".celeb-stage:not(.hidden)")) return;
+      dismiss(ov);
+    });
+    // 아래로 쓸어내리기 (손가락을 따라 카드가 내려오고, 충분히 내리거나 빠르게 쓸면 닫힘)
+    var st = null;
+    function scrolledAway(el, root) {
+      while (el && el !== root && el.nodeType === 1) {
+        var oy = getComputedStyle(el).overflowY;
+        if ((oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight + 1 && el.scrollTop > 0) return true;
+        el = el.parentNode;
+      }
+      return false;
+    }
+    function reset(card, animate) {
+      if (!card) return;
+      card.style.transition = animate ? "transform .22s ease" : "none";
+      card.style.transform = "";
+      if (animate) setTimeout(function () { card.style.transition = ""; }, 240);
+    }
+    document.addEventListener("touchstart", function (e) {
+      st = null;
+      if (e.touches.length !== 1) return;
+      var ov = topOverlay();
+      if (!ov || !(ov.id in CLOSE_ACTION) || document.querySelector(".celeb-stage:not(.hidden)")) return;
+      var tg = e.target;
+      if (!ov.contains(tg)) return;
+      // 시간 선택 휠·입력창·슬라이더 위에서 시작한 동작은 그 요소 고유의 조작이므로 건드리지 않는다
+      if (tg.closest && tg.closest(".tp-scroll, input, textarea, select")) return;
+      var card = ov.querySelector(".tp-card, .help-sheet");
+      if (!card || scrolledAway(tg, card)) return;
+      st = { ov: ov, card: card, x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), drag: false, dead: false };
+    }, { passive: true });
+    document.addEventListener("touchmove", function (e) {
+      if (!st || st.dead) return;
+      var t = e.touches[0], dx = t.clientX - st.x, dy = t.clientY - st.y;
+      if (!st.drag) {
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) { st.dead = true; return; }
+        if (dy < -8) { st.dead = true; return; }
+        if (dy < 10) return;
+        st.drag = true;
+      }
+      st.card.style.transition = "none";
+      st.card.style.transform = "translateY(" + Math.max(0, dy) + "px)";
+    }, { passive: true });
+    document.addEventListener("touchend", function (e) {
+      if (!st) return;
+      var s = st; st = null;
+      if (!s.drag) return;
+      var dy = e.changedTouches[0].clientY - s.y, dt = Math.max(1, Date.now() - s.t);
+      if (dy > 90 || (dy > 40 && dy / dt > 0.5)) { dismiss(s.ov); reset(s.card, !s.ov.classList.contains("hidden")); }
+      else reset(s.card, true);
+    }, { passive: true });
+    document.addEventListener("touchcancel", function () {
+      if (st && st.drag) reset(st.card, true);
+      st = null;
+    }, { passive: true });
+  })();
+
   // ---- 오버레이/전체화면이 열려 있을 때 뒤 화면 스크롤 막기 ----
   // CSS overscroll-behavior만으로는 "내용이 짧아 스크롤이 안 되는 오버레이"에서 손가락을
   // 밀면 뒤 화면이 같이 움직이는 걸 못 막는다(iOS Safari). 그래서 오버레이가 하나라도 떠 있으면
