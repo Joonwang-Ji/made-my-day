@@ -2333,6 +2333,9 @@
   var bibleShelfState = { mode: "list", bookId: null };
   var shelfPop = { on: false, base: 0, i: 0 };
   var shelfAnimBusy = false;
+  var shelfTk = 0;   // removeShelfCover가 불릴 때마다 올라감 — 건너뛰기 뒤에 뒤늦게 오는 옛 애니메이션 콜백을 무시하기 위한 번호
+  // 애니메이션 중에 탭이 오면 무시하지 않고, 진행 중이던 연출을 건너뛰어 끝난 상태로 만든 뒤 그 탭을 처리한다.
+  function skipShelfAnim() { removeShelfCover(); shelfAnimBusy = false; }
   function shelfBodyEl() { return document.getElementById("bibleShelfBody"); }
   function shelfCardEl() { var o = document.getElementById("bibleShelfOverlay"); return o ? o.querySelector(".tp-card") : null; }
   function shelfSlotEl(mid) { return document.querySelector('#bibleShelfBody [data-action="open-milestone-detail"][data-id="' + mid + '"]'); }
@@ -2355,6 +2358,7 @@
     return d;
   }
   function removeShelfCover() {
+    shelfTk++;
     var c = document.querySelector("#bibleShelfOverlay .book-cover");
     if (c) { cancelAnimsIn(c); c.remove(); }
     var card = shelfCardEl();
@@ -2364,30 +2368,33 @@
     var card = shelfCardEl();
     if (!card || !card.animate) { render(); return; }
     removeShelfCover();
+    var tk = shelfTk;
     shelfAnimBusy = true;
     var cover = makeBookCover(book);
     card.appendChild(cover);
     card.style.perspective = "1500px";
     var a1 = cover.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1)" }],
-      { duration: 170, easing: "ease-out", fill: "both" });
+      { duration: 140, easing: "ease-out", fill: "both" });
     var started = false;
     function openIt() {
+      if (tk !== shelfTk) return;   // 건너뛰기로 이미 정리됨
       if (started) return; started = true;
       render();
       var a2 = cover.animate([
         { transform: "rotateY(0deg)", opacity: 1, offset: 0 },
         { transform: "rotateY(-85deg)", opacity: 1, offset: 0.5 },
         { transform: "rotateY(-160deg)", opacity: 0, offset: 1 }
-      ], { duration: 760, easing: "cubic-bezier(.45,.05,.3,1)", fill: "forwards" });
-      onAnimsDone([a2], 760, function () { removeShelfCover(); shelfAnimBusy = false; });
+      ], { duration: 600, easing: "cubic-bezier(.45,.05,.3,1)", fill: "forwards" });
+      onAnimsDone([a2], 600, function () { if (tk !== shelfTk) return; removeShelfCover(); shelfAnimBusy = false; });
     }
-    onAnimsDone([a1], 170, openIt);
+    onAnimsDone([a1], 140, openIt);
   }
   // hideAfter가 true면(✕로 닫을 때) 책이 덮인 뒤 책장 창 자체를 닫는다
   function playBookClose(book, render, hideAfter) {
     var card = shelfCardEl();
     if (!card || !card.animate) { render(); if (hideAfter) closeBibleShelfNow(); return; }
     removeShelfCover();
+    var tk = shelfTk;
     shelfAnimBusy = true;
     var cover = makeBookCover(book);
     card.appendChild(cover);
@@ -2396,13 +2403,14 @@
       { transform: "rotateY(-160deg)", opacity: 0, offset: 0 },
       { transform: "rotateY(-85deg)", opacity: 1, offset: 0.5 },
       { transform: "rotateY(0deg)", opacity: 1, offset: 1 }
-    ], { duration: 560, easing: "cubic-bezier(.45,.05,.3,1)", fill: "both" });
-    onAnimsDone([a1], 560, function () {
+    ], { duration: 440, easing: "cubic-bezier(.45,.05,.3,1)", fill: "both" });
+    onAnimsDone([a1], 440, function () {
+      if (tk !== shelfTk) return;   // 건너뛰기로 이미 정리됨
       if (hideAfter) { closeBibleShelfNow(); return; }
       render();
       var a2 = cover.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.94)" }],
-        { duration: 240, easing: "ease-in", fill: "forwards" });
-      onAnimsDone([a2], 240, function () { removeShelfCover(); shelfAnimBusy = false; });
+        { duration: 180, easing: "ease-in", fill: "forwards" });
+      onAnimsDone([a2], 180, function () { if (tk !== shelfTk) return; removeShelfCover(); shelfAnimBusy = false; });
     });
   }
   function openBibleShelf() {
@@ -2416,7 +2424,7 @@
     document.getElementById("bibleShelfOverlay").classList.add("hidden");
   }
   function closeBibleShelf() {
-    if (shelfAnimBusy) return;
+    if (shelfAnimBusy) { closeBibleShelfNow(); return; }   // 연출 중에 ✕를 눌러도 바로 닫힌다
     var book = bibleShelfState.mode === "book" ? BIBLE_BOOKS.filter(function (b) { return b.id === bibleShelfState.bookId; })[0] : null;
     if (book && bookUnlocked(book)) { playBookClose(book, function () {}, true); return; }
     closeBibleShelfNow();
@@ -2430,7 +2438,7 @@
     var b = shelfBodyEl(); if (b) b.scrollTop = 0;
   }
   function openBibleShelfBook(bookId) {
-    if (shelfAnimBusy) return;
+    if (shelfAnimBusy) skipShelfAnim();
     var book = BIBLE_BOOKS.filter(function (b) { return b.id === bookId; })[0];
     if (!book) return;
     function render() {
@@ -2442,7 +2450,7 @@
     playBookOpen(book, render);
   }
   function backToBibleShelfList() {
-    if (shelfAnimBusy) return;
+    if (shelfAnimBusy) skipShelfAnim();
     var bookId = bibleShelfState.bookId;
     var book = BIBLE_BOOKS.filter(function (b) { return b.id === bookId; })[0];
     function render() {
@@ -7668,7 +7676,9 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   var COIN_EASE_OUT = "cubic-bezier(.22,.78,.26,1)";
   var COIN_EASE_IO = "cubic-bezier(.5,0,.25,1)";
   var COIN_PERSP = "perspective(1000px) ";
-  var msd = { mid: null, busy: false, open: false, angle: 0, src: null, fly: null, coin: null };
+  // tk: 리셋될 때마다 올라가는 번호. 애니메이션이 끝났다는 옛 콜백이 뒤늦게 와도(건너뛰기로 이미 닫은 뒤) 상태를 건드리지 않게 한다.
+  // finishNow: 닫기 애니메이션 중일 때 그 마무리를 즉시 실행하는 함수(닫기를 또 누르면 건너뛰기).
+  var msd = { mid: null, busy: false, open: false, angle: 0, src: null, fly: null, coin: null, tk: 0, finishNow: null };
   var celebFlying = false;
   var celebAnims = [];
 
@@ -7766,7 +7776,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var fired = false;
     function go() { if (fired) return; fired = true; cb(); }
     anims[0].onfinish = go;
-    setTimeout(go, dur + 300);
+    setTimeout(go, dur + 120);   // 끝났다는 신호가 늦어도(느린 기기) 잠금이 오래 남지 않게 여유를 짧게
   }
   function coinShine(coin) {
     var sh = coin && coin.querySelector(".coin-shine");
@@ -7814,23 +7824,25 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     }
     if (msd.src) msd.src.style.opacity = "0";
     msd.busy = true;
-    var DUR = 780;
+    var openTk = msd.tk;
+    var DUR = 600;
     if (!c.fly.animate) { msd.busy = false; msd.open = true; return; }
     document.getElementById("msdBackdrop").animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, fill: "both" });
     document.getElementById("msdCard").animate(
       [{ opacity: 0, transform: "translateY(26px) scale(.94)" }, { opacity: 1, transform: "none" }],
-      { duration: 420, delay: 200, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
+      { duration: 380, delay: 150, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
     ["msDetailTitle", "msDetailRef", "msDetailVerse"].forEach(function (id, i) {
       document.getElementById(id).animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
-        { duration: 360, delay: 520 + i * 90, easing: "ease-out", fill: "both" });
+        { duration: 320, delay: 380 + i * 70, easing: "ease-out", fill: "both" });
     });
     [".msd-hint", "#msdCloseBtn"].forEach(function (sel, i) {
       document.querySelector("#milestoneDetailOverlay " + sel).animate([{ opacity: 0 }, { opacity: 1 }],
-        { duration: 360, delay: 760 + i * 80, fill: "both" });
+        { duration: 300, delay: 560 + i * 60, fill: "both" });
     });
     var anims = coinAnimIn(c.fly, c.coin, dx, dy, s, DUR);
     setTimeout(function () { var gl = document.getElementById("msdGlow"); if (gl) gl.classList.add("on"); }, DUR - 320);
     onAnimsDone(anims, DUR, function () {
+      if (openTk !== msd.tk) return;   // 이미 건너뛰어 닫힌 뒤에 온 옛 콜백
       anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
       msd.busy = false; msd.open = true;
       coinShine(c.coin);
@@ -7841,15 +7853,16 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   function msdFlip() {
     if (msd.busy || !msd.open || !msd.coin) return;
     msd.busy = true;
+    var flipTk = msd.tk;
     var from = msd.angle, to = from === 0 ? 180 : 0, coin = msd.coin, fly = msd.fly;
     // 뒷면에 권·구절 위치가 나오므로, 뒷면을 보는 동안은 카드의 구절 위치 줄을 감춘다
-    document.getElementById("msDetailRef").animate([{ opacity: to === 180 ? 1 : 0 }, { opacity: to === 180 ? 0 : 1 }], { duration: 300, fill: "forwards" });
+    document.getElementById("msDetailRef").animate([{ opacity: to === 180 ? 1 : 0 }, { opacity: to === 180 ? 0 : 1 }], { duration: 260, fill: "forwards" });
     coin.style.transform = COIN_PERSP + "rotateY(" + to + "deg)";
     var a = coin.animate([
       { transform: COIN_PERSP + "rotateY(" + from + "deg)" }, { transform: COIN_PERSP + "rotateY(" + to + "deg)" }
-    ], { duration: 560, easing: "cubic-bezier(.4,.1,.2,1)" });
-    fly.animate([{ transform: "scale(1)" }, { transform: "scale(1.07)", offset: 0.5 }, { transform: "scale(1)" }], { duration: 560, easing: "ease-in-out" });
-    onAnimsDone([a], 560, function () { msd.angle = to; msd.busy = false; });
+    ], { duration: 460, easing: "cubic-bezier(.4,.1,.2,1)" });
+    fly.animate([{ transform: "scale(1)" }, { transform: "scale(1.07)", offset: 0.5 }, { transform: "scale(1)" }], { duration: 460, easing: "ease-in-out" });
+    onAnimsDone([a], 460, function () { if (flipTk !== msd.tk) return; msd.angle = to; msd.busy = false; });
   }
 
   function msdReset() {
@@ -7860,11 +7873,19 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     document.getElementById("msdGlow").classList.remove("on");
     if (msd.src) msd.src.style.opacity = "";
     msd.busy = false; msd.open = false; msd.mid = null; msd.src = null; msd.fly = null; msd.coin = null;
+    msd.finishNow = null; msd.tk++;
   }
   function closeMilestoneDetail() {
-    if (msd.busy) return;
+    if (msd.busy) {
+      // 애니메이션 중에 닫기를 눌렀다: 무시하지 않고 그 애니메이션을 건너뛰어 바로 닫는다.
+      // 닫히는 중이면 그 마무리(원래 자리 복원)를, 열리거나 뒤집히는 중이면 그냥 정리해서 닫는다.
+      if (msd.finishNow) { var fn = msd.finishNow; msd.finishNow = null; fn(false); }
+      else msdReset();
+      return;
+    }
     if (!msd.open) { msdReset(); return; }
     msd.busy = true;
+    var closeTk = msd.tk;
     var ov = document.getElementById("milestoneDetailOverlay");
     // 열었던 자리(업적 화면의 메달 또는 성경 여정의 칸)로 돌아간다. 그 자리가 사라졌으면 책장에서 같은 메달을 찾는다.
     var src = (msd.src && msd.src.isConnected) ? msd.src : (msd.mid ? shelfSlotEl(msd.mid) : null);
@@ -7872,17 +7893,19 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (src && shelfBody && shelfBody.contains(src)) shelfRevealSlot(src);
     var cur = msd.fly.getBoundingClientRect();
     var to = src ? src.getBoundingClientRect() : null;
-    var DUR = 760;
+    var DUR = 560;
     var srcOld = msd.src;
     function finish(landed) {
+      if (closeTk !== msd.tk) return;   // 이미 건너뛰기로 마무리됨
       if (src) src.style.opacity = "";
       if (srcOld) srcOld.style.opacity = "";
       if (landed) landingRing(to);
       msdReset();
     }
+    msd.finishNow = finish;
     if (!msd.fly.animate) { finish(false); return; }
     document.getElementById("msdGlow").classList.remove("on");
-    document.getElementById("msdBackdrop").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 480, delay: 220, easing: "ease-in", fill: "forwards" });
+    document.getElementById("msdBackdrop").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, delay: 120, easing: "ease-in", fill: "forwards" });
     document.getElementById("msdCard").animate(
       [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(18px) scale(.96)" }],
       { duration: 280, easing: "ease-in", fill: "forwards" });
