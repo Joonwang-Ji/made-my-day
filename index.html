@@ -609,6 +609,43 @@
   .bc-icon { font-size: 56px; line-height: 1; }
   .bc-name { font-family: 'Fraunces', serif; font-weight: 650; font-size: 24px; letter-spacing: .04em; color: #F1DFA8; margin-top: 10px; }
   .bc-sec { font-size: 11.5px; letter-spacing: .14em; color: rgba(241,223,168,.7); margin-top: 6px; }
+  /* 권 이동: 가죽 표지가 아니라 종이 한 장이 넘어간다 */
+  .book-cover.pg .bc-front { background: linear-gradient(90deg, #E6D9B8, #F6EEDA 12%, #F4EBD5);
+    box-shadow: inset 0 0 0 1px #C2A25E, 6px 0 18px rgba(60,40,10,.28); }
+  .book-cover.pg .bc-front::before { width: 30px; background: linear-gradient(90deg, rgba(90,60,20,.3), transparent); }
+  .book-cover.pg .bc-icon { font-size: 38px; opacity: .85; }
+  .book-cover.pg .bc-name { color: #8A6A2E; font-size: 20px; margin-top: 8px; }
+  .book-cover.pg .bc-sec { color: rgba(138,106,46,.75); }
+  /* 전체여정: 검은 가죽 표지에 금박 HOLY BIBLE */
+  .book-cover.holy .bc-front { background: repeating-linear-gradient(45deg, rgba(255,255,255,.018) 0 2px, transparent 2px 4px),
+      radial-gradient(120% 90% at 30% 18%, #302A25, #15110F 72%);
+    box-shadow: inset 0 0 0 1.5px rgba(232,199,102,.75), inset 0 0 0 9px #1B1714, inset 0 0 0 10.5px rgba(232,199,102,.5), 8px 0 22px rgba(0,0,0,.35); }
+  .book-cover.holy .bc-front::before { width: 22px; background: linear-gradient(90deg, rgba(0,0,0,.55), transparent); }
+  .book-cover.holy .bc-name { color: #E8C766; font-size: 27px; letter-spacing: .2em; margin-top: 18px; text-indent: .2em;
+    text-shadow: 0 1px 0 rgba(0,0,0,.6), 0 0 10px rgba(232,199,102,.25); }
+  .book-cover.holy .bc-sec { color: rgba(232,199,102,.65); letter-spacing: .5em; text-indent: .5em; margin-top: 10px; }
+  .bc-cross { position: relative; width: 34px; height: 46px; margin: 0 auto; }
+  .bc-cross::before, .bc-cross::after { content: ''; position: absolute; background: linear-gradient(135deg, #F3D98A, #C9A24A); border-radius: 2px;
+    box-shadow: 0 0 8px rgba(232,199,102,.35); }
+  .bc-cross::before { left: 14px; top: 0; width: 6px; height: 46px; }
+  .bc-cross::after { left: 0; top: 12px; width: 34px; height: 6px; }
+  /* 내 선물함: 리본이 풀리고 뚜껑이 열린다 */
+  #pendingRewardsOverlay .tp-card { position: relative; overflow: hidden; }
+  .gift-stage { position: absolute; inset: 0; z-index: 5; background: var(--card); border-radius: 20px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .gift-box { position: relative; width: 104px; height: 104px; }
+  .gb-glow { position: absolute; left: 50%; top: 44%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,199,102,.55), rgba(232,199,102,0) 68%); opacity: 0; }
+  .gb-body { position: absolute; left: 10px; right: 10px; bottom: 0; height: 62px; border-radius: 6px 6px 12px 12px;
+    background: linear-gradient(135deg, #E8908E, #C65F5E); box-shadow: 0 6px 14px rgba(0,0,0,.18); overflow: hidden; }
+  .gb-lid { position: absolute; left: 3px; right: 3px; bottom: 58px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, #F2A5A3, #D26E6C); transform-origin: 0% 100%; box-shadow: 0 3px 8px rgba(0,0,0,.15); overflow: hidden; }
+  .gb-rib { position: absolute; left: 50%; top: 0; bottom: 0; width: 16px; margin-left: -8px; background: linear-gradient(90deg, #E9C86A, #F6E2A0, #E9C86A); }
+  .gb-bow { position: absolute; left: 50%; bottom: 82px; width: 0; height: 0; }
+  .gb-bow i { position: absolute; width: 22px; height: 16px; bottom: 0; border: 4px solid #E9C86A; border-radius: 50% 50% 50% 8%; background: transparent; }
+  .gb-bow i:first-child { left: -25px; transform: rotate(-18deg); }
+  .gb-bow i:last-child { left: 3px; transform: scaleX(-1) rotate(-18deg); }
+  .gb-spark { position: absolute; left: 50%; top: 30%; font-size: 14px; color: #E8C766; opacity: 0; line-height: 1; }
   .celeb-plate { position: relative; overflow: hidden; }
   .celeb-plate .coin-shine { animation: celebShine 1.1s ease-in-out .9s both; }
   @keyframes celebShine { from { transform: translateX(-130%); } to { transform: translateX(130%); } }
@@ -2350,10 +2387,17 @@
     var g = computeGrowth(computeGamification().points);
     return BIBLE_BOOKS.indexOf(book) <= g.bookIndex;
   }
+  var HOLY_COVER = { holy: true };   // 전체여정을 열 때 쓰는 "HOLY BIBLE" 표지
   function makeBookCover(book) {
     var d = document.createElement("div");
-    d.className = "book-cover";
-    d.innerHTML = '<div class="bc-front"><div class="bc-frame"><div class="bc-icon">' + book.icon + '</div><div class="bc-name">' +
+    if (book && book.holy) {
+      d.className = "book-cover holy";
+      d.innerHTML = '<div class="bc-front"><div class="bc-frame"><div class="bc-cross"></div><div class="bc-name">HOLY BIBLE</div>' +
+        '<div class="bc-sec">성경</div></div></div><div class="bc-back"></div>';
+      return d;
+    }
+    d.className = "book-cover pg";
+    d.innerHTML ='<div class="bc-front"><div class="bc-frame"><div class="bc-icon">' + book.icon + '</div><div class="bc-name">' +
       escapeHtml(book.name) + '</div><div class="bc-sec">' + escapeHtml(book.section) + '</div></div></div><div class="bc-back"></div>';
     return d;
   }
@@ -2373,8 +2417,12 @@
     var cover = makeBookCover(book);
     card.appendChild(cover);
     card.style.perspective = "1500px";
-    var a1 = cover.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1)" }],
-      { duration: 140, easing: "ease-out", fill: "both" });
+    var holy = !!(book && book.holy);
+    var openDur = holy ? 900 : 520;   // HOLY BIBLE 표지는 천천히, 책장 한 장은 가볍게
+    var hold = holy ? 380 : 0;        // 표지 글씨가 읽히도록 잠깐 머문다
+    var a1 = cover.animate(holy ? [{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1)" }]
+                                : [{ opacity: 0.6 }, { opacity: 1 }],
+      { duration: holy ? 160 : 60, easing: "ease-out", fill: "both" });
     var started = false;
     function openIt() {
       if (tk !== shelfTk) return;   // 건너뛰기로 이미 정리됨
@@ -2384,10 +2432,10 @@
         { transform: "rotateY(0deg)", opacity: 1, offset: 0 },
         { transform: "rotateY(-85deg)", opacity: 1, offset: 0.5 },
         { transform: "rotateY(-160deg)", opacity: 0, offset: 1 }
-      ], { duration: 600, easing: "cubic-bezier(.45,.05,.3,1)", fill: "forwards" });
-      onAnimsDone([a2], 600, function () { if (tk !== shelfTk) return; removeShelfCover(); shelfAnimBusy = false; });
+      ], { duration: openDur, easing: "cubic-bezier(.45,.05,.3,1)", fill: "forwards" });
+      onAnimsDone([a2], openDur, function () { if (tk !== shelfTk) return; removeShelfCover(); shelfAnimBusy = false; });
     }
-    onAnimsDone([a1], 140, openIt);
+    onAnimsDone([a1], holy ? 160 : 60, function () { if (hold) setTimeout(openIt, hold); else openIt(); });
   }
   // hideAfter가 true면(✕로 닫을 때) 책이 덮인 뒤 책장 창 자체를 닫는다
   function playBookClose(book, render, hideAfter) {
@@ -2399,12 +2447,13 @@
     var cover = makeBookCover(book);
     card.appendChild(cover);
     card.style.perspective = "1500px";
+    var closeDur = (book && book.holy) ? 620 : 440;
     var a1 = cover.animate([
       { transform: "rotateY(-160deg)", opacity: 0, offset: 0 },
       { transform: "rotateY(-85deg)", opacity: 1, offset: 0.5 },
       { transform: "rotateY(0deg)", opacity: 1, offset: 1 }
-    ], { duration: 440, easing: "cubic-bezier(.45,.05,.3,1)", fill: "both" });
-    onAnimsDone([a1], 440, function () {
+    ], { duration: closeDur, easing: "cubic-bezier(.45,.05,.3,1)", fill: "both" });
+    onAnimsDone([a1], closeDur, function () {
       if (tk !== shelfTk) return;   // 건너뛰기로 이미 정리됨
       if (hideAfter) { closeBibleShelfNow(); return; }
       render();
@@ -2417,7 +2466,9 @@
     removeShelfCover(); shelfAnimBusy = false;
     bibleShelfState = { mode: "list", bookId: null };
     renderBibleShelf();
+    var body0 = shelfBodyEl(); if (body0) body0.scrollTop = 0;
     document.getElementById("bibleShelfOverlay").classList.remove("hidden");
+    playBookOpen(HOLY_COVER, function () {});   // HOLY BIBLE 표지가 열리며 66권 목록이 나타난다
   }
   function closeBibleShelfNow() {
     removeShelfCover(); shelfAnimBusy = false;
@@ -2427,6 +2478,7 @@
     if (shelfAnimBusy) { closeBibleShelfNow(); return; }   // 연출 중에 ✕를 눌러도 바로 닫힌다
     var book = bibleShelfState.mode === "book" ? BIBLE_BOOKS.filter(function (b) { return b.id === bibleShelfState.bookId; })[0] : null;
     if (book && bookUnlocked(book)) { playBookClose(book, function () {}, true); return; }
+    if (!book) { playBookClose(HOLY_COVER, function () {}, true); return; }   // 목록에서 닫으면 성경 표지가 덮인다
     closeBibleShelfNow();
   }
   // 축하 화면에서 메달이 들어갈 칸이 보이도록, 표지 연출 없이 바로 해당 권을 펼친 상태로 연다
@@ -8627,11 +8679,53 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (n > 0) document.getElementById("pendingRewardBannerText").textContent =
       "열린 보상 " + n + "개가 기다리고 있어요 — 탭해서 기록하기";
   }
+  // 내 선물함 열기: 리본이 풀리고 뚜껑이 들리며 반짝임이 올라온 뒤 목록이 나타난다(약 1초, 탭하면 건너뜀)
+  var giftTk = 0;
+  function removeGiftStage() {
+    giftTk++;
+    var s = document.querySelector("#pendingRewardsOverlay .gift-stage");
+    if (s) { cancelAnimsIn(s); s.remove(); }
+  }
+  function playGiftOpen() {
+    var ov = document.getElementById("pendingRewardsOverlay");
+    var card = ov ? ov.querySelector(".tp-card") : null;
+    removeGiftStage();
+    if (!card || !card.animate) return;
+    var tk = giftTk;
+    var sparkVec = [[-46, -44], [-22, -62], [4, -70], [30, -60], [50, -40], [14, -50]];
+    var sparks = sparkVec.map(function () { return '<span class="gb-spark">✦</span>'; }).join("");
+    var st = document.createElement("div");
+    st.className = "gift-stage";
+    st.setAttribute("data-action", "gift-skip");
+    st.innerHTML = '<div class="gift-box"><div class="gb-glow"></div><div class="gb-body"><div class="gb-rib"></div></div>' +
+      '<div class="gb-lid"><div class="gb-rib"></div></div><div class="gb-bow"><i></i><i></i></div>' + sparks + '</div>';
+    card.appendChild(st);
+    var box = st.querySelector(".gift-box");
+    var E = "cubic-bezier(.2,.8,.3,1)";
+    box.animate([{ transform: "scale(.6)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], { duration: 200, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "both" });
+    st.querySelector(".gb-bow").animate([{ transform: "scale(1) rotate(0deg)", opacity: 1 }, { transform: "scale(0) rotate(50deg)", opacity: 0 }],
+      { duration: 240, delay: 260, easing: "ease-in", fill: "both" });
+    Array.prototype.forEach.call(st.querySelectorAll(".gb-rib"), function (r) {
+      r.animate([{ transform: "scaleX(1)", opacity: 1 }, { transform: "scaleX(0)", opacity: 0 }], { duration: 260, delay: 260, easing: "ease-in", fill: "both" });
+    });
+    st.querySelector(".gb-lid").animate([{ transform: "translateY(0) rotate(0deg)" }, { transform: "translateY(-40px) rotate(-16deg)" }],
+      { duration: 340, delay: 520, easing: E, fill: "both" });
+    st.querySelector(".gb-glow").animate([{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: "scale(1.1)", offset: 0.5 }, { opacity: 0.7, transform: "scale(1.25)" }],
+      { duration: 460, delay: 520, easing: "ease-out", fill: "both" });
+    Array.prototype.forEach.call(st.querySelectorAll(".gb-spark"), function (sp, i) {
+      var v = sparkVec[i];
+      sp.animate([{ transform: "translate(0,0) scale(.4)", opacity: 0 }, { transform: "translate(" + v[0] * 0.6 + "px," + v[1] * 0.6 + "px) scale(1.1)", opacity: 1, offset: 0.4 },
+        { transform: "translate(" + v[0] + "px," + v[1] + "px) scale(.6)", opacity: 0 }], { duration: 560, delay: 540 + i * 30, easing: "ease-out", fill: "both" });
+    });
+    var fade = st.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, delay: 1000, easing: "ease-in", fill: "forwards" });
+    onAnimsDone([fade], 1240, function () { if (tk !== giftTk) return; removeGiftStage(); });
+  }
   function openPendingRewardsOverlay() {
     renderPendingRewardsList();
     document.getElementById("pendingRewardsOverlay").classList.remove("hidden");
+    playGiftOpen();
   }
-  function closePendingRewardsOverlay() { document.getElementById("pendingRewardsOverlay").classList.add("hidden"); }
+  function closePendingRewardsOverlay() { removeGiftStage(); document.getElementById("pendingRewardsOverlay").classList.add("hidden"); }
   function renderPendingRewardsList() {
     var list = (state.pendingRewards || []).slice(0, 40);
     var el = document.getElementById("pendingRewardsList");
@@ -10763,6 +10857,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     else if (action === "open-daily-box") { if (!celebQueue.length) queueCeleb({ type: "dailyOpen" }); }
     else if (action === "open-pending-rewards") { openPendingRewardsOverlay(); }
     else if (action === "pending-rewards-close") { closePendingRewardsOverlay(); }
+    else if (action === "gift-skip") { removeGiftStage(); }
     else if (action === "open-reward-claim") { openRewardClaim(id); }
     else if (action === "reward-claim-cancel") { closeRewardClaim(); }
     else if (action === "reward-claim-save") { saveRewardClaim(); }
