@@ -8,7 +8,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-25-1";
+  var BUILD_VERSION = "2026-09-25-2";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -1085,8 +1085,6 @@
     <div class="badge-grid" id="badgeGrid"></div>
     <div class="section-label" style="margin-top:16px;">족보 트랙</div>
     <div id="achieveGenealogy" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
-    <div class="section-label" style="margin-top:16px;">내가 나에게 준 선물</div>
-    <div id="rewardLogList"></div>
     </div>
   </div>
 </div>
@@ -1287,6 +1285,7 @@
       <div class="btn" data-action="reward-claim-cancel">취소</div>
       <div class="btn primary" data-action="reward-claim-save">저장</div>
     </div>
+    <div data-action="reward-claim-delete" style="text-align:center;margin-top:12px;font-size:12px;color:var(--danger);text-decoration:underline;cursor:pointer;">이 기록 삭제</div>
   </div>
 </div>
 
@@ -2323,12 +2322,6 @@
       var unlocked = longest >= b.days;
       return '<div class="badge-cell' + (unlocked ? ' unlocked' : '') + '"><span class="emoji">' + b.emoji + '</span><span class="label">' + b.label + '</span></div>';
     }).join("");
-    var logEl = document.getElementById("rewardLogList");
-    var rewards = (state.rewards || []).slice(0, 10);
-    logEl.innerHTML = rewards.length ? rewards.map(function (r) {
-      var tag = r.type === "badge" ? (r.badgeDays + "일 연속") : ("Lv." + r.level);
-      return '<div class="reward-log-item"><div class="reward-log-date">' + r.date + ' · ' + tag + '</div><div class="reward-log-note">' + escapeHtml(r.note) + '</div></div>';
-    }).join("") : '<div class="reward-log-empty">아직 기록한 선물이 없어요</div>';
     document.getElementById("achieveOverlay").classList.remove("hidden");
   }
   function closeAchievements() { document.getElementById("achieveOverlay").classList.add("hidden"); }
@@ -2993,6 +2986,18 @@
     if (!Array.isArray(p.celebratedQuarterGoals)) p.celebratedQuarterGoals = [];
     if (!Array.isArray(p.celebratedWeeks)) p.celebratedWeeks = [];
     if (!Array.isArray(p.pendingRewards)) p.pendingRewards = [];
+    // 보상 기록 통합 마이그레이션(9차 후속): 예전엔 배지 보상이 state.rewards라는 별도 배열에 저장돼
+    // 업적 화면 안에서만 보였다. 이제 배지 보상도 주간·분기와 같은 곳(선물함, pendingRewards)에
+    // 모아서 보여주므로, 기존에 쌓인 배지 보상 기록을 한 번만 옮겨 담고 원래 배열은 비운다.
+    if (Array.isArray(p.rewards) && p.rewards.length > 0) {
+      p.rewards.forEach(function (r) {
+        if (r && r.type === "badge") {
+          p.pendingRewards.unshift({ id: r.id || uid(), kind: "badge", badgeDays: r.badgeDays,
+            unlockedAt: r.date || todayKey(), status: "claimed", note: r.note || "", claimedAt: r.date || todayKey() });
+        }
+      });
+      p.rewards = [];
+    }
     // 레벨업/배지 보상 팝업 도입 시점 마이그레이션: 기존에 이미 쌓아온 레벨·배지에 대해
     // 뒤늦게 축하 팝업이 뜨지 않도록, 처음 보는 상태라면 "지금까지"를 기준선으로 맞춰둔다.
     if (typeof p.lastSeenLevel !== "number" || !Array.isArray(p.celebratedBadgeDays)) {
@@ -8228,7 +8233,11 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     BADGE_THRESHOLDS.forEach(function (b) {
       if (longest >= b.days && state.celebratedBadgeDays.indexOf(b.days) === -1) {
         state.celebratedBadgeDays.push(b.days);
-        queueCeleb({ type: "badge", badge: b });
+        if (!Array.isArray(state.pendingRewards)) state.pendingRewards = [];
+        var bRec = { id: uid(), kind: "badge", badgeDays: b.days,
+          unlockedAt: todayKey(), status: "pending", note: "", claimedAt: null };
+        state.pendingRewards.unshift(bRec);
+        queueCeleb({ type: "badge", id: bRec.id, badge: b });
       }
     });
     checkWeeklyReward();
@@ -8426,11 +8435,8 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var ev = celebQueue[0];
     var inp = document.getElementById("celebNote");
     var note = inp ? inp.value.trim() : "";
-    if (ev && ev.badge && note) {
-      if (!Array.isArray(state.rewards)) state.rewards = [];
-      state.rewards.unshift({ id: uid(), type: "badge", level: null, badgeDays: ev.badge.days, date: todayKey(), note: note });
-      if (state.rewards.length > 200) state.rewards.length = 200;
-      saveState();
+    if (ev && ev.id && note) {
+      applyRewardNote(ev.id, note);
       toast("기록했어요 🎁");
     }
     celebNext();
@@ -8438,11 +8444,8 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   // 배지 팝업의 추천 칩을 탭하면 입력 없이 바로 그 텍스트로 저장(celebBadgeOk와 같은 저장 로직, 입력창 대신 칩 텍스트 사용)
   function celebChipTap(text) {
     var ev = celebQueue[0];
-    if (ev && ev.badge && text) {
-      if (!Array.isArray(state.rewards)) state.rewards = [];
-      state.rewards.unshift({ id: uid(), type: "badge", level: null, badgeDays: ev.badge.days, date: todayKey(), note: text });
-      if (state.rewards.length > 200) state.rewards.length = 200;
-      saveState();
+    if (ev && ev.id && text) {
+      applyRewardNote(ev.id, text);
       toast("기록했어요 🎁");
     }
     celebNext();
@@ -8600,7 +8603,9 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var el = document.getElementById("pendingRewardsList");
     if (!list.length) { el.innerHTML = '<div class="reward-log-empty">아직 열린 보상이 없어요</div>'; return; }
     el.innerHTML = list.map(function (r) {
-      var title = r.kind === "quarter" ? ("🏆 " + r.goalPoints + "P 돌파") : ("🎀 주간 보상 · " + weeklyPeriodLabel(r.periodKey));
+      var title = r.kind === "quarter" ? ("🏆 " + r.goalPoints + "P 돌파")
+        : r.kind === "badge" ? ("🔥 " + r.badgeDays + "일 연속 배지")
+        : ("🎀 주간 보상 · " + weeklyPeriodLabel(r.periodKey));
       var noteTxt = r.status === "pending" ? "탭해서 기록하기" : escapeHtml(r.note || "");
       return '<div class="pending-reward-item" data-action="open-reward-claim" data-id="' + r.id + '">' +
         '<div class="pending-reward-main"><div class="pending-reward-title">' + title + '</div>' +
@@ -8619,20 +8624,38 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (!r) return;
     claimingRewardId = id;
     var titleEl = document.getElementById("rewardClaimTitle");
+    var chipsEl = document.getElementById("rewardClaimChips");
     if (r.kind === "quarter") {
       titleEl.textContent = r.goalPoints + "P 돌파 보상!";
-      document.getElementById("rewardClaimBody").textContent = "꾸준히 3개월 가까이 애썼어요. 크게 하나 해보는 거 어때요?";
+      document.getElementById("rewardClaimBody").textContent = "꾸준히 몇 달 가까이 애썼어요. 크게 하나 해보는 거 어때요?";
+      chipsEl.innerHTML = ""; // 분기 보상은 추천 칩 없이 직접 입력만 받는다(자유 텍스트 전용 등급).
+    } else if (r.kind === "badge") {
+      titleEl.textContent = r.badgeDays + "일 연속 달성!";
+      document.getElementById("rewardClaimBody").textContent = "정말 대단해요 — 자신에게 특별한 선물을 해보는 건 어때요?";
+      chipsEl.innerHTML = badgeChipsFor(r.badgeDays).map(function (t) {
+        return '<span class="rc-chip" data-action="reward-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>';
+      }).join("");
     } else {
       titleEl.textContent = "이번 주 작은 보상 · " + weeklyPeriodLabel(r.periodKey);
       document.getElementById("rewardClaimBody").textContent = "이번 주도 잘 보냈어요. 어떤 보상을 원하시나요?";
+      chipsEl.innerHTML = WEEKLY_CHIPS.map(function (t) {
+        return '<span class="rc-chip" data-action="reward-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>';
+      }).join("");
     }
-    var chipsEl = document.getElementById("rewardClaimChips");
-    // 분기 보상은 추천 칩 없이 직접 입력만 받는다(자유 텍스트 전용 등급).
-    chipsEl.innerHTML = r.kind === "quarter" ? "" : WEEKLY_CHIPS.map(function (t) {
-      return '<span class="rc-chip" data-action="reward-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>';
-    }).join("");
     document.getElementById("rewardClaimInput").value = r.note || "";
     document.getElementById("rewardClaimOverlay").classList.remove("hidden");
+  }
+  function deleteRewardClaim() {
+    var id = claimingRewardId;
+    if (!id) return;
+    askConfirm("이 기록을 삭제할까요?", "삭제하면 되돌릴 수 없어요.", "삭제", function () {
+      state.pendingRewards = (state.pendingRewards || []).filter(function (r) { return r.id !== id; });
+      saveState();
+      renderPendingRewardsList();
+      renderPendingIndicator();
+      toast("삭제했어요");
+      closeRewardClaim();
+    });
   }
   function closeRewardClaim() {
     document.getElementById("rewardClaimOverlay").classList.add("hidden");
@@ -9957,7 +9980,19 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (typeof parsed.quarterGoalPoints === "number") state.quarterGoalPoints = parsed.quarterGoalPoints;
     if (Array.isArray(parsed.celebratedQuarterGoals)) state.celebratedQuarterGoals = parsed.celebratedQuarterGoals;
     if (Array.isArray(parsed.celebratedWeeks)) state.celebratedWeeks = parsed.celebratedWeeks;
+    if (!Array.isArray(state.pendingRewards)) state.pendingRewards = [];
     if (Array.isArray(parsed.pendingRewards)) state.pendingRewards = parsed.pendingRewards;
+    // 예전 형식(state.rewards의 배지 보상)을 가져온 경우, 선물함(pendingRewards)으로 함께 옮겨서
+    // 새 통합 화면에서도 보이게 한다.
+    if (Array.isArray(state.rewards) && state.rewards.length > 0) {
+      state.rewards.forEach(function (r) {
+        if (r && r.type === "badge") {
+          state.pendingRewards.unshift({ id: r.id || uid(), kind: "badge", badgeDays: r.badgeDays,
+            unlockedAt: r.date || todayKey(), status: "claimed", note: r.note || "", claimedAt: r.date || todayKey() });
+        }
+      });
+      state.rewards = [];
+    }
     if (parsed.personalTitle && typeof parsed.personalTitle === "object") {
       state.personalTitle = {
         emoji: typeof parsed.personalTitle.emoji === "string" ? parsed.personalTitle.emoji : "",
@@ -10344,20 +10379,20 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     ], see: ["home", "days"] },
     achieve: { t: "업적 화면", sub: "누적 포인트 · 성경 여정 · 선물함", s: [
       ["누적 포인트와 성경 여정", "위쪽 숫자가 지금까지의 누적 포인트예요. 포인트가 쌓이면 창세기부터 요한계시록까지 66권의 메달이 하나씩 열려요. ‘성경 여정 전체보기’에서 열린 권과 장면을 볼 수 있고, 채워진 칸을 누르면 상세를 볼 수 있어요."],
-      ["내 선물함", "받은 보상을 확인하고 입력하는 곳이에요."],
-      ["배지와 족보 트랙", "연속일 배지와, 이야기가 진행되면서 채워지는 족보 트랙도 여기서 볼 수 있어요."],
-      ["내가 나에게 준 선물", "스스로에게 준 작은 선물을 기록해 두면 여기에 모여요."]
+      ["내 선물함", "매일 · 주간 · 배지 · 분기, 스스로에게 준 보상 기록이 전부 여기 한 곳에 모여요. 탭해서 내용을 고치거나 삭제할 수 있어요."],
+      ["배지와 족보 트랙", "연속일 배지와, 이야기가 진행되면서 채워지는 족보 트랙도 여기서 볼 수 있어요."]
     ], see: ["points", "rewards", "badges"] },
     points: { t: "포인트와 성경 여정", sub: "포인트가 쌓이는 방법", s: [
       ["쌓이는 방법", "완료한 항목마다 1P예요. 그날 한 카테고리를 전부 끝내면 3P가 더 붙어요. 성공한 날 열리는 보너스 상자에서 5P를 더 받아요. 불시 항목도 포인트에는 들어가요."],
       ["줄어들지 않아요", "연속일이 끊겨도 포인트는 줄지 않아요. 연속일 기록과 포인트는 서로 별개예요."],
       ["성경 여정", "누적 포인트에 따라 66권이 순서대로 열려요. 66권 전체를 채우려면 약 12,000P가 필요해요. 새 권이 열릴 때는 책이 펼쳐지는 연출이 나와요."]
     ], see: ["rewards", "badges", "achieve"] },
-    rewards: { t: "선물함과 보상", sub: "매일 · 주간 · 분기 보상", s: [
+    rewards: { t: "선물함과 보상", sub: "매일 · 주간 · 배지 · 분기 보상", s: [
       ["매일 상자", "하루의 성공 기준을 채우면 보너스 상자가 도착해요. 열면 5P가 더해져요. [나중에]를 누르면 홈에 상자 카드가 남아요."],
       ["주간 보상", "평일(월~금) 5일 중 4일 이상 성공하면 ‘작은 보상’이 열려요. 금·토·일에 판정해요. 쉬는 날 등으로 평가할 날이 5일보다 적으면 그날들을 모두 성공해야 해요."],
+      ["배지 보상", "연속일 배지(3·7·14·30·60·100·200·365일)를 얻을 때마다 열려요. 30일 미만은 작은 보상, 30일 이상은 큰 보상 칩으로 추천이 달라져요."],
       ["분기 보상", "누적 포인트가 3000P · 6000P · 9000P… 3000P를 넘을 때마다 반복해서 ‘큰 보상’이 열려요. 전체화면으로 크게 축하하고, 추천 칩 없이 직접 입력만 받아요."],
-      ["보상 입력", "보상이 열려도 바로 정하지 않아도 돼요. 나중에 선물함에서 입력하고, 입력한 뒤에도 다시 눌러 고칠 수 있어요."]
+      ["한 곳에 모아 보기", "매일 · 주간 · 배지 · 분기 보상 기록이 전부 선물함 하나에 모여요. 항목을 탭하면 나중에 입력하거나, 이미 쓴 내용을 고치거나, 삭제할 수 있어요."]
     ], see: ["points", "streak"] },
     badges: { t: "연속일 배지", sub: "3 · 7 · 14 · 30 · 60 · 100 · 200 · 365일", s: [
       ["배지를 얻는 조건", "최장 연속 성공일이 3 · 7 · 14 · 30 · 60 · 100 · 200 · 365일에 닿으면 배지를 얻어요."],
@@ -10666,6 +10701,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     else if (action === "open-reward-claim") { openRewardClaim(id); }
     else if (action === "reward-claim-cancel") { closeRewardClaim(); }
     else if (action === "reward-claim-save") { saveRewardClaim(); }
+    else if (action === "reward-claim-delete") { deleteRewardClaim(); }
     else if (action === "reward-chip-tap") { tapRewardChip(dataText); }
     else if (action === "theme-select") { currentTheme = id; applyTheme(id); updateSettingsModalUI(); }
     else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
