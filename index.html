@@ -3665,14 +3665,14 @@
     return Math.max(longest, current);
   }
   var BADGE_THRESHOLDS = [
-    { days: 3, label: "불씨", emoji: "🔥" },
-    { days: 7, label: "일주일", emoji: "⭐" },
-    { days: 14, label: "2주", emoji: "🕊️" },
-    { days: 30, label: "한 달", emoji: "⛺" },
-    { days: 60, label: "두 달", emoji: "⛰️" },
-    { days: 100, label: "백 일", emoji: "🏆" },
+    { days: 3, label: "3일", emoji: "🔥" },
+    { days: 7, label: "7일", emoji: "⭐" },
+    { days: 14, label: "14일", emoji: "🕊️" },
+    { days: 30, label: "30일", emoji: "⛺" },
+    { days: 60, label: "60일", emoji: "⛰️" },
+    { days: 100, label: "100일", emoji: "🏆" },
     { days: 200, label: "200일", emoji: "💎" },
-    { days: 365, label: "1년", emoji: "👑" }
+    { days: 365, label: "365일", emoji: "👑" }
   ];
   // ---- 레벨/포인트 ----
   // 항목 완료 1개= 1P, 그날 한 카테고리를 전부 채우면 보너스 3P(과거엔 5P라 보상이 너무 잦았음).
@@ -8244,7 +8244,12 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   var celebAwaitClaim = false;
   var dailyBoxDeferred = false;
   var dailyBoxPromptedKey = null;
-  var CELEB_CHIPS = ["☕ 커피 한 잔", "📖 책 한 권", "🍪 간식", "🎁 갖고 싶던 물건", "🎧 음악 들으며 산책", "😴 낮잠", "🌙 일찍 쉬기"];
+  // 보상 추천 칩: 등급별로 다른 세트를 쓴다. 주간(자주·가볍게) / 배지(연속일, 30일 미만은 작게·이상은 크게).
+  // 분기 보상은 칩 없이 직접 입력만 받는다(celebration 화면에서 처리).
+  var WEEKLY_CHIPS = ["☕ 커피 한 잔", "🍫 간식", "🎵 좋아하는 음악 듣기", "📱 여유시간 30분", "🚶 산책 15분"];
+  var BADGE_CHIPS_SMALL = ["📖 책 한 챕터", "🍿 간식", "🎬 짧은 영상 한 편", "🎧 좋아하는 음악"];
+  var BADGE_CHIPS_BIG = ["🍽️ 맛있는 외식", "🛍️ 갖고 싶던 물건", "🎉 하루 온전히 쉬기", "💆 마사지·휴식"];
+  function badgeChipsFor(days) { return days >= 30 ? BADGE_CHIPS_BIG : BADGE_CHIPS_SMALL; }
 
   function celebEl() { return document.getElementById("celebStage"); }
   function celebLater(fn, ms) { celebTimers.push(setTimeout(fn, ms)); }
@@ -8375,7 +8380,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
         '<div class="celeb-icon">' + b.emoji + '</div>' +
         '<div class="celeb-title">' + b.days + '일 연속 달성!</div>' +
         '<div class="celeb-sub">정말 대단해요 — 자신에게 특별한 선물을 해보는 건 어때요?</div>' +
-        '<div class="celeb-chips">' + CELEB_CHIPS.map(function (t) { return '<span data-action="celeb-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>'; }).join("") + '</div>' +
+        '<div class="celeb-chips">' + badgeChipsFor(b.days).map(function (t) { return '<span data-action="celeb-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>'; }).join("") + '</div>' +
         '<input type="text" class="celeb-input" id="celebNote" maxlength="60" placeholder="원하는 보상 혹은 이미 준 보상을 적어보세요">',
         '<div class="celeb-btn" data-action="celeb-badge-ok">확인</div>');
       celebLater(function () { celebFlash(); celebConfetti(36); }, 400);
@@ -8383,15 +8388,27 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       return;
     }
 
-    if (ev.type === "weekly" || ev.type === "quarter") {
-      var q = ev.type === "quarter";
+    if (ev.type === "weekly") {
       st.innerHTML = celebFrame(
-        '<div class="celeb-icon">' + (q ? "🎉" : "🎀") + '</div>' +
-        '<div class="celeb-title">' + (q ? (ev.goal + "P 돌파!") : "이번 주 보상이 열렸어요") + '</div>' +
-        '<div class="celeb-sub">' + (q ? "꾸준히 애써온 만큼 큰 보상이 열렸어요."
-          : (ev.counted ? ("평일 " + ev.counted + "일 중 " + ev.success + "일 성공! ") : "") + "주말에 나에게 줄 보상을 정해보세요.") + '</div>',
+        '<div class="celeb-icon">🎀</div>' +
+        '<div class="celeb-title">이번 주 보상이 열렸어요</div>' +
+        '<div class="celeb-sub">' + (ev.counted ? ("평일 " + ev.counted + "일 중 " + ev.success + "일 성공! ") : "") + '주말에 나에게 줄 보상을 정해보세요.</div>',
         okBtn + '<div class="celeb-btn ghost" data-action="celeb-claim-now" data-id="' + ev.id + '">지금 기록하기</div>');
-      celebLater(function () { celebFlash(); celebConfetti(q ? 50 : 32); }, 400);
+      celebLater(function () { celebFlash(); celebConfetti(32); }, 400);
+      celebLater(celebReady, 1500);
+      return;
+    }
+
+    if (ev.type === "quarter") {
+      st.innerHTML = celebFrame(
+        '<div class="celeb-kicker">몇 달간 쌓아온 결실</div>' +
+        '<div class="celeb-icon">🏆</div>' +
+        '<div class="celeb-title">' + ev.goal + 'P 돌파!</div>' +
+        '<div class="celeb-sub">정말 대단해요. 오랜 시간 흔들림 없이 꾸준히 해내셨어요 — 이번엔 크게, 나에게 선물해보는 건 어때요?</div>' +
+        '<input type="text" class="celeb-input" id="celebQuarterNote" maxlength="60" placeholder="이번엔 어떻게 나에게 보상할까요? 자유롭게 적어보세요">',
+        '<div class="celeb-btn" data-action="celeb-quarter-save" data-id="' + ev.id + '">저장하기</div>' +
+        '<div class="celeb-btn ghost" data-action="celeb-next">나중에 기록할게요</div>');
+      celebLater(function () { celebFlash(); celebConfetti(80); }, 400);
       celebLater(celebReady, 1500);
       return;
     }
@@ -8427,6 +8444,17 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       if (state.rewards.length > 200) state.rewards.length = 200;
       saveState();
       toast("기록했어요 🎁");
+    }
+    celebNext();
+  }
+  // 분기 보상(전체화면 안에서 바로 자유 텍스트로 저장 — 칩 추천 없음, applyRewardNote로 선물함 기록도 같이 갱신)
+  function celebQuarterSave() {
+    var ev = celebQueue[0];
+    var inp = document.getElementById("celebQuarterNote");
+    var note = inp ? inp.value.trim() : "";
+    if (ev && ev.id && note) {
+      applyRewardNote(ev.id, note);
+      toast("기록했어요 🎉");
     }
     celebNext();
   }
@@ -8531,12 +8559,12 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     return { success: info.success, counted: info.counted, needed: needed, remaining: remaining };
   }
 
-  // ---- 분기 보상(누적 3000포인트 돌파 · 목표는 고정값, 설정에서 바꿀 수 없음) ----
+  // ---- 분기 보상(누적 3000포인트마다 반복 · 3000, 6000, 9000... · 간격은 설정에서 바꿀 수 없음) ----
   var QUARTER_GOAL_POINTS = 3000;
   function checkQuarterReward() {
-    var goal = QUARTER_GOAL_POINTS;
-    var points = computeGamification().points;
     if (!Array.isArray(state.celebratedQuarterGoals)) state.celebratedQuarterGoals = [];
+    var goal = (state.celebratedQuarterGoals.length + 1) * QUARTER_GOAL_POINTS;
+    var points = computeGamification().points;
     if (state.celebratedQuarterGoals.indexOf(goal) !== -1) return;
     if (points >= goal) {
       state.celebratedQuarterGoals.push(goal);
@@ -8572,7 +8600,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var el = document.getElementById("pendingRewardsList");
     if (!list.length) { el.innerHTML = '<div class="reward-log-empty">아직 열린 보상이 없어요</div>'; return; }
     el.innerHTML = list.map(function (r) {
-      var title = r.kind === "quarter" ? ("🎉 " + r.goalPoints + "P 돌파") : ("🎀 주간 보상 · " + weeklyPeriodLabel(r.periodKey));
+      var title = r.kind === "quarter" ? ("🏆 " + r.goalPoints + "P 돌파") : ("🎀 주간 보상 · " + weeklyPeriodLabel(r.periodKey));
       var noteTxt = r.status === "pending" ? "탭해서 기록하기" : escapeHtml(r.note || "");
       return '<div class="pending-reward-item" data-action="open-reward-claim" data-id="' + r.id + '">' +
         '<div class="pending-reward-main"><div class="pending-reward-title">' + title + '</div>' +
@@ -8599,7 +8627,8 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       document.getElementById("rewardClaimBody").textContent = "이번 주도 잘 보냈어요. 어떤 보상을 원하시나요?";
     }
     var chipsEl = document.getElementById("rewardClaimChips");
-    chipsEl.innerHTML = CELEB_CHIPS.map(function (t) {
+    // 분기 보상은 추천 칩 없이 직접 입력만 받는다(자유 텍스트 전용 등급).
+    chipsEl.innerHTML = r.kind === "quarter" ? "" : WEEKLY_CHIPS.map(function (t) {
       return '<span class="rc-chip" data-action="reward-chip-tap" data-text="' + escapeHtml(t) + '">' + t + '</span>';
     }).join("");
     document.getElementById("rewardClaimInput").value = r.note || "";
@@ -9844,7 +9873,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var rate = daysElapsed > 0 ? Math.round(successDays / daysElapsed * 100) : 0;
 
     html += '<div class="stat-row">' +
-      '<div class="stat-box"><div class="num">' + streak + '</div><div class="lbl">연속일</div></div>' +
+      '<div class="stat-box"><div class="num">' + streak + '</div><div class="lbl">연속일<span class="help-q" data-action="help" data-id="streak">?</span></div></div>' +
       '<div class="stat-box"><div class="num">' + successDays + '</div><div class="lbl">성공일</div></div>' +
       '<div class="stat-box"><div class="num">' + rate + '%</div><div class="lbl">이번 달 달성률</div></div>' +
     '</div>';
@@ -10283,6 +10312,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       ["성공한 날이란", "그날 해야 하는 모든 항목을 합쳐서 완료 비율이 기준 이상이면 성공이에요. 카테고리별이 아니라 전체 합산이라, 작은 카테고리 하나를 놓쳐도 무너지지 않아요."],
       ["기준 고르기", "설정에서 100% · 90% · 80% · 70% 중에 고를 수 있어요."],
       ["이어지는 규칙", "쉬는 날이나 할 일이 하나도 없는 날은 건너뛰어요. 끊기지도, 세어지지도 않아요. ‘불시’ 항목과 쉬는 날에 자발적으로 한 항목은 스트릭에 들어가지 않아요."],
+      ["표시 범위", "통계의 ‘연속일’은 지금 보고 있는 달과 상관없이, 오늘까지 이어진 전체 연속 일수예요. 옆의 ‘성공일’은 지금 보고 있는 달 안에서만 센 숫자라 범위가 달라요."],
       ["포인트와의 관계", "연속일이 끊겨도 누적 포인트와 성경 여정은 그대로 남아요. 이미 얻은 배지도 사라지지 않아요."]
     ], see: ["badges", "points", "keeprest"] },
     days: { t: "반복 요일 · 불시", sub: "요일 정하기와 불시 항목", s: [
@@ -10326,7 +10356,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     rewards: { t: "선물함과 보상", sub: "매일 · 주간 · 분기 보상", s: [
       ["매일 상자", "하루의 성공 기준을 채우면 보너스 상자가 도착해요. 열면 5P가 더해져요. [나중에]를 누르면 홈에 상자 카드가 남아요."],
       ["주간 보상", "평일(월~금) 5일 중 4일 이상 성공하면 ‘작은 보상’이 열려요. 금·토·일에 판정해요. 쉬는 날 등으로 평가할 날이 5일보다 적으면 그날들을 모두 성공해야 해요."],
-      ["분기 보상", "누적 포인트가 3000P를 넘으면 ‘큰 보상’이 열려요. 목표는 3000P로 고정돼 있어요."],
+      ["분기 보상", "누적 포인트가 3000P · 6000P · 9000P… 3000P를 넘을 때마다 반복해서 ‘큰 보상’이 열려요. 전체화면으로 크게 축하하고, 추천 칩 없이 직접 입력만 받아요."],
       ["보상 입력", "보상이 열려도 바로 정하지 않아도 돼요. 나중에 선물함에서 입력하고, 입력한 뒤에도 다시 눌러 고칠 수 있어요."]
     ], see: ["points", "streak"] },
     badges: { t: "연속일 배지", sub: "3 · 7 · 14 · 30 · 60 · 100 · 200 · 365일", s: [
@@ -10629,6 +10659,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     else if (action === "celeb-badge-ok") { celebBadgeOk(); }
     else if (action === "celeb-chip-tap") { celebChipTap(dataText); }
     else if (action === "celeb-claim-now") { celebClaimNow(id); }
+    else if (action === "celeb-quarter-save") { celebQuarterSave(); }
     else if (action === "open-daily-box") { if (!celebQueue.length) queueCeleb({ type: "dailyOpen" }); }
     else if (action === "open-pending-rewards") { openPendingRewardsOverlay(); }
     else if (action === "pending-rewards-close") { closePendingRewardsOverlay(); }
