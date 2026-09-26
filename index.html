@@ -153,6 +153,7 @@
   .ring-info { flex: 1; min-width: 0; }
   .ring-info-main { font-size: 14px; font-weight: 700; color: var(--ink); }
   .ring-info-sub { margin-top: 3px; font-size: 11.5px; color: var(--ink-dim); }
+  .ring-info-bible { margin-top: 6px; font-size: 11.5px; font-weight: 700; color: var(--gold); }
 
   @keyframes flameFlicker {
     0%, 100% { opacity: 1; transform: scale(1); }
@@ -441,6 +442,14 @@
     background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; font-size: 12.5px; }
 
   .achieve-level-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .bible-strip { display: flex; flex-direction: column; gap: 7px; cursor: pointer; margin: 2px 0 6px; }
+  .bible-strip .bs-row { display: flex; align-items: flex-start; gap: 8px; }
+  .bible-strip .bs-lab { flex: none; width: 24px; font-size: 10.5px; font-weight: 800; color: var(--ink-dim); line-height: 14px; }
+  .bible-strip .bs-cells { flex: 1; display: flex; flex-wrap: wrap; gap: 3px; }
+  .bible-strip .bs-cell { width: 11px; height: 14px; border-radius: 3px; background: var(--ring-track); flex: none; }
+  .bible-strip .bs-cell.done { background: var(--gold); }
+  .bible-strip .bs-cell.cur { outline: 1.5px solid var(--gold); outline-offset: 1px; }
+  .bible-strip-cap { font-size: 11.5px; font-weight: 700; color: var(--ink); margin: 0 0 14px; line-height: 1.5; }
   .achieve-level-num { font-family: 'Fraunces', serif; font-weight: 650; font-size: 18px; flex: none; }
   .achieve-level-bar-track { flex: 1; height: 8px; border-radius: 999px; background: var(--ring-track); overflow: hidden; }
   .achieve-level-bar-fill { height: 100%; background: var(--gold); border-radius: 999px; transition: width .3s ease; }
@@ -906,6 +915,7 @@
     <div class="ring-info">
       <div class="ring-info-main" id="ringInfoMain"></div>
       <div class="ring-info-sub" id="ringInfoSub"></div>
+      <div class="ring-info-bible" id="ringInfoBible"></div>
     </div>
   </div>
 
@@ -1177,14 +1187,16 @@
     <div class="av-ach-cap">탭해서 아바타 꾸미기</div>
     <div id="achieveTotalPoints" style="text-align:center;font-size:13px;font-weight:700;color:var(--ink-dim);margin-bottom:10px;">누적 0P</div>
     <div class="achieve-level-row">
-      <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;">📜</div>
+      <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;"></div>
       <div style="flex:1;">
         <div style="font-size:12.5px;font-weight:700;" id="achieveGrowthLabel"></div>
         <div class="growth-bar-track"><div class="growth-bar-fill" id="achieveLevelFill"></div></div>
         <div class="growth-pts" id="achieveLevelPts">0P</div>
       </div>
     </div>
-    <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 14px;"></div>
+    <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 10px;"></div>
+    <div class="bible-strip" id="achieveBibleStrip" data-action="open-bible-shelf"></div>
+    <div class="bible-strip-cap" id="achieveBibleCap"></div>
     <div class="btn" data-action="open-bible-shelf" style="margin-bottom:10px;">📖 성경 여정 전체보기</div>
     <div class="btn" data-action="open-pending-rewards" style="margin-bottom:10px;">🎀 내 선물함 열기</div>
     <div class="section-label">배지 (최장 연속일 기준)<span class="help-q" data-action="help" data-id="badges">?</span></div>
@@ -1807,7 +1819,7 @@
     return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
   }
 
-  // 지인이 축하할 만한 일(연속일 배지 · 레벨 업 · 새 권 열림)을 했는지: 내가 마지막으로 확인한 값과 비교한다.
+  // 지인이 축하할 만한 일(연속일 배지 · 새 권 열림)을 했는지: 내가 마지막으로 확인한 값과 비교한다.
   // 처음 보는 지인은 지금 값을 기준으로만 기록하고 축하하지 않는다(예전 기록이 전부 축하로 뜨는 것을 막는다).
   function friendsBaseline() {
     if (!friendsData || !state.social) return;
@@ -1833,9 +1845,6 @@
     var thr = BADGE_THRESHOLDS.map(function (b) { return b.days; });
     if (thr.indexOf(pr.streak) >= 0 && pr.streak !== rec.st) {
       out.push({ label: "🔥 " + pr.streak + "일 연속 달성", text: pr.streak + "일 연속이라니, 정말 대단해요!" });
-    }
-    if ((pr.level || 0) > (rec.lv || 0)) {
-      out.push({ label: "⬆️ 레벨 " + pr.level, text: "레벨이 올랐네요, 축하해요!" });
     }
     if ((pr.bookIndex || 0) > (rec.bk || 0)) {
       out.push({ label: "📖 새 권 · " + pr.bookName, text: pr.bookName + " 시작을 축하해요!" });
@@ -1886,7 +1895,7 @@
         h += '<div class="fr-name">' + escapeHtml((pr && pr.titleEmoji ? pr.titleEmoji + " " : "") + nm) +
           (pr && pr.titleText ? '<span class="fr-title">' + escapeHtml(pr.titleText) + '</span>' : '') + '</div>';
         if (pr) {
-          h += '<div class="fr-stat">Lv.' + pr.level + ' · ' + pr.points + 'P · 🔥 ' + pr.streak + '일</div>';
+          h += '<div class="fr-stat">성경 ' + bibleProgress(pr.points || 0).text + ' · ' + pr.points + 'P · 🔥 ' + pr.streak + '일</div>';
           h += '<div class="fr-stat">' + escapeHtml((pr.bookIcon ? pr.bookIcon + " " : "") + pr.bookName + " · " + pr.milestoneTitle) + '</div>';
           var ce = friendCelebrations(o, pr);
           if (ce.length) h += '<div><span class="fr-celeb">✨ ' + escapeHtml(ce[0].label) + (ce.length > 1 ? ' 외 ' + (ce.length - 1) : '') + ' · 칭찬해 보세요</span></div>';
@@ -1905,7 +1914,7 @@
 
     if (showMgmt) {
       h += '<div class="section-label" style="margin-top:' + (sc.shareOn ? 18 : 0) + 'px;">내 공개 설정<span class="help-q" data-action="help" data-id="share">?</span></div>';
-      h += '<div class="fr-note">공개를 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 레벨 · 누적P · 연속일 · 성경 진행이 보여요. 루틴 이름, 메모, 선물함, 이메일은 공개되지 않아요.</div>';
+      h += '<div class="fr-note">공개를 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 누적P · 연속일 · 성경 진행(%·권)이 보여요. 루틴 이름, 메모, 선물함, 이메일은 공개되지 않아요.</div>';
       h += '<input class="fr-input" id="friendNickInput" maxlength="12" placeholder="닉네임 (1~12자)" value="' + escapeHtml(sc.nickname || "") + '">';
       h += '<div class="fr-opts">' +
         '<span class="fr-opt' + (friendsForm.today ? ' on' : '') + '" data-action="friend-opt" data-id="today">오늘 진행률도 공개</span>' +
@@ -2213,7 +2222,7 @@
         '<span class="chat-prof-tog">' + (chatProfCollapsed ? '비교 펼치기 ▾' : '접기 ▴') + '</span></div>';
       if (!chatProfCollapsed) {
         h += '<table class="cmp"><tr><th></th><th>나</th><th>' + escapeHtml(chatWith.nick) + '</th></tr>' +
-          '<tr><td>레벨</td><td>Lv.' + me.level + '</td><td>Lv.' + pr.level + '</td></tr>' +
+          '<tr><td>진행</td><td>' + bibleProgress(me.points || 0).text + '</td><td>' + bibleProgress(pr.points || 0).text + '</td></tr>' +
           '<tr><td>누적</td><td>' + me.points + 'P</td><td>' + pr.points + 'P</td></tr>' +
           '<tr><td>연속</td><td>🔥 ' + me.streak + '일</td><td>🔥 ' + pr.streak + '일</td></tr>' +
           '<tr><td>최장</td><td>' + me.longest + '일</td><td>' + pr.longest + '일</td></tr>' +
@@ -2429,7 +2438,7 @@
     var gam = computeGamification();
     var g = computeGrowth(gam.points);
     var totalEl = document.getElementById("achieveTotalPoints");
-    if (totalEl) totalEl.textContent = "누적 " + gam.points + "P";
+    if (totalEl) totalEl.textContent = "누적 " + gam.points + "P · 성경 " + bibleProgress(gam.points).text;
     var lvlEl = document.getElementById("achieveLevelNum");
     lvlEl.innerHTML = bibleIconSVG(g.milestone.icon, 46);
     lvlEl.setAttribute("data-action", "open-milestone-detail");
@@ -2441,8 +2450,9 @@
     var bookProgEl = document.getElementById("achieveBookProgress");
     if (bookProgEl) {
       bookProgEl.style.whiteSpace = "pre-line";
-      bookProgEl.textContent = g.milestone.ref + "  (" + (g.bookIndex + 1) + "/" + g.totalBooks + "권 · " + g.book.section + ")\n메달을 탭하면 말씀이 열려요";
+      bookProgEl.textContent = g.milestone.ref + "\n메달을 탭하면 말씀이 열려요";
     }
+    renderBibleStrip(gam.points, g);
     var genEl = document.getElementById("achieveGenealogy");
     if (genEl) {
       var gen = bibleUnlockedGenealogy();
@@ -2458,6 +2468,26 @@
     }).join("");
     renderAvatarSlots();
     document.getElementById("achieveOverlay").classList.remove("hidden");
+  }
+  // 66권 띠: 순서를 몰라도 "전체 중 어디쯤"인지 보이게 — 끝낸 권은 금색, 지금 읽는 권은 테두리+아래에서 차오르는 색
+  function renderBibleStrip(points, g) {
+    var el = document.getElementById("achieveBibleStrip");
+    if (!el) return;
+    var cur = g.bookIndex, final = g.final;
+    var into = final ? g.book.points : Math.max(0, points - g.book.cumStart);
+    var frac = final ? 1 : Math.min(1, into / Math.max(1, g.book.points));
+    function cells(test) {
+      return BIBLE_BOOKS.map(function (b, i) { return { b: b, i: i }; }).filter(function (x) { return x.b.testament === test; })
+        .map(function (x) {
+          var cls = "bs-cell" + (final || x.i < cur ? " done" : "") + (!final && x.i === cur ? " cur" : "");
+          var st = (!final && x.i === cur) ? ' style="background:linear-gradient(to top,var(--gold) ' + Math.round(frac * 100) + '%,var(--ring-track) ' + Math.round(frac * 100) + '%);"' : '';
+          return '<span class="' + cls + '"' + st + ' title="' + escapeHtml(x.b.name) + '"></span>';
+        }).join("");
+    }
+    el.innerHTML = '<div class="bs-row"><span class="bs-lab">구약</span><div class="bs-cells">' + cells("OT") + '</div></div>' +
+                   '<div class="bs-row"><span class="bs-lab">신약</span><div class="bs-cells">' + cells("NT") + '</div></div>';
+    var cap = document.getElementById("achieveBibleCap");
+    if (cap) cap.textContent = (final ? g.gen + "회독 중 · " : "지금은 ") + testamentLabel(g.book) + " · " + g.book.section + " · " + g.book.name + " (" + (cur + 1) + "/" + g.totalBooks + "권)";
   }
   function closeAchievements() { document.getElementById("achieveOverlay").classList.add("hidden"); }
 
@@ -8434,6 +8464,15 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     };
   }
   function growthShortLabel(g) { return g.book.icon; }
+  // 성경 전체 진행률(%): 1회독은 12,000P 대비, 완주 후에는 그 회차 목표 대비. 포인트만으로 계산되므로
+  // 지인 프로필(pr.points)에도 그대로 쓸 수 있다(새 필드 없이 예전 공개 데이터도 호환).
+  function bibleProgress(points) {
+    var g = computeGrowth(points);
+    var pct = g.final ? Math.round(Math.min(g.ptsIntoStage / g.ptsForNext, 1) * 100)
+                      : Math.min(99, Math.floor(points / BIBLE_TOTAL_POINTS * 100));
+    return { g: g, gen: g.gen, pct: pct, text: (g.gen > 1 ? g.gen + "회독 · " : "") + pct + "%" };
+  }
+  function testamentLabel(book) { return book.testament === "OT" ? "구약" : "신약"; }
   function growthFullLabel(g) {
     return g.final ? (g.book.name + " · " + g.milestone.title + " · " + g.gen + "회독")
       : (g.book.name + " · " + g.milestone.title);
@@ -10093,6 +10132,14 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       }
     }
 
+    var bibleLineEl = document.getElementById("ringInfoBible");
+    if (bibleLineEl) {
+      try {
+        var bp = bibleProgress(computeGamification().points);
+        bibleLineEl.textContent = "📖 성경 " + bp.text + " · " + bp.g.book.name;
+      } catch (e) { bibleLineEl.textContent = ""; }
+    }
+
     var list = document.getElementById("catList");
     var prevRects = {};
     Array.prototype.forEach.call(list.children, function (el) {
@@ -11623,7 +11670,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       ["연결 끊기", "대화 화면 위쪽 ⋯ 메뉴에서 끊을 수 있고, 한 번 더 확인해요."]
     ], see: ["share", "cheers"] },
     share: { t: "내 공개 설정", sub: "무엇이 누구에게 보이는지", s: [
-      ["공개는 내가 켜야 해요", "공개를 켜기 전에는 지인에게 아무것도 보이지 않아요. 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 레벨 · 누적P · 연속일 · 성경 진행이 보여요."],
+      ["공개는 내가 켜야 해요", "공개를 켜기 전에는 지인에게 아무것도 보이지 않아요. 켜면 <b>서로 수락한 지인에게만</b> 타이틀 · 누적P · 연속일 · 성경 진행(%·권)이 보여요."],
       ["선택 공개", "‘오늘 진행률도 공개’와 ‘루틴 개수도 공개’는 원할 때만 켜요."],
       ["공개용 요약", "지인에게 보이는 건 이 요약뿐이에요. 루틴 이름이나 상세 기록은 보이지 않아요."],
       ["닉네임과 끄기", "공개하려면 닉네임이 필요해요. 언제든 ‘공개 끄기’로 멈출 수 있어요."]
