@@ -202,6 +202,7 @@
   .mini-name { flex: 1; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mini-item.done .mini-name { color: var(--ink-dim); text-decoration: line-through; text-decoration-color: var(--line); }
   .mini-dur { color: var(--ink-dim); font-variant-numeric: tabular-nums; font-size: 11.5px; flex: none; }
+  .mini-over { color: var(--gold); font-weight: 700; margin-left: 2px; }
 
   .add-cat { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 11px;
     border-radius: 16px; border: 1.5px dashed var(--line); color: var(--ink-dim); font-size: 12.5px; font-weight: 700; cursor: pointer; }
@@ -2988,6 +2989,16 @@
     var m = Math.floor(sec / 60), s = sec % 60;
     if (m > 0) return s > 0 ? (m + "분 " + s + "초") : (m + "분");
     return s + "초";
+  }
+  // 합계처럼 커질 수 있는 시간: 일·시간·분·초로 풀어서 (0인 단위는 생략)
+  function fmtDurFull(sec) {
+    sec = Math.max(0, Math.round(sec));
+    var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), r = sec % 60, out = [];
+    if (d) out.push(d + "일");
+    if (h) out.push(h + "시간");
+    if (m) out.push(m + "분");
+    if (r || !out.length) out.push(r + "초");
+    return out.join(" ");
   }
   function escapeHtml(s) {
     return (s || "").replace(/[&<>"']/g, function (c) { return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; });
@@ -8424,30 +8435,31 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
 // <<AVATAR SYSTEM>>
   // ---- 아바타 (상반신 조합형) ----
   // 저장 값은 숫자/문자열 id뿐이고, 그림은 아래 표에서만 꺼내 그린다(외부 값이 SVG에 그대로 들어가지 않음).
-  // av = { sk, hs, hc, ex, hw, fa, ou, oc, cp, bg, fr }
-  //   sk 피부색 0-5 · hs 머리 0-7 · hc 머리색 0-5 · ex 표정 0-3 · oc 옷색 0-5
-  //   hw 머리 위 · fa 얼굴 소품 · ou 옷 · cp 어깨 동무 · bg 배경 · fr 테두리 (기본 id 또는 권 완주 아이템 id)
+  // av = { sk, hs, hc, ex, hw, fa, gl, ou, oc, cp, bg, fr }
+  //   sk 피부색 0-5 · hs 머리 0-21 · hc 머리색 0-7 · ex 표정 0-9 · oc 옷색 0-5
+  //   gl 안경(기본 id) · hw 머리 위 · fa 얼굴 소품 · ou 옷 · cp 어깨 동무 · bg 배경 · fr 테두리 (기본 id 또는 권 완주 아이템 id)
   var AV_SKIN = ["#F6D7C0", "#EBC09E", "#D9A57B", "#B98058", "#8D5B3E", "#5E3B2A"];
-  var AV_HAIRC = ["#2B2118", "#5A3A22", "#8A5A2B", "#D2AE6D", "#B9B9BD", "#A6402E"];
+  var AV_HAIRC = ["#2B2118", "#5A3A22", "#8A5A2B", "#D2AE6D", "#B9B9BD", "#A6402E", "#12100E", "#E9C7C1"];
   var AV_OC = ["#7A9E7E", "#5B7FA6", "#C9A063", "#B0574B", "#6E6A8C", "#4A4A4A"];
   var AV_BGC = { c0: "#DCE8D5", c1: "#D5E3EE", c2: "#F1E4C8", c3: "#EBD5D5", c4: "#DDD8EC", c5: "#E8E4DA" };
-  var AV_HS_NAMES = ["짧은 머리", "아주 짧게", "웨이브", "곱슬", "긴 머리", "단발", "포니테일", "올림머리"];
-  var AV_EX_NAMES = ["미소", "활짝", "차분", "윙크"];
+  var AV_HS_NAMES = ["짧은 머리", "아주 짧게", "웨이브", "곱슬", "긴 머리", "단발", "포니테일", "올림머리", "옆가르마", "앞머리 단발", "투블럭", "뾰족 머리", "긴 웨이브", "양갈래", "올백", "삭발", "중단발", "시스루 뱅", "똥머리 뱅", "아프로", "땋은 머리", "픽시컷"];
+  var AV_EX_NAMES = ["미소", "활짝", "차분", "윙크", "놀람", "씨익", "졸림", "눈웃음", "시무룩", "메롱"];
   var AV_SKIN_NAMES = ["아주 밝은", "밝은", "보통", "갈색", "짙은 갈색", "아주 짙은"];
-  var AV_HAIRC_NAMES = ["검정", "갈색", "밤색", "금발", "은발", "적갈색"];
+  var AV_HAIRC_NAMES = ["검정", "갈색", "밤색", "금발", "은발", "적갈색", "칠흑", "분홍"];
   var AV_OC_NAMES = ["세이지", "파랑", "겨자", "벽돌", "보라", "먹색"];
   // 기본으로 처음부터 쓸 수 있는 선택지 (id → 이름)
   var AV_BASE_NAMES = {
     hw: { none: "없음", cap: "야구모자", phones: "헤드폰", beanie: "비니" },
-    fa: { none: "없음", glasses: "안경", freckles: "주근깨", beard: "수염", stache: "콧수염" },
+    fa: { none: "없음", freckles: "주근깨", beard: "수염", stache: "콧수염", goatee: "턱수염", mole: "점", lashes: "속눈썹", blush: "볼터치" },
+    gl: { none: "없음", round: "동그란", rect: "직사각형", square: "정사각", oval: "타원", cat: "캣아이", half: "반테", sun: "선글라스" },
     ou: { tee: "티셔츠", hoodie: "후드", shirt: "셔츠" },
     cp: { none: "없음" },
     bg: { c0: "연두", c1: "하늘", c2: "크림", c3: "분홍", c4: "연보라", c5: "회백" },
     fr: { none: "없음", thin: "얇은 금테", dbl: "이중 금테" }
   };
-  var AV_DEFAULT = { sk: 1, hs: 0, hc: 1, ex: 0, hw: "none", fa: "none", ou: "tee", oc: 0, cp: "none", bg: "c0", fr: "thin" };
-  var AV_SLOT_FIELD = { hw: "hw", fa: "fa", ou: "ou", cp: "cp", bg: "bg", fr: "fr" };
-  var AV_SLOT_LABEL = { hw: "머리 위", fa: "얼굴", ou: "옷", cp: "어깨 동무", bg: "배경", fr: "테두리" };
+  var AV_DEFAULT = { sk: 1, hs: 0, hc: 1, ex: 0, hw: "none", fa: "none", gl: "none", ou: "tee", oc: 0, cp: "none", bg: "c0", fr: "thin" };
+  var AV_SLOT_FIELD = { hw: "hw", fa: "fa", gl: "gl", ou: "ou", cp: "cp", bg: "bg", fr: "fr" };
+  var AV_SLOT_LABEL = { hw: "머리 위", fa: "얼굴", gl: "안경", ou: "옷", cp: "어깨 동무", bg: "배경", fr: "테두리" };
 
   // 66권 완주 아이템 — 권마다 1개, 완주하면 자동 지급. id = "i_" + 권 id
   var AV_ITEMS = [
@@ -8781,7 +8793,10 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   // ---------- 얼굴 소품 ----------
   var AV_ART_FA = {
     none: function () { return ""; },
-    glasses: function () { return '<circle cx="43.4" cy="43.6" r="5.6" fill="#FFFFFF" fill-opacity=".25" stroke="#3C3C3C" stroke-width="1.5"/><circle cx="56.6" cy="43.6" r="5.6" fill="#FFFFFF" fill-opacity=".25" stroke="#3C3C3C" stroke-width="1.5"/><path d="M49 43.4 h2 M37.8 43 L34.6 42 M62.2 43 L65.4 42" stroke="#3C3C3C" stroke-width="1.5" stroke-linecap="round"/>'; },
+    goatee: function (c) { return '<path d="M44.6 54.4 Q50 52.4 55.4 54.4 Q55 61.8 50 62.4 Q45 61.8 44.6 54.4Z" fill="' + c.hair + '"/>'; },
+    mole: function (c) { return '<circle cx="57.4" cy="49.6" r=".95" fill="' + avShade(c.skin, .5) + '"/>'; },
+    lashes: function () { return '<path d="M40.8 41.2 L39.2 39.8 M42.2 40.6 L41.4 38.8 M45.6 41.2 L46.6 39.8 M59.2 41.2 L60.8 39.8 M57.8 40.6 L58.6 38.8 M54.4 41.2 L53.4 39.8" stroke="#2B2118" stroke-width=".9" stroke-linecap="round" fill="none"/>'; },
+    blush: function () { return '<ellipse cx="38.8" cy="49" rx="3.4" ry="2" fill="#F08A8A" opacity=".5"/><ellipse cx="61.2" cy="49" rx="3.4" ry="2" fill="#F08A8A" opacity=".5"/>'; },
     freckles: function (c) { return '<g fill="' + avShade(c.skin, .72) + '"><circle cx="40.6" cy="48.6" r=".9"/><circle cx="43.4" cy="49.6" r=".9"/><circle cx="46" cy="48.4" r=".9"/><circle cx="54" cy="48.4" r=".9"/><circle cx="56.6" cy="49.6" r=".9"/><circle cx="59.4" cy="48.6" r=".9"/></g>'; },
     beard: function (c) { return '<path d="M35.4 46 C35 62 42 66.6 50 66.6 C58 66.6 65 62 64.6 46 C63 54 58.6 55.6 50 55.6 C41.4 55.6 37 54 35.4 46Z" fill="' + c.hair + '"/><path d="M45 52.6 Q50 54.6 55 52.6" fill="none" stroke="' + c.skinD + '" stroke-width="1.4" stroke-linecap="round"/>'; },
     stache: function (c) { return '<path d="M44 51 Q47 48.6 50 50.4 Q53 48.6 56 51 Q53 52.6 50 51.8 Q47 52.6 44 51Z" fill="' + c.hair + '"/>'; },
@@ -8791,6 +8806,20 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       var h = function (x, y, s) { return '<path transform="translate(' + x + ' ' + y + ') scale(' + s + ')" d="M0 3 C-5 -1 -3 -5 0 -2 C3 -5 5 -1 0 3Z" fill="#E86A7A"/>'; };
       return h(38.4, 49.6, .95) + h(61.6, 49.6, .95) + h(35.6, 46, .5) + h(64.4, 46, .5);
     }
+  };
+  // ---------- 안경 (기본 · 처음부터 사용) ----------
+  var AV_GL_C = "#3C3C3C";
+  function avGlTemples() { return '<path d="M37.6 42 L34.6 41.2 M62.4 42 L65.4 41.2" stroke="' + AV_GL_C + '" stroke-width="1.3" stroke-linecap="round"/>'; }
+  var AV_ART_GL = {
+    none: function () { return ""; },
+    round: function () { return '<circle cx="43.4" cy="43.6" r="5.6" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.5"/><circle cx="56.6" cy="43.6" r="5.6" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.5"/><path d="M49 43.4 h2 M37.8 43 L34.6 42 M62.2 43 L65.4 42" stroke="' + AV_GL_C + '" stroke-width="1.5" stroke-linecap="round"/>'; },
+    // 가로가 세로보다 약간 긴 직사각형 (11.8 x 9)
+    rect: function () { return '<rect x="37.4" y="39.2" width="11.8" height="9" rx="1.5" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.4"/><rect x="50.8" y="39.2" width="11.8" height="9" rx="1.5" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.4"/><path d="M49.2 42 h1.6" stroke="' + AV_GL_C + '" stroke-width="1.4" stroke-linecap="round"/>' + avGlTemples(); },
+    square: function () { return '<rect x="38.2" y="38.6" width="10.4" height="10.4" rx="2" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.4"/><rect x="51.4" y="38.6" width="10.4" height="10.4" rx="2" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.4"/><path d="M48.6 42 h2.8" stroke="' + AV_GL_C + '" stroke-width="1.4" stroke-linecap="round"/>' + avGlTemples(); },
+    oval: function () { return '<ellipse cx="43.4" cy="43.6" rx="6" ry="4.6" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.4"/><ellipse cx="56.6" cy="43.6" rx="6" ry="4.6" fill="#FFFFFF" fill-opacity=".25" stroke="' + AV_GL_C + '" stroke-width="1.4"/><path d="M49.4 43 h1.2" stroke="' + AV_GL_C + '" stroke-width="1.4" stroke-linecap="round"/>' + avGlTemples(); },
+    cat: function () { return '<path d="M37 39.4 L48.8 41.4 Q48.8 48.4 43.2 48.4 Q37.2 48.4 37 39.4Z" fill="#FFFFFF" fill-opacity=".25" stroke="#8A3E5A" stroke-width="1.4" stroke-linejoin="round"/><path d="M63 39.4 L51.2 41.4 Q51.2 48.4 56.8 48.4 Q62.8 48.4 63 39.4Z" fill="#FFFFFF" fill-opacity=".25" stroke="#8A3E5A" stroke-width="1.4" stroke-linejoin="round"/><path d="M48.8 41.6 h2.4 M37 39.6 L34.6 38.6 M63 39.6 L65.4 38.6" stroke="#8A3E5A" stroke-width="1.4" stroke-linecap="round"/>'; },
+    half: function () { return '<path d="M37.6 40.2 H49.2 V43.6 Q49.2 48 43.4 48 Q37.6 48 37.6 43.6Z" fill="#FFFFFF" fill-opacity=".22" stroke="' + AV_GL_C + '" stroke-width=".8"/><path d="M50.8 40.2 H62.4 V43.6 Q62.4 48 56.6 48 Q50.8 48 50.8 43.6Z" fill="#FFFFFF" fill-opacity=".22" stroke="' + AV_GL_C + '" stroke-width=".8"/><path d="M37.2 40.2 H49.6 M50.4 40.2 H62.8" stroke="' + AV_GL_C + '" stroke-width="1.9" stroke-linecap="round"/><path d="M49.6 40.6 h.8" stroke="' + AV_GL_C + '" stroke-width="1.4"/>' + avGlTemples(); },
+    sun: function () { return '<rect x="37.2" y="39.4" width="12" height="8.8" rx="3.4" fill="#25252E" stroke="#111114" stroke-width="1.2"/><rect x="50.8" y="39.4" width="12" height="8.8" rx="3.4" fill="#25252E" stroke="#111114" stroke-width="1.2"/><path d="M49.2 41.6 h1.6" stroke="#111114" stroke-width="1.4" stroke-linecap="round"/><path d="M39.6 41.6 l3 -.1 M53.2 41.6 l3 -.1" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity=".55"/><path d="M37.2 42 L34.6 41.2 M62.8 42 L65.4 41.2" stroke="#111114" stroke-width="1.3" stroke-linecap="round"/>'; }
   };
   // ---------- 어깨 동무(오른쪽 어깨 곁) ----------
   var AV_ART_CP = {
@@ -8843,16 +8872,31 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   function avHairBack(hs, c) {
     var h = c.hair;
     if (hs === 4) return '<path d="M31.6 40 C27 62 29 78 35 84 L65 84 C71 78 73 62 68.4 40Z" fill="' + h + '"/>';
-    if (hs === 5) return '<path d="M31 40 C30 26 40 21 50 21 C60 21 70 26 69 40 L69 60 Q69 65 64 65 L36 65 Q31 65 31 60Z" fill="' + h + '"/>';
+    if (hs === 5 || hs === 9) return '<path d="M31 40 C30 26 40 21 50 21 C60 21 70 26 69 40 L69 60 Q69 65 64 65 L36 65 Q31 65 31 60Z" fill="' + h + '"/>';
     if (hs === 6) return '<path d="M63 33 C77 32 82 48 76 62 C73 57 71 52 66 47Z" fill="' + h + '"/><rect x="62" y="31" width="5" height="4" rx="1.4" fill="' + avShade(h, .6) + '" transform="rotate(30 64 33)"/>';
-    if (hs === 7) return c.hwOn ? "" : '<circle cx="50" cy="19" r="8" fill="' + h + '"/><circle cx="47" cy="17" r="2" fill="' + avShade(h, 1.25) + '" opacity=".5"/>';
+    if (hs === 7 || hs === 18) return c.hwOn ? "" : '<circle cx="50" cy="19" r="8" fill="' + h + '"/><circle cx="47" cy="17" r="2" fill="' + avShade(h, 1.25) + '" opacity=".5"/>';
+    if (hs === 12) return '<path d="M31.6 40 C26 54 33 62 29 72 C28 80 34 84 35 86 L65 86 C66 84 72 80 71 72 C67 62 74 54 68.4 40Z" fill="' + h + '"/><path d="M31 60 Q34 64 31 68 M69 60 Q66 64 69 68" fill="none" stroke="' + avShade(h, .75) + '" stroke-width="1" opacity=".6"/>';
+    if (hs === 13) {
+      var t = function (x, sg) { return '<path d="M' + (50 + sg * 17) + ' 38 C' + (50 + sg * 27) + ' 40 ' + (50 + sg * 29) + ' 56 ' + (50 + sg * 22) + ' 66 C' + (50 + sg * 19) + ' 61 ' + (50 + sg * 17) + ' 54 ' + (50 + sg * 16) + ' 46Z" fill="' + h + '"/><circle cx="' + (50 + sg * 17.4) + '" cy="40" r="2.2" fill="#B0574B"/>'; };
+      return t(0, -1) + t(0, 1);
+    }
+    if (hs === 16) return '<path d="M31 40 C29 54 30 68 34 74 L66 74 C70 68 71 54 69 40Z" fill="' + h + '"/>';
+    if (hs === 17) return '<path d="M31.6 40 C27.6 62 29 78 34 84 L66 84 C71 78 72.4 62 68.4 40Z" fill="' + h + '"/>';
+    if (hs === 19) return '<circle cx="50" cy="36" r="25.6" fill="' + h + '"/><circle cx="30" cy="42" r="6.6" fill="' + h + '"/><circle cx="70" cy="42" r="6.6" fill="' + h + '"/><circle cx="34" cy="26" r="7.6" fill="' + h + '"/><circle cx="66" cy="26" r="7.6" fill="' + h + '"/><circle cx="50" cy="16" r="8.6" fill="' + h + '"/>';
+    if (hs === 20) {
+      var br = '<path d="M31.6 40 C30 52 32 60 36 64 L64 64 C68 60 70 52 68.4 40Z" fill="' + h + '"/>';
+      [[65.6, 48], [67.2, 54.4], [67.6, 61], [66.6, 67.4], [65.4, 73.6]].forEach(function (p, i) { br += '<ellipse cx="' + p[0] + '" cy="' + p[1] + '" rx="3.7" ry="3.5" fill="' + (i % 2 ? avShade(h, .85) : h) + '" stroke="' + avShade(h, .62) + '" stroke-width=".5"/>'; });
+      return br + '<rect x="63.6" y="76" width="4.6" height="3.2" rx="1.4" fill="#B0574B"/>';
+    }
     return "";
   }
   function avHairFront(hs, c) {
-    var h = c.hair, hd = avShade(h, .78);
+    var h = c.hair, hd = avShade(h, .78), hl = avShade(h, 1.3);
+    var cap = '<path d="M34 44 C31.6 27 41 21 50 21 C59 21 68.4 27 66 44 C64.6 37 60.6 32.4 54 31 C48 34 39 33.4 36 39 C35.2 40.6 34.6 42.4 34 44Z" fill="' + h + '"/><path d="M40 27 Q45 24 50 24" fill="none" stroke="' + hl + '" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>';
+    var bangs = '<path d="M33 44 C31.6 28 41 23.4 50 23.4 C59 23.4 68.4 28 67 44 C66 38 65 36.2 63.6 35.4 Q50 32.6 36.4 35.4 C35 36.2 34 38 33 44Z" fill="' + h + '"/><path d="M41 28 Q46 25.6 51 25.6" fill="none" stroke="' + hl + '" stroke-width="1.1" stroke-linecap="round" opacity=".5"/>';
     switch (hs) {
       case 0: case 6: case 7:
-        return '<path d="M34 44 C31.6 27 41 21 50 21 C59 21 68.4 27 66 44 C64.6 37 60.6 32.4 54 31 C48 34 39 33.4 36 39 C35.2 40.6 34.6 42.4 34 44Z" fill="' + h + '"/><path d="M40 27 Q45 24 50 24" fill="none" stroke="' + avShade(h, 1.3) + '" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>';
+        return cap;
       case 1:
         return '<path d="M34.6 41 C34 29 42 23.6 50 23.6 C58 23.6 66 29 65.4 41 C63 34 58 31 50 31 C42 31 37 34 34.6 41Z" fill="' + h + '" opacity=".92"/>';
       case 2:
@@ -8866,6 +8910,32 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
         return '<path d="M34 46 C31 28 41 21 50 21 C59 21 69 28 66 46 C63.6 38 58 31.4 51.6 29.6 C47 34 40 37.6 36.4 42 C35 43.6 34.4 44.8 34 46Z" fill="' + h + '"/>';
       case 5:
         return '<path d="M33 44 C32 29 42 24.4 50 24.4 C58 24.4 68 29 67 44 C63 37 58 34 50 34 C42 34 37 37 33 44Z" fill="' + h + '"/><path d="M34 44 V60 M66 44 V60" stroke="' + hd + '" stroke-width="1" opacity=".5"/>';
+      case 8: // 옆가르마
+        return '<path d="M33.6 45 C31 28 40 21.4 50 21.4 C60 21.4 69 28 66.4 45 C65 39 63 35.6 60 33.4 C54 33 46 30 41.4 26.6 C38 31 35 37 33.6 45Z" fill="' + h + '"/><path d="M41.4 26.6 Q44.4 23.8 48 22.2" fill="none" stroke="' + hd + '" stroke-width="1.1" stroke-linecap="round"/><path d="M46 29 Q54 31 60 33" fill="none" stroke="' + hl + '" stroke-width="1" stroke-linecap="round" opacity=".5"/>';
+      case 9: case 18:
+        return bangs;
+      case 10: // 투블럭
+        return '<path d="M37 31 C35.6 20 44 16.6 50 16.6 C58 16.6 64.4 20 63 31 C58 26.6 42 26.6 37 31Z" fill="' + h + '"/><path d="M34.4 42 C33 30 40 24.6 50 24.2 C60 24.6 67 30 65.6 42 C64.6 36 61 33.4 55 32.4 C49 34 42 34 37.6 35.6 C36 37 35 39 34.4 42Z" fill="' + h + '"/><path d="M34.4 42 C34 39 34.4 37 35.6 35 M65.6 42 C66 39 65.6 37 64.4 35" fill="none" stroke="' + hd + '" stroke-width=".9" opacity=".6"/><path d="M42 21.6 Q50 19 58 21.6" fill="none" stroke="' + hl + '" stroke-width="1.1" stroke-linecap="round" opacity=".55"/>';
+      case 11: // 뾰족 머리
+        return '<path d="M35 37 L32.6 22 L41 28.4 L43.6 15.6 L49.6 27.4 L55.6 15.6 L59 28.4 L67.4 22 L65 37 C60 32.4 40 32.4 35 37Z" fill="' + h + '"/><path d="M34.6 42 C34 33 42 29.4 50 29.4 C58 29.4 66 33 65.4 42 C63 35.6 58 32.6 50 32.6 C42 32.6 37 35.6 34.6 42Z" fill="' + h + '"/>';
+      case 12: // 긴 웨이브
+        return '<path d="M33.4 46 C30.4 30 38 21.4 50 21.2 C62 21.4 69.6 30 66.6 46 C64 38 58.6 32 52 30 C47 35 40 38 36 42 C35 43.6 34 44.8 33.4 46Z" fill="' + h + '"/><circle cx="33.4" cy="47" r="3.4" fill="' + h + '"/><circle cx="66.6" cy="47" r="3.4" fill="' + h + '"/>';
+      case 13: // 양갈래
+        return '<path d="M33.6 44 C31.6 27 41 21.4 50 21.4 C59 21.4 68.4 27 66.4 44 C65 37 61 33 55 31.4 Q50 36 45 31.4 C39 33 35 37 33.6 44Z" fill="' + h + '"/><path d="M50 21.6 V30" stroke="' + hd + '" stroke-width="1" opacity=".55"/>';
+      case 14: // 올백
+        return '<path d="M34.2 42 C32 27 41 20.6 50 20.6 C59 20.6 68 27 65.8 42 C64.6 34.6 60 30.2 50 29.4 C40 30.2 35.4 34.6 34.2 42Z" fill="' + h + '"/><path d="M39 27 Q50 22.4 61 27 M42 30.4 Q50 26.6 58 30.4" fill="none" stroke="' + hl + '" stroke-width="1" stroke-linecap="round" opacity=".5"/>';
+      case 15: // 삭발
+        return '<path d="M34.6 40 C34 29 42 24 50 24 C58 24 66 29 65.4 40 C63 33 58 30 50 30 C42 30 37 33 34.6 40Z" fill="' + h + '" opacity=".3"/>';
+      case 16: // 중단발 (가운데 가르마)
+        return '<path d="M33.6 45 C31 27 41 21 50 21 C59 21 69 27 66.4 45 C64.6 38 60 32.4 50 27.4 C40 32.4 35.4 38 33.6 45Z" fill="' + h + '"/><path d="M50 21.4 V27.4" stroke="' + hd + '" stroke-width="1" opacity=".6"/>';
+      case 17: // 시스루 뱅 긴 머리
+        return '<path d="M33.4 46 C31 28 41 21.6 50 21.6 C59 21.6 69 28 66.6 46 C64.4 40.6 60.6 36 55.4 33.6 Q50 37.4 44.6 33.6 C39.4 36 35.6 40.6 33.4 46Z" fill="' + h + '"/><path d="M42 26 Q47 23.6 52 23.6" fill="none" stroke="' + hl + '" stroke-width="1.1" stroke-linecap="round" opacity=".5"/>';
+      case 19: // 아프로
+        return '<path d="M35 42 C34 31 42 26.4 50 26.4 C58 26.4 66 31 65 42 C63 35.4 58 32.4 50 32.4 C42 32.4 37 35.4 35 42Z" fill="' + h + '"/><circle cx="40" cy="29.4" r="3.6" fill="' + h + '"/><circle cx="50" cy="26.4" r="3.8" fill="' + h + '"/><circle cx="60" cy="29.4" r="3.6" fill="' + h + '"/>';
+      case 20: // 땋은 머리
+        return '<path d="M33.6 44 C31.6 27 41 21 50 21 C59 21 68.4 27 66.4 44 C65 37 61 32.6 55 31 C49 33.6 40 33 36 38.6 C35 40.4 34.4 42.2 33.6 44Z" fill="' + h + '"/>';
+      case 21: // 픽시컷
+        return '<path d="M33.6 43 C31.6 28 41 22 50 22 C60 22 68.4 28 66.4 43 C65 38 63 35.4 60 34 C55 36 47 36 40 31.6 C37.6 34 35 37 33.6 43Z" fill="' + h + '"/><path d="M33.8 42 L34.6 49.4 L36.8 43.6Z M66.2 42 L65.4 49.4 L63.2 43.6Z" fill="' + h + '"/><path d="M44 27 Q50 24.6 56 26.4" fill="none" stroke="' + hl + '" stroke-width="1.1" stroke-linecap="round" opacity=".5"/>';
     }
     return "";
   }
@@ -8874,14 +8944,33 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var eye = c.eye, brow = avShade(c.hair, .9);
     var s = '<ellipse cx="34.6" cy="45.4" rx="2.4" ry="3.2" fill="' + c.skin + '"/><ellipse cx="65.4" cy="45.4" rx="2.4" ry="3.2" fill="' + c.skin + '"/>';
     s += '<ellipse cx="50" cy="43.4" rx="15.4" ry="17" fill="' + c.skin + '"/>';
-    s += '<path d="M39.6 38 Q43.4 36.2 46.6 37.8 M53.4 37.8 Q56.6 36.2 60.4 38" fill="none" stroke="' + brow + '" stroke-width="1.5" stroke-linecap="round"/>';
-    s += '<ellipse cx="43.4" cy="43.4" rx="1.7" ry="2.3" fill="' + eye + '"/>';
-    if (ex === 3) s += '<path d="M54.6 43.8 Q56.6 41.2 58.6 43.8" fill="none" stroke="' + eye + '" stroke-width="1.6" stroke-linecap="round"/>';
-    else s += '<ellipse cx="56.6" cy="43.4" rx="1.7" ry="2.3" fill="' + eye + '"/>';
-    s += '<circle cx="43.9" cy="42.6" r=".6" fill="#FFFFFF"/>' + (ex === 3 ? "" : '<circle cx="57.1" cy="42.6" r=".6" fill="#FFFFFF"/>');
+    // 눈썹
+    var bd = "M39.6 38 Q43.4 36.2 46.6 37.8 M53.4 37.8 Q56.6 36.2 60.4 38";
+    if (ex === 4) bd = "M39.6 36.4 Q43.4 34.2 46.6 35.8 M53.4 35.8 Q56.6 34.2 60.4 36.4";
+    else if (ex === 8) bd = "M39.6 39.6 Q43 38.6 46.6 36.6 M53.4 36.6 Q57 38.6 60.4 39.6";
+    else if (ex === 5) bd = "M39.6 38 Q43.4 36.2 46.6 37.8 M53.4 36.4 Q56.6 34.8 60.4 36.6";
+    s += '<path d="' + bd + '" fill="none" stroke="' + brow + '" stroke-width="1.5" stroke-linecap="round"/>';
+    // 눈
+    var lid = function (x) { return '<path d="M' + (x - 2.2) + ' 43.2 Q' + x + ' 42 ' + (x + 2.2) + ' 43.2" fill="none" stroke="' + brow + '" stroke-width=".9"/>'; };
+    var arc = function (x) { return '<path d="M' + (x - 2.2) + ' 44.4 Q' + x + ' 41 ' + (x + 2.2) + ' 44.4" fill="none" stroke="' + eye + '" stroke-width="1.6" stroke-linecap="round"/>'; };
+    var dot = function (x, rx, ry) { return '<ellipse cx="' + x + '" cy="43.4" rx="' + rx + '" ry="' + ry + '" fill="' + eye + '"/><circle cx="' + (x + .5) + '" cy="' + (43.4 - ry * .35) + '" r=".6" fill="#FFFFFF"/>'; };
+    if (ex === 3) s += dot(43.4, 1.7, 2.3) + '<path d="M54.6 43.8 Q56.6 41.2 58.6 43.8" fill="none" stroke="' + eye + '" stroke-width="1.6" stroke-linecap="round"/>';
+    else if (ex === 7) s += arc(43.4) + arc(56.6);
+    else if (ex === 4) s += '<ellipse cx="43.4" cy="43.4" rx="2.6" ry="3" fill="#FFFFFF" stroke="' + eye + '" stroke-width=".7"/><ellipse cx="56.6" cy="43.4" rx="2.6" ry="3" fill="#FFFFFF" stroke="' + eye + '" stroke-width=".7"/><circle cx="43.4" cy="43.6" r="1.5" fill="' + eye + '"/><circle cx="56.6" cy="43.6" r="1.5" fill="' + eye + '"/>';
+    else if (ex === 6) s += '<ellipse cx="43.4" cy="44" rx="1.7" ry="1.2" fill="' + eye + '"/><ellipse cx="56.6" cy="44" rx="1.7" ry="1.2" fill="' + eye + '"/><path d="M41 42.8 H45.8 M54.2 42.8 H59" stroke="' + brow + '" stroke-width="1.5" stroke-linecap="round"/>';
+    else if (ex === 8) s += dot(43.4, 1.7, 2.2) + dot(56.6, 1.7, 2.2);
+    else s += dot(43.4, 1.7, 2.3) + dot(56.6, 1.7, 2.3);
+    // 코
     s += '<path d="M50 44.6 Q48.6 48.4 50 49" fill="none" stroke="' + c.skinD + '" stroke-width="1.1" stroke-linecap="round"/>';
-    if (ex === 1) s += '<path d="M43.6 51.2 Q50 58.8 56.4 51.2 Z" fill="#7A3B32"/><path d="M44.8 51.6 Q50 53.2 55.2 51.6 L54.6 53.2 Q50 54.4 45.4 53.2Z" fill="#FFFFFF"/><ellipse cx="38.6" cy="49.2" rx="2.8" ry="1.8" fill="#F08A8A" opacity=".4"/><ellipse cx="61.4" cy="49.2" rx="2.8" ry="1.8" fill="#F08A8A" opacity=".4"/>';
+    // 입
+    var blush = '<ellipse cx="38.6" cy="49.2" rx="2.8" ry="1.8" fill="#F08A8A" opacity=".4"/><ellipse cx="61.4" cy="49.2" rx="2.8" ry="1.8" fill="#F08A8A" opacity=".4"/>';
+    if (ex === 1 || ex === 7) s += '<path d="M43.6 51.2 Q50 58.8 56.4 51.2 Z" fill="#7A3B32"/><path d="M44.8 51.6 Q50 53.2 55.2 51.6 L54.6 53.2 Q50 54.4 45.4 53.2Z" fill="#FFFFFF"/>' + blush;
     else if (ex === 2) s += '<path d="M46.4 52.6 H53.6" stroke="#8A4B3C" stroke-width="1.6" stroke-linecap="round"/>';
+    else if (ex === 4) s += '<ellipse cx="50" cy="53.4" rx="2.4" ry="3.1" fill="#7A3B32"/>';
+    else if (ex === 5) s += '<path d="M45.4 53 Q50 54.6 54 52.6 Q55.6 51.8 56.6 50.2" fill="none" stroke="#8A4B3C" stroke-width="1.6" stroke-linecap="round"/>';
+    else if (ex === 6) s += '<path d="M47 53 Q50 54 53 53" fill="none" stroke="#8A4B3C" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="56.4" cy="53.6" rx="1.2" ry="1.5" fill="#9CCBE8" opacity=".85"/>';
+    else if (ex === 8) s += '<path d="M45.4 54.4 Q50 50.6 54.6 54.4" fill="none" stroke="#8A4B3C" stroke-width="1.6" stroke-linecap="round"/>';
+    else if (ex === 9) s += '<path d="M44 51.4 Q50 56.6 56 51.4" fill="none" stroke="#8A4B3C" stroke-width="1.6" stroke-linecap="round"/><path d="M47.2 54.4 Q47.4 59.4 50.4 59.4 Q53.2 59.4 52.8 54.2Z" fill="#E8707A" stroke="#C25566" stroke-width=".7"/><path d="M50.2 54.6 V57.6" stroke="#C25566" stroke-width=".6"/>';
     else s += '<path d="M45 51.4 Q50 56 55 51.4" fill="none" stroke="#8A4B3C" stroke-width="1.6" stroke-linecap="round"/>';
     return s;
   }
@@ -8904,6 +8993,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     s += ou.over;
     s += avFace(av.ex, c);
     s += (AV_ART_FA[av.fa] || AV_ART_FA.none)(c);
+    s += (AV_ART_GL[av.gl] || AV_ART_GL.none)(c);
     s += avHairFront(av.hs, c);
     s += (AV_ART_HW[av.hw] || AV_ART_HW.none)(c);
     if (av.cp !== "none" && AV_ART_CP[av.cp]) s += '<g transform="translate(1.2 3.8) scale(.92)">' + AV_ART_CP[av.cp](c) + '</g>';
@@ -8914,7 +9004,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var o = {}, d = AV_DEFAULT;
     a = (a && typeof a === "object") ? a : {};
     function num(k, max) { var v = a[k]; return (typeof v === "number" && isFinite(v) && v >= 0 && v <= max && Math.floor(v) === v) ? v : d[k]; }
-    o.sk = num("sk", 5); o.hs = num("hs", 7); o.hc = num("hc", 5); o.ex = num("ex", 3); o.oc = num("oc", 5);
+    o.sk = num("sk", 5); o.hs = num("hs", 21); o.hc = num("hc", 7); o.ex = num("ex", 9); o.oc = num("oc", 5);
     function pick(k, slot) {
       var v = a[k];
       if (typeof v !== "string") return d[k];
@@ -8922,7 +9012,8 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       var it = AV_ITEM_BY_ID[v];
       return (it && it.slot === slot) ? v : d[k];
     }
-    o.hw = pick("hw", "hw"); o.fa = pick("fa", "fa"); o.ou = pick("ou", "ou"); o.cp = pick("cp", "cp"); o.bg = pick("bg", "bg"); o.fr = pick("fr", "fr");
+    if (a.gl === undefined && a.fa === "glasses") { var mg = {}; for (var mk in a) mg[mk] = a[mk]; mg.fa = "none"; mg.gl = "round"; a = mg; }
+    o.hw = pick("hw", "hw"); o.fa = pick("fa", "fa"); o.gl = pick("gl", "gl"); o.ou = pick("ou", "ou"); o.cp = pick("cp", "cp"); o.bg = pick("bg", "bg"); o.fr = pick("fr", "fr");
     return o;
   }
   function avItemName(id) { var it = AV_ITEM_BY_ID[id]; return it ? it.name : ""; }
@@ -8966,7 +9057,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
 
   // ---- 편집 화면 ----
   var AV_TABS = [
-    { id: "face", label: "얼굴" }, { id: "hair", label: "머리" }, { id: "hw", label: "머리 위" }, { id: "fa", label: "얼굴 소품" },
+    { id: "face", label: "얼굴" }, { id: "hair", label: "머리" }, { id: "hw", label: "머리 위" }, { id: "gl", label: "안경" }, { id: "fa", label: "얼굴 소품" },
     { id: "ou", label: "옷" }, { id: "cp", label: "어깨 동무" }, { id: "bg", label: "배경" }, { id: "fr", label: "테두리" }
   ];
   var avTab = "face";
@@ -9013,7 +9104,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       h += '<div class="section-label">옷 색 <span style="font-weight:400;">(기본 옷 · 앞치마 등에 적용)</span></div>' + avSwatches("oc", AV_OC, AV_OC_NAMES, a.oc);
     } else {
       var slot = avTab;
-      h += '<div class="section-label" style="margin-top:2px;">' + AV_SLOT_LABEL[slot] + '<span style="font-weight:400;"> · 성경 한 권을 마칠 때마다 하나씩 늘어나요</span></div>' + avSlotGrid(slot, a);
+      h += '<div class="section-label" style="margin-top:2px;">' + AV_SLOT_LABEL[slot] + (slot === "gl" ? '' : '<span style="font-weight:400;"> · 성경 한 권을 마칠 때마다 하나씩 늘어나요</span>') + '</div>' + avSlotGrid(slot, a);
     }
     var body = document.getElementById("avOptions");
     var keep = body ? body.scrollTop : 0;
@@ -9857,7 +9948,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
           ((due || optional) ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + dotCls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          '<span class="mini-dur">' + (!checked && due && runSaveRemaining(cat.id, it) !== null ? ("이어하기 · 남은 " + fmtMMSS(runSaveRemaining(cat.id, it))) : checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? ((overtimeDone ? "초과 " : "") + fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? "시간 초과 완료" : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
+          '<span class="mini-dur">' + (!checked && due && runSaveRemaining(cat.id, it) !== null ? ("이어하기 · 남은 " + fmtMMSS(runSaveRemaining(cat.id, it))) : checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? (overtimeDone ? (fmtDur(it.seconds) + ' <span class="mini-over">+' + fmtDur(Math.max(0, actualSecsOf(todayK, it.id) - it.seconds)) + '</span>') : fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? fmtDur(it.seconds) : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
       }).join("");
       card.setAttribute("data-cat-card", cat.id);
       card.innerHTML =
@@ -10648,7 +10739,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
       });
     }
     html += '</div>';
-    html += '<div class="time-summary">' + (statsTimeOnlySuggest ? ('조정 제안 ' + sugN + '개') : (rangeLabel + ' 기록 시간 합계 ' + (totalSecs ? fmtDur(totalSecs) : "0초") + ' · 조정 제안 ' + sugN + '개')) + '</div>';
+    html += '<div class="time-summary">' + (statsTimeOnlySuggest ? ('조정 제안 ' + sugN + '개') : (rangeLabel + ' 기록 시간 합계 ' + fmtDurFull(totalSecs) + ' · 조정 제안 ' + sugN + '개')) + '</div>';
     if (statsTimeOnlySuggest) rows = rows.filter(function (r) { return !!r.ts.sug; });
     rows.sort(function (a, b) {
       var as = a.ts.sug ? 1 : 0, bs = b.ts.sug ? 1 : 0;
@@ -10670,7 +10761,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
         diffHtml = '<div class="time-review-diff ' + cls + '">' + (diff === 0 ? "딱 맞아요" : ((diff > 0 ? "+" : "−") + fmtDur(Math.abs(diff)) + " (" + (pct > 0 ? "+" : "") + pct + "%)")) + '</div>';
       }
       var sub1 = '지정 ' + fmtDur(it.seconds) + (r.avg !== null ? ' · 실측 평균 ' + fmtDur(r.avg) : '');
-      var sub2 = '완료 ' + r.cnt + '회 (실측 ' + r.meas + ' · 지정시간 ' + r.planned + ')' + (r.sumAll ? ' · 총 ' + fmtDur(r.sumAll) : '');
+      var sub2 = '완료 ' + r.cnt + '회 (실측 ' + r.meas + ' · 지정시간 ' + r.planned + ')' + (r.sumAll ? ' · 총 ' + fmtDurFull(r.sumAll) : '');
       var extra = "";
       if (ts.sug) {
         var sg = ts.sug;
