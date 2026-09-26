@@ -64,14 +64,19 @@
   .nav-btn span { font-size: 10.5px; font-weight: 700; }
   #view-home, #view-editItems, #view-stats, #view-backfill, #view-export, #view-settings, #view-restDays, #view-friends { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 68px); }
 
-  header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; min-height: 82px; }
   .date-block { min-width: 0; }
   .date-block .day { font-family: 'Fraunces', serif; font-weight: 560; font-size: 28px; line-height: 1; letter-spacing: -0.01em; white-space: nowrap; }
-  .sub-row { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 22px; }
+  .sub-row { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .sub-row:empty { display: none; }
   .sub-row .sub-text { font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
   .sub-row .rest-badge, .sub-row .memo-badge { display: inline-flex; align-items: center; padding: 4px 10px;
     border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-  .sub-row .rest-badge { background: var(--rest-soft); color: var(--rest); }
+  .sub-row .rest-badge { background: var(--rest-soft); color: var(--rest); max-width: 100%; }
+  .sub-row .rest-badge .rest-why { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 120px; display: inline-block; vertical-align: bottom; margin-left: 4px; }
+  .day-ov-label { font-size: 12px; font-weight: 700; color: var(--ink-dim); margin: 14px 0 6px; }
+  .day-ov-note { font-size: 12px; color: var(--ink-dim); line-height: 1.5; margin-top: 6px; }
   .sub-row .memo-badge { background: var(--gold-soft); color: var(--gold); }
   .sub-row .time-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 12px;
     font-weight: 700; white-space: nowrap; background: var(--sage-soft); color: var(--sage); cursor: pointer; }
@@ -108,10 +113,14 @@
   .emoji-chip { font-size: 20px; padding: 8px 0; border-radius: 10px; border: 1px solid var(--line);
     background: var(--bg-soft); cursor: pointer; line-height: 1; }
   .emoji-chip.selected { border-color: var(--gold); background: var(--gold-soft); }
-  .streak { display: flex; align-items: center; gap: 6px; background: var(--gold-soft); color: var(--gold);
-    padding: 7px 12px 7px 10px; border-radius: 999px; font-weight: 800; font-size: 14px; white-space: nowrap; cursor: pointer;
-    flex: none; margin-top: 3px; }
-  .streak svg { width: 17px; height: 17px; flex: none; transform-origin: 50% 50%; }
+  /* 스트릭: 배경 없이 글자만. 왼쪽 날짜 블록(작은 줄 + 큰 줄)과 같은 리듬으로 두 줄을 쌓는다. */
+  .streak { display: flex; flex-direction: column; align-items: flex-end; color: var(--gold); white-space: nowrap;
+    cursor: pointer; flex: none; }
+  .streak .streak-main { display: flex; align-items: center; gap: 4px; height: 24px; }
+  .streak svg { width: 18px; height: 18px; flex: none; transform-origin: 50% 50%; }
+  .streak .streak-num { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; line-height: 24px;
+    letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .streak .streak-unit { font-size: 13px; font-weight: 700; margin-left: 1px; align-self: flex-end; padding-bottom: 2px; }
 
   .nudge-banner { display: flex; align-items: center; gap: 8px; background: var(--gold-soft); color: var(--gold);
     border-radius: 14px; padding: 11px 14px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px; line-height: 1.5;
@@ -654,9 +663,9 @@
   @keyframes celebShine { from { transform: translateX(-130%); } to { transform: translateX(130%); } }
 
   /* ---- 아바타 ---- */
+  /* 오른쪽: 아바타(왼쪽 제목+날짜 줄 높이) 아래에 스트릭(왼쪽 뱃지 줄 높이) — 양쪽이 같은 3줄 리듬 */
   .top-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
-  .top-right .streak { margin-top: 0; }
-  .home-avatar { width: 46px; height: 46px; border-radius: 50%; cursor: pointer; flex: none; line-height: 0; }
+  .home-avatar { width: 52px; height: 52px; border-radius: 50%; cursor: pointer; flex: none; line-height: 0; }
   .home-avatar svg, .fr-av svg, .av-mini svg, .av-ach svg { display: block; }
   .fr-av { flex: none; width: 44px; height: 44px; line-height: 0; }
   .fr-av.sm { width: 30px; height: 30px; }
@@ -868,8 +877,10 @@
     <div class="top-right">
       <div class="home-avatar" id="homeAvatar" data-action="open-avatar"></div>
       <div class="streak" id="streakChip" data-action="open-achievements">
-        <svg id="streakFlame" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0.8 C9.7 4 8.4 6.8 9.2 9.6 C6.8 8.6 5 10.7 4.8 13.5 C4.6 16.6 6.4 19.2 9 20.5 C9.5 20.8 10.2 21 11 21.2 C10 19 10.3 16.7 11.8 15 C12.3 17.8 13.7 20 15.8 21 C18.9 19.7 20.3 16.3 19.1 13.1 C18.5 11.5 17.2 10.4 15.7 10 C16.5 7 15.6 3.8 12 0.8 Z"/></svg>
-        <span id="streakNum">0</span>일째<span id="levelTag" style="margin-left:5px;opacity:.75;"></span>
+        <div class="streak-main">
+          <svg id="streakFlame" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0.8 C9.7 4 8.4 6.8 9.2 9.6 C6.8 8.6 5 10.7 4.8 13.5 C4.6 16.6 6.4 19.2 9 20.5 C9.5 20.8 10.2 21 11 21.2 C10 19 10.3 16.7 11.8 15 C12.3 17.8 13.7 20 15.8 21 C18.9 19.7 20.3 16.3 19.1 13.1 C18.5 11.5 17.2 10.4 15.7 10 C16.5 7 15.6 3.8 12 0.8 Z"/></svg>
+          <span class="streak-num" id="streakNum">0</span><span class="streak-unit">일째</span>
+        </div>
       </div>
     </div>
   </header>
@@ -1272,7 +1283,11 @@
 
 <div class="tp-overlay hidden" id="todayMemoOverlay">
   <div class="tp-card" style="max-width:300px;">
-    <div class="tp-title">하루 한 줄</div>
+    <div class="tp-title" id="todayOvTitle">오늘</div>
+    <div class="theme-option" id="todayRestToggle" data-action="today-rest-toggle"><span>오늘은 쉬는 날</span><span class="dot"></span></div>
+    <input type="text" class="cat-name-input hidden" id="todayRestReason" maxlength="30" placeholder="쉬는 이유 (선택)" style="margin-top:8px;font-size:13px;font-weight:600;">
+    <div class="day-ov-note hidden" id="todayRestNote"></div>
+    <div class="day-ov-label">하루 한 줄</div>
     <div class="export-box" style="margin-bottom:4px;"><textarea id="todayMemoInput" maxlength="150" placeholder="오늘 하루를 한 줄로 남겨보세요" style="min-height:70px;"></textarea></div>
     <div class="tp-actions">
       <div class="btn" data-action="today-memo-cancel">취소</div>
@@ -3782,11 +3797,41 @@
     closeTitleEditOverlay();
     toast("저장했어요");
   }
+  // ---- 홈 날짜 탭: 오늘 쉬는 날 지정/해제(+이유) + 하루 한 줄 ----
+  var todayRestOn = false;
+  function todayIsRecurringRest() { return state.recurringHolidays.indexOf(todayKey().slice(5)) !== -1; }
+  function todayRestReason() {
+    var idx = findRestIdx(todayKey());
+    if (idx !== -1) { var lb = restDayLabel(state.restDays[idx]); if (lb) return lb; }
+    if (todayIsRecurringRest()) return KNOWN_KR_HOLIDAYS[todayKey().slice(5)] || "";
+    return "";
+  }
+  function syncTodayRestUI() {
+    var recurring = todayIsRecurringRest() && findRestIdx(todayKey()) === -1;
+    var tog = document.getElementById("todayRestToggle");
+    tog.classList.toggle("active", todayRestOn);
+    tog.classList.toggle("disabled", recurring);
+    document.getElementById("todayRestReason").classList.toggle("hidden", !todayRestOn || recurring);
+    var note = document.getElementById("todayRestNote");
+    note.classList.toggle("hidden", !recurring);
+    if (recurring) note.textContent = "매년 반복 공휴일" + (todayRestReason() ? "(" + todayRestReason() + ")" : "") + "이라 쉬는 날이에요. 해제는 설정 › 쉬는 날에서 할 수 있어요.";
+  }
   function openTodayMemoOverlay() {
     var input = document.getElementById("todayMemoInput");
+    var d = new Date(), wd = ["일","월","화","수","목","금","토"];
+    document.getElementById("todayOvTitle").textContent = (d.getMonth()+1) + "월 " + d.getDate() + "일 " + wd[d.getDay()] + "요일";
     input.value = (state.memos && state.memos[todayKey()]) || "";
+    todayRestOn = isRestDay(todayKey());
+    var idx = findRestIdx(todayKey());
+    document.getElementById("todayRestReason").value = idx !== -1 ? restDayLabel(state.restDays[idx]) : "";
+    syncTodayRestUI();
     document.getElementById("todayMemoOverlay").classList.remove("hidden");
-    input.focus();
+  }
+  function toggleTodayRestInOverlay() {
+    if (todayIsRecurringRest() && findRestIdx(todayKey()) === -1) return;
+    todayRestOn = !todayRestOn;
+    syncTodayRestUI();
+    if (todayRestOn) document.getElementById("todayRestReason").focus();
   }
   function closeTodayMemoOverlay() { document.getElementById("todayMemoOverlay").classList.add("hidden"); }
   function saveTodayMemoOverlay() {
@@ -3794,6 +3839,16 @@
     var k = todayKey();
     if (!state.memos) state.memos = {};
     if (v) state.memos[k] = v; else delete state.memos[k];
+    if (!(todayIsRecurringRest() && findRestIdx(k) === -1)) {
+      var ri = findRestIdx(k);
+      if (todayRestOn) {
+        var why = document.getElementById("todayRestReason").value.trim();
+        var entry = why ? { date: k, label: why } : k;
+        if (ri === -1) state.restDays.push(entry); else state.restDays[ri] = entry;
+      } else if (ri !== -1) {
+        state.restDays.splice(ri, 1);
+      }
+    }
     saveState();
     closeTodayMemoOverlay();
     renderHome();
@@ -9175,7 +9230,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var a = null;
     try { a = avOwn(); } catch (e) { a = AV_DEFAULT; }
     var h = document.getElementById("homeAvatar");
-    if (h) h.innerHTML = avatarSVG(a, 46);
+    if (h) h.innerHTML = avatarSVG(a, 52);
     var s = document.getElementById("settingsAvatar");
     if (s) s.innerHTML = avatarSVG(a, 34);
     var c = document.getElementById("achieveAvatar");
@@ -9958,9 +10013,6 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     var days = ["일","월","화","수","목","금","토"];
     document.getElementById("dayLabel").textContent = (d.getMonth()+1) + "월 " + d.getDate() + "일 " + days[d.getDay()] + "요일";
     document.getElementById("streakNum").textContent = computeStreakGeneric(overallStreakStatus);
-    var gam = computeGamification();
-    var g = computeGrowth(gam.points);
-    document.getElementById("levelTag").textContent = "· " + growthShortLabel(g);
 
     document.getElementById("dailyBoxCard").classList.toggle("hidden", !(dailyBoxDeferred && todayBoxAvailable()));
     if (homeIsVisible()) maybeInviteDailyBox();
@@ -9972,7 +10024,10 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     if (state.categories.length === 0) {
       badges.push('<span class="sub-text">카테고리를 추가해보세요</span>');
     } else {
-      if (todayIsRest) badges.push('<span class="rest-badge">쉬는 날</span>');
+      if (todayIsRest) {
+        var restWhy = todayRestReason();
+        badges.push('<span class="rest-badge">쉬는 날' + (restWhy ? ' · <span class="rest-why">' + escapeHtml(restWhy) + '</span>' : '') + '</span>');
+      }
       if (state.memos && state.memos[todayK]) badges.push('<span class="memo-badge">✎ 오늘 메모</span>');
       var timeSugN = timeSuggestionCount();
       if (timeSugN > 0) badges.push('<span class="time-badge" data-action="open-time-suggest">⏱ 시간 조정 제안 ' + timeSugN + '</span>');
@@ -11810,6 +11865,7 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
     else if (action === "open-missed-overlay") { openMissedOverlay(); }
     else if (action === "missed-close") { closeMissedOverlay(); }
     else if (action === "open-today-memo") { openTodayMemoOverlay(); }
+    else if (action === "today-rest-toggle") { toggleTodayRestInOverlay(); }
     else if (action === "today-memo-cancel") { closeTodayMemoOverlay(); }
     else if (action === "today-memo-save") { saveTodayMemoOverlay(); }
     else if (action === "open-title-edit") { openTitleEditOverlay(); }
