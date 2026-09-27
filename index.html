@@ -1640,7 +1640,7 @@
     var body = document.getElementById("approvalOverlayBody");
     body.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);text-align:center;">불러오는 중…</div>';
     window.__fb.listPendingUsers().then(function (list) {
-      list = list.filter(function (u) { return (u.data.email || "").toLowerCase() !== ADMIN_EMAIL.toLowerCase(); });
+      list = list.filter(function (u) { return u.uid !== ADMIN_UID; });
       if (list.length === 0) {
         body.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);text-align:center;">대기 중인 가입 요청이 없어요.</div>';
         return;
@@ -3399,7 +3399,7 @@
     };
     return map[code] || ("로그인에 실패했어요 (" + code + ")");
   }
-  var ADMIN_EMAIL = "god@yonsei.ac.kr"; // 관리자 계정 — 가입 승인 권한을 가짐, 항상 승인된 것으로 취급
+  var ADMIN_UID = "MxmI44jnF9fpLV3URYlXUYTgl2L2"; // 관리자 계정(UID) — 가입 승인 권한을 가짐, 항상 승인된 것으로 취급
   function doSignIn() {
     var email = document.getElementById("authEmail").value.trim();
     var pw = document.getElementById("authPassword").value;
@@ -3524,7 +3524,7 @@
     window.__fb.onAuthStateChanged(function (user) {
       logoutArmed = false;
       if (user) {
-        isAdminUser = (user.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        isAdminUser = user.uid === ADMIN_UID;
         onUserLoaded(user.uid, user.email || "");
       } else {
         currentUid = null;
