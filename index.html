@@ -575,6 +575,18 @@
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="deleteItemOverlay" style="z-index:95;">
+  <div class="tp-card" style="max-width:300px;">
+    <div class="tp-title">지난 기록을 남겨둘까요?</div>
+    <div class="export-note" style="margin:0 0 10px;text-align:center;">이 항목을 완료했던 기록이 있어요. 항목만 지우고 기록은 통계에 남길지, 기록까지 함께 지울지 선택해 주세요. 기록을 지우면 관련 포인트도 함께 줄어들고 되돌릴 수 없어요.</div>
+    <div class="tp-actions" style="flex-direction:column;gap:8px;">
+      <div class="btn" data-action="delete-item-keep">항목만 삭제, 기록은 남기기</div>
+      <div class="btn" style="color:var(--danger);" data-action="delete-item-purge">기록까지 함께 삭제</div>
+      <div class="btn" data-action="delete-item-cancel">취소</div>
+    </div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="holidayFirstPromptOverlay">
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title">공휴일을 불러올까요?</div>
@@ -2856,6 +2868,52 @@
   function isTimedDone(dateKey, itemId) {
     var d = state.history[dateKey];
     return !!d && Array.isArray(d.timed) && d.timed.indexOf(itemId) !== -1;
+  }
+  // ---- 항목 삭제 시 지난 완료 기록 처리 ----
+  // 그 항목을 완료한 적이 있는지(즉 통계에 남을 기록이 있는지) 확인 — 있을 때만 "기록을
+  // 남길지/지울지" 선택 창을 띄우고, 기록이 하나도 없으면(막 추가했다가 바로 지우는 경우 등)
+  // 곧바로 삭제해 매번 번거롭게 물어보지 않는다.
+  function itemHasHistory(itemId) {
+    var h = state.history || {};
+    return Object.keys(h).some(function (dk) {
+      var e = h[dk];
+      return !!e && Array.isArray(e.completed) && e.completed.indexOf(itemId) !== -1;
+    });
+  }
+  // 기록까지 함께 삭제를 선택했을 때: 모든 날짜에서 이 항목의 완료/초과완료/실측시간 흔적을
+  // 지운다. dayEntry()를 거쳐야 아카이브된 연도의 기록도 다음 저장 때 제대로 다시 반영된다.
+  function purgeItemHistory(itemId) {
+    Object.keys(state.history || {}).forEach(function (dk) {
+      var raw = state.history[dk];
+      if (!raw) return;
+      var hasCompleted = Array.isArray(raw.completed) && raw.completed.indexOf(itemId) !== -1;
+      var hasOvertime = Array.isArray(raw.overtime) && raw.overtime.indexOf(itemId) !== -1;
+      var hasTimed = Array.isArray(raw.timed) && raw.timed.indexOf(itemId) !== -1;
+      var hasSecs = raw.secs && Object.prototype.hasOwnProperty.call(raw.secs, itemId);
+      if (!hasCompleted && !hasOvertime && !hasTimed && !hasSecs) return;
+      var entry = dayEntry(dk);
+      var ci = entry.completed.indexOf(itemId);
+      if (ci !== -1) entry.completed.splice(ci, 1);
+      if (Array.isArray(entry.overtime)) {
+        var oi = entry.overtime.indexOf(itemId);
+        if (oi !== -1) entry.overtime.splice(oi, 1);
+      }
+      if (Array.isArray(entry.timed)) {
+        var ti = entry.timed.indexOf(itemId);
+        if (ti !== -1) entry.timed.splice(ti, 1);
+        if (entry.timed.length === 0) delete entry.timed;
+      }
+      if (entry.secs && Object.prototype.hasOwnProperty.call(entry.secs, itemId)) {
+        delete entry.secs[itemId];
+        if (Object.keys(entry.secs).length === 0) delete entry.secs;
+      }
+    });
+  }
+  var pendingDeleteItemId = null;
+  function removeItemFromCategory(itemId) {
+    var cat = getCat(editingCatId);
+    if (!cat) return;
+    cat.items = cat.items.filter(function (it) { return it.id !== itemId; });
   }
   // ---- generic confirm dialog ----
   var confirmCb = null;
@@ -6303,9 +6361,36 @@
       if (inputs2.length) inputs2[inputs2.length-1].focus();
     }
     else if (action === "delete-item") {
-      var cat2 = getCat(editingCatId);
-      cat2.items = cat2.items.filter(function (it) { return it.id !== id; });
-      saveState(); renderEditItems();
+      if (itemHasHistory(id)) {
+        pendingDeleteItemId = id;
+        document.getElementById("deleteItemOverlay").classList.remove("hidden");
+      } else {
+        removeItemFromCategory(id);
+        saveState(); renderEditItems();
+      }
+    }
+    else if (action === "delete-item-cancel") {
+      pendingDeleteItemId = null;
+      document.getElementById("deleteItemOverlay").classList.add("hidden");
+    }
+    else if (action === "delete-item-keep") {
+      document.getElementById("deleteItemOverlay").classList.add("hidden");
+      if (pendingDeleteItemId) {
+        removeItemFromCategory(pendingDeleteItemId);
+        saveState(); renderEditItems();
+        toast("항목을 삭제했어요. 지난 기록은 통계에 남아요");
+      }
+      pendingDeleteItemId = null;
+    }
+    else if (action === "delete-item-purge") {
+      document.getElementById("deleteItemOverlay").classList.add("hidden");
+      if (pendingDeleteItemId) {
+        purgeItemHistory(pendingDeleteItemId);
+        removeItemFromCategory(pendingDeleteItemId);
+        saveState(); renderEditItems();
+        toast("항목과 지난 기록을 모두 삭제했어요");
+      }
+      pendingDeleteItemId = null;
     }
     else if (action === "duplicate-item") { duplicateItem(id); }
     else if (action === "open-move-category") { openMoveCategory(id); }
