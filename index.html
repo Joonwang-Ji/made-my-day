@@ -5085,27 +5085,49 @@
 
 
   var tpItemId = null, tpMinVal = 0, tpSecVal = 0;
+  var WHEEL_COPIES = 5; // repeated copies of the 0..max sequence, so scrolling past an end wraps around instead of stopping
   function buildWheel(container, max, current, onSettle) {
+    var range = max + 1;
+    var midCopy = Math.floor(WHEEL_COPIES / 2);
     container.innerHTML = "";
     var spacerTop = document.createElement("div"); spacerTop.style.height = ITEM_H + "px"; container.appendChild(spacerTop);
-    for (var i = 0; i <= max; i++) { var d = document.createElement("div"); d.textContent = i; container.appendChild(d); }
+    for (var c = 0; c < WHEEL_COPIES; c++) {
+      for (var i = 0; i < range; i++) { var d = document.createElement("div"); d.textContent = i; container.appendChild(d); }
+    }
     var spacerBot = document.createElement("div"); spacerBot.style.height = ITEM_H + "px"; container.appendChild(spacerBot);
-    container.scrollTop = current * ITEM_H;
-    markSelected(container, current);
+
+    function rowTop(rowIdx) { return (rowIdx + 1) * ITEM_H; } // +1 skips the top spacer row
+    function setRow(rowIdx, smooth) {
+      if (smooth) container.scrollTo({ top: rowTop(rowIdx), behavior: "smooth" });
+      else container.scrollTop = rowTop(rowIdx);
+      markSelected(container, rowIdx);
+    }
+
+    setRow(midCopy * range + current, false);
+
     var t = null;
     container.onscroll = function () {
       clearTimeout(t);
       t = setTimeout(function () {
-        var idx = Math.max(0, Math.min(max, Math.round(container.scrollTop / ITEM_H)));
-        container.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
-        markSelected(container, idx);
-        onSettle(idx);
+        var totalRows = WHEEL_COPIES * range;
+        var rawRow = Math.round(container.scrollTop / ITEM_H) - 1; // undo the +1 top-spacer offset
+        var rowIdx = Math.max(0, Math.min(totalRows - 1, rawRow));
+        var value = rowIdx % range;
+        onSettle(value);
+        var copy = Math.floor(rowIdx / range);
+        if (copy === midCopy) {
+          setRow(rowIdx, true);
+        } else {
+          // drifted into another repeated copy near an end — silently re-center on the middle
+          // copy at the same value, so the wheel appears to keep scrolling past 0/max forever
+          setRow(midCopy * range + value, false);
+        }
       }, 120);
     };
   }
-  function markSelected(container, idx) {
+  function markSelected(container, rowIdx) {
     var children = container.children;
-    for (var i = 1; i < children.length - 1; i++) children[i].className = (i - 1 === idx) ? "selected" : "";
+    for (var i = 1; i < children.length - 1; i++) children[i].className = (i - 1 === rowIdx) ? "selected" : "";
   }
   function openTimePicker(itemId) {
     var it = findItem(itemId);

@@ -361,10 +361,10 @@
   .tp-title { font-weight: 800; font-size: 14px; margin-bottom: 14px; text-align: center; color: var(--ink); }
   .tp-wheels { position: relative; display: flex; justify-content: center; gap: 22px; height: 114px; }
   .tp-col { display: flex; flex-direction: column; align-items: center; }
-  .tp-scroll { height: 114px; width: 60px; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; }
+  .tp-scroll { height: 114px; width: 60px; overflow-y: scroll; -webkit-overflow-scrolling: touch; }
   .tp-scroll::-webkit-scrollbar { display: none; }
   .tp-scroll div { height: 38px; display: flex; align-items: center; justify-content: center; font-size: 18px;
-    font-variant-numeric: tabular-nums; scroll-snap-align: center; color: var(--ink-dim); }
+    font-variant-numeric: tabular-nums; color: var(--ink-dim); }
   .tp-scroll div.selected { color: var(--ink); font-weight: 800; }
   .tp-unit { margin-top: 6px; font-size: 11px; color: var(--ink-dim); }
   .tp-highlight { position: absolute; top: 38px; left: 0; right: 0; height: 38px; border-top: 1px solid var(--line);
