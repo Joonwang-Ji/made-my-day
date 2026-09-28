@@ -480,7 +480,6 @@
     <span class="fr-ico" data-action="chat-menu" title="더보기">⋯</span>
   </div>
   <div class="chat-scroll" id="chatScroll">
-    <div id="chatProfile"></div>
     <div id="chatMsgs"></div>
   </div>
   <div class="chat-compose">
@@ -910,7 +909,7 @@
         renderFriends();
         if (chatWith) {
           chatWith.nick = friendNick(chatWith.uid);
-          renderChatHead(); renderChatProfile(); renderChatSuggest();
+          renderChatHead(); renderChatSuggest();
         }
       });
     }).catch(function (err) {
@@ -1004,7 +1003,8 @@
         h += '<div class="fr-name">' + escapeHtml((pr && pr.titleEmoji ? pr.titleEmoji + " " : "") + nm) +
           (pr && pr.titleText ? '<span class="fr-title">' + escapeHtml(pr.titleText) + '</span>' : '') + '</div>';
         if (pr) {
-          h += '<div class="fr-stat">성경 ' + bibleProgress(pr.points || 0).text + ' · ' + pr.points + 'P · 🔥 ' + pr.streak + '일</div>';
+          var todayBit = (pr.showToday && pr.dateKey === todayKey() && pr.todayDue != null) ? (' · 오늘 ' + pr.todayDone + '/' + pr.todayDue) : '';
+          h += '<div class="fr-stat">성경 ' + bibleProgress(pr.points || 0).text + ' · ' + pr.points + 'P · 🔥 ' + pr.streak + '일' + todayBit + '</div>';
           h += '<div class="fr-stat">' + escapeHtml((pr.bookIcon ? pr.bookIcon + " " : "") + pr.bookName + " · " + pr.milestoneTitle) + '</div>';
           var ce = friendCelebrations(o, pr);
           if (ce.length) h += '<div><span class="fr-celeb">✨ ' + escapeHtml(ce[0].label) + (ce.length > 1 ? ' 외 ' + (ce.length - 1) : '') + ' · 칭찬해 보세요</span></div>';
@@ -1251,7 +1251,7 @@
     document.getElementById("chatInput").style.height = "";
     document.getElementById("toast").classList.remove("show");
     document.getElementById("view-friend-chat").classList.remove("hidden");
-    renderChatHead(); renderChatProfile(); renderChatSuggest();
+    renderChatHead(); renderChatSuggest();
     document.getElementById("chatMsgs").innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">불러오는 중…</div>';
     updateChatCompose();
     chatFit();
@@ -1274,7 +1274,7 @@
       if (!chatWith || chatWith.uid !== w.uid) return;
       if (friendsData) friendsData.profiles[w.uid] = pr;
       chatCelebs = friendCelebrations(w.uid, pr);
-      renderChatProfile(); renderChatSuggest();
+      renderChatSuggest();
     }).catch(function () {});
     loadChat(true);
   }
@@ -1308,43 +1308,6 @@
   function renderChatHead() {
     var t = document.getElementById("chatTitle");
     if (t && chatWith) t.textContent = chatWith.nick;
-  }
-  function cmpBook(p) { return (p.bookIcon ? p.bookIcon + " " : "") + p.bookName + " " + p.bookIndex + "/" + p.totalBooks; }
-  var chatProfCollapsed = false;
-  try { chatProfCollapsed = localStorage.getItem("mmd_chat_prof_collapsed") === "1"; } catch (e) {}
-  function toggleChatProfile() {
-    chatProfCollapsed = !chatProfCollapsed;
-    try { localStorage.setItem("mmd_chat_prof_collapsed", chatProfCollapsed ? "1" : "0"); } catch (e) {}
-    renderChatProfile();
-  }
-  function renderChatProfile() {
-    var box = document.getElementById("chatProfile");
-    if (!chatWith) { box.innerHTML = ""; return; }
-    var pr = friendsData && friendsData.profiles[chatWith.uid];
-    var h = '<div class="chat-prof">';
-    if (!pr) {
-      h += '<div class="fr-name">' + escapeHtml(chatWith.nick) + '</div><div class="fr-stat" style="color:var(--ink-dim);">아직 공개 전이에요 · 상대가 공개를 켜면 보여요</div>';
-    } else {
-      var me = buildPublicProfile();
-      h += '<div class="chat-prof-head" data-action="chat-prof-toggle"><span class="fr-av sm">' + avForFriend(pr, 30) + '</span><div class="fr-name">' + escapeHtml((pr.titleEmoji ? pr.titleEmoji + " " : "") + chatWith.nick) +
-        (pr.titleText ? '<span class="fr-title">' + escapeHtml(pr.titleText) + '</span>' : '') + '</div>' +
-        '<span class="chat-prof-tog">' + (chatProfCollapsed ? '비교 펼치기 ▾' : '접기 ▴') + '</span></div>';
-      if (!chatProfCollapsed) {
-        h += '<table class="cmp"><tr><th></th><th>나</th><th>' + escapeHtml(chatWith.nick) + '</th></tr>' +
-          '<tr><td>진행</td><td>' + bibleProgress(me.points || 0).text + '</td><td>' + bibleProgress(pr.points || 0).text + '</td></tr>' +
-          '<tr><td>누적</td><td>' + me.points + 'P</td><td>' + pr.points + 'P</td></tr>' +
-          '<tr><td>연속</td><td>🔥 ' + me.streak + '일</td><td>🔥 ' + pr.streak + '일</td></tr>' +
-          '<tr><td>최장</td><td>' + me.longest + '일</td><td>' + pr.longest + '일</td></tr>' +
-          '<tr><td>성경</td><td>' + escapeHtml(cmpBook(me)) + '</td><td>' + escapeHtml(cmpBook(pr)) + '</td></tr></table>';
-        var extra = [], tk = todayKey();
-        if (pr.showToday && pr.dateKey === tk && pr.todayDue != null) extra.push("오늘 " + pr.todayDone + "/" + pr.todayDue);
-        if (pr.showCount && pr.routineCount != null) extra.push("루틴 " + pr.routineCount + "개");
-        if (extra.length) h += '<div class="fr-stat" style="margin-top:8px;">' + extra.join(" · ") + '</div>';
-        h += '<div class="fr-upd">' + (fmtMD(pr.updatedAt) ? fmtMD(pr.updatedAt) + " 기준 · 우측 상단 ↻로 새로고침" : "") + '</div>';
-      }
-    }
-    h += '</div>';
-    box.innerHTML = h;
   }
   // 지인 끊기: 헤더 ⋯ 메뉴 → 안내 확인창까지 거쳐야만 실행된다(대화 화면에 바로 눌리는 버튼을 두지 않음)
   function openChatMenu() {
@@ -6482,7 +6445,6 @@
     else if (action === "chat-open") { openChat(id); }
     else if (action === "chat-close") { closeChat(); }
     else if (action === "chat-refresh") { refreshChat(); }
-    else if (action === "chat-prof-toggle") { toggleChatProfile(); }
     else if (action === "chat-menu") { openChatMenu(); }
     else if (action === "chat-menu-close") { closeChatMenu(); }
     else if (action === "chat-menu-cut") { askCutFriend(); }
