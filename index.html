@@ -335,11 +335,13 @@
     <div class="theme-option" data-action="threshold-select" data-id="80"><span>웬만큼 (80% 이상)</span><span class="dot"></span></div>
     <div class="theme-option" data-action="threshold-select" data-id="70"><span>느슨하게 (70% 이상)</span><span class="dot"></span></div>
   </div>
-  <div class="section-label">알람 소리<span class="help-q" data-action="help" data-id="alarm">?</span></div>
+  <div class="section-label">소리<span class="help-q" data-action="help" data-id="alarm">?</span></div>
   <div class="theme-option-row">
+    <div class="theme-option" id="alarmAllOffToggle" data-action="toggle-alarm-all-off"><span>모든 알람 끄기 (무음 모드)</span><span class="dot"></span></div>
     <div class="theme-option" id="alarmForceToggle" data-action="toggle-alarm-force"><span>무음 스위치가 켜져 있어도 울리기</span><span class="dot"></span></div>
-    <div class="btn" data-action="alarm-preview" style="margin:0;">🔔 알람 소리 미리듣기</div>
+    <div class="btn" id="alarmPreviewBtn" data-action="alarm-preview" style="margin:0;">🔔 알람 소리 미리듣기</div>
   </div>
+  <div class="export-note hidden" id="alarmAllOffNote" style="margin:6px 0 0;">🔕 지금은 모든 알람이 꺼져 있어요. 항목을 완료해도 소리·진동이 울리지 않아요. 다시 켜려면 위 스위치를 눌러 주세요.</div>
   <div class="section-label">초과 유예 시간<span class="help-q" data-action="help" data-id="grace">?</span></div>
   <div class="theme-option-row" id="graceOptionRow">
     <div class="theme-option" data-action="grace-select" data-id="5"><span>5초</span><span class="dot"></span></div>
@@ -5243,6 +5245,11 @@
   // (iOS 16.4+ Safari의 navigator.audioSession). 기기별 설정(localStorage)으로 끌 수 있다.
   var alarmForce = true;
   try { alarmForce = localStorage.getItem("mmd_alarm_force") !== "0"; } catch (e) {}
+  // 모든 알람 끄기(무음 모드): 켜면 항목별 무음 설정이나 "무음 스위치가 켜져 있어도 울리기"와
+  // 상관없이 소리·진동이 전혀 울리지 않는다. 회의·예배·낮잠 시간처럼 잠깐 완전히 끄고 싶을 때 쓰는
+  // 상위 스위치 — playCompleteAlarm() 맨 앞에서 걸러 다른 모든 알람 로직보다 우선한다.
+  var alarmAllOff = false;
+  try { alarmAllOff = localStorage.getItem("mmd_alarm_all_off") === "1"; } catch (e) {}
   var alarmSessionTimer = null;
   function setAudioSessionType(t) {
     try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) {}
@@ -5261,6 +5268,7 @@
     });
   }
   function playCompleteAlarm() {
+    if (alarmAllOff) return;
     try {
       if (!audioCtx) unlockAudioCtx();
       if (!audioCtx) return;
@@ -5278,8 +5286,17 @@
     try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (e) {}
   }
   function updateAlarmSettingUI() {
+    var allOffEl = document.getElementById("alarmAllOffToggle");
+    if (allOffEl) allOffEl.classList.toggle("active", alarmAllOff);
     var el = document.getElementById("alarmForceToggle");
-    if (el) el.classList.toggle("active", alarmForce);
+    if (el) {
+      el.classList.toggle("active", alarmForce);
+      el.classList.toggle("disabled", alarmAllOff);
+    }
+    var previewBtn = document.getElementById("alarmPreviewBtn");
+    if (previewBtn) previewBtn.classList.toggle("disabled", alarmAllOff);
+    var note = document.getElementById("alarmAllOffNote");
+    if (note) note.classList.toggle("hidden", !alarmAllOff);
   }
 
   // ---- tags ----
@@ -6152,10 +6169,11 @@
       ["시간 기록은요", "유예 안에 마치면 걸린 시간은 지정한 시간 그대로 저장돼요. 그래서 ‘시간 조정 제안’이 알람 반응 시간 때문에 흔들리지 않아요."],
       ["화면 표시", "0:00이 지나면 +MM:SS가 차분한 회색으로 흐르다가, 유예가 끝나면 빨간색으로 바뀌어요. 알람은 0:00에 그대로 울려요."]
     ], see: ["home", "days"] },
-    alarm: { t: "타이머 알람", sub: "언제 울리는지 · 무음 스위치", s: [
+    alarm: { t: "타이머 알람", sub: "언제 울리는지 · 무음 모드 · 무음 스위치", s: [
       ["언제 울리나", "▶ 카운트다운에서 시간이 0:00이 되는 순간 한 번 울려요. 홈에서 탭해서 체크하거나, 카운트다운 중에 일찍 완료를 눌렀을 때는 울리지 않아요."],
-      ["무음 스위치", "‘무음 스위치가 켜져 있어도 울리기’를 켜 두면(기본 켜짐) 아이폰의 무음 스위치가 켜져 있어도 소리가 나요."],
-      ["항목별 무음 · 미리듣기", "항목의 반복 요일 창에서 그 항목만 무음으로 할 수 있어요. 설정의 ‘알람 소리 미리듣기’로 소리를 확인해 보세요."]
+      ["모든 알람 끄기", "설정 맨 위 ‘모든 알람 끄기’를 켜면 항목별 설정이나 무음 스위치 설정과 상관없이 소리·진동이 전혀 울리지 않아요. 회의·예배·낮잠 시간처럼 잠깐 완전히 조용히 하고 싶을 때 켜고, 끝나면 다시 꺼서 되돌리면 돼요."],
+      ["무음 스위치", "‘무음 스위치가 켜져 있어도 울리기’를 켜 두면(기본 켜짐) 아이폰의 무음 스위치가 켜져 있어도 소리가 나요. ‘모든 알람 끄기’가 켜져 있으면 이 설정은 잠시 비활성화돼요."],
+      ["항목별 무음 · 미리듣기", "항목의 반복 요일 창에서 그 항목만 무음으로 할 수 있어요. 설정의 ‘알람 소리 미리듣기’로 소리를 확인해 보세요(‘모든 알람 끄기’ 중에는 미리듣기도 울리지 않아요)."]
     ], see: ["home", "days"] },
     achieve: { t: "업적 화면", sub: "누적 포인트 · 성경 여정 · 선물함", s: [
       ["누적 포인트와 성경 여정", "위쪽 숫자가 지금까지의 누적 포인트예요. 포인트가 쌓이면 창세기부터 요한계시록까지 66권의 메달이 하나씩 열려요. ‘성경 여정 전체보기’에서 열린 권과 장면을 볼 수 있고, 채워진 칸을 누르면 상세를 볼 수 있어요."],
@@ -6197,7 +6215,7 @@
     ], see: ["friends", "share"] },
     settings: { t: "설정 화면", sub: "테마 · 스트릭 · 알람 · 계정", s: [
       ["테마", "기기 설정을 따르거나 항상 밝게 · 항상 어둡게 고를 수 있어요."],
-      ["스트릭 · 알람", "‘스트릭 인정 기준’과 ‘알람 소리’ 옆의 ?에서 자세한 규칙을 볼 수 있어요."],
+      ["스트릭 · 알람", "‘스트릭 인정 기준’과 ‘소리’ 옆의 ?에서 자세한 규칙을 볼 수 있어요."],
       ["쉬는 날 · 데이터", "쉬는 날 관리와 데이터 백업·복원 화면으로 들어가요."],
       ["계정", "비밀번호를 바꾸거나 로그아웃할 수 있어요."]
     ], see: ["streak", "alarm", "backup"] },
@@ -6401,11 +6419,17 @@
     else if (action === "toggle-keep-on-rest") { if (dpFlex) return; dpKeepOnRest = !dpKeepOnRest; updateKeepOnRestToggleUI(); }
     else if (action === "toggle-no-suggest") { if (dpFlex) return; dpNoSug = !dpNoSug; updateAlarmToggleUI(); }
     else if (action === "toggle-alarm-force") {
+      if (alarmAllOff) return;
       alarmForce = !alarmForce;
       try { localStorage.setItem("mmd_alarm_force", alarmForce ? "1" : "0"); } catch (e) {}
       updateAlarmSettingUI();
     }
-    else if (action === "alarm-preview") { unlockAudioCtx(); playCompleteAlarm(); }
+    else if (action === "toggle-alarm-all-off") {
+      alarmAllOff = !alarmAllOff;
+      try { localStorage.setItem("mmd_alarm_all_off", alarmAllOff ? "1" : "0"); } catch (e) {}
+      updateAlarmSettingUI();
+    }
+    else if (action === "alarm-preview") { if (alarmAllOff) return; unlockAudioCtx(); playCompleteAlarm(); }
     else if (action === "toggle-alarm") { if (dpFlex) return; dpMuted = !dpMuted; updateAlarmToggleUI(); }
     else if (action === "day-toggle") {
       if (dpFlex) return;

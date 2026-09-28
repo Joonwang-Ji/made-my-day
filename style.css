@@ -384,6 +384,7 @@
   .day-toggle-row { display: flex; justify-content: space-between; gap: 4px; }
   .day-toggle-row.disabled { opacity: .3; pointer-events: none; }
   .theme-option.disabled { opacity: .35; pointer-events: none; }
+  .btn.disabled { opacity: .35; pointer-events: none; }
   .flex-hint { font-size: 11.5px; color: var(--ink-dim); line-height: 1.55; margin-top: 10px; }
   .day-toggle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg-soft);
     color: var(--ink-dim); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
