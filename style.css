@@ -48,7 +48,7 @@
     background: none; border: none; color: var(--ink-dim); cursor: pointer; }
   .nav-btn svg { width: 1.0625rem; height: 1.0625rem; }
   .nav-btn span { font-size: 0.6562rem; font-weight: 700; }
-  #view-home, #view-editItems, #view-stats, #view-backfill, #view-export, #view-settings, #view-restDays, #view-friends { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.25rem); }
+  #view-home, #view-editItems, #view-stats, #view-backfill, #view-export, #view-settings, #view-setDisplay, #view-setRules, #view-setNotify, #view-setAccount, #view-restDays, #view-friends, #view-help { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.25rem); }
 
   header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; min-height: 82px; }
   .date-block { min-width: 0; }
