@@ -773,3 +773,51 @@
     border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; margin-bottom: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
   .help-row .help-row-sub { display: block; font-size: 11.5px; font-weight: 400; color: var(--ink-dim); margin-top: 2px; }
   .help-row .chev { color: var(--ink-dim); }
+
+/* ---------------- 주간 · 월간 리뷰 (19차) ---------------- */
+.review-card { display: flex; align-items: center; gap: 12px; background: var(--gold-soft); border-radius: 16px;
+  padding: 13px 16px; margin-bottom: 12px; cursor: pointer; }
+.review-card .rc-emoji { font-size: 22px; flex: none; }
+.review-card .rc-main { flex: 1; min-width: 0; }
+.review-card .rc-title { font-size: 14px; font-weight: 800; color: var(--ink); line-height: 1.4; }
+.review-card .rc-sub { font-size: 11.5px; color: var(--ink-dim); margin-top: 2px; line-height: 1.4; }
+.review-card .rc-chev { color: var(--gold); font-size: 20px; flex: none; }
+.sub-row .review-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 12px;
+  font-weight: 700; white-space: nowrap; background: var(--gold-soft); color: var(--gold); cursor: pointer; }
+
+.rv-period { font-size: 11.5px; color: var(--ink-dim); margin-bottom: 12px; }
+.rv-block { margin-bottom: 16px; }
+.rv-h { font-size: 11.5px; font-weight: 800; color: var(--gold); margin-bottom: 6px; letter-spacing: .02em; }
+.rv-line { font-size: 15.5px; font-weight: 800; line-height: 1.6; color: var(--ink); word-break: keep-all; }
+.rv-block p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--ink); word-break: keep-all; }
+.rv-block ul { margin: 0; padding-left: 18px; }
+.rv-block li { font-size: 13.5px; line-height: 1.7; color: var(--ink); margin-bottom: 4px; word-break: keep-all; }
+.rv-expert { background: var(--sage-soft); border-radius: 14px; padding: 12px 14px; }
+.rv-expert .rv-h { color: var(--ink-dim); }
+.rv-src { font-size: 11px; color: var(--ink-dim); margin-top: 8px; line-height: 1.5; }
+.rv-more { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 4px; }
+.rv-more summary { font-size: 12.5px; font-weight: 700; color: var(--ink-dim); cursor: pointer; list-style: none; padding: 4px 0; }
+.rv-more summary::-webkit-details-marker { display: none; }
+.rv-more summary::before { content: "▸ "; }
+.rv-more[open] summary::before { content: "▾ "; }
+.rv-more-body { padding-top: 8px; }
+.rv-sub { font-size: 11.5px; font-weight: 800; color: var(--ink-dim); margin: 14px 0 8px; }
+.rv-days { display: flex; justify-content: space-between; gap: 4px; }
+.rv-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rv-day-bar { width: 18px; height: 54px; border-radius: 6px; background: var(--bg-soft, var(--line)); display: flex; align-items: flex-end; overflow: hidden; }
+.rv-day-fill { width: 100%; background: var(--sage); border-radius: 6px; }
+.rv-day-pct { font-size: 10px; color: var(--ink-dim); }
+.rv-day-lab { font-size: 11px; font-weight: 700; color: var(--ink); }
+.rv-catrow { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; }
+.rv-catname { flex: none; max-width: 42%; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-cattrack { flex: 1; height: 8px; border-radius: 4px; background: var(--bg-soft, var(--line)); overflow: hidden; }
+.rv-catfill { display: block; height: 100%; background: var(--sage); border-radius: 4px; }
+.rv-catnum { flex: none; width: 44px; text-align: right; font-size: 11.5px; color: var(--ink-dim); }
+.rv-none { font-size: 12.5px; color: var(--ink-dim); line-height: 1.6; }
+.rv-foot { font-size: 11px; color: var(--ink-dim); margin-top: 14px; line-height: 1.6; }
+.rv-ly { font-size: 12.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 8px; }
+.rv-ly-tag { display: inline-block; font-size: 10.5px; font-weight: 800; color: var(--gold); background: var(--gold-soft); border-radius: 999px; padding: 1px 8px; margin-right: 6px; }
+.rv-hist-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 4px; border-bottom: 1px solid var(--line);
+  font-size: 13.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.rv-hist-row:last-child { border-bottom: none; }
+.rv-hist-row .rc-chev { color: var(--gold); font-size: 18px; }

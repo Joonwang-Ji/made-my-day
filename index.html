@@ -8,7 +8,8 @@
     firebase-service.js    Firebase Auth/Firestore 연동부 (ES 모듈, window.__fb 로 노출)
     bible-medals-data.js   66권 성경 마일스톤 데이터: BIBLE_BOOKS, MEDAL_ART, SVG 부품 생성기 MP/D2~D7/DF/G2
     avatar-data.js         아바타 SVG 부품(SVG_P/BIBLE_ICONS 구 아이콘셋) + 아바타 아이템·조합 로직(AV_*, avatarSVG 등)
-    index.html 본문 <script> 하나 (state/렌더링/이벤트 등 핵심 로직) — 위 네 파일이 먼저 로드된 뒤
+    review-data.js         주간·월간·연간 리뷰(19차)의 문구 풀·전문가 한마디 데이터: REVIEW_DATA (문구만 — 고르는 로직은 index.html)
+    index.html 본문 <script> 하나 (state/렌더링/이벤트 등 핵심 로직) — 위 다섯 파일이 먼저 로드된 뒤
       순서대로 실행되는 하나의 IIFE. 이 안의 코드는 위 파일들이 선언한 전역 변수(BIBLE_BOOKS, MEDAL_ART,
       MP, AV_DEFAULT 등)를 그냥 참조만 함 — 모듈 import 없이 전역 스코프로 연결된 구조.
     특정 기능만 고칠 땐 해당 파일만 읽고 수정하면 됨(핵심 로직 수정이 아니면 index.html의 거대한 메인
@@ -20,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-27-1";
+  var BUILD_VERSION = "2026-09-29-1";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -132,6 +133,7 @@
   <div id="pendingRewardBanner" class="pending-banner hidden" data-action="open-pending-rewards">
     <span class="emoji">🎀</span><span id="pendingRewardBannerText"></span>
   </div>
+  <div id="reviewCards"></div>
   <div id="weeklyProgressBanner" class="weekly-card hidden"></div>
   <div id="nudgeBanner" class="nudge-banner hidden" data-action="open-missed-overlay"></div>
   <div id="holidayBanner" class="nudge-banner hidden" data-action="open-holiday-banner-year"></div>
@@ -274,6 +276,8 @@
     <div class="theme-option" id="alarmToggle" data-action="toggle-alarm"><span>이 항목은 무음 (타이머 종료 시 소리 안 남)</span><span class="dot"></span></div>
     <div class="section-label">시간 조정 제안<span class="help-q" data-action="help" data-id="timesuggest">?</span></div>
     <div class="theme-option" id="noSuggestToggle" data-action="toggle-no-suggest"><span>이 항목은 시간 조정 제안 받지 않기</span><span class="dot"></span></div>
+    <div class="section-label">시작 전<span class="help-q" data-action="help" data-id="notstarted">?</span></div>
+    <div class="theme-option" id="notStartedToggle" data-action="toggle-not-started"><span>아직 시작 전 (목록엔 두고 달성률에선 제외)</span><span class="dot"></span></div>
     <div class="tp-actions">
       <div class="btn" data-action="day-cancel">취소</div>
       <div class="btn primary" data-action="day-confirm">확인</div>
@@ -347,6 +351,23 @@
     <div class="theme-option" data-action="grace-select" data-id="15"><span>15초</span><span class="dot"></span></div>
     <div class="theme-option" data-action="grace-select" data-id="30"><span>30초</span><span class="dot"></span></div>
   </div>
+  <div class="section-label">리뷰<span class="help-q" data-action="help" data-id="review">?</span></div>
+  <div class="theme-option-row">
+    <div class="theme-option" id="rvWeeklyToggle" data-action="rv-toggle-weekly"><span>주간 리뷰 받기</span><span class="dot"></span></div>
+  </div>
+  <div class="theme-option-row" id="rvWeeklyOpts" style="margin-top:8px;">
+    <div class="theme-option" data-action="rv-weekly-preset" data-id="sun20"><span>일요일 저녁 8시 (기본)</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="rv-weekly-preset" data-id="mon07"><span>월요일 아침 7시</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="rv-weekly-preset" data-id="custom"><span id="rvCustomLabel">직접 정하기</span><span class="dot"></span></div>
+  </div>
+  <div class="theme-option-row" style="margin-top:12px;">
+    <div class="theme-option" id="rvMonthlyToggle" data-action="rv-toggle-monthly"><span>월간 리뷰 받기 (매월 마지막 날)</span><span class="dot"></span></div>
+  </div>
+  <div class="theme-option-row" id="rvMonthlyOpts" style="margin-top:8px;">
+    <div class="theme-option" data-action="rv-monthly-preset" data-id="def"><span>마지막 날 저녁 8시 (기본)</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="rv-monthly-preset" data-id="custom"><span id="rvMonthlyCustomLabel">시각 바꾸기</span><span class="dot"></span></div>
+  </div>
+  <div class="btn" data-action="open-review-history" id="rvReopenBtn" style="margin-top:10px;">📚 지난 리뷰 보기</div>
   <div class="btn" data-action="open-export" style="margin-top:16px;">💾 데이터 백업·복원</div>
   <div class="btn" data-action="open-rest-modal" style="margin-top:10px;">쉬는 날 관리</div>
   <div class="btn hidden" id="adminApprovalBtn" data-action="open-approval-overlay" style="margin-top:10px;">가입 승인 관리</div>
@@ -632,6 +653,49 @@
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="reviewHistOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title">지난 리뷰 보기</div>
+      <span class="tp-close-x" data-action="review-hist-close">✕</span>
+    </div>
+    <div class="tp-card-body">
+      <div class="theme-option-row" id="rvHistTabs">
+        <div class="theme-option" data-action="review-hist-tab" data-id="weekly"><span>주간 (최근 12주)</span><span class="dot"></span></div>
+        <div class="theme-option" data-action="review-hist-tab" data-id="monthly"><span>월간 (최근 12개월)</span><span class="dot"></span></div>
+        <div class="theme-option" data-action="review-hist-tab" data-id="yearly"><span>연간 (올해 돌아보기)</span><span class="dot"></span></div>
+      </div>
+      <div id="rvHistList" style="margin-top:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="reviewOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title" id="reviewTitle">리뷰</div>
+      <span class="tp-close-x" data-action="review-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="reviewBody"></div>
+  </div>
+</div>
+
+<div class="tp-overlay hidden" id="reviewTimeOverlay">
+  <div class="tp-card">
+    <div class="tp-title" id="rvTimeTitle">리뷰 받는 시각</div>
+    <div class="day-toggle-row hidden" id="rvDayRow" style="margin-bottom:14px;"></div>
+    <div class="tp-wheels">
+      <div class="tp-col"><div class="tp-scroll" id="rvHour"></div><div class="tp-unit">시</div></div>
+      <div class="tp-col"><div class="tp-scroll" id="rvMin"></div><div class="tp-unit">분</div></div>
+      <div class="tp-highlight"></div>
+    </div>
+    <div class="tp-actions">
+      <div class="btn" data-action="rv-time-cancel">취소</div>
+      <div class="btn primary" data-action="rv-time-confirm">확인</div>
+    </div>
+  </div>
+</div>
+
 <div class="tp-overlay help-overlay hidden" id="helpOverlay" data-action="help-backdrop">
   <div class="help-sheet">
     <div class="help-head">
@@ -673,6 +737,7 @@
 <script type="module" src="firebase-service.js"></script>
 <script src="bible-medals-data.js"></script>
 <script src="avatar-data.js"></script>
+<script src="review-data.js"></script>
 <script>
 (function () {
   "use strict";
@@ -737,6 +802,7 @@
       o.classList.toggle("active", o.getAttribute("data-id") === curGr);
     });
     updateAlarmSettingUI();
+    try { updateReviewSettingsUI(); } catch (e) {}
     renderAvatarSlots();
     var adminBtn = document.getElementById("adminApprovalBtn");
     if (adminBtn) adminBtn.classList.toggle("hidden", !isAdminUser);
@@ -2161,6 +2227,9 @@
       celebratedQuarterGoals: [],
       celebratedWeeks: [],
       pendingRewards: [],
+      weeklyReview: rvDefaultWeekly(),
+      monthlyReview: rvDefaultMonthly(),
+      reviewRecent: { weekly: [], monthly: [], yearly: [] },
       memos: {},
       holidayPromptSeen: false,
       holidayBannerDismissedYear: null,
@@ -2265,6 +2334,10 @@
     if (!Array.isArray(p.celebratedQuarterGoals)) p.celebratedQuarterGoals = [];
     if (!Array.isArray(p.celebratedWeeks)) p.celebratedWeeks = [];
     if (!Array.isArray(p.pendingRewards)) p.pendingRewards = [];
+    // 리뷰(19차): 설정과 "최근에 쓴 문구 id"(반복 방지용). 리뷰 내용 자체는 저장하지 않고 기록에서 매번 계산한다.
+    p.weeklyReview = rvNormWeekly(p.weeklyReview);
+    p.monthlyReview = rvNormMonthly(p.monthlyReview);
+    p.reviewRecent = rvNormRecent(p.reviewRecent);
     // 보상 기록 통합 마이그레이션(9차 후속): 예전엔 배지 보상이 state.rewards라는 별도 배열에 저장돼
     // 업적 화면 안에서만 보였다. 이제 배지 보상도 주간·분기와 같은 곳(선물함, pendingRewards)에
     // 모아서 보여주므로, 기존에 쌓인 배지 보상 기록을 한 번만 옮겨 담고 원래 배열은 비운다.
@@ -2919,6 +2992,9 @@
   function dueOnKey(item, dk) { return dueOn(item, parseKeyToDate(dk)); }
   function dueToday(item) { return dueOn(item, new Date()); }
   function isDueForDate(item, dk) {
+    // 19차: "시작 전" 항목은 목록에는 보이지만 어떤 날에도 "예정"이 아니다 — 달성률·스트릭·놓친 항목·
+    // 리뷰 하이라이트에서 모두 빠진다(끄는 날 createdAt을 오늘로 갱신하므로 그날부터 평가에 들어간다).
+    if (item.notStarted) return false;
     if (!itemExistedOn(item, dk)) return false;
     if (!dueOnKey(item, dk)) return false;
     if (isRestDay(dk) && !item.keepOnRest) return false;
@@ -2934,6 +3010,7 @@
   }
   function catItemsDueOn(cat, dk) { return cat.items.filter(function (it) { return isDueForDate(it, dk); }); }
   function dayLabel(item) {
+    if (item.notStarted) return "시작 전 · " + dayLabel(Object.assign({}, item, { notStarted: false }));
     if (item.flex) return "불시" + (item.muted ? " 🔕 무음" : "");
     var days = item.days;
     var base;
@@ -4434,7 +4511,7 @@
   // 이름 없이 설정만 만진 항목이 있으면 떠나지 못하게 막고 안내한다. 떠나도 되면 true.
   function isPristineBlankItem(it) {
     if ((it.name || "").trim()) return false;
-    if (it.flex || it.keepOnRest || it.muted) return false;
+    if (it.flex || it.keepOnRest || it.muted || it.notStarted) return false;
     if (it.days && it.days.length) return false;
     if (it.tags && it.tags.length) return false;
     if (it.seconds !== 15) return false;
@@ -4562,8 +4639,10 @@
       var timeSugN = timeSuggestionCount();
       if (timeSugN > 0) badges.push('<span class="time-badge" data-action="open-time-suggest">⏱ 시간 조정 제안 ' + timeSugN + '</span>');
     }
+    try { var rvb = rvBadgeHtml(); if (rvb) badges.push(rvb); } catch (e) {}
     if (cheerUnread > 0) badges.push('<span class="cheer-badge" data-action="open-cheers">💌 새 응원 ' + cheerUnread + '</span>');
     document.getElementById("subRow").innerHTML = badges.join("");
+    try { renderReviewCards(); } catch (e) {}
 
     var yKey = keyFor(new Date(Date.now() - 86400000));
     var nudgeEl = document.getElementById("nudgeBanner");
@@ -4661,16 +4740,16 @@
         // 쉬는 날에는 예정(due)이 아닌 항목도 자유롭게 체크할 수 있게 열어둔다(보너스/선택).
         // 스트릭 집계(overallStreakStatus)는 여전히 due 항목만 기준으로 삼으므로 이 체크는
         // 스트릭에 영향을 주지 않고, 성공 달력에서 별도 표시로만 남는다.
-        var optional = !due && (todayIsRest || !!it.flex);
+        var optional = !due && (todayIsRest || !!it.flex || !!it.notStarted);
         var checked = isDone(todayK, it.id);
         var overtimeDone = checked && isOvertimeDone(todayK, it.id);
-        var itemCls = checked ? ' done' : (due ? '' : (optional ? ' optional' + (it.flex ? ' flex' : '') : ' not-due'));
+        var itemCls = checked ? ' done' : (due ? '' : (optional ? ' optional' + ((it.flex || it.notStarted) ? ' flex' : '') : ' not-due'));
         var dotCls = (checked ? ' done' : (due ? '' : (optional ? ' optional' : ' na'))) + (overtimeDone ? ' overtime' : '');
         return '<div class="mini-item' + itemCls + '"' +
           ((due || optional) ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + dotCls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          '<span class="mini-dur">' + (!checked && due && runSaveRemaining(cat.id, it) !== null ? ("이어하기 · 남은 " + fmtMMSS(runSaveRemaining(cat.id, it))) : checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? (overtimeDone ? (fmtDur(it.seconds) + ' <span class="mini-over">+' + fmtDur(Math.max(0, actualSecsOf(todayK, it.id) - it.seconds)) + '</span>') : fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? fmtDur(it.seconds) : (due ? fmtDur(it.seconds) : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it))))) + '</span></div>';
+          '<span class="mini-dur">' + (!checked && due && runSaveRemaining(cat.id, it) !== null ? ("이어하기 · 남은 " + fmtMMSS(runSaveRemaining(cat.id, it))) : checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? (overtimeDone ? (fmtDur(it.seconds) + ' <span class="mini-over">+' + fmtDur(Math.max(0, actualSecsOf(todayK, it.id) - it.seconds)) + '</span>') : fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? fmtDur(it.seconds) : (due ? fmtDur(it.seconds) : (it.notStarted ? "시작 전" : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it)))))) + '</span></div>';
       }).join("");
       card.setAttribute("data-cat-card", cat.id);
       card.innerHTML =
@@ -5046,6 +5125,7 @@
       createdAt: todayKey()
     };
     if (src.flex) clone.flex = true;
+    if (src.notStarted) clone.notStarted = true;
     cat.items.splice(idx + 1, 0, clone);
     saveState();
     renderEditItems();
@@ -5152,11 +5232,17 @@
   }
 
   // ---- day picker ----
-  var dpItemId = null, dpSel = [], dpKeepOnRest = false, dpMuted = false, dpFlex = false, dpStash = null, dpNoSug = false;
+  var dpItemId = null, dpSel = [], dpKeepOnRest = false, dpMuted = false, dpFlex = false, dpStash = null, dpNoSug = false, dpNotStarted = false;
   function updateKeepOnRestToggleUI() {
     var kt = document.getElementById("keepOnRestToggle");
     kt.classList.toggle("active", dpKeepOnRest);
     kt.classList.toggle("disabled", dpFlex);
+  }
+  function updateNotStartedToggleUI() {
+    var nt = document.getElementById("notStartedToggle");
+    if (!nt) return;
+    nt.classList.toggle("active", dpNotStarted);
+    nt.classList.toggle("disabled", dpFlex);   // 불시 항목은 애초에 평가에서 빠지므로 따로 켤 필요가 없다
   }
   function updateAlarmToggleUI() {
     var at = document.getElementById("alarmToggle");
@@ -5185,6 +5271,7 @@
     document.getElementById("flexHint").classList.toggle("hidden", !dpFlex);
     updateKeepOnRestToggleUI();
     updateAlarmToggleUI();
+    updateNotStartedToggleUI();
   }
   function openDayPicker(itemId) {
     var it = findItem(itemId);
@@ -5194,6 +5281,7 @@
     dpKeepOnRest = !!it.keepOnRest;
     dpMuted = !!it.muted;
     dpNoSug = !!it.noTimeSuggest;
+    dpNotStarted = !!it.notStarted;
     dpFlex = !!it.flex;
     dpStash = null;
     // 불시 항목은 요일·쉬는 날·무음이 모두 해당 없으므로 전부 해제된 상태로 보여준다.
@@ -5201,6 +5289,7 @@
     renderDayToggles();
     updateKeepOnRestToggleUI();
     updateAlarmToggleUI();
+    updateNotStartedToggleUI();
     document.getElementById("dayOverlay").classList.remove("hidden");
   }
   function closeDayPicker() { document.getElementById("dayOverlay").classList.add("hidden"); dpItemId = null; }
@@ -5216,6 +5305,10 @@
       else { delete it.flex; it.days = dpSel.length >= 7 ? null : dpSel.slice().sort(); }
       it.keepOnRest = dpKeepOnRest; it.muted = dpMuted;
       if (!dpFlex) { if (dpNoSug) it.noTimeSuggest = true; else delete it.noTimeSuggest; }
+      // 시작 전: 켜면 그대로 표시만 하고, 끄는 순간(켜져 있던 항목을 끔) 시작일을 오늘로 갱신해 그날부터 평가에 넣는다.
+      var wasNotStarted = !!it.notStarted;
+      if (dpNotStarted) it.notStarted = true;
+      else { delete it.notStarted; if (wasNotStarted) it.createdAt = todayKey(); }
       saveState();
     }
     closeDayPicker(); renderEditItems();
@@ -5579,7 +5672,7 @@
       var rate = dueDaysCount > 0 ? Math.round(doneCount / dueDaysCount * 100) : 0;
       html += '<div class="mini-cal-card"><div class="mini-cal-title">' + escapeHtml(it.name || "이름 없음") + '</div>' +
         '<div class="mini-cal-days">' + cellsHtml + '</div>' +
-        '<div class="mini-cal-foot"><span class="rate">' + (it.flex ? '불시' : rate + '%') + '</span><span>' + doneCount + '회</span></div></div>';
+        '<div class="mini-cal-foot"><span class="rate">' + (it.notStarted ? '시작 전' : (it.flex ? '불시' : rate + '%')) + '</span><span>' + doneCount + '회</span></div></div>';
     });
     html += '</div>';
     return html;
@@ -5686,7 +5779,10 @@
       quarterGoalPoints: state.quarterGoalPoints,
       celebratedQuarterGoals: state.celebratedQuarterGoals,
       celebratedWeeks: state.celebratedWeeks,
-      pendingRewards: state.pendingRewards
+      pendingRewards: state.pendingRewards,
+      weeklyReview: state.weeklyReview,
+      monthlyReview: state.monthlyReview,
+      reviewRecent: state.reviewRecent
     };
     document.getElementById("exportText").value = JSON.stringify(data, null, 2);
   }
@@ -5713,6 +5809,7 @@
           createdAt: (typeof it.createdAt === "string" && it.createdAt) ? it.createdAt : undefined
         };
         if (it.flex === true) normItem.flex = true;
+        if (it.notStarted === true) normItem.notStarted = true;
         if (typeof it.timeBasis === "string" && it.timeBasis) normItem.timeBasis = it.timeBasis;
         if (it.timeKept === true) normItem.timeKept = true;
         if (it.noTimeSuggest === true) normItem.noTimeSuggest = true;
@@ -5746,6 +5843,9 @@
     if (Array.isArray(parsed.celebratedWeeks)) state.celebratedWeeks = parsed.celebratedWeeks;
     if (!Array.isArray(state.pendingRewards)) state.pendingRewards = [];
     if (Array.isArray(parsed.pendingRewards)) state.pendingRewards = parsed.pendingRewards;
+    if (parsed.weeklyReview) state.weeklyReview = rvNormWeekly(parsed.weeklyReview);
+    if (parsed.monthlyReview) state.monthlyReview = rvNormMonthly(parsed.monthlyReview);
+    if (parsed.reviewRecent) state.reviewRecent = rvNormRecent(parsed.reviewRecent);
     // 예전 형식(state.rewards의 배지 보상)을 가져온 경우, 선물함(pendingRewards)으로 함께 옮겨서
     // 새 통합 화면에서도 보이게 한다.
     if (Array.isArray(state.rewards) && state.rewards.length > 0) {
@@ -5931,20 +6031,20 @@
     var html = "";
     state.categories.forEach(function (cat) {
       var due = catItemsDueOn(cat, dk).filter(function (it) { return itemExistedOn(it, dk); });
-      var list = cat.items.filter(function (it) { return itemExistedOn(it, dk) && (restDay || it.flex || due.indexOf(it) !== -1); });
+      var list = cat.items.filter(function (it) { return itemExistedOn(it, dk) && (restDay || it.flex || it.notStarted || due.indexOf(it) !== -1); });
       if (list.length === 0) return;
       var doneCount = due.filter(function (it) { return isDone(dk, it.id); }).length;
       var itemsHtml = list.map(function (it) {
         var isItemDue = due.indexOf(it) !== -1;
         var d = isDone(dk, it.id);
-        var cls = d ? ' done' : (isItemDue ? '' : ' optional' + (it.flex ? ' flex' : ''));
+        var cls = d ? ' done' : (isItemDue ? '' : ' optional' + ((it.flex || it.notStarted) ? ' flex' : ''));
         return '<div class="mini-item' + cls + '" data-action="toggle-backfill-item" data-id="' + it.id + '">' +
           '<span class="mini-dot' + cls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          (it.flex ? '<span class="mini-dur">불시</span>' : '') + '</div>';
+          (it.notStarted ? '<span class="mini-dur">시작 전</span>' : (it.flex ? '<span class="mini-dur">불시</span>' : '')) + '</div>';
       }).join("");
       html += '<div class="cat-card"><div class="cat-top"><div><div class="cat-name">' + escapeHtml(cat.name || "이름 없음") + '</div>' +
-        '<div class="cat-meta">' + (due.length ? (doneCount + '/' + due.length + ' 완료') : (restDay ? '쉬는 날 · 선택 항목' : '불시 항목')) + '</div></div></div>' +
+        '<div class="cat-meta">' + (due.length ? (doneCount + '/' + due.length + ' 완료') : (restDay ? '쉬는 날 · 선택 항목' : '불시·시작 전 항목')) + '</div></div></div>' +
         '<div class="cat-items-preview">' + itemsHtml + '</div></div>';
     });
     if (!html) html = '<div class="empty">이 날짜에 예정된 항목이 없어요.</div>';
@@ -6023,7 +6123,7 @@
         '<button data-action="backfill-cal-next-month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button></div>' +
       '<div class="mini-cal-card" style="margin-top:10px;">' +
         '<div class="mini-cal-days" style="gap:6px;">' + cellsHtml + '</div>' +
-        '<div class="mini-cal-foot" style="margin-top:10px;"><span class="rate">' + (it.flex ? '불시' : rate + '%') + '</span><span>' + doneCount + '회</span></div>' +
+        '<div class="mini-cal-foot" style="margin-top:10px;"><span class="rate">' + (it.notStarted ? '시작 전' : (it.flex ? '불시' : rate + '%')) + '</span><span>' + doneCount + '회</span></div>' +
       '</div>' +
       (bfPendingCount() > 0
         ? '<div class="bf-save-note">저장하지 않은 변경 ' + bfPendingCount() + '개 (노란 테두리)</div>' +
@@ -6053,7 +6153,10 @@
       quarterGoalPoints: state.quarterGoalPoints,
       celebratedQuarterGoals: state.celebratedQuarterGoals,
       celebratedWeeks: state.celebratedWeeks,
-      pendingRewards: state.pendingRewards
+      pendingRewards: state.pendingRewards,
+      weeklyReview: state.weeklyReview,
+      monthlyReview: state.monthlyReview,
+      reviewRecent: state.reviewRecent
     };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
@@ -6124,6 +6227,20 @@
       ["불시", "정해진 요일 없이 가끔 하는 항목이에요. 홈과 기록에서 직접 체크하고, 스트릭 · ▶ 카운트다운 · 놓친 항목에는 들어가지 않고 포인트에만 반영돼요. 시간도 지정하지 않아요."],
       ["같은 창의 다른 설정", "이 창에서 쉬는 날 유지, 타이머 종료음(무음), 시간 조정 제안 끄기도 항목마다 정해요."]
     ], see: ["keeprest", "alarm", "timesuggest"] },
+    review: { t: "주간 · 월간 리뷰", sub: "주간 · 월간 돌아보기 · 도착 시간", s: [
+      ["리뷰가 뭐예요", "지난 7일의 기록을 앱이 그 자리에서 계산해 짧게 보여줘요. 점수나 등급은 없고, 잘한 점과 다음 주에 바꿔 볼 것 하나만 알려줘요. 따로 저장하지 않아서 언제 열어도 그때 기록으로 다시 계산돼요."],
+      ["도착 시간", "서버 알림이 아니라, 정한 시간이 지난 뒤 앱을 열면 홈에 ‘이번 주 리뷰 도착’ 카드가 떠요. 눌러야만 열리고, 새 리뷰가 오면 이전 카드는 사라져요. 기본은 일요일 저녁 8시예요."],
+      ["월간 리뷰", "매월 마지막 날 저녁 8시(시각은 바꿀 수 있어요)가 지나면 도착해요. 한 달의 달성률, 하이라이트, 다음 달에 해 볼 것 하나를 보여줘요. 지난달에 기록한 날이 7일 이상이면 지난달과, 작년 같은 달에 14일 이상이면 작년 이맘때와도 비교해요."],
+      ["올해 돌아보기", "월간 리뷰를 켜 두면 12월 31일 저녁(월간 리뷰 받는 시각)부터 한 해를 돌아보는 화면이 도착해요. 달별 달성률 흐름, 가장 꾸준한 항목, 성경 여정, 새해에 해 볼 것 하나를 보여줘요. 홈 카드는 다음 해 1월 말까지 뜨고, 그 뒤에는 ‘지난 리뷰 보기’에서 열 수 있어요."],
+      ["지난 리뷰", "설정의 ‘지난 리뷰 보기’에서 주간은 최근 12주, 월간은 최근 12개월, 연간은 해마다 다시 볼 수 있어요. 지난 리뷰도 그때 기록으로 다시 계산해요."],
+      ["기록이 적을 때", "기록된 날이 3일보다 적으면 리뷰 대신 환영 메시지가 나와요."],
+      ["시작 전 항목", "항목 편집의 ‘시작 전’을 켜 두면 목록에는 보이지만 달성률 · 스트릭 · 리뷰 계산에서 빠져요. 끄는 날부터 시작한 것으로 세요."]
+    ], see: ["settings", "days"] },
+    notstarted: { t: "시작 전", sub: "아직 시작하지 않은 항목", s: [
+      ["언제 쓰나요", "해 보고 싶지만 아직 시작하지 않은 항목을 미리 넣어 둘 때 써요."],
+      ["계산에서 빠져요", "달성률 · 연속 성공 · 놓친 항목 · 리뷰에 들어가지 않아요. 홈에서는 ‘선택’처럼 보이고, 체크하면 포인트만 반영돼요."],
+      ["시작하기", "‘시작 전’을 끄면 그날이 시작일이 되고, 그날부터 기록으로 세요."]
+    ], see: ["review", "days"] },
     keeprest: { t: "쉬는 날 처리", sub: "쉬는 날에도 유지 · 자발적 체크", s: [
       ["기본 동작", "쉬는 날로 표시된 날에는 항목들이 ‘해야 할 일’에서 빠져요."],
       ["쉬는 날에도 유지", "켜 두면 그 항목은 쉬는 날에도 해야 할 항목으로 남아요. 쉬는 날에도 꼭 지키고 싶은 항목에 쓰세요."],
@@ -6200,7 +6317,7 @@
       ["스트릭 · 알람", "‘스트릭 인정 기준’과 ‘알람 소리’ 옆의 ?에서 자세한 규칙을 볼 수 있어요."],
       ["쉬는 날 · 데이터", "쉬는 날 관리와 데이터 백업·복원 화면으로 들어가요."],
       ["계정", "비밀번호를 바꾸거나 로그아웃할 수 있어요."]
-    ], see: ["streak", "alarm", "backup"] },
+    ], see: ["streak", "alarm", "review", "backup"] },
     backup: { t: "데이터 백업 · 복원", sub: "파일 · 텍스트", s: [
       ["파일로 저장", "기록 전체를 파일 하나로 내려받아 두세요. 기기를 바꾸거나 데이터가 지워졌을 때 이 파일로 복원할 수 있어요."],
       ["텍스트로", "텍스트로 복사해 두거나, 붙여넣어 가져올 수도 있어요. 텍스트는 Claude 대화에 붙여넣어 보여줄 때 편해요."],
@@ -6209,7 +6326,7 @@
   };
   var HELP_GROUPS = [
     ["화면별 안내", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
-    ["루틴 · 통계 규칙", ["colors", "streak", "days", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
+    ["루틴 · 통계 규칙", ["colors", "streak", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
     ["지인 · 데이터", ["share", "cheers", "backup"]]
   ];
@@ -6246,6 +6363,1100 @@
     document.getElementById("helpListBody").innerHTML = h;
   }
 
+  // =====================================================================================
+  // 리뷰 (19차) — 주간·월간·연간 리뷰
+  //  · 서버·AI 없이, 기존 기록(history)만으로 브라우저에서 매번 계산하는 규칙 기반 방식이다.
+  //  · 리뷰 "내용"은 저장하지 않는다. 저장하는 건 설정(state.weeklyReview / monthlyReview)과,
+  //    반복을 피하려고 남기는 "최근 2회분에 쓴 문구 id"(state.reviewRecent)뿐이다.
+  //  · 문구 데이터는 review-data.js(REVIEW_DATA), 어떤 문구를 고를지는 여기서 정한다.
+  //  · 정시 푸시는 서버가 없어 못 한다 → 정해진 시각 이후 앱을 열면(또는 열어 둔 채 그 시각이 지나면)
+  //    홈에 "리뷰 도착" 카드+뱃지가 뜨고, 탭하면 열린다. 강제 팝업 없음.
+  //  · 계산 규칙(주의): 오늘이 기간에 들어가면, 오늘 아직 못 한 항목은 "놓친 것"으로 세지 않는다
+  //    (하루가 끝나기 전이라 진행 중이므로 — 달성률·연속 결석·놓친 목록 모두 같은 규칙).
+  // =====================================================================================
+  var RV_DOW = ["일", "월", "화", "수", "목", "금", "토"];
+
+  function rvReady() { return typeof REVIEW_DATA !== "undefined" && !!REVIEW_DATA && !!REVIEW_DATA.weekly; }
+
+  // ---- 설정 값 (state.weeklyReview / monthlyReview / reviewRecent) ----
+  function rvDefaultWeekly() { return { enabled: true, day: 0, time: "20:00", lastSeenKey: null }; }
+  function rvDefaultMonthly() { return { enabled: true, time: "20:00", lastSeenKey: null, yearSeenKey: null }; }
+  function rvValidTime(t) { return typeof t === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(t); }
+  function rvNormWeekly(o) {
+    o = (o && typeof o === "object") ? o : {};
+    return {
+      enabled: o.enabled !== false,
+      day: (typeof o.day === "number" && o.day >= 0 && o.day <= 6 && Math.floor(o.day) === o.day) ? o.day : 0,
+      time: rvValidTime(o.time) ? o.time : "20:00",
+      lastSeenKey: typeof o.lastSeenKey === "string" ? o.lastSeenKey : null
+    };
+  }
+  function rvNormMonthly(o) {
+    o = (o && typeof o === "object") ? o : {};
+    return {
+      enabled: o.enabled !== false,
+      time: rvValidTime(o.time) ? o.time : "20:00",
+      lastSeenKey: typeof o.lastSeenKey === "string" ? o.lastSeenKey : null,
+      yearSeenKey: typeof o.yearSeenKey === "string" ? o.yearSeenKey : null
+    };
+  }
+  // reviewRecent[종류] = 최근 리뷰 최대 2개: [{ key, ids: { oneLine, trend, good:[...], cheer, expert } }] (최신이 앞)
+  function rvNormRecent(o) {
+    o = (o && typeof o === "object") ? o : {};
+    var out = {};
+    ["weekly", "monthly", "yearly"].forEach(function (k) {
+      out[k] = Array.isArray(o[k]) ? o[k].filter(function (e) {
+        return e && typeof e.key === "string" && e.ids && typeof e.ids === "object";
+      }).slice(0, 2) : [];
+    });
+    return out;
+  }
+
+  // ---- 날짜·시각 도우미 ----
+  function rvTimeParts(t) {
+    var m = /^(\d{2}):(\d{2})$/.exec(t || "");
+    return m ? { h: parseInt(m[1], 10), m: parseInt(m[2], 10) } : { h: 20, m: 0 };
+  }
+  // 정오 이후에 받는 시각(저녁)이면 기간이 "오늘까지", 오전(아침)이면 "어제까지"
+  function rvCoversToday(t) { return rvTimeParts(t).h >= 12; }
+  function rvAddDays(dk, n) { var d = parseKeyToDate(dk); d.setDate(d.getDate() + n); return keyFor(d); }
+  function rvDayDiff(a, b) { return Math.round((parseKeyToDate(b) - parseKeyToDate(a)) / 86400000); }
+  function rvTimeLabel(t) {
+    var p = rvTimeParts(t), h = p.h;
+    var part = h < 5 ? "새벽" : h < 9 ? "아침" : h < 12 ? "오전" : h < 17 ? "오후" : h < 21 ? "저녁" : "밤";
+    var h12 = h % 12 === 0 ? 12 : h % 12;
+    return part + " " + h12 + "시" + (p.m ? " " + p.m + "분" : "");
+  }
+  function rvMD(dk) { var p = dk.split("-"); return parseInt(p[1], 10) + "/" + parseInt(p[2], 10); }
+  function rvMDW(dk) { return rvMD(dk) + "(" + RV_DOW[parseKeyToDate(dk).getDay()] + ")"; }
+  function rvRate(done, due) {
+    if (!due) return null;
+    var r = Math.round(done / due * 100);
+    if (done < due && r >= 100) r = 99;   // 하나라도 놓쳤으면 100%로 보이지 않게
+    return r;
+  }
+
+  // ---- 받는 시점 → "최신 리뷰 키" ----
+  // 주간: 키 = 받는 날의 날짜("YYYY-MM-DD"). 받는 요일+시각이 이미 지났으면 그 날짜가 최신.
+  function rvWeeklyLatestKey(now) {
+    var cfg = state.weeklyReview;
+    if (!cfg || !cfg.enabled) return null;
+    var tp = rvTimeParts(cfg.time), today = keyFor(now);
+    for (var i = 0; i <= 7; i++) {
+      var dk = rvAddDays(today, -i);
+      if (parseKeyToDate(dk).getDay() !== cfg.day) continue;
+      var at = parseKeyToDate(dk); at.setHours(tp.h, tp.m, 0, 0);
+      if (at <= now) return dk;
+    }
+    return null;
+  }
+  function rvWeeklyPeriod(key) {
+    var cfg = state.weeklyReview;
+    var E = rvCoversToday(cfg.time) ? key : rvAddDays(key, -1);
+    var S = rvAddDays(E, -6);
+    return { key: key, S: S, E: E, pS: rvAddDays(S, -7), pE: rvAddDays(S, -1) };
+  }
+  // 다음 주간 리뷰가 도착할 시각(설정을 바꿨을 때 안내용)
+  function rvNextWeeklyLabel(now) {
+    var cfg = state.weeklyReview, tp = rvTimeParts(cfg.time), today = keyFor(now);
+    for (var i = 0; i <= 7; i++) {
+      var dk = rvAddDays(today, i);
+      if (parseKeyToDate(dk).getDay() !== cfg.day) continue;
+      var at = parseKeyToDate(dk); at.setHours(tp.h, tp.m, 0, 0);
+      if (at > now) return rvMDW(dk) + " " + rvTimeLabel(cfg.time);
+    }
+    return "";
+  }
+
+  // ---- 한 기간의 기록을 모아 계산 ----
+  function rvCollect(S, E) {
+    var today = todayKey(), flat = allItemsFlat();
+    var r = { S: S, E: E, due: 0, done: 0, countedDays: 0, recordedDays: 0, restDays: 0, days: [], items: {}, cats: {} };
+    flat.forEach(function (p) {
+      r.items[p.item.id] = { item: p.item, cat: p.cat, due: 0, done: 0, dueDates: [], missDates: [] };
+      if (!r.cats[p.cat.id]) r.cats[p.cat.id] = { cat: p.cat, due: 0, done: 0 };
+    });
+    var dk = S, guard = 0;
+    while (dk <= E && guard++ < 400) {
+      var dDue = 0, dDone = 0;
+      flat.forEach(function (p) {
+        var it = p.item;
+        if (!isDueForDate(it, dk)) return;          // 시작 전·불시·쉬는 날·시작일 이전은 여기서 이미 빠진다
+        var done = isDone(dk, it.id);
+        if (dk === today && !done) return;          // 오늘은 아직 끝나지 않은 날
+        var rec = r.items[it.id];
+        rec.due++; rec.dueDates.push(dk);
+        if (done) rec.done++; else rec.missDates.push(dk);
+        r.cats[p.cat.id].due++;
+        if (done) r.cats[p.cat.id].done++;
+        dDue++; if (done) dDone++;
+      });
+      var e = state.history[dk];
+      if (e && Array.isArray(e.completed) && e.completed.length) r.recordedDays++;
+      if (isRestDay(dk)) r.restDays++;
+      if (dDue > 0) r.countedDays++;
+      r.due += dDue; r.done += dDone;
+      r.days.push({ dk: dk, due: dDue, done: dDone });
+      dk = rvAddDays(dk, 1);
+    }
+    return r;
+  }
+  // 전체 기록에서 "뭔가 체크한 날"의 수 — 3일 미만이면 리뷰 대신 환영 메시지
+  function rvTotalRecordedDays() {
+    var n = 0;
+    Object.keys(state.history).forEach(function (dk) {
+      var e = state.history[dk];
+      if (e && Array.isArray(e.completed) && e.completed.length) n++;
+    });
+    return n;
+  }
+  function rvIsDailyish(it) { return !it.days || it.days.length === 0 || it.days.length >= 5; }
+  // 항목 하나의 "예정일 기준 연속 완료" 횟수 (E까지 거슬러). 오늘 미완료는 진행 중이라 건너뛴다.
+  function rvItemStreakAt(it, E) {
+    if (it.notStarted || it.flex) return 0;
+    var n = 0, dk = E, today = todayKey(), guard = 0;
+    while (guard++ < 800) {
+      if (it.createdAt && dk < it.createdAt) break;
+      if (isDueForDate(it, dk)) {
+        if (isDone(dk, it.id)) n++;
+        else if (dk !== today) break;
+      }
+      dk = rvAddDays(dk, -1);
+    }
+    return n;
+  }
+  function rvStreakText(it, n) {
+    if (rvIsDailyish(it)) {
+      var ms = [365, 300, 200, 150, 100, 60, 50, 30, 21, 14, 10, 7], m = null;
+      for (var i = 0; i < ms.length; i++) if (n >= ms[i]) { m = ms[i]; break; }
+      return m ? (m + "일 넘게") : (n + "번 연속");
+    }
+    return n + "번 연속";
+  }
+  // 예정일 기준 "2번 이상 연속 쉰" 항목. 기간 앞 3주까지 거슬러 봐서, 주 1회 항목도 이어서 셀 수 있다.
+  // trailing = 기간 끝 시점에도 아직 이어지는 중(최근 예정 2번이 연속으로 비었음)
+  function rvMissRuns(S, E) {
+    var today = todayKey(), out = [], from = rvAddDays(S, -21);
+    allItemsFlat().forEach(function (p) {
+      var it = p.item;
+      if (it.notStarted || it.flex) return;
+      var run = 0, best = 0, bestEnd = null, dk = from;
+      while (dk <= E) {
+        if (isDueForDate(it, dk)) {
+          var done = isDone(dk, it.id);
+          if (done) run = 0;
+          else if (dk !== today) {
+            run++;
+            if (dk >= S && run >= 2 && run > best) { best = run; bestEnd = dk; }
+          }
+        }
+        dk = rvAddDays(dk, 1);
+      }
+      if (best >= 2) out.push({ item: it, cat: p.cat, run: best, end: bestEnd, trailing: run >= 2 });
+    });
+    out.sort(function (a, b) {
+      if (a.trailing !== b.trailing) return a.trailing ? -1 : 1;
+      if (a.run !== b.run) return b.run - a.run;
+      return (a.item.name || "") < (b.item.name || "") ? -1 : 1;
+    });
+    return out;
+  }
+  // 기록 처음부터 E까지 훑어서 (1) E 시점의 연속 성공일 (2) [S,E] 안에서 새로 넘긴 배지를 구한다
+  function rvScanStreak(S, E) {
+    var out = { run: 0, badges: [] };
+    var keys = Object.keys(state.history).sort();
+    if (!keys.length) return out;
+    var start = keys[0];
+    if (rvDayDiff(start, E) > 1500) start = rvAddDays(E, -1500);
+    var today = todayKey(), run = 0, dk = start, guard = 0;
+    while (dk <= E && guard++ < 2000) {
+      var s = overallStreakStatus(dk);
+      if (dk === today && s === false) s = null;   // 오늘은 아직 진행 중
+      if (s === true) {
+        run++;
+        if (dk >= S) BADGE_THRESHOLDS.forEach(function (b) { if (b.days === run) out.badges.push(b); });
+      } else if (s === false) run = 0;
+      dk = rvAddDays(dk, 1);
+    }
+    out.run = run;
+    return out;
+  }
+
+  function rvItemName(it) { return (it.name || "").trim() || "이름 없음"; }
+  function rvNameList(recs, max) {
+    var names = recs.slice(0, max).map(function (r) { return rvItemName(r.item); });
+    var s = names.join("·");
+    if (recs.length > max) s += " 외 " + (recs.length - max) + "개";
+    return s;
+  }
+  function rvMissedList(cur) {
+    var list = [];
+    Object.keys(cur.items).forEach(function (id) {
+      var r = cur.items[id];
+      if (r.missDates.length > 0) list.push({ item: r.item, count: r.missDates.length });
+    });
+    list.sort(function (a, b) { return b.count - a.count || (rvItemName(a.item) < rvItemName(b.item) ? -1 : 1); });
+    return list;
+  }
+  function rvMissedText(list) {
+    if (!list.length) return "";
+    var s = list.slice(0, 2).map(function (x) { return rvItemName(x.item) + " " + x.count + "번"; }).join(", ");
+    if (list.length > 2) s += " 외 " + (list.length - 2) + "개";
+    return s;
+  }
+  function rvNotStartedItems() {
+    var out = [];
+    state.categories.forEach(function (c) {
+      c.items.forEach(function (it) { if (it.notStarted && (it.name || "").trim()) out.push({ item: it, cat: c }); });
+    });
+    return out;
+  }
+
+  // ---- 주간 리뷰 모델(지표) ----
+  function rvBuildWeekly(key) {
+    var per = rvWeeklyPeriod(key);
+    var cur = rvCollect(per.S, per.E), prev = rvCollect(per.pS, per.pE);
+    var m = { type: "weekly", key: key, S: per.S, E: per.E, cur: cur, prev: prev };
+    m.welcome = rvTotalRecordedDays() < 3;
+    m.rate = rvRate(cur.done, cur.due);
+    m.prevRate = (prev.countedDays >= 3) ? rvRate(prev.done, prev.due) : null;
+    m.delta = (m.rate !== null && m.prevRate !== null) ? (m.rate - m.prevRate) : null;
+    m.trend = m.delta === null ? null : (m.delta >= 5 ? "up" : (m.delta <= -5 ? "down" : "flat"));
+    m.missCount = cur.due - cur.done;
+    m.missed = rvMissedList(cur);
+    m.missRuns = rvMissRuns(per.S, per.E);
+    m.trailing = m.missRuns.filter(function (r) { return r.trailing; })[0] || null;
+    m.notStartedItems = rvNotStartedItems();
+    var scan = rvScanStreak(per.S, per.E);
+    m.streakRun = scan.run;
+    m.newBadges = scan.badges;
+
+    var ids = Object.keys(cur.items).map(function (id) { return cur.items[id]; });
+    // 이번 주 한 번도 안 빠진 항목(예정 3회 이상)
+    m.perfect = ids.filter(function (r) { return r.dueDates.length >= 3 && r.missDates.length === 0; });
+    // 가장 긴 개별 연속(매일형 10회↑, 그 외 5회↑)
+    var sb = null;
+    state.categories.forEach(function (c) {
+      c.items.forEach(function (it) {
+        if (it.notStarted || it.flex) return;
+        var n = rvItemStreakAt(it, per.E);
+        if (n >= (rvIsDailyish(it) ? 10 : 5) && (!sb || n > sb.n)) sb = { item: it, n: n, text: rvStreakText(it, n) };
+      });
+    });
+    m.streakBest = sb;
+    // 이번 주에 새로 시작한 항목(기간 안에 시작일이 있고 실제로 한 번 이상 체크)
+    m.newItem = null;
+    ids.forEach(function (r) {
+      var it = r.item;
+      if (m.newItem || it.notStarted || !(it.name || "").trim()) return;
+      if (it.createdAt && it.createdAt >= per.S && it.createdAt <= per.E && r.done > 0) m.newItem = r;
+    });
+    // 지난주보다 눈에 띄게 오른 항목(양쪽 예정 3회 이상, 20%p 이상)
+    var ru = null;
+    ids.forEach(function (r) {
+      var p0 = prev.items[r.item.id];
+      if (!p0 || r.due < 3 || p0.due < 3) return;
+      var a = rvRate(r.done, r.due), b = rvRate(p0.done, p0.due), d = a - b;
+      if (d >= 20 && (!ru || d > ru.d)) ru = { r: r, from: b, to: a, d: d };
+    });
+    m.rateUp = ru;
+    // 가장 잘 챙긴 항목(예정 3회 이상, 80% 이상)
+    var bi = null;
+    ids.forEach(function (r) {
+      if (r.due < 3) return;
+      var a = rvRate(r.done, r.due);
+      if (a >= 80 && (!bi || a > bi.rate || (a === bi.rate && r.due > bi.r.due))) bi = { r: r, rate: a };
+    });
+    m.bestItem = bi;
+    m.cheerKey = m.trailing ? "streakMiss" : (m.notStartedItems.length ? "notStarted" : (m.trend === "down" ? "down" : (m.trend === "up" ? "up" : "base")));
+    return m;
+  }
+  function rvTopBadge(list) { return list.reduce(function (a, b) { return b.days > a.days ? b : a; }, list[0]); }
+  function rvGoodCandidates(m) {
+    var c = [];
+    if (m.newBadges.length) c.push({ pool: "badge", vars: { badge: rvTopBadge(m.newBadges).label } });
+    if (m.streakBest) c.push({ pool: "streakItem", vars: { item: rvItemName(m.streakBest.item), streakText: m.streakBest.text } });
+    if (m.perfect.length) c.push({ pool: "perfectItems", vars: { items: rvNameList(m.perfect, 3) } });
+    if (m.newItem) c.push({ pool: "newItem", vars: { item: rvItemName(m.newItem.item) } });
+    if (m.rateUp) c.push({ pool: "rateUp", vars: { item: rvItemName(m.rateUp.r.item), from: m.rateUp.from, to: m.rateUp.to } });
+    if (m.bestItem) c.push({ pool: "bestItem", vars: { item: rvItemName(m.bestItem.r.item), rate: m.bestItem.rate } });
+    if (!c.length && m.rate !== null) c.push({ pool: "any", vars: {} });
+    return c;
+  }
+
+  // ---- 문구 고르기(조건에 맞는 풀에서, 최근 2회에 쓴 문구는 제외, 같은 리뷰는 항상 같은 문구) ----
+  function rvHash(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+  function rvJosa(word, pair) {
+    var parts = pair.split("/"), a = parts[0], b = parts[1];
+    var w = word.replace(/\([^)]*\)\s*$/, "").replace(/[\s.,!?~…]+$/, "");
+    var code = w.charCodeAt(w.length - 1);
+    if (!(code >= 0xAC00 && code <= 0xD7A3)) return a + "(" + b + ")";   // 한글로 끝나지 않으면 "이(가)" 꼴
+    var jong = (code - 0xAC00) % 28;
+    if (a === "으로") return (jong === 0 || jong === 8) ? b : a;
+    return jong === 0 ? b : a;
+  }
+  function rvFill(t, vars) {
+    return t.replace(/\{(\w+)(?::([^}]+))?\}/g, function (m0, name, josa) {
+      var v = vars[name];
+      if (v === undefined || v === null) return "";
+      v = String(v);
+      return josa ? (v + rvJosa(v, josa)) : v;
+    });
+  }
+  function rvVarsOk(p, vars) {
+    return !p.need || p.need.every(function (k) { return vars[k] !== undefined && vars[k] !== null && vars[k] !== ""; });
+  }
+  function rvPickPhrase(pool, seed, avoidIds, preferId, vars) {
+    var cands = (pool || []).filter(function (p) { return rvVarsOk(p, vars); });
+    if (!cands.length) return null;
+    if (preferId) {
+      var pf = cands.filter(function (p) { return p.id === preferId; })[0];
+      if (pf) return pf;
+    }
+    var fresh = cands.filter(function (p) { return avoidIds.indexOf(p.id) === -1; });
+    var use = fresh.length ? fresh : cands;
+    return use[rvHash(seed) % use.length];
+  }
+  // 이 리뷰 키가 아닌 "최근 리뷰"들이 쓴 문구 id를 슬롯별로 모은다
+  function rvAvoidFor(type, key) {
+    var avoid = { oneLine: [], trend: [], ly: [], good: [], cheer: [], expert: [] };
+    ((state.reviewRecent && state.reviewRecent[type]) || []).forEach(function (e) {
+      if (e.key === key) return;
+      Object.keys(avoid).forEach(function (slot) { if (e.ids[slot]) avoid[slot] = avoid[slot].concat(e.ids[slot]); });
+    });
+    return avoid;
+  }
+  function rvStoredIds(type, key) {
+    var e = ((state.reviewRecent && state.reviewRecent[type]) || []).filter(function (x) { return x.key === key; })[0];
+    return e ? e.ids : {};
+  }
+  function rvPickExpert(condKey, seed, avoid, preferId) {
+    var conds = (REVIEW_DATA.expertFor && REVIEW_DATA.expertFor[condKey]) || ["steady"];
+    var pool = [];
+    // 조건이 여럿이면 시드로 하나를 정하되, 그 조건 풀이 비어 있으면 다음 후보로 넘어간다
+    var start = rvHash(seed + "|cond") % conds.length;
+    for (var i = 0; i < conds.length && !pool.length; i++) pool = REVIEW_DATA.expert[conds[(start + i) % conds.length]] || [];
+    if (preferId) {
+      var all = [];
+      conds.forEach(function (c) { all = all.concat(REVIEW_DATA.expert[c] || []); });
+      var pf = all.filter(function (p) { return p.id === preferId; })[0];
+      if (pf) return pf;
+    }
+    var fresh = pool.filter(function (p) { return avoid.indexOf(p.id) === -1; });
+    var use = fresh.length ? fresh : pool;
+    return use.length ? use[rvHash(seed + "|exp") % use.length] : null;
+  }
+
+  // ---- 주간 리뷰 화면 만들기 ----
+  function rvComposeWeekly(m) {
+    var D = REVIEW_DATA.weekly;
+    var period = rvMDW(m.S) + " ~ " + rvMDW(m.E);
+    if (m.welcome) {
+      var wl = rvPickPhrase(REVIEW_DATA.welcome, m.key + "|welcome", [], (rvStoredIds("weekly", m.key) || {}).oneLine, {});
+      return {
+        title: "주간 리뷰",
+        html: '<div class="rv-period">' + escapeHtml(period) + '</div><div class="rv-block"><div class="rv-line">' +
+          escapeHtml(wl ? wl.t : "") + '</div></div>',
+        ids: wl ? { oneLine: wl.id } : {}
+      };
+    }
+    var sids = rvStoredIds("weekly", m.key), avoid = rvAvoidFor("weekly", m.key), ids = {};
+    var band = m.rate === null ? "empty" : (m.missCount === 0 ? "perfect" : (m.rate >= 90 ? "high" : (m.rate >= 75 ? "good" : (m.rate >= 50 ? "mid" : "low"))));
+    var lv = { rate: m.rate, missed: rvMissedText(m.missed), prev: m.prevRate, delta: m.delta === null ? "" : Math.abs(m.delta) };
+
+    // 1) 이번 주 한 줄 (+ 지난주 대비 한 문장)
+    var ol = rvPickPhrase(D.oneLine[band], m.key + "|oneLine", avoid.oneLine, sids.oneLine, lv);
+    var line = ol ? rvFill(ol.t, lv) : "";
+    if (ol) ids.oneLine = ol.id;
+    if (m.trend && band !== "empty") {
+      var tr = rvPickPhrase(D.trend[m.trend], m.key + "|trend", avoid.trend, sids.trend, lv);
+      if (tr) { line += " " + rvFill(tr.t, lv); ids.trend = tr.id; }
+    }
+
+    // 2) 잘하고 있어요 (최대 2줄)
+    var goods = [], gids = [];
+    rvGoodCandidates(m).forEach(function (c) {
+      if (goods.length >= 2) return;
+      var pool = D.good[c.pool] || [];
+      var prefer = (sids.good || []).filter(function (id) { return pool.some(function (p) { return p.id === id; }); })[0];
+      var ph = rvPickPhrase(pool, m.key + "|good|" + c.pool, avoid.good, prefer, c.vars);
+      if (ph) { goods.push(rvFill(ph.t, c.vars)); gids.push(ph.id); }
+    });
+    if (gids.length) ids.good = gids;
+
+    // 3) 응원 한마디 (다음 주에 하나만 바꿔 본다면… 제안 포함)
+    var cv = {};
+    if (m.cheerKey === "streakMiss") cv.item = rvItemName(m.trailing.item);
+    if (m.cheerKey === "notStarted") {
+      var nsi = m.notStartedItems[rvHash(m.key + "|nsitem") % m.notStartedItems.length];
+      cv.item = rvItemName(nsi.item);
+    }
+    var ch = rvPickPhrase(D.cheer[m.cheerKey], m.key + "|cheer", avoid.cheer, sids.cheer, cv);
+    if (ch) ids.cheer = ch.id;
+
+    // 4) 전문가 한마디 (출처 표기)
+    var ex = rvPickExpert(m.cheerKey, m.key, avoid.expert, sids.expert);
+    if (ex) ids.expert = ex.id;
+
+    var h = '<div class="rv-period">' + escapeHtml(period) + '</div>';
+    h += '<div class="rv-block"><div class="rv-h">이번 주 한 줄</div><div class="rv-line">' + escapeHtml(line) + '</div></div>';
+    if (goods.length) {
+      h += '<div class="rv-block"><div class="rv-h">잘하고 있어요</div><ul>' +
+        goods.map(function (g) { return '<li>' + escapeHtml(g) + '</li>'; }).join("") + '</ul></div>';
+    }
+    if (ch) h += '<div class="rv-block"><div class="rv-h">응원 한마디</div><p>' + escapeHtml(rvFill(ch.t, cv)) + '</p></div>';
+    if (ex) {
+      h += '<div class="rv-block rv-expert"><div class="rv-h">전문가 한마디</div><p>' + escapeHtml(ex.t) + '</p>' +
+        '<div class="rv-src">' + escapeHtml(ex.src) + '</div></div>';
+    }
+    h += rvDetailWeeklyHtml(m);
+    return { title: "주간 리뷰", html: h, ids: ids };
+  }
+
+  // [자세히 보기]: 요일별 · 시간대(카테고리)별 달성률, 2번 연속 쉰 항목, 시작 전 항목
+  function rvDetailWeeklyHtml(m) {
+    var h = '<details class="rv-more"><summary>자세히 보기</summary><div class="rv-more-body">';
+    h += '<div class="rv-sub">요일별 달성률</div><div class="rv-days">' + m.cur.days.map(function (d) {
+      var pct = d.due ? rvRate(d.done, d.due) : null;
+      return '<div class="rv-day"><div class="rv-day-bar"><div class="rv-day-fill" style="height:' + (pct === null ? 0 : pct) + '%"></div></div>' +
+        '<div class="rv-day-pct">' + (pct === null ? '–' : pct + '%') + '</div>' +
+        '<div class="rv-day-lab">' + RV_DOW[parseKeyToDate(d.dk).getDay()] + '</div></div>';
+    }).join("") + '</div>';
+    var cats = Object.keys(m.cur.cats).map(function (k) { return m.cur.cats[k]; }).filter(function (c) { return c.due > 0; });
+    h += '<div class="rv-sub">시간대별 달성률</div>';
+    h += cats.length ? cats.map(function (c) {
+      return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(c.cat.name || "이름 없음") + '</span>' +
+        '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + rvRate(c.done, c.due) + '%"></span></span>' +
+        '<span class="rv-catnum">' + c.done + '/' + c.due + '</span></div>';
+    }).join("") : '<div class="rv-none">이번 주는 예정된 항목이 없었어요.</div>';
+    h += '<div class="rv-sub">이어서 2번 이상 쉰 항목</div>';
+    h += m.missRuns.length ? m.missRuns.map(function (r) {
+      return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(rvItemName(r.item)) + '</span>' +
+        '<span class="rv-catnum" style="width:auto;">' + r.run + '번 연속 · 마지막 ' + rvMD(r.end) + '</span></div>';
+    }).join("") : '<div class="rv-none">없어요 — 잘 이어 갔어요 🙂</div>';
+    if (m.notStartedItems.length) {
+      h += '<div class="rv-sub">시작 전 항목</div>' + m.notStartedItems.map(function (x) {
+        return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(rvItemName(x.item)) + '</span><span class="rv-catnum" style="width:auto;">시작 전</span></div>';
+      }).join("");
+    }
+    h += '<div class="rv-foot">시작 전·불시 항목, 쉬는 날은 달성률에서 빠져요. 오늘이 기간에 들어 있으면 오늘 아직 못 한 항목은 세지 않아요.</div>';
+    h += '</div></details>';
+    return h;
+  }
+
+  // ================= 월간 리뷰 =================
+  // 키 = 리뷰 대상 달("YYYY-MM"). 받는 시각 = 그 달의 마지막 날 + 설정 시각(기본 20:00).
+  function rvMonthKey(y, m0) { return y + "-" + pad(m0 + 1); }
+  function rvMonthParse(key) { var p = key.split("-"); return { y: parseInt(p[0], 10), m0: parseInt(p[1], 10) - 1 }; }
+  function rvLastDayOf(y, m0) { return keyFor(new Date(y, m0 + 1, 0)); }
+  function rvMonthLatestKey(now) {
+    var cfg = state.monthlyReview;
+    if (!cfg || !cfg.enabled) return null;
+    var tp = rvTimeParts(cfg.time);
+    for (var i = 0; i <= 2; i++) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      var at = new Date(d.getFullYear(), d.getMonth() + 1, 0, tp.h, tp.m, 0, 0);
+      if (at <= now) return rvMonthKey(d.getFullYear(), d.getMonth());
+    }
+    return null;
+  }
+  function rvMonthPeriod(key) {
+    var k = rvMonthParse(key), cfg = state.monthlyReview;
+    var S = key + "-01", L = rvLastDayOf(k.y, k.m0);
+    var E = rvCoversToday(cfg.time) ? L : rvAddDays(L, -1);
+    var pd = new Date(k.y, k.m0 - 1, 1);
+    return {
+      key: key, S: S, E: E, month: k.m0 + 1, year: k.y,
+      pS: keyFor(pd), pE: rvLastDayOf(pd.getFullYear(), pd.getMonth()),
+      lyS: (k.y - 1) + "-" + pad(k.m0 + 1) + "-01", lyE: rvLastDayOf(k.y - 1, k.m0)
+    };
+  }
+  function rvNextMonthlyLabel(now) {
+    var cfg = state.monthlyReview, tp = rvTimeParts(cfg.time);
+    for (var i = 0; i <= 2; i++) {
+      var d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      var at = new Date(d.getFullYear(), d.getMonth() + 1, 0, tp.h, tp.m, 0, 0);
+      if (at > now) return rvMDW(keyFor(at)) + " " + rvTimeLabel(cfg.time);
+    }
+    return "";
+  }
+  // dk "이전" 날들의 누적 포인트(computeGamification과 같은 계산 + 보너스). 성경 여정 위치를 특정 날짜 기준으로 구할 때 쓴다.
+  function rvPointsBefore(dk) {
+    var pts = 0;
+    Object.keys(state.history).forEach(function (k) {
+      if (k >= dk) return;
+      var entry = state.history[k], completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
+      pts += completed.length;
+      state.categories.forEach(function (cat) {
+        var due = catItemsDueOn(cat, k);
+        if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) pts += 3;
+      });
+    });
+    return pts + (state.bonusPoints || 0);
+  }
+  function rvBibleFor(S, E) {
+    try {
+      var p0 = rvPointsBefore(S), p1 = rvPointsBefore(rvAddDays(E, 1));
+      var gain = p1 - p0 - 0;
+      if (gain <= 0) return null;
+      var g0 = computeGrowth(p0), g1 = computeGrowth(p1);
+      return {
+        gain: gain, book: g1.book.name, from: g0.book.name, to: g1.book.name,
+        moved: g0.book.id !== g1.book.id || g1.gen > g0.gen, pct: bibleProgress(p1).text
+      };
+    } catch (err) { return null; }
+  }
+
+  function rvBuildMonthly(key) {
+    var per = rvMonthPeriod(key);
+    var cur = rvCollect(per.S, per.E), prev = rvCollect(per.pS, per.pE), ly = rvCollect(per.lyS, per.lyE);
+    var m = { type: "monthly", key: key, S: per.S, E: per.E, month: per.month, cur: cur, prev: prev, ly: ly };
+    m.welcome = rvTotalRecordedDays() < 3;
+    m.rate = rvRate(cur.done, cur.due);
+    m.missCount = cur.due - cur.done;
+    // 지난달과 비교: 지난달에 기록한 날이 7일 이상일 때만
+    m.prevRate = (prev.recordedDays >= 7) ? rvRate(prev.done, prev.due) : null;
+    m.delta = (m.rate !== null && m.prevRate !== null) ? (m.rate - m.prevRate) : null;
+    m.trend = m.delta === null ? null : (m.delta >= 5 ? "up" : (m.delta <= -5 ? "down" : "flat"));
+    // 작년 이맘때와 비교: 작년 같은 달에 기록한 날이 14일 이상일 때만
+    m.lyRate = (ly.recordedDays >= 14) ? rvRate(ly.done, ly.due) : null;
+    m.lyDelta = (m.rate !== null && m.lyRate !== null) ? (m.rate - m.lyRate) : null;
+    m.lyTrend = m.lyDelta === null ? null : (m.lyDelta >= 5 ? "up" : (m.lyDelta <= -5 ? "down" : "flat"));
+
+    var recs = Object.keys(cur.items).map(function (id) { return cur.items[id]; });
+    var best = null, low = null, imp = null, nw = null;
+    recs.forEach(function (r) {
+      var it = r.item;
+      if ((it.name || "").trim() === "") return;
+      if (r.due >= 4) {
+        var a = rvRate(r.done, r.due);
+        if (a >= 80 && (!best || a > best.rate || (a === best.rate && r.due > best.r.due))) best = { r: r, rate: a };
+        if (a < 60 && (!low || a < low.rate || (a === low.rate && r.due > low.r.due))) low = { r: r, rate: a };
+        var p0 = prev.items[it.id];
+        if (m.prevRate !== null && p0 && p0.due >= 4) {
+          var d = a - rvRate(p0.done, p0.due);
+          if (d >= 15 && (!imp || d > imp.d)) imp = { r: r, from: rvRate(p0.done, p0.due), to: a, d: d };
+        }
+      }
+      if (!nw && !it.notStarted && it.createdAt && it.createdAt >= per.S && it.createdAt <= per.E && r.done >= 3) nw = r;
+    });
+    m.consistent = best; m.lowItem = low; m.improved = imp; m.newItem = nw;
+    var sb = null;
+    state.categories.forEach(function (c) {
+      c.items.forEach(function (it) {
+        if (it.notStarted || it.flex) return;
+        var n = rvItemStreakAt(it, per.E);
+        if (n >= (rvIsDailyish(it) ? 10 : 5) && (!sb || n > sb.n)) sb = { item: it, n: n, text: rvStreakText(it, n) };
+      });
+    });
+    m.streakBest = sb;
+    var scan = rvScanStreak(per.S, per.E);
+    m.newBadges = scan.badges;
+    m.notStartedItems = rvNotStartedItems();
+    m.bible = rvBibleFor(per.S, per.E);
+    m.nextKey = m.lowItem ? "lowItem" : (m.notStartedItems.length ? "notStarted" : (m.trend === "down" ? "down" : "base"));
+    return m;
+  }
+
+  function rvComposeMonthly(m) {
+    var D = REVIEW_DATA.monthly;
+    var period = m.month + "월 · " + rvMD(m.S) + " ~ " + rvMD(m.E);
+    if (m.welcome) {
+      var wl = rvPickPhrase(REVIEW_DATA.welcome, m.key + "|welcome", [], (rvStoredIds("monthly", m.key) || {}).oneLine, {});
+      return {
+        title: "월간 리뷰",
+        html: '<div class="rv-period">' + escapeHtml(period) + '</div><div class="rv-block"><div class="rv-line">' +
+          escapeHtml(wl ? wl.t : "") + '</div></div>',
+        ids: wl ? { oneLine: wl.id } : {}
+      };
+    }
+    var sids = rvStoredIds("monthly", m.key), avoid = rvAvoidFor("monthly", m.key), ids = {};
+    var band = m.rate === null ? "empty" : (m.missCount === 0 ? "perfect" : (m.rate >= 90 ? "high" : (m.rate >= 75 ? "good" : (m.rate >= 50 ? "mid" : "low"))));
+    var lv = { rate: m.rate, prev: m.prevRate, delta: m.delta === null ? "" : Math.abs(m.delta), ly: m.lyRate };
+
+    // 1) 이번 달 한 줄 (+ 지난달과 비교)
+    var ol = rvPickPhrase(D.oneLine[band], m.key + "|oneLine", avoid.oneLine, sids.oneLine, lv);
+    var line = ol ? rvFill(ol.t, lv) : "";
+    if (ol) ids.oneLine = ol.id;
+    if (m.trend && band !== "empty") {
+      var tr = rvPickPhrase(D.trend[m.trend], m.key + "|trend", avoid.trend, sids.trend, lv);
+      if (tr) { line += " " + rvFill(tr.t, lv); ids.trend = tr.id; }
+    }
+    var lyHtml = "";
+    if (m.lyTrend && band !== "empty") {
+      var lvy = { rate: m.rate, ly: m.lyRate, delta: Math.abs(m.lyDelta) };
+      var lp = rvPickPhrase(D.lastYear[m.lyTrend], m.key + "|ly", avoid.ly, sids.ly, lvy);
+      if (lp) { lyHtml = '<div class="rv-ly"><span class="rv-ly-tag">작년 이맘때와 비교</span>' + escapeHtml(rvFill(lp.t, lvy)) + '</div>'; ids.ly = lp.id; }
+    }
+
+    // 2) 이번 달 하이라이트 (항목 관련 최대 3줄 + 성경 여정 1줄)
+    var cands = [];
+    if (m.newBadges.length) cands.push({ pool: "badge", vars: { badge: rvTopBadge(m.newBadges).label } });
+    if (m.consistent) cands.push({ pool: "consistent", vars: { item: rvItemName(m.consistent.r.item), rate: m.consistent.rate } });
+    if (m.improved) cands.push({ pool: "improved", vars: { item: rvItemName(m.improved.r.item), from: m.improved.from, to: m.improved.to } });
+    if (m.newItem) cands.push({ pool: "newItem", vars: { item: rvItemName(m.newItem.item) } });
+    if (m.streakBest) cands.push({ pool: "streakItem", vars: { item: rvItemName(m.streakBest.item), streakText: m.streakBest.text } });
+    cands = cands.slice(0, 3);
+    if (m.bible) cands.push({ pool: m.bible.moved ? "bibleMove" : "bibleStay", vars: m.bible });
+    if (!cands.length && m.rate !== null) cands.push({ pool: "any", vars: {} });
+    var goods = [], gids = [];
+    cands.forEach(function (c) {
+      var pool = D.good[c.pool] || [];
+      var prefer = (sids.good || []).filter(function (id) { return pool.some(function (p) { return p.id === id; }); })[0];
+      var ph = rvPickPhrase(pool, m.key + "|good|" + c.pool, avoid.good, prefer, c.vars);
+      if (ph) { goods.push(rvFill(ph.t, c.vars)); gids.push(ph.id); }
+    });
+    if (gids.length) ids.good = gids;
+
+    // 3) 다음 달에 하나만
+    var nv = {};
+    if (m.nextKey === "lowItem") nv.item = rvItemName(m.lowItem.r.item);
+    if (m.nextKey === "notStarted") nv.item = rvItemName(m.notStartedItems[rvHash(m.key + "|nsitem") % m.notStartedItems.length].item);
+    var nx = rvPickPhrase(D.next[m.nextKey], m.key + "|next", avoid.cheer, sids.cheer, nv);
+    if (nx) ids.cheer = nx.id;
+
+    // 4) 전문가 한마디
+    var ex = rvPickExpert("m_" + m.nextKey, m.key, avoid.expert, sids.expert);
+    if (ex) ids.expert = ex.id;
+
+    var h = '<div class="rv-period">' + escapeHtml(period) + '</div>';
+    h += '<div class="rv-block"><div class="rv-h">이번 달 한 줄</div><div class="rv-line">' + escapeHtml(line) + '</div>' + lyHtml + '</div>';
+    if (goods.length) {
+      h += '<div class="rv-block"><div class="rv-h">이번 달 하이라이트</div><ul>' +
+        goods.map(function (g) { return '<li>' + escapeHtml(g) + '</li>'; }).join("") + '</ul></div>';
+    }
+    if (nx) h += '<div class="rv-block"><div class="rv-h">다음 달을 위해</div><p>' + escapeHtml(rvFill(nx.t, nv)) + '</p></div>';
+    if (ex) {
+      h += '<div class="rv-block rv-expert"><div class="rv-h">전문가 한마디</div><p>' + escapeHtml(ex.t) + '</p>' +
+        '<div class="rv-src">' + escapeHtml(ex.src) + '</div></div>';
+    }
+    h += rvDetailMonthlyHtml(m);
+    return { title: "월간 리뷰", html: h, ids: ids };
+  }
+
+  // [자세히 보기]: 주차별 달성률 흐름 · 시간대별 달성률 · 시작 전 항목
+  function rvDetailMonthlyHtml(m) {
+    var h = '<details class="rv-more"><summary>자세히 보기</summary><div class="rv-more-body">';
+    h += '<div class="rv-sub">주차별 달성률 흐름</div>';
+    var days = m.cur.days, chunks = [], i = 0;
+    while (i < days.length) {
+      var end = (chunks.length >= 3) ? days.length : Math.min(i + 7, days.length);
+      var slice = days.slice(i, end), due = 0, done = 0;
+      slice.forEach(function (d) { due += d.due; done += d.done; });
+      chunks.push({ label: (chunks.length + 1) + "주차", range: rvMD(slice[0].dk) + "~" + rvMD(slice[slice.length - 1].dk), due: due, done: done });
+      i = end;
+    }
+    h += chunks.map(function (c) {
+      var r = c.due ? rvRate(c.done, c.due) : null;
+      return '<div class="rv-catrow"><span class="rv-catname" style="max-width:none;flex:0 0 auto;">' + c.label + '</span>' +
+        '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + (r === null ? 0 : r) + '%"></span></span>' +
+        '<span class="rv-catnum">' + (r === null ? '–' : r + '%') + '</span></div>' +
+        '<div class="rv-none" style="margin:-2px 0 4px;font-size:11px;">' + c.range + '</div>';
+    }).join("");
+    var cats = Object.keys(m.cur.cats).map(function (k) { return m.cur.cats[k]; }).filter(function (c) { return c.due > 0; });
+    h += '<div class="rv-sub">시간대별 달성률</div>';
+    h += cats.length ? cats.map(function (c) {
+      return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(c.cat.name || "이름 없음") + '</span>' +
+        '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + rvRate(c.done, c.due) + '%"></span></span>' +
+        '<span class="rv-catnum">' + rvRate(c.done, c.due) + '%</span></div>';
+    }).join("") : '<div class="rv-none">이번 달은 예정된 항목이 없었어요.</div>';
+    if (m.notStartedItems.length) {
+      h += '<div class="rv-sub">시작 전 항목</div>' + m.notStartedItems.map(function (x) {
+        return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(rvItemName(x.item)) + '</span><span class="rv-catnum" style="width:auto;">시작 전</span></div>';
+      }).join("");
+    }
+    h += '<div class="rv-foot">쉬는 날 ' + m.cur.restDays + '일, 시작 전·불시 항목은 달성률에서 빠져요. 지난달·작년 비교는 그 달에 기록한 날이 충분할 때만 보여요.</div>';
+    h += '</div></details>';
+    return h;
+  }
+
+  // ================= 올해 돌아보기 (연말) =================
+  // 키 = 연도("YYYY"). 12월 31일 + 월간 리뷰 받는 시각이 지나면 도착하고, 다음 해 1월 말까지 홈 카드로 알린다.
+  // 월간 리뷰를 켜 둔 경우에만 받는다(별도 스위치 없음). "봤는지"는 monthlyReview.yearSeenKey에 기록한다.
+  function rvYearLatestKey(now) {
+    var cfg = state.monthlyReview;
+    if (!cfg || !cfg.enabled) return null;
+    var tp = rvTimeParts(cfg.time);
+    for (var i = 0; i <= 1; i++) {
+      var y = now.getFullYear() - i;
+      if (new Date(y, 11, 31, tp.h, tp.m, 0, 0) <= now) return String(y);
+    }
+    return null;
+  }
+  function rvYearPeriod(key) {
+    var y = parseInt(key, 10), cfg = state.monthlyReview;
+    var L = y + "-12-31";
+    return { key: key, year: y, S: y + "-01-01", E: rvCoversToday(cfg.time) ? L : rvAddDays(L, -1) };
+  }
+  function rvBuildYearly(key) {
+    var per = rvYearPeriod(key), cur = rvCollect(per.S, per.E);
+    var m = { type: "yearly", key: key, year: per.year, S: per.S, E: per.E, cur: cur };
+    m.welcome = rvTotalRecordedDays() < 3;
+    m.sparse = cur.recordedDays < 30;
+    m.rate = rvRate(cur.done, cur.due);
+    // 월별 달성률 흐름
+    m.months = [];
+    for (var mi = 0; mi < 12; mi++) {
+      var pre = per.year + "-" + pad(mi + 1) + "-";
+      var due = 0, done = 0;
+      cur.days.forEach(function (d) { if (d.dk.indexOf(pre) === 0) { due += d.due; done += d.done; } });
+      m.months.push({ month: mi + 1, due: due, done: done, rate: due ? rvRate(done, due) : null });
+    }
+    var bm = null;
+    m.months.forEach(function (x) { if (x.due >= 10 && (!bm || x.rate > bm.rate)) bm = x; });
+    m.bestMonth = bm;
+    var recs = Object.keys(cur.items).map(function (id) { return cur.items[id]; });
+    var best = null, low = null;
+    recs.forEach(function (r) {
+      if ((r.item.name || "").trim() === "" || r.due < 20) return;
+      var a = rvRate(r.done, r.due);
+      if (a >= 70 && (!best || a > best.rate || (a === best.rate && r.due > best.r.due))) best = { r: r, rate: a };
+      if (a < 60 && (!low || a < low.rate)) low = { r: r, rate: a };
+    });
+    m.consistent = best; m.lowItem = low;
+    var sb = null;
+    state.categories.forEach(function (c) {
+      c.items.forEach(function (it) {
+        if (it.notStarted || it.flex) return;
+        var n = rvItemStreakAt(it, per.E);
+        if (n >= (rvIsDailyish(it) ? 10 : 5) && (!sb || n > sb.n)) sb = { item: it, n: n, text: rvStreakText(it, n) };
+      });
+    });
+    m.streakBest = sb;
+    var scan = rvScanStreak(per.S, per.E);
+    m.newBadges = scan.badges;
+    m.bible = rvBibleFor(per.S, per.E);
+    m.nextKey = m.lowItem ? "lowItem" : "base";
+    return m;
+  }
+  function rvComposeYearly(m) {
+    var D = REVIEW_DATA.yearly;
+    var period = m.year + "년 · " + rvMD(m.S) + " ~ " + rvMD(m.E);
+    var title = m.year + "년 돌아보기";
+    if (m.welcome || m.sparse) {
+      var pool = m.welcome ? REVIEW_DATA.welcome : D.sparse;
+      var wl = rvPickPhrase(pool, m.key + "|sparse", [], (rvStoredIds("yearly", m.key) || {}).oneLine, {});
+      return {
+        title: title,
+        html: '<div class="rv-period">' + escapeHtml(period) + '</div><div class="rv-block"><div class="rv-line">' + escapeHtml(wl ? wl.t : "") + '</div></div>',
+        ids: wl ? { oneLine: wl.id } : {}
+      };
+    }
+    var sids = rvStoredIds("yearly", m.key), avoid = rvAvoidFor("yearly", m.key), ids = {};
+    var band = m.rate >= 75 ? "high" : (m.rate >= 50 ? "mid" : "low");
+    var lv = { year: m.year, rate: m.rate };
+    var ol = rvPickPhrase(D.oneLine[band], m.key + "|oneLine", avoid.oneLine, sids.oneLine, lv);
+    var line = ol ? rvFill(ol.t, lv) : "";
+    if (ol) ids.oneLine = ol.id;
+
+    var cands = [];
+    if (m.newBadges.length) cands.push({ pool: "badge", vars: { badge: rvTopBadge(m.newBadges).label } });
+    if (m.bestMonth) cands.push({ pool: "bestMonth", vars: { month: m.bestMonth.month, mrate: m.bestMonth.rate } });
+    if (m.consistent) cands.push({ pool: "consistent", vars: { item: rvItemName(m.consistent.r.item), rate: m.consistent.rate } });
+    if (m.streakBest) cands.push({ pool: "streakItem", vars: { item: rvItemName(m.streakBest.item), streakText: m.streakBest.text } });
+    cands = cands.slice(0, 2);
+    if (m.bible) cands.push({ pool: m.bible.moved ? "bibleMove" : "bibleStay", vars: m.bible });
+    if (!cands.length) cands.push({ pool: "any", vars: {} });
+    var goods = [], gids = [];
+    cands.forEach(function (c) {
+      var p = D.good[c.pool] || [];
+      var prefer = (sids.good || []).filter(function (id) { return p.some(function (q) { return q.id === id; }); })[0];
+      var ph = rvPickPhrase(p, m.key + "|good|" + c.pool, avoid.good, prefer, c.vars);
+      if (ph) { goods.push(rvFill(ph.t, c.vars)); gids.push(ph.id); }
+    });
+    if (gids.length) ids.good = gids;
+
+    var nv = {};
+    if (m.nextKey === "lowItem") nv.item = rvItemName(m.lowItem.r.item);
+    var nx = rvPickPhrase(D.next[m.nextKey], m.key + "|next", avoid.cheer, sids.cheer, nv);
+    if (nx) ids.cheer = nx.id;
+    var ex = rvPickExpert("y_" + m.nextKey, m.key, avoid.expert, sids.expert);
+    if (ex) ids.expert = ex.id;
+
+    var h = '<div class="rv-period">' + escapeHtml(period) + '</div>';
+    h += '<div class="rv-block"><div class="rv-h">올해 한 줄</div><div class="rv-line">' + escapeHtml(line) + '</div></div>';
+    h += '<div class="rv-block"><div class="rv-h">달별 달성률 흐름</div>' + m.months.map(function (x) {
+      return '<div class="rv-catrow"><span class="rv-catname" style="max-width:none;flex:0 0 30px;">' + x.month + '월</span>' +
+        '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + (x.rate === null ? 0 : x.rate) + '%"></span></span>' +
+        '<span class="rv-catnum">' + (x.rate === null ? '–' : x.rate + '%') + '</span></div>';
+    }).join("") + '</div>';
+    if (goods.length) {
+      h += '<div class="rv-block"><div class="rv-h">올해의 하이라이트</div><ul>' +
+        goods.map(function (g) { return '<li>' + escapeHtml(g) + '</li>'; }).join("") + '</ul></div>';
+    }
+    if (nx) h += '<div class="rv-block"><div class="rv-h">새해를 위해</div><p>' + escapeHtml(rvFill(nx.t, nv)) + '</p></div>';
+    if (ex) {
+      h += '<div class="rv-block rv-expert"><div class="rv-h">전문가 한마디</div><p>' + escapeHtml(ex.t) + '</p>' +
+        '<div class="rv-src">' + escapeHtml(ex.src) + '</div></div>';
+    }
+    return { title: title, html: h, ids: ids };
+  }
+
+  // ---- 열기 / 닫기 / "확인함" 기록 ----
+  var rvOpen = null;   // { type, key }
+  function rvLatestKey(type) {
+    var now = new Date();
+    return type === "weekly" ? rvWeeklyLatestKey(now) : (type === "monthly" ? rvMonthLatestKey(now) : (type === "yearly" ? rvYearLatestKey(now) : null));
+  }
+  function rvCfg(type) { return type === "weekly" ? state.weeklyReview : ((type === "monthly" || type === "yearly") ? state.monthlyReview : null); }
+  function rvSeenGet(type) { var c = rvCfg(type); return c ? (type === "yearly" ? c.yearSeenKey : c.lastSeenKey) : null; }
+  function rvSeenSet(type, key) { var c = rvCfg(type); if (c) { if (type === "yearly") c.yearSeenKey = key; else c.lastSeenKey = key; } }
+  function rvMarkSeen(type, key, ids) {
+    var cfg = rvCfg(type), changed = false;
+    if (!cfg) return;
+    if (rvSeenGet(type) !== key) { rvSeenSet(type, key); changed = true; }
+    if (!state.reviewRecent || !state.reviewRecent[type]) state.reviewRecent = rvNormRecent(state.reviewRecent);
+    var list = state.reviewRecent[type];
+    var idx = list.findIndex(function (e) { return e.key === key; });
+    var entry = { key: key, ids: ids || {} };
+    if (idx === -1) { list.unshift(entry); if (list.length > 2) list.length = 2; changed = true; }
+    else if (canon(list[idx].ids) !== canon(entry.ids)) { list[idx] = entry; changed = true; }
+    if (changed) saveState();
+  }
+  function openReview(type, key) {
+    type = type || "weekly";
+    if (!key) key = rvLatestKey(type);
+    if (!key) return;
+    if (!rvReady()) { toast("review-data.js 파일이 있어야 리뷰를 볼 수 있어요"); return; }
+    var composed;
+    try {
+      composed = type === "yearly" ? rvComposeYearly(rvBuildYearly(key))
+        : (type === "monthly" ? rvComposeMonthly(rvBuildMonthly(key)) : rvComposeWeekly(rvBuildWeekly(key)));
+    } catch (err) {
+      console.error("review build failed", err);
+      toast("리뷰를 만들지 못했어요");
+      return;
+    }
+    rvOpen = { type: type, key: key };
+    document.getElementById("reviewTitle").textContent = composed.title;
+    var body = document.getElementById("reviewBody");
+    body.innerHTML = composed.html;
+    body.scrollTop = 0;
+    document.getElementById("reviewOverlay").classList.remove("hidden");
+    // 가장 최근 리뷰를 열었을 때만 "확인함"으로 표시하고 쓴 문구를 기록한다(지난 리뷰 열람은 기록을 바꾸지 않는다)
+    if (key === rvLatestKey(type)) rvMarkSeen(type, key, composed.ids);
+  }
+  function closeReview() {
+    document.getElementById("reviewOverlay").classList.add("hidden");
+    rvOpen = null;
+    renderHome();
+  }
+
+  // ---- 홈: "리뷰 도착" 카드 + 뱃지 ----
+  function rvPending() {
+    var out = [];
+    if (!rvReady() || !state.weeklyReview) return out;
+    var now = new Date();
+    var wk = rvWeeklyLatestKey(now);
+    if (wk && wk !== state.weeklyReview.lastSeenKey) out.push({ type: "weekly", key: wk });
+    var mk = state.monthlyReview ? rvMonthLatestKey(now) : null;
+    if (mk && mk !== state.monthlyReview.lastSeenKey) out.push({ type: "monthly", key: mk });   // 주간과 겹쳐도 카드는 따로
+    var yk = state.monthlyReview ? rvYearLatestKey(now) : null;
+    // 연말 돌아보기 카드는 12/31 저녁부터 다음 해 1월 말까지만 알린다(그 뒤에는 '지난 리뷰 보기'에서 열 수 있다)
+    if (yk && yk !== state.monthlyReview.yearSeenKey && now <= new Date(parseInt(yk, 10) + 1, 0, 31, 23, 59, 59)) out.push({ type: "yearly", key: yk });
+    return out;
+  }
+  var rvLastSig = "";
+  function rvSig() { return rvPending().map(function (p) { return p.type + ":" + p.key; }).join(","); }
+  function renderReviewCards() {
+    var host = document.getElementById("reviewCards");
+    if (!host) return;
+    var list = [];
+    try { list = rvPending(); } catch (err) { console.error("review pending failed", err); }
+    rvLastSig = list.map(function (p) { return p.type + ":" + p.key; }).join(",");
+    host.innerHTML = list.map(function (p) {
+      var isM = p.type === "monthly", isY = p.type === "yearly";
+      var per = isY ? rvYearPeriod(p.key) : (isM ? rvMonthPeriod(p.key) : rvWeeklyPeriod(p.key));
+      return '<div class="review-card" data-action="open-review" data-id="' + p.type + '">' +
+        '<span class="rc-emoji">' + (isY ? '🎆' : (isM ? '🗓️' : '📬')) + '</span>' +
+        '<div class="rc-main"><div class="rc-title">' + (isY ? (per.year + '년 돌아보기가 도착했어요') : (isM ? (per.month + '월 리뷰가 도착했어요') : '이번 주 리뷰가 도착했어요')) + '</div>' +
+        '<div class="rc-sub">' + rvMD(per.S) + ' ~ ' + rvMD(per.E) + ' · 탭해서 열어 보기</div></div>' +
+        '<span class="rc-chev">›</span></div>';
+    }).join("");
+  }
+  function rvBadgeHtml() {
+    var n = 0;
+    try { n = rvPending().length; } catch (err) { n = 0; }
+    return n > 0 ? '<span class="review-badge" data-action="open-review-pending">📬 리뷰 ' + n + '</span>' : "";
+  }
+  // 앱을 열어 둔 채 받는 시각이 지나거나 다시 앱으로 돌아왔을 때 카드가 뜨도록 가볍게 다시 확인한다
+  function rvTick() {
+    if (document.hidden || !currentUid || !synced) return;
+    var sig = "";
+    try { sig = rvSig(); } catch (err) { return; }
+    if (sig === rvLastSig) return;
+    if (homeIsVisible()) renderHomeWhenIdle();
+  }
+  setInterval(rvTick, 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) rvTick(); });
+
+  // ---- 설정 화면 ("리뷰" 섹션) ----
+  function updateReviewSettingsUI() {
+    var w = state.weeklyReview;
+    var tg = document.getElementById("rvWeeklyToggle");
+    if (!tg || !w) return;
+    tg.classList.toggle("active", !!w.enabled);
+    document.getElementById("rvWeeklyOpts").classList.toggle("hidden", !w.enabled);
+    var mo = state.monthlyReview;
+    document.getElementById("rvReopenBtn").classList.toggle("hidden", !w.enabled && !(mo && mo.enabled));
+    if (mo) {
+      document.getElementById("rvMonthlyToggle").classList.toggle("active", !!mo.enabled);
+      document.getElementById("rvMonthlyOpts").classList.toggle("hidden", !mo.enabled);
+      var isDef = mo.time === "20:00";
+      Array.prototype.forEach.call(document.querySelectorAll("#rvMonthlyOpts .theme-option"), function (o) {
+        o.classList.toggle("active", o.getAttribute("data-id") === "def" ? isDef : !isDef);
+      });
+      document.getElementById("rvMonthlyCustomLabel").textContent = isDef ? "시각 바꾸기" : ("마지막 날 " + rvTimeLabel(mo.time));
+    }
+    var isSun = w.day === 0 && w.time === "20:00", isMon = w.day === 1 && w.time === "07:00";
+    Array.prototype.forEach.call(document.querySelectorAll("#rvWeeklyOpts .theme-option"), function (o) {
+      var id = o.getAttribute("data-id");
+      o.classList.toggle("active", id === "sun20" ? isSun : (id === "mon07" ? isMon : (!isSun && !isMon)));
+    });
+    document.getElementById("rvCustomLabel").textContent = (!isSun && !isMon)
+      ? ("직접 정하기 · " + RV_DOW[w.day] + "요일 " + rvTimeLabel(w.time)) : "직접 정하기 (요일·시각)";
+  }
+  function rvToggleWeekly() {
+    var w = state.weeklyReview;
+    w.enabled = !w.enabled;
+    saveState(); updateReviewSettingsUI(); renderHome();
+    if (w.enabled) toast("주간 리뷰를 켰어요");
+  }
+  // 받는 시점을 바꾸면, 그 순간까지 이미 지난 리뷰는 "확인함"으로 처리한다(방금 본 리뷰가 다시 카드로 뜨는 걸 막기 위해).
+  function rvApplyWeeklySchedule(day, time) {
+    var w = state.weeklyReview;
+    w.day = day; w.time = time;
+    var lk = rvWeeklyLatestKey(new Date());
+    if (lk) w.lastSeenKey = lk;
+    saveState(); updateReviewSettingsUI(); renderHome();
+    var nx = rvNextWeeklyLabel(new Date());
+    toast(nx ? ("다음 주간 리뷰는 " + nx + "에 도착해요") : "저장했어요");
+  }
+  function rvWeeklyPreset(id) {
+    if (id === "sun20") rvApplyWeeklySchedule(0, "20:00");
+    else if (id === "mon07") rvApplyWeeklySchedule(1, "07:00");
+    else openReviewTimePicker("weekly");
+  }
+
+  function rvToggleMonthly() {
+    var mo = state.monthlyReview;
+    mo.enabled = !mo.enabled;
+    saveState(); updateReviewSettingsUI(); renderHome();
+    if (mo.enabled) toast("월간 리뷰를 켰어요");
+  }
+  function rvApplyMonthlySchedule(time) {
+    var mo = state.monthlyReview;
+    mo.time = time;
+    var lk = rvMonthLatestKey(new Date());
+    if (lk) mo.lastSeenKey = lk;
+    saveState(); updateReviewSettingsUI(); renderHome();
+    var nx = rvNextMonthlyLabel(new Date());
+    toast(nx ? ("다음 월간 리뷰는 " + nx + "에 도착해요") : "저장했어요");
+  }
+  function rvMonthlyPreset(id) {
+    if (id === "def") rvApplyMonthlySchedule("20:00");
+    else openReviewTimePicker("monthly");
+  }
+
+  // ---- 지난 리뷰 보기 ----
+  var rvHistTab = "weekly";
+  function rvEarliestKey() {
+    var keys = Object.keys(state.history).filter(function (k) {
+      var e = state.history[k]; return e && Array.isArray(e.completed) && e.completed.length;
+    }).sort();
+    return keys.length ? keys[0] : null;
+  }
+  function rvHistKeys(type) {
+    var now = new Date(), out = [], first = rvEarliestKey();
+    if (type === "weekly") {
+      var k = rvWeeklyLatestKey(now);
+      for (var i = 0; k && i < 12; i++, k = rvAddDays(k, -7)) {
+        var per = rvWeeklyPeriod(k);
+        if (first && per.E < first && out.length) break;
+        out.push({ key: k, label: rvMDW(per.S) + " ~ " + rvMDW(per.E) });
+      }
+    } else if (type === "yearly") {
+      var yk = rvYearLatestKey(now);
+      if (yk && first) {
+        var fy = parseInt(first.slice(0, 4), 10);
+        for (var yy = parseInt(yk, 10); yy >= fy && out.length < 10; yy--) out.push({ key: String(yy), label: yy + "년 돌아보기" });
+      }
+    } else {
+      var mk = rvMonthLatestKey(now);
+      if (mk) {
+        var mp = rvMonthParse(mk);
+        for (var j = 0; j < 12; j++) {
+          var d = new Date(mp.y, mp.m0 - j, 1), key = rvMonthKey(d.getFullYear(), d.getMonth());
+          var pr = rvMonthPeriod(key);
+          if (first && pr.E < first && out.length) break;
+          out.push({ key: key, label: d.getFullYear() + "년 " + (d.getMonth() + 1) + "월" });
+        }
+      }
+    }
+    return out;
+  }
+  function renderReviewHistory() {
+    Array.prototype.forEach.call(document.querySelectorAll("#rvHistTabs .theme-option"), function (o) {
+      o.classList.toggle("active", o.getAttribute("data-id") === rvHistTab);
+    });
+    var list = [];
+    try { list = rvHistKeys(rvHistTab); } catch (err) { console.error("review history failed", err); }
+    var host = document.getElementById("rvHistList");
+    if (!list.length) {
+      host.innerHTML = '<div class="rv-none">' + (rvHistTab === "weekly" ? '주간 리뷰가 꺼져 있거나 아직 도착한 리뷰가 없어요.' : (rvHistTab === "monthly" ? '월간 리뷰가 꺼져 있거나 아직 도착한 리뷰가 없어요.' : '올해 돌아보기는 12월 31일 저녁에 도착해요. (월간 리뷰를 켜 둔 경우)')) + '</div>';
+      return;
+    }
+    host.innerHTML = list.map(function (r) {
+      return '<div class="rv-hist-row" data-action="open-review-past" data-type="' + rvHistTab + '" data-id="' + r.key + '">' +
+        '<span>' + escapeHtml(r.label) + '</span><span class="rc-chev">›</span></div>';
+    }).join("");
+  }
+  function openReviewHistory() {
+    if (!rvReady()) { toast("review-data.js 파일이 있어야 리뷰를 볼 수 있어요"); return; }
+    if (!state.weeklyReview.enabled && state.monthlyReview.enabled) rvHistTab = "monthly";
+    renderReviewHistory();
+    document.getElementById("reviewHistOverlay").classList.remove("hidden");
+  }
+  function closeReviewHistory() { document.getElementById("reviewHistOverlay").classList.add("hidden"); }
+
+  // ---- 받는 시각 고르기(요일 + 기존 시간 휠 재사용) ----
+  var rvTpMode = null, rvTpDay = 0, rvTpH = 20, rvTpM = 0;
+  function rvRenderDayRow() {
+    var el = document.getElementById("rvDayRow");
+    el.innerHTML = "";
+    [1, 2, 3, 4, 5, 6, 0].forEach(function (d) {
+      var b = document.createElement("button");
+      b.className = "day-toggle" + (rvTpDay === d ? " active" : "");
+      b.textContent = RV_DOW[d];
+      b.setAttribute("data-action", "rv-day-pick");
+      b.setAttribute("data-id", d);
+      el.appendChild(b);
+    });
+  }
+  function openReviewTimePicker(mode) {
+    rvTpMode = mode;
+    var cfg = mode === "monthly" ? state.monthlyReview : state.weeklyReview, tp = rvTimeParts(cfg.time);
+    rvTpDay = cfg.day || 0; rvTpH = tp.h; rvTpM = tp.m;
+    document.getElementById("rvTimeTitle").textContent = mode === "monthly" ? "월간 리뷰 받는 시각 (매월 마지막 날)" : "주간 리뷰 받는 시점";
+    document.getElementById("rvDayRow").classList.toggle("hidden", mode === "monthly");
+    if (mode !== "monthly") rvRenderDayRow();
+    document.getElementById("reviewTimeOverlay").classList.remove("hidden");
+    buildWheel(document.getElementById("rvHour"), 23, rvTpH, function (v) { rvTpH = v; });
+    buildWheel(document.getElementById("rvMin"), 59, rvTpM, function (v) { rvTpM = v; });
+  }
+  function closeReviewTimePicker() { document.getElementById("reviewTimeOverlay").classList.add("hidden"); rvTpMode = null; }
+  function confirmReviewTimePicker() {
+    var t = pad(rvTpH) + ":" + pad(rvTpM);
+    var mode = rvTpMode;
+    closeReviewTimePicker();
+    if (mode === "weekly") rvApplyWeeklySchedule(rvTpDay, t);
+    else if (mode === "monthly") rvApplyMonthlySchedule(t);
+  }
+
   // ---------------- event delegation ----------------
   document.addEventListener("click", function (e) {
     var el = e.target.closest("[data-action]");
@@ -6256,6 +7467,21 @@
     var dKey = el.getAttribute("data-key"), dVal = el.getAttribute("data-val");
 
     if (action === "go-home") { goHomeAnimated(); }
+    else if (action === "toggle-not-started") { if (dpFlex) return; dpNotStarted = !dpNotStarted; updateNotStartedToggleUI(); }
+    else if (action === "rv-toggle-weekly") { rvToggleWeekly(); }
+    else if (action === "rv-weekly-preset") { rvWeeklyPreset(id); }
+    else if (action === "rv-day-pick") { rvTpDay = parseInt(id, 10); rvRenderDayRow(); }
+    else if (action === "rv-time-cancel") { closeReviewTimePicker(); }
+    else if (action === "rv-time-confirm") { confirmReviewTimePicker(); }
+    else if (action === "open-review") { openReview(id || "weekly"); }
+    else if (action === "open-review-pending") { var pend = rvPending(); openReview(pend.length ? pend[0].type : "weekly"); }
+    else if (action === "rv-toggle-monthly") { rvToggleMonthly(); }
+    else if (action === "rv-monthly-preset") { rvMonthlyPreset(id); }
+    else if (action === "open-review-history") { openReviewHistory(); }
+    else if (action === "review-hist-close") { closeReviewHistory(); }
+    else if (action === "review-hist-tab") { rvHistTab = id; renderReviewHistory(); }
+    else if (action === "open-review-past") { openReview(el.getAttribute("data-type"), id); }
+    else if (action === "review-close") { closeReview(); }
     else if (action === "go-back") { goHomeAnimated(true); }
     else if (action === "help") { openHelp(id); }
     else if (action === "help-see") { openHelp(id); }
@@ -6837,7 +8063,7 @@
       chatMenuOverlay: "chat-menu-close", cheerPickOverlay: "cheer-pick-close", todayMemoOverlay: "today-memo-cancel",
       titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
       missedOverlay: "missed-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
-      rewardClaimOverlay: "reward-claim-cancel", avatarOverlay: "avatar-close", catOverlay: null
+      rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewHistOverlay: "review-hist-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", catOverlay: null
     };
     function forceDismiss(ov) {
       var act = CLOSE_ACTION[ov.id];
