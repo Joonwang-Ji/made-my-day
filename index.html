@@ -954,7 +954,7 @@
     if (w && w.enabled) rv.push("주간");
     if (mo && mo.enabled) rv.push("월간");
     put("setSumNotify", (alarmAllOff ? "알람 꺼짐" : "알람 켜짐") + " · " + (rv.length ? "리뷰 " + rv.join("·") : "리뷰 꺼짐"));
-    var em = state.email || "";
+    var em = currentEmail || state.email || "";
     put("setSumAccount", (isAdminUser ? "관리자 · " : "") + (em || "로그인 정보 없음"));
     put("accountEmail", em || "(이메일 없음)");
   }
@@ -2547,6 +2547,7 @@
 
   var state = defaultState();
   var currentUid = null;
+  var currentEmail = "";   // 로그인한 계정의 이메일(로그인 시점 값). 저장 문서(state.email)는 새로 가입한 계정에만 채워져 있다
   var isAdminUser = false;
   var saveDebounceTimer = null;
   var saveChain = Promise.resolve();
@@ -2916,6 +2917,7 @@
   }
   function onUserLoaded(uid, email) {
     currentUid = uid;
+    currentEmail = email || "";
     synced = false; syncedRaw = null; syncedBase = null;
     archivedHistoryCache = {};   // 계정이 바뀌면 아카이브 캐시도 새로 시작한다
     if (stateUnsub) { stateUnsub(); stateUnsub = null; }
