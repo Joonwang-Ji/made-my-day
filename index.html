@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-29-1";
+  var BUILD_VERSION = "2026-09-29-2";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -35,7 +35,20 @@
   } catch (e) {}
 })();
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>
+// 글씨 크기·선명하게 보기 설정을 화면이 그려지기 전에 먼저 적용(깜빡임 방지)
+(function () {
+  try {
+    var v = localStorage.getItem("mmd_font_scale"), r = document.documentElement;
+    if (v === "115" || v === "130" || v === "150") {
+      r.setAttribute("data-fs", v); r.classList.add("fs-big");
+      if (v !== "115") r.classList.add("fs-xl");
+    }
+    if (localStorage.getItem("mmd_vivid") === "1") r.classList.add("vivid");
+  } catch (e) {}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Made My Day</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -79,19 +92,20 @@
 </div>
 
 <div class="wrap hidden" id="view-login">
-  <div style="min-height:80vh;display:flex;flex-direction:column;justify-content:center;">
+  <div class="fs-login-row"><span class="fs-login-btn" id="fsLoginBtn" data-action="fs-cycle">가 글씨 크기 · 보통</span></div>
+  <div style="min-height:70vh;display:flex;flex-direction:column;justify-content:center;">
     <div style="text-align:center;margin-bottom:28px;">
-      <div class="day" style="font-size:26px;">Made My Day</div>
+      <div class="day" style="font-size:1.625rem;">Made My Day</div>
       <div class="sub" style="margin-top:6px;">이메일로 로그인하면 기록이 안전하게 저장돼요</div>
     </div>
     <input type="email" id="authEmail" class="cat-name-input" placeholder="이메일" autocomplete="username" style="margin-bottom:10px;">
     <input type="password" id="authPassword" class="cat-name-input" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" style="margin-bottom:14px;">
-    <div id="authError" style="color:var(--danger);font-size:12.5px;margin-bottom:10px;display:none;"></div>
+    <div id="authError" style="color:var(--danger);font-size:0.7812rem;margin-bottom:10px;display:none;"></div>
     <div class="bottom-row" style="margin-top:0;">
       <div class="btn primary" data-action="auth-signin">로그인</div>
       <div class="btn" data-action="auth-signup">처음이에요 (가입)</div>
     </div>
-    <div data-action="auth-forgot" style="text-align:center;margin-top:16px;font-size:12.5px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">비밀번호를 잊으셨나요?</div>
+    <div data-action="auth-forgot" style="text-align:center;margin-top:16px;font-size:0.7812rem;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">비밀번호를 잊으셨나요?</div>
     <div class="sub" style="text-align:center;margin-top:18px;">가입 후 관리자 승인이 있어야 이용할 수 있어요</div>
   </div>
 </div>
@@ -99,7 +113,7 @@
 <div class="wrap hidden" id="view-pending">
   <div style="min-height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
     <div style="font-size:40px;margin-bottom:14px;">⏳</div>
-    <div class="day" style="font-size:20px;">가입 승인 대기 중</div>
+    <div class="day" style="font-size:1.25rem;">가입 승인 대기 중</div>
     <div class="sub" id="pendingSubText" style="margin-top:10px;max-width:260px;"></div>
     <div class="btn" data-action="auth-logout" style="margin-top:28px;min-width:140px;flex:none;">로그아웃</div>
   </div>
@@ -208,7 +222,7 @@
   <div id="backfillMemoListMode" class="hidden">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
       <div id="memoSearchSpacer" style="flex:1;"></div>
-      <input type="text" id="memoSearchInput" class="cat-name-input hidden" placeholder="내용 검색" style="margin:0;flex:1;font-size:13px;padding:9px 10px;">
+      <input type="text" id="memoSearchInput" class="cat-name-input hidden" placeholder="내용 검색" style="margin:0;flex:1;font-size:0.8125rem;padding:9px 10px;">
       <button class="icon-btn" id="memoSearchOpenBtn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
       <button class="icon-btn hidden" id="memoSearchCloseBtn" data-action="toggle-memo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
@@ -326,7 +340,19 @@
   </div>
   <div class="btn" data-action="open-avatar" style="margin:0 0 10px;display:flex;align-items:center;justify-content:center;gap:10px;"><span class="av-mini" id="settingsAvatar"></span>내 아바타 꾸미기</div>
   <div class="btn" data-action="open-help-view" style="margin:0 0 16px;">❓ 사용법 · 도움말</div>
-  <div class="section-label" style="margin-top:0;">테마</div>
+  <div class="section-label" style="margin-top:0;">글씨 크기</div>
+  <div class="fs-sample" id="fsSample">가나다라마바사 Aa 123<br>오늘도 좋은 하루 되세요</div>
+  <div class="theme-option-row" id="fsOptionRow">
+    <div class="theme-option" data-action="fs-select" data-id="100"><span>보통</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="fs-select" data-id="115"><span>크게</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="fs-select" data-id="130"><span>아주 크게</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="fs-select" data-id="150"><span>가장 크게</span><span class="dot"></span></div>
+  </div>
+  <div class="theme-option-row" style="margin-top:8px;">
+    <div class="theme-option" id="vividToggle" data-action="vivid-toggle"><span>선명하게 보기 (진한 글씨)</span><span class="dot"></span></div>
+  </div>
+  <div class="sub" style="margin-top:6px;">이 기기에만 적용돼요. 밝은 테마에서 옅은 글씨가 더 진하게 보여요.</div>
+  <div class="section-label">테마</div>
   <div class="theme-option-row" id="themeOptionRow">
     <div class="theme-option" data-action="theme-select" data-id="auto"><span>기기 설정을 따름</span><span class="dot"></span></div>
     <div class="theme-option" data-action="theme-select" data-id="light"><span>항상 밝게</span><span class="dot"></span></div>
@@ -376,12 +402,26 @@
 </div>
 
 
+<div class="tp-overlay hidden" id="fsPromptOverlay">
+  <div class="tp-card" style="max-width:340px;">
+    <div class="tp-title">글씨 크기를 골라주세요</div>
+    <div class="sub" style="text-align:center;margin:-6px 0 14px;">눌러 보시면 바로 바뀌어요. 나중에 설정에서 다시 고를 수 있어요.</div>
+    <div class="theme-option-row" id="fsPromptRow">
+      <div class="theme-option" data-action="fs-select" data-id="100"><span style="font-size:16px;">보통 · 가나다 Aa</span><span class="dot"></span></div>
+      <div class="theme-option" data-action="fs-select" data-id="115"><span style="font-size:18.4px;">크게 · 가나다 Aa</span><span class="dot"></span></div>
+      <div class="theme-option" data-action="fs-select" data-id="130"><span style="font-size:20.8px;">아주 크게 · 가나다</span><span class="dot"></span></div>
+      <div class="theme-option" data-action="fs-select" data-id="150"><span style="font-size:24px;">가장 크게 · 가나다</span><span class="dot"></span></div>
+    </div>
+    <div class="tp-actions"><div class="btn primary" data-action="fs-prompt-ok">이 크기로 할게요</div></div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="changePwOverlay">
   <div class="tp-card">
     <div class="tp-title">비밀번호 변경</div>
     <input type="password" id="changePwCurrent" class="cat-name-input" placeholder="현재 비밀번호" autocomplete="current-password" style="margin-bottom:10px;">
     <input type="password" id="changePwNew" class="cat-name-input" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password" style="margin-bottom:10px;">
-    <div id="changePwError" style="color:var(--danger);font-size:12.5px;margin-bottom:6px;display:none;"></div>
+    <div id="changePwError" style="color:var(--danger);font-size:0.7812rem;margin-bottom:6px;display:none;"></div>
     <div class="tp-actions">
       <div class="btn" data-action="changepw-cancel">취소</div>
       <div class="btn primary" data-action="changepw-confirm">변경</div>
@@ -406,9 +446,9 @@
   <div class="btn primary" id="restTodayBtn" data-action="toggle-today-rest" style="margin-bottom:16px;">오늘을 쉬는 날로 표시</div>
 
   <div class="section-label" style="margin-top:0;">기간으로 추가</div>
-  <div style="display:flex;gap:8px;margin-bottom:10px;">
-    <input type="date" id="restStartInput" class="cat-name-input" style="margin-bottom:0;font-size:13px;padding:9px;">
-    <input type="date" id="restEndInput" class="cat-name-input" style="margin-bottom:0;font-size:13px;padding:9px;">
+  <div class="rest-range-row" style="display:flex;gap:8px;margin-bottom:10px;">
+    <input type="date" id="restStartInput" class="cat-name-input" style="margin-bottom:0;font-size:0.8125rem;padding:9px;">
+    <input type="date" id="restEndInput" class="cat-name-input" style="margin-bottom:0;font-size:0.8125rem;padding:9px;">
   </div>
   <div class="theme-option" id="recurringToggle" data-action="toggle-recurring-add" style="margin-bottom:10px;"><span>매년 반복 공휴일로 등록</span><span class="dot"></span></div>
   <div class="btn" data-action="add-rest-range" style="margin-bottom:10px;">추가</div>
@@ -438,16 +478,16 @@
     <div class="tp-card-body">
     <div class="av-ach" id="achieveAvatar" data-action="open-avatar"></div>
     <div class="av-ach-cap">탭해서 아바타 꾸미기</div>
-    <div id="achieveTotalPoints" style="text-align:center;font-size:13px;font-weight:700;color:var(--ink-dim);margin-bottom:10px;">누적 0P</div>
+    <div id="achieveTotalPoints" style="text-align:center;font-size:0.8125rem;font-weight:700;color:var(--ink-dim);margin-bottom:10px;">누적 0P</div>
     <div class="achieve-level-row">
-      <div class="achieve-level-num" id="achieveLevelNum" style="font-size:15px;"></div>
+      <div class="achieve-level-num" id="achieveLevelNum" style="font-size:0.9375rem;"></div>
       <div style="flex:1;">
-        <div style="font-size:12.5px;font-weight:700;" id="achieveGrowthLabel"></div>
+        <div style="font-size:0.7812rem;font-weight:700;" id="achieveGrowthLabel"></div>
         <div class="growth-bar-track"><div class="growth-bar-fill" id="achieveLevelFill"></div></div>
         <div class="growth-pts" id="achieveLevelPts">0P</div>
       </div>
     </div>
-    <div id="achieveBookProgress" style="font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:6px 0 10px;"></div>
+    <div id="achieveBookProgress" style="font-size:0.7188rem;color:var(--ink-dim);line-height:1.5;margin:6px 0 10px;"></div>
     <div class="bible-journey" data-action="open-bible-shelf">
       <div class="bible-journey-head">📖 성경 여정<span class="bible-journey-arrow">›</span></div>
       <div class="bible-strip" id="achieveBibleStrip"></div>
@@ -538,8 +578,8 @@
     <div class="msd-glow" id="msdGlow"></div>
     <div class="msd-coinslot" id="msdCoinSlot" data-action="msd-flip"></div>
     <div class="msd-card" id="msdCard">
-      <div class="tp-title" id="msDetailTitle" style="font-family:'Fraunces',serif;font-size:17px;font-weight:650;margin-bottom:2px;"></div>
-      <div id="msDetailRef" style="font-size:11.5px;color:var(--ink-dim);margin-bottom:12px;"></div>
+      <div class="tp-title" id="msDetailTitle" style="font-family:'Fraunces',serif;font-size:1.0625rem;font-weight:650;margin-bottom:2px;"></div>
+      <div id="msDetailRef" style="font-size:0.7188rem;color:var(--ink-dim);margin-bottom:12px;"></div>
       <div id="msDetailVerse" class="msd-verse"></div>
       <div class="msd-hint">메달을 탭하면 뒷면이 보여요</div>
       <div class="btn primary" id="msdCloseBtn" data-action="milestone-detail-close">닫기</div>
@@ -551,7 +591,7 @@
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title" id="todayOvTitle">오늘</div>
     <div class="theme-option" id="todayRestToggle" data-action="today-rest-toggle"><span>오늘은 쉬는 날</span><span class="dot"></span></div>
-    <input type="text" class="cat-name-input hidden" id="todayRestReason" maxlength="30" placeholder="쉬는 이유 (선택)" style="margin-top:8px;font-size:13px;font-weight:600;">
+    <input type="text" class="cat-name-input hidden" id="todayRestReason" maxlength="30" placeholder="쉬는 이유 (선택)" style="margin-top:8px;font-size:0.8125rem;font-weight:600;">
     <div class="day-ov-note hidden" id="todayRestNote"></div>
     <div class="day-ov-label">하루 한 줄</div>
     <div class="export-box" style="margin-bottom:4px;"><textarea id="todayMemoInput" maxlength="150" placeholder="오늘 하루를 한 줄로 남겨보세요" style="min-height:70px;"></textarea></div>
@@ -624,7 +664,7 @@
   <div class="tp-card" style="max-width:320px;">
     <div class="tp-title">공휴일 불러오기</div>
     <div class="export-note" style="margin:0 0 10px;">매년 반복되는 고정 공휴일과, 설날·추석·대체공휴일처럼 해마다 날짜가 바뀌는 공휴일을 한 번에 불러와요. 실제로 쉬지 않는 날은 체크를 해제하고 추가하세요.</div>
-    <div style="text-align:right;margin-bottom:8px;"><span data-action="toggle-holiday-pick-all" style="font-size:12px;text-decoration:underline;font-weight:700;cursor:pointer;color:var(--ink-dim);">전체 선택/해제</span></div>
+    <div style="text-align:right;margin-bottom:8px;"><span data-action="toggle-holiday-pick-all" style="font-size:0.75rem;text-decoration:underline;font-weight:700;cursor:pointer;color:var(--ink-dim);">전체 선택/해제</span></div>
     <div id="holidayPickerList" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;"></div>
     <div class="tp-actions">
       <div class="btn" data-action="close-holiday-picker">취소</div>
@@ -721,14 +761,14 @@
 <div class="tp-overlay hidden" id="rewardClaimOverlay">
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title" id="rewardClaimTitle">보상 기록</div>
-    <div id="rewardClaimBody" style="font-size:12.5px;color:var(--ink-dim);text-align:center;margin-bottom:12px;"></div>
+    <div id="rewardClaimBody" style="font-size:0.7812rem;color:var(--ink-dim);text-align:center;margin-bottom:12px;"></div>
     <div id="rewardClaimChips" class="rc-chips"></div>
     <input type="text" class="reward-note-input" id="rewardClaimInput" placeholder="원하는 보상 혹은 이미 준 보상을 적어보세요" maxlength="60">
     <div class="tp-actions">
       <div class="btn" data-action="reward-claim-cancel">취소</div>
       <div class="btn primary" data-action="reward-claim-save">저장</div>
     </div>
-    <div data-action="reward-claim-delete" style="text-align:center;margin-top:12px;font-size:12px;color:var(--danger);text-decoration:underline;cursor:pointer;">이 기록 삭제</div>
+    <div data-action="reward-claim-delete" style="text-align:center;margin-top:12px;font-size:0.75rem;color:var(--danger);text-decoration:underline;cursor:pointer;">이 기록 삭제</div>
   </div>
 </div>
 
@@ -771,6 +811,56 @@
   }
   var currentTheme = loadTheme();
   applyTheme(currentTheme);
+
+  // ---- 글씨 크기 / 선명하게 보기 (이 기기에만 저장) ----
+  var FS_KEY = "mmd_font_scale", FS_SEEN_KEY = "mmd_fs_seen", VIVID_KEY = "mmd_vivid";
+  var FS_STEPS = ["100", "115", "130", "150"];
+  var FS_NAMES = { "100": "보통", "115": "크게", "130": "아주 크게", "150": "가장 크게" };
+  function loadFontScale() {
+    try { var v = localStorage.getItem(FS_KEY); return FS_STEPS.indexOf(v) !== -1 ? v : "100"; } catch (e) { return "100"; }
+  }
+  var currentFontScale = loadFontScale();
+  function updateFontScaleUI() {
+    ["fsOptionRow", "fsPromptRow"].forEach(function (rid) {
+      var opts = document.querySelectorAll("#" + rid + " .theme-option");
+      Array.prototype.forEach.call(opts, function (o) { o.classList.toggle("active", o.getAttribute("data-id") === currentFontScale); });
+    });
+    var vt = document.getElementById("vividToggle");
+    if (vt) vt.classList.toggle("active", document.documentElement.classList.contains("vivid"));
+    var lb = document.getElementById("fsLoginBtn");
+    if (lb) lb.textContent = "가 글씨 크기 · " + FS_NAMES[currentFontScale];
+  }
+  function applyFontScale(v) {
+    if (FS_STEPS.indexOf(v) === -1) v = "100";
+    currentFontScale = v;
+    var r = document.documentElement;
+    if (v === "100") r.removeAttribute("data-fs"); else r.setAttribute("data-fs", v);
+    r.classList.toggle("fs-big", v !== "100");
+    r.classList.toggle("fs-xl", v === "130" || v === "150");
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+    updateFontScaleUI();
+  }
+  function applyVivid(on) {
+    document.documentElement.classList.toggle("vivid", !!on);
+    try { localStorage.setItem(VIVID_KEY, on ? "1" : "0"); } catch (e) {}
+    updateFontScaleUI();
+  }
+  function needFontPrompt() {
+    try { return !localStorage.getItem(FS_SEEN_KEY); } catch (e) { return false; }
+  }
+  var fontPromptDone = null;
+  function showFontPrompt(done) {
+    fontPromptDone = done || null;
+    try { localStorage.setItem(FS_SEEN_KEY, "1"); } catch (e) {}
+    updateFontScaleUI();
+    document.getElementById("fsPromptOverlay").classList.remove("hidden");
+  }
+  function closeFontPrompt() {
+    document.getElementById("fsPromptOverlay").classList.add("hidden");
+    var cb = fontPromptDone; fontPromptDone = null;
+    if (cb) cb();
+  }
+  applyFontScale(currentFontScale);
   // personalTitle은 Firestore 응답을 기다리는 동안(확인 중… 화면 동안) 비어 보이지 않도록,
   // 이 기기에 마지막으로 저장했던 값을 즉시 먼저 보여준다. 이 기기에서 한 번도 값을 저장한 적
   // 없는 최초 1회에 한해서만 스켈레톤을 띄운다 — 이후 renderTitleRow()가 실제 값으로 교체한다.
@@ -801,6 +891,7 @@
     Array.prototype.forEach.call(grOpts, function (o) {
       o.classList.toggle("active", o.getAttribute("data-id") === curGr);
     });
+    updateFontScaleUI();
     updateAlarmSettingUI();
     try { updateReviewSettingsUI(); } catch (e) {}
     renderAvatarSlots();
@@ -812,11 +903,11 @@
   function openApprovalOverlay() {
     document.getElementById("approvalOverlay").classList.remove("hidden");
     var body = document.getElementById("approvalOverlayBody");
-    body.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);text-align:center;">불러오는 중…</div>';
+    body.innerHTML = '<div style="font-size:0.7812rem;color:var(--ink-dim);text-align:center;">불러오는 중…</div>';
     window.__fb.listPendingUsers().then(function (list) {
       list = list.filter(function (u) { return u.uid !== ADMIN_UID; });
       if (list.length === 0) {
-        body.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);text-align:center;">대기 중인 가입 요청이 없어요.</div>';
+        body.innerHTML = '<div style="font-size:0.7812rem;color:var(--ink-dim);text-align:center;">대기 중인 가입 요청이 없어요.</div>';
         return;
       }
       list.sort(function (a, b) {
@@ -827,10 +918,10 @@
         var email = escapeHtml(u.data.email || "(이메일 없음)");
         var dt = u.data.requestedAt ? escapeHtml(String(u.data.requestedAt).slice(0, 10)) : "";
         return '<div class="rest-item" style="gap:10px;"><span style="flex:1;min-width:0;overflow-wrap:anywhere;">' + email + (dt ? (' · ' + dt) : '') + '</span>' +
-          '<button class="btn primary" data-action="approve-user" data-id="' + u.uid + '" style="margin:0;padding:7px 14px;font-size:12px;">승인</button></div>';
+          '<button class="btn primary" data-action="approve-user" data-id="' + u.uid + '" style="margin:0;padding:7px 14px;font-size:0.75rem;">승인</button></div>';
       }).join("");
     }).catch(function (err) {
-      body.innerHTML = '<div style="font-size:12.5px;color:var(--danger);text-align:center;">목록을 불러오지 못했어요.</div>';
+      body.innerHTML = '<div style="font-size:0.7812rem;color:var(--danger);text-align:center;">목록을 불러오지 못했어요.</div>';
       console.error("listPendingUsers failed", err);
     });
   }
@@ -1105,7 +1196,7 @@
 
         h += '<div class="section-label" style="margin-top:14px;">지인 코드로 요청하기</div>';
         if (friendsPending) {
-          h += '<div class="fr-note" style="font-size:13px;color:var(--ink);"><b>' + escapeHtml(friendsPending.nick || "이 코드의 주인") + '</b>님에게 지인 요청을 보낼까요?</div>';
+          h += '<div class="fr-note" style="font-size:0.8125rem;color:var(--ink);"><b>' + escapeHtml(friendsPending.nick || "이 코드의 주인") + '</b>님에게 지인 요청을 보낼까요?</div>';
           h += '<div class="fr-btns"><div class="btn primary" data-action="friend-send">보내기</div><div class="btn" data-action="friend-send-cancel">취소</div></div>';
         } else {
           h += '<input class="fr-input" id="friendCodeInput" maxlength="9" placeholder="지인의 코드 8자리" autocapitalize="characters" autocomplete="off">';
@@ -1596,7 +1687,7 @@
       var gen = bibleUnlockedGenealogy();
       genEl.innerHTML = gen.length ? gen.map(function (p) {
         return '<span class="reward-idea-chip" title="' + escapeHtml(p.relation) + '">' + escapeHtml(p.name) + '</span>';
-      }).join("") : '<span style="font-size:11.5px;color:var(--ink-dim);">아직 등장한 인물이 없어요</span>';
+      }).join("") : '<span style="font-size:0.7188rem;color:var(--ink-dim);">아직 등장한 인물이 없어요</span>';
     }
     var longest = computeLongestStreak();
     var grid = document.getElementById("badgeGrid");
@@ -1799,7 +1890,7 @@
           var pct = status === "current" ? Math.min(100, Math.round((points - b.cumStart) / b.points * 100)) : (status === "done" ? 100 : 0);
           var icon = status === "locked" ? "🔒" : b.icon;
           html += '<div class="btn" data-action="bible-shelf-open-book" data-id="' + b.id + '" style="display:flex;justify-content:space-between;align-items:center;opacity:' +
-            (status === "locked" ? 0.45 : 1) + ';margin:0;"><span>' + icon + ' ' + b.name + '</span><span style="font-size:11px;color:var(--ink-dim);">' +
+            (status === "locked" ? 0.45 : 1) + ';margin:0;"><span>' + icon + ' ' + b.name + '</span><span style="font-size:0.6875rem;color:var(--ink-dim);">' +
             (status === "done" ? "완료 ✓" : status === "current" ? pct + "%" : "잠김") + '</span></div>';
         });
         html += '</div>';
@@ -1811,7 +1902,7 @@
       var bookIdx = BIBLE_BOOKS.indexOf(book);
       titleEl.textContent = book.icon + " " + book.name;
       if (bookIdx > g.bookIndex) {
-        body.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink-dim);font-size:13px;">🔒 아직 열리지 않았어요<br>앞의 권들을 먼저 완주해보세요</div>' +
+        body.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink-dim);font-size:0.8125rem;">🔒 아직 열리지 않았어요<br>앞의 권들을 먼저 완주해보세요</div>' +
           '<div class="btn" data-action="bible-shelf-back" style="margin-top:14px;">← 목록으로</div>';
         return;
       }
@@ -1822,10 +1913,10 @@
       scenes.forEach(function (sc) {
         var filled = sceneFilledCount(book, sc, into);
         var complete = filled === sc.count;
-        html += '<div style="margin-bottom:18px;"><div style="font-size:12.5px;font-weight:700;margin-bottom:4px;">' + sc.title +
+        html += '<div style="margin-bottom:18px;"><div style="font-size:0.7812rem;font-weight:700;margin-bottom:4px;">' + sc.title +
           (complete ? " ✓" : filled > 0 ? " · 진행 중" : "") + '</div>' +
           (filled > 0 ? '<div style="text-align:center;">' + sceneCanvasSVG(book, sc, filled, 220) + '</div>' :
-            '<div style="text-align:center;font-size:11.5px;color:var(--ink-dim);padding:14px 0;">아직 시작 전이에요</div>') + '</div>';
+            '<div style="text-align:center;font-size:0.7188rem;color:var(--ink-dim);padding:14px 0;">아직 시작 전이에요</div>') + '</div>';
       });
       body.innerHTML = html;
       shelfPop.on = false;
@@ -2039,7 +2130,7 @@
   function renderRecurringList() {
     var el = document.getElementById("recurringList");
     var sorted = state.recurringHolidays.slice().sort();
-    if (sorted.length === 0) { el.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);">등록된 반복 공휴일이 없어요.</div>'; return; }
+    if (sorted.length === 0) { el.innerHTML = '<div style="font-size:0.7812rem;color:var(--ink-dim);">등록된 반복 공휴일이 없어요.</div>'; return; }
     el.innerHTML = sorted.map(function (md) {
       return '<div class="rest-item"><span>' + mdLabel(md) + '</span><button class="icon-btn" data-action="remove-recurring" data-id="' + md + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
     }).join("");
@@ -2056,16 +2147,16 @@
     var hiddenCount = sorted.length - visible.length;
     linkEl.style.display = hiddenCount > 0 || restShowAllPast ? "inline" : "none";
     linkEl.textContent = restShowAllPast ? "최근 기록만 보기" : ("지난 기록 전체 보기 (" + hiddenCount + ")");
-    if (visible.length === 0) { el.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);">등록된 날짜가 없어요.</div>'; return; }
+    if (visible.length === 0) { el.innerHTML = '<div style="font-size:0.7812rem;color:var(--ink-dim);">등록된 날짜가 없어요.</div>'; return; }
     el.innerHTML = visible.map(function (e) {
       var dk = restDayDate(e), lb = restDayLabel(e);
       if (restEditingDk === dk) {
         return '<div class="rest-item" style="flex-direction:column;align-items:stretch;gap:8px;">' +
-          '<span style="font-size:12px;color:var(--ink-dim);">' + dk + '</span>' +
-          '<input type="text" class="cat-name-input" id="restLabelInput" placeholder="왜 쉬었는지 메모 (선택)" value="' + escapeHtml(lb) + '" style="margin-bottom:0;font-size:13px;padding:9px 10px;">' +
+          '<span style="font-size:0.75rem;color:var(--ink-dim);">' + dk + '</span>' +
+          '<input type="text" class="cat-name-input" id="restLabelInput" placeholder="왜 쉬었는지 메모 (선택)" value="' + escapeHtml(lb) + '" style="margin-bottom:0;font-size:0.8125rem;padding:9px 10px;">' +
           '<div style="display:flex;gap:6px;">' +
-            '<button class="btn" data-action="cancel-rest-label" style="flex:1;margin:0;padding:9px;font-size:12.5px;">취소</button>' +
-            '<button class="btn primary" data-action="save-rest-label" data-id="' + dk + '" style="flex:1;margin:0;padding:9px;font-size:12.5px;">저장</button>' +
+            '<button class="btn" data-action="cancel-rest-label" style="flex:1;margin:0;padding:9px;font-size:0.7812rem;">취소</button>' +
+            '<button class="btn primary" data-action="save-rest-label" data-id="' + dk + '" style="flex:1;margin:0;padding:9px;font-size:0.7812rem;">저장</button>' +
           '</div></div>';
       }
       return '<div class="rest-item"><span>' + dk + (lb ? (' · ' + escapeHtml(lb)) : '') + '</span>' +
@@ -2775,7 +2866,10 @@
       if (!effectiveApproved) { renderPendingView(); return; }
       if (!document.getElementById("view-pending").classList.contains("hidden")) { showView("view-home"); }
       renderHomeWhenIdle();
-      if (!window.__holidayPromptChecked) { window.__holidayPromptChecked = true; checkHolidayFirstPrompt(); }
+      if (!window.__holidayPromptChecked) {
+        window.__holidayPromptChecked = true;
+        if (needFontPrompt()) showFontPrompt(checkHolidayFirstPrompt); else checkHolidayFirstPrompt();
+      }
     }
     stateUnsub = window.__fb.subscribeState(uid, function (data, hasPendingWrites, fromCache) {
       if (fromCache) return;                 // 기기 안의 오래된 캐시 응답은 무시하고 서버에서 확정된 값만 쓴다
@@ -5164,7 +5258,7 @@
     var el = document.getElementById("moveCatList");
     var others = state.categories.filter(function (c) { return c.id !== editingCatId; });
     if (others.length === 0) {
-      el.innerHTML = '<div style="font-size:12.5px;color:var(--ink-dim);">이동할 다른 카테고리가 없어요.</div>';
+      el.innerHTML = '<div style="font-size:0.7812rem;color:var(--ink-dim);">이동할 다른 카테고리가 없어요.</div>';
       return;
     }
     el.innerHTML = others.map(function (c) {
@@ -5419,7 +5513,7 @@
     tgSel.forEach(function (t) { if (union.indexOf(t) === -1) union.push(t); });
     if (union.length === 0) {
       var e = document.createElement("div");
-      e.style.fontSize = "12.5px"; e.style.color = "var(--ink-dim)";
+      e.style.fontSize = "0.78125rem"; e.style.color = "var(--ink-dim)";
       e.textContent = "아직 태그가 없어요. 아래에서 추가해보세요.";
       el.appendChild(e);
       return;
@@ -5636,7 +5730,7 @@
             '<div class="btn primary" data-action="time-adopt" data-id="' + it.id + '">' + fmtDur(sg.suggested) + '으로 조정</div>' +
             '<div class="btn" data-action="time-keep" data-id="' + it.id + '">지금 시간이 맞아요</div>' +
           '</div>' +
-          '<div style="margin-top:8px;text-align:right;"><span data-action="time-off" data-id="' + it.id + '" style="font-size:11.5px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">이 항목은 제안 끄기</span></div></div>';
+          '<div style="margin-top:8px;text-align:right;"><span data-action="time-off" data-id="' + it.id + '" style="font-size:0.7188rem;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">이 항목은 제안 끄기</span></div></div>';
       } else if (statsTimeOnlySuggest) {
         extra = "";
       } else if (ts.off) {
@@ -5781,7 +5875,7 @@
     '</div>';
     html += '<div class="success-header">' + ["S","M","T","W","T","F","S"].map(function(d){return '<div>'+d+'</div>';}).join("") + '</div>';
     html += '<div class="success-grid">' + cellsHtml + '</div>';
-    if (anyBonus) html += '<div style="margin-top:10px;font-size:11.5px;color:var(--ink-dim);">🟡 쉬는 날인데 뭔가 한 날 (스트릭에는 반영되지 않아요)</div>';
+    if (anyBonus) html += '<div style="margin-top:10px;font-size:0.7188rem;color:var(--ink-dim);">🟡 쉬는 날인데 뭔가 한 날 (스트릭에는 반영되지 않아요)</div>';
     return html;
   }
 
@@ -6037,7 +6131,7 @@
           var d = parseKeyToDate(dk);
           var dlabel = (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + days[d.getDay()] + ")";
           return '<div class="rest-item" data-action="backfill-memo-goto" data-id="' + dk + '" style="align-items:flex-start;cursor:pointer;">' +
-            '<span style="font-size:11.5px;color:var(--ink-dim);flex:none;width:74px;">' + dlabel + '</span>' +
+            '<span style="font-size:0.7188rem;color:var(--ink-dim);flex:none;width:74px;">' + dlabel + '</span>' +
             '<span style="flex:1;">' + escapeHtml(state.memos[dk]) + '</span></div>';
         }).join("");
         return '<div class="section-label" style="margin-top:14px;">' + label + ' (' + groups[ym].length + ')</div>' +
@@ -6157,7 +6251,7 @@
         ? '<div class="bf-save-note">저장하지 않은 변경 ' + bfPendingCount() + '개 (노란 테두리)</div>' +
           '<div class="bf-save-bar"><div class="btn" data-action="backfill-reset-pending">되돌리기</div><div class="btn primary" data-action="backfill-save-pending">저장</div></div>'
         : '') +
-      '<div style="font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.5;">날짜를 탭해서 완료 여부를 바꾼 뒤 \'저장\'을 눌러야 반영돼요. 연한 칸(예정 없던 날)도 자유롭게 기록할 수 있어요. 카운트다운 없이 기록한 날은 지정된 시간으로 저장돼요.</div>';
+      '<div style="font-size:0.7188rem;color:var(--ink-dim);margin-top:10px;line-height:1.5;">날짜를 탭해서 완료 여부를 바꾼 뒤 \'저장\'을 눌러야 반영돼요. 연한 칸(예정 없던 날)도 자유롭게 기록할 수 있어요. 카운트다운 없이 기록한 날은 지정된 시간으로 저장돼요.</div>';
     el.innerHTML = html;
   }
 
@@ -6875,7 +6969,7 @@
       return '<div class="rv-catrow"><span class="rv-catname" style="max-width:none;flex:0 0 34px;">' + x[0] + '</span>' +
         '<span class="rv-cattrack"><span class="rv-catfill ' + x[2] + '" style="width:' + Math.round(x[1] / max * 100) + '%"></span></span>' +
         '<span class="rv-catnum">' + x[1] + '번</span></div>';
-    }).join("") + '<div class="rv-none" style="font-size:11px;">아침 4~12시 · 오후 12~18시 · 저녁 18시 이후</div>';
+    }).join("") + '<div class="rv-none" style="font-size:0.6875rem;">아침 4~12시 · 오후 12~18시 · 저녁 18시 이후</div>';
   }
 
   // [자세히 보기]: 요일별 · 시간대(카테고리)별 달성률, 2번 연속 쉰 항목, 시작 전 항목
@@ -7119,7 +7213,7 @@
       return '<div class="rv-catrow"><span class="rv-catname" style="max-width:none;flex:0 0 auto;">' + c.label + '</span>' +
         '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + (r === null ? 0 : r) + '%"></span></span>' +
         '<span class="rv-catnum">' + (r === null ? '–' : r + '%') + '</span></div>' +
-        '<div class="rv-none" style="margin:-2px 0 4px;font-size:11px;">' + c.range + '</div>';
+        '<div class="rv-none" style="margin:-2px 0 4px;font-size:0.6875rem;">' + c.range + '</div>';
     }).join("");
     var cats = Object.keys(m.cur.cats).map(function (k) { return m.cur.cats[k]; }).filter(function (c) { return c.due > 0; });
     h += '<div class="rv-sub">카테고리별 달성률</div>';
@@ -7819,6 +7913,10 @@
     else if (action === "reward-claim-delete") { deleteRewardClaim(); }
     else if (action === "reward-chip-tap") { tapRewardChip(dataText); }
     else if (action === "theme-select") { currentTheme = id; applyTheme(id); updateSettingsModalUI(); }
+    else if (action === "fs-select") { applyFontScale(id); }
+    else if (action === "fs-cycle") { applyFontScale(FS_STEPS[(FS_STEPS.indexOf(currentFontScale) + 1) % FS_STEPS.length]); }
+    else if (action === "vivid-toggle") { applyVivid(!document.documentElement.classList.contains("vivid")); }
+    else if (action === "fs-prompt-ok") { closeFontPrompt(); }
     else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
     else if (action === "grace-select") { state.overtimeGrace = parseInt(id, 10); saveState(); updateSettingsModalUI(); }
     else if (action === "open-rest-modal") { showView("view-restDays"); openRestModal(); }
