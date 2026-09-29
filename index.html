@@ -2304,6 +2304,7 @@
       restDays: [],
       recurringHolidays: [],
       streakThreshold: 100,
+      thresholdHistory: [],
       overtimeGrace: 10,
       avatar: { sk: 1, hs: 0, hc: 1, ex: 0, hw: "none", fa: "none", ou: "tee", oc: 0, cp: "none", bg: "c0", fr: "thin" },
       avatarSeen: null,
@@ -2422,6 +2423,7 @@
     if (typeof p.email !== "string") p.email = "";
     if (typeof p.requestedAt === "undefined") p.requestedAt = null;
     if (!p.streakThreshold) p.streakThreshold = 100;
+    p.thresholdHistory = normalizeThresholdHistory(p.thresholdHistory);
     if ([5, 10, 15, 30].indexOf(p.overtimeGrace) === -1) p.overtimeGrace = 10;
     if (typeof AV_ITEM_BY_ID !== "undefined") p.avatar = sanitizeAvatar(p.avatar);
     else if (!p.avatar || typeof p.avatar !== "object") p.avatar = { sk: 1, hs: 0, hc: 1, ex: 0, hw: "none", fa: "none", ou: "tee", oc: 0, cp: "none", bg: "c0", fr: "thin" };
@@ -3176,6 +3178,49 @@
     if (state.restDays.some(function (e) { return restDayDate(e) === dateKey; })) return true;
     return state.recurringHolidays.indexOf(dateKey.slice(5)) !== -1;
   }
+  // ---- 스트릭 인정 기준 변경 이력 ----
+  // 기준(%)을 바꿔도 과거 날짜의 성공/실패 판정이 바뀌지 않도록, 변경한 날짜부터만 새 기준을
+  // 적용한다. thresholdHistory = [{from:"YYYY-MM-DD", value:N}, ...] (from 오름차순).
+  // 이력이 비어 있으면 모든 날짜에 현재 streakThreshold를 적용(기존 사용자와 동일한 동작).
+  function normalizeThresholdHistory(h) {
+    if (!Array.isArray(h)) return [];
+    var out = h.filter(function (e) {
+      return e && typeof e.from === "string" && typeof e.value === "number" && e.value > 0 && e.value <= 100;
+    }).map(function (e) { return { from: e.from, value: e.value }; });
+    out.sort(function (a, b) { return a.from < b.from ? -1 : a.from > b.from ? 1 : 0; });
+    return out;
+  }
+  function thresholdFor(dateKey) {
+    var h = state.thresholdHistory;
+    if (Array.isArray(h) && h.length) {
+      var val = null;
+      for (var i = 0; i < h.length; i++) {
+        if (h[i].from <= dateKey) val = h[i].value; else break;
+      }
+      // 첫 항목보다 이전 날짜는 첫 항목의 값을 그대로 사용
+      return val !== null ? val : h[0].value;
+    }
+    return state.streakThreshold || 100;
+  }
+  function setStreakThreshold(newVal) {
+    var today = todayKey();
+    var cur = state.streakThreshold || 100;
+    if (newVal === cur) return;
+    var h = normalizeThresholdHistory(state.thresholdHistory);
+    // 최초 변경: 지금까지 쓰던 값을 "처음부터" 적용된 기준으로 고정해 과거를 보존
+    if (h.length === 0) h.push({ from: "0000-00-00", value: cur });
+    // 같은 날 다시 바꾸면 그날 항목을 교체
+    h = h.filter(function (e) { return e.from !== today; });
+    h.push({ from: today, value: newVal });
+    // 직전 항목과 값이 같은 항목은 합쳐서 이력을 짧게 유지
+    var merged = [];
+    h.forEach(function (e) {
+      if (merged.length && merged[merged.length - 1].value === e.value) return;
+      merged.push(e);
+    });
+    state.thresholdHistory = merged;
+    state.streakThreshold = newVal;
+  }
   // "성공" 기준: 카테고리별로 개별 충족을 요구하지 않고, 오늘 예정된 전체 항목을 하나의
   // 풀로 모아 합산 달성률(완료/예정)이 인정 기준(%) 이상이면 성공으로 잡는다.
   // 이렇게 하면 항목 수가 적은 카테고리 하나 때문에(그 카테고리만 기준 미달) 다른
@@ -3183,7 +3228,7 @@
   function overallStreakStatus(k) {
     var withDue = state.categories.filter(function (c) { return catItemsDueOn(c, k).length > 0; });
     if (withDue.length === 0) return null;
-    var threshold = state.streakThreshold || 100;
+    var threshold = thresholdFor(k);
     var totalDue = 0, totalDone = 0;
     withDue.forEach(function (c) {
       totalDue += catItemsDueOn(c, k).length;
@@ -4784,7 +4829,7 @@
       totalDueToday += catItemsDueOn(c, todayK).length;
       totalDoneToday += catDoneCount(c, todayK);
     });
-    var threshold = state.streakThreshold || 100;
+    var threshold = thresholdFor(todayK);
     var todayPct = totalDueToday > 0 ? Math.round(totalDoneToday / totalDueToday * 100) : null;
     var ringEl = document.getElementById("todayRingCard");
     var fillCircle = document.getElementById("ringFillCircle");
@@ -5890,6 +5935,7 @@
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
+      thresholdHistory: state.thresholdHistory,
       overtimeGrace: state.overtimeGrace,
       avatar: state.avatar,
       avatarSeen: state.avatarSeen,
@@ -5953,6 +5999,7 @@
     if (Array.isArray(parsed.restDays)) state.restDays = parsed.restDays;
     if (Array.isArray(parsed.recurringHolidays)) state.recurringHolidays = parsed.recurringHolidays;
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
+    state.thresholdHistory = normalizeThresholdHistory(parsed.thresholdHistory);
     if ([5, 10, 15, 30].indexOf(parsed.overtimeGrace) !== -1) state.overtimeGrace = parsed.overtimeGrace;
     if (parsed.avatar && typeof parsed.avatar === "object") state.avatar = sanitizeAvatar(parsed.avatar);
     if (typeof parsed.avatarSeen === "number") state.avatarSeen = parsed.avatarSeen;
@@ -6264,6 +6311,7 @@
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
+      thresholdHistory: state.thresholdHistory,
       overtimeGrace: state.overtimeGrace,
       avatar: state.avatar,
       avatarSeen: state.avatarSeen,
@@ -6339,7 +6387,7 @@
     ], see: ["rest", "days"] },
     streak: { t: "스트릭(연속일) 규칙", sub: "성공한 날의 기준", s: [
       ["성공한 날이란", "그날 해야 하는 모든 항목을 합쳐서 완료 비율이 기준 이상이면 성공이에요. 카테고리별이 아니라 전체 합산이라, 작은 카테고리 하나를 놓쳐도 무너지지 않아요."],
-      ["기준 고르기", "설정에서 100% · 90% · 80% · 70% 중에 고를 수 있어요."],
+      ["기준 고르기", "설정에서 100% · 90% · 80% · 70% 중에 고를 수 있어요. 기준을 바꾸면 바꾼 날부터 새 기준이 적용되고, 그 전 날짜의 성공·연속일은 당시 기준 그대로 유지돼요."],
       ["이어지는 규칙", "쉬는 날이나 할 일이 하나도 없는 날은 건너뛰어요. 끊기지도, 세어지지도 않아요. ‘불시’ 항목과 쉬는 날에 자발적으로 한 항목은 스트릭에 들어가지 않아요."],
       ["표시 범위", "통계의 ‘연속일’은 지금 보고 있는 달과 상관없이, 오늘까지 이어진 전체 연속 일수예요. 옆의 ‘성공일’은 지금 보고 있는 달 안에서만 센 숫자라 범위가 달라요."],
       ["포인트와의 관계", "연속일이 끊겨도 누적 포인트와 성경 여정은 그대로 남아요. 이미 얻은 배지도 사라지지 않아요."]
@@ -7917,7 +7965,7 @@
     else if (action === "fs-cycle") { applyFontScale(FS_STEPS[(FS_STEPS.indexOf(currentFontScale) + 1) % FS_STEPS.length]); }
     else if (action === "vivid-toggle") { applyVivid(!document.documentElement.classList.contains("vivid")); }
     else if (action === "fs-prompt-ok") { closeFontPrompt(); }
-    else if (action === "threshold-select") { state.streakThreshold = parseInt(id, 10); saveState(); updateSettingsModalUI(); renderHome(); }
+    else if (action === "threshold-select") { setStreakThreshold(parseInt(id, 10)); saveState(); updateSettingsModalUI(); renderHome(); }
     else if (action === "grace-select") { state.overtimeGrace = parseInt(id, 10); saveState(); updateSettingsModalUI(); }
     else if (action === "open-rest-modal") { showView("view-restDays"); openRestModal(); }
     else if (action === "toggle-today-rest") { toggleTodayRest(); }
