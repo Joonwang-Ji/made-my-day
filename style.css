@@ -425,6 +425,17 @@
   .theme-option.active { border-color: var(--sage); background: var(--sage-soft); }
   .theme-option .dot { width: 1rem; height: 1rem; border-radius: 50%; border: 2px solid var(--line); flex: none; }
   .theme-option.active .dot { border-color: var(--sage); background: var(--sage); }
+  .set-menu { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .set-row { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--bg-soft); color: var(--ink); cursor: pointer; }
+  .set-row:active { background: var(--sage-soft); }
+  .set-ico { flex: none; width: 1.75rem; text-align: center; font-size: 1.125rem; }
+  .set-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .set-t { font-size: 0.875rem; font-weight: 700; }
+  .set-v { font-size: 0.7188rem; color: var(--ink-dim); font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+  .set-v:empty { display: none; }
+  .set-sub .theme-option-row + .section-label, .set-sub .sub + .section-label, .set-sub .btn + .section-label { margin-top: 22px; }
+  .set-arrow { flex: none; color: var(--ink-dim); font-size: 1.25rem; font-weight: 700; line-height: 1; }
   .rest-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px;
     background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; font-size: 0.7812rem; }
 
