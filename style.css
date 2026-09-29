@@ -821,3 +821,29 @@
   font-size: 13.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .rv-hist-row:last-child { border-bottom: none; }
 .rv-hist-row .rc-chev { color: var(--gold); font-size: 18px; }
+
+/* ---- 리뷰 그래프·카드 다듬기 (산뜻하게, 과하지 않게) ---- */
+.rv-h { display: inline-block; background: var(--gold-soft); color: var(--gold); border-radius: 999px; padding: 2px 10px; margin-bottom: 8px; }
+.rv-block li::marker { color: var(--gold); }
+.rv-expert { border-left: 3px solid var(--sage); border-radius: 4px 14px 14px 4px; }
+.rv-expert .rv-h { background: transparent; color: var(--sage); padding: 0; }
+.rv-more { background: var(--bg-soft); border: none; border-radius: 14px; padding: 10px 14px 12px; }
+.rv-more summary { color: var(--ink); }
+.rv-sub { color: var(--sage); margin: 16px 0 8px; letter-spacing: .02em; }
+.rv-sub-note { font-weight: 600; color: var(--ink-dim); font-size: 10.5px; margin-left: 2px; }
+.rv-days { align-items: flex-end; }
+.rv-day-bar { width: 22px; height: 64px; border-radius: 11px; background: var(--sage-soft); }
+.rv-day-fill { border-radius: 11px; background: var(--sage); transition: height .5s cubic-bezier(.22,.78,.26,1); animation: rvGrowY .6s cubic-bezier(.22,.78,.26,1); }
+.rv-day-fill.best { background: var(--gold); }
+.rv-day-pct { font-weight: 700; color: var(--ink-dim); }
+.rv-cattrack { height: 10px; border-radius: 999px; background: var(--sage-soft); }
+.rv-catfill { border-radius: 999px; background: var(--sage); animation: rvGrowX .6s cubic-bezier(.22,.78,.26,1); }
+.rv-catfill.sl-am { background: var(--gold); }
+.rv-catfill.sl-pm { background: var(--sage); }
+.rv-catfill.sl-ev { background: #7E9CC4; }
+.rv-catnum { font-weight: 700; color: var(--ink); }
+@keyframes rvGrowX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes rvGrowY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.rv-catfill { transform-origin: left center; }
+.rv-day-fill { transform-origin: center bottom; }
+@media (prefers-reduced-motion: reduce) { .rv-day-fill, .rv-catfill { animation: none; } }

@@ -2248,7 +2248,9 @@
       var overtimeUnion = {};
       var secsIn = {};
       var timedUnion = {};
+      var atIn = {};
       if (dayObj && typeof dayObj === "object") {
+        if (dayObj.at && typeof dayObj.at === "object" && !Array.isArray(dayObj.at)) atIn = dayObj.at;
         if (dayObj.secs && typeof dayObj.secs === "object" && !Array.isArray(dayObj.secs)) secsIn = dayObj.secs;
         if (Array.isArray(dayObj.timed)) dayObj.timed.forEach(function (id) { timedUnion[id] = true; });
         if (Array.isArray(dayObj.completed)) {
@@ -2258,7 +2260,7 @@
           dayObj.overtime.forEach(function (id) { overtimeUnion[id] = true; });
         }
         Object.keys(dayObj).forEach(function (k) {
-          if (k === "completed" || k === "overtime" || k === "secs" || k === "timed") return;
+          if (k === "completed" || k === "overtime" || k === "secs" || k === "timed" || k === "at") return;
           var v = dayObj[k];
           if (v && typeof v === "object" && Array.isArray(v.completed)) {
             v.completed.forEach(function (id) { union[id] = true; });
@@ -2279,6 +2281,12 @@
         var timedOut = Object.keys(timedUnion).filter(function (id) { return secsOut[id] !== undefined; });
         if (timedOut.length) entryOut.timed = timedOut;
       }
+      // 완료한 시각(at: 항목별 "HH:MM") — 오늘 체크한 것만 기록되고, 완료된 항목 것만 유지한다
+      var atOut = {};
+      Object.keys(atIn).forEach(function (id) {
+        if (union[id] && typeof atIn[id] === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(atIn[id])) atOut[id] = atIn[id];
+      });
+      if (Object.keys(atOut).length) entryOut.at = atOut;
       out[dateKey] = entryOut;
     });
     return out;
@@ -2435,8 +2443,14 @@
     Object.keys(bs).forEach(function (id) { if (ls[id] === undefined) delete secs[id]; });
     Object.keys(secs).forEach(function (id) { if (comp.indexOf(id) === -1) delete secs[id]; });
     var timed = mergeIdList(b.timed, l.timed, s.timed).filter(function (id) { return secs[id] !== undefined; });
+    var at = {}, la = l.at || {}, ba = b.at || {};
+    Object.keys(s.at || {}).forEach(function (id) { at[id] = s.at[id]; });
+    Object.keys(la).forEach(function (id) { if (ba[id] !== la[id]) at[id] = la[id]; });
+    Object.keys(ba).forEach(function (id) { if (la[id] === undefined) delete at[id]; });
+    Object.keys(at).forEach(function (id) { if (comp.indexOf(id) === -1) delete at[id]; });
     var e = { completed: comp, overtime: ot };
     if (Object.keys(secs).length) { e.secs = secs; if (timed.length) e.timed = timed; }
+    if (Object.keys(at).length) e.at = at;
     return e;
   }
   function mergeHistory(bh, lh, sh) {
@@ -2894,6 +2908,15 @@
     }
     if (Object.keys(entry.secs).length === 0) delete entry.secs;
     if (entry.timed.length === 0) delete entry.timed;
+    // 완료한 시각: "오늘" 체크한 것만 지금 시각을 남긴다(지난 날짜를 나중에 채우는 기록은 실제 수행 시각이 아니므로 남기지 않는다).
+    // 이미 시각이 있으면 그대로 두고, 체크를 취소하면 함께 지운다.
+    if (done && dk === todayKey()) {
+      if (!entry.at || typeof entry.at !== "object") entry.at = {};
+      if (!entry.at[itemId]) { var nowD = new Date(); entry.at[itemId] = pad(nowD.getHours()) + ":" + pad(nowD.getMinutes()); }
+    } else if (!done && entry.at) {
+      delete entry.at[itemId];
+      if (Object.keys(entry.at).length === 0) delete entry.at;
+    }
   }
   function markDone(itemId, done, dateKey, overtime, actualSecs) {
     applyDone(itemId, done, dateKey, overtime, actualSecs);
@@ -2928,7 +2951,8 @@
       var hasOvertime = Array.isArray(raw.overtime) && raw.overtime.indexOf(itemId) !== -1;
       var hasTimed = Array.isArray(raw.timed) && raw.timed.indexOf(itemId) !== -1;
       var hasSecs = raw.secs && Object.prototype.hasOwnProperty.call(raw.secs, itemId);
-      if (!hasCompleted && !hasOvertime && !hasTimed && !hasSecs) return;
+      var hasAt = raw.at && Object.prototype.hasOwnProperty.call(raw.at, itemId);
+      if (!hasCompleted && !hasOvertime && !hasTimed && !hasSecs && !hasAt) return;
       var entry = dayEntry(dk);
       var ci = entry.completed.indexOf(itemId);
       if (ci !== -1) entry.completed.splice(ci, 1);
@@ -2944,6 +2968,10 @@
       if (entry.secs && Object.prototype.hasOwnProperty.call(entry.secs, itemId)) {
         delete entry.secs[itemId];
         if (Object.keys(entry.secs).length === 0) delete entry.secs;
+      }
+      if (entry.at && Object.prototype.hasOwnProperty.call(entry.at, itemId)) {
+        delete entry.at[itemId];
+        if (Object.keys(entry.at).length === 0) delete entry.at;
       }
     });
   }
@@ -6233,6 +6261,7 @@
       ["월간 리뷰", "매월 마지막 날 저녁 8시(시각은 바꿀 수 있어요)가 지나면 도착해요. 한 달의 달성률, 하이라이트, 다음 달에 해 볼 것 하나를 보여줘요. 지난달에 기록한 날이 7일 이상이면 지난달과, 작년 같은 달에 14일 이상이면 작년 이맘때와도 비교해요."],
       ["올해 돌아보기", "월간 리뷰를 켜 두면 12월 31일 저녁(월간 리뷰 받는 시각)부터 한 해를 돌아보는 화면이 도착해요. 달별 달성률 흐름, 가장 꾸준한 항목, 성경 여정, 새해에 해 볼 것 하나를 보여줘요. 홈 카드는 다음 해 1월 말까지 뜨고, 그 뒤에는 ‘지난 리뷰 보기’에서 열 수 있어요."],
       ["지난 리뷰", "설정의 ‘지난 리뷰 보기’에서 주간은 최근 12주, 월간은 최근 12개월, 연간은 해마다 다시 볼 수 있어요. 지난 리뷰도 그때 기록으로 다시 계산해요."],
+      ["완료한 시각", "이제 오늘 체크한 항목은 완료한 시각이 함께 저장돼요. ‘자세히 보기’에서 아침(4~12시)·오후(12~18시)·저녁(18시 이후) 중 언제 많이 했는지 볼 수 있어요. 지난 날짜를 나중에 채운 기록에는 시각이 없어요."],
       ["기록이 적을 때", "기록된 날이 3일보다 적으면 리뷰 대신 환영 메시지가 나와요."],
       ["시작 전 항목", "항목 편집의 ‘시작 전’을 켜 두면 목록에는 보이지만 달성률 · 스트릭 · 리뷰 계산에서 빠져요. 끄는 날부터 시작한 것으로 세요."]
     ], see: ["settings", "days"] },
@@ -6817,22 +6846,57 @@
     return { title: "주간 리뷰", html: h, ids: ids };
   }
 
+  // 완료한 시각(history[날짜].at)을 아침(04~12시) · 오후(12~18시) · 저녁(18시~새벽 4시)으로 나눠 센다.
+  // 시각 기록은 이 기능이 들어간 뒤 "오늘" 체크한 것부터 쌓이므로, 예전 기록에는 없다.
+  function rvTimeSlots(S, E) {
+    var r = { morning: 0, afternoon: 0, evening: 0, total: 0 };
+    var dk = S, guard = 0;
+    while (dk <= E && guard++ < 400) {
+      var e = state.history[dk];
+      if (e && e.at && Array.isArray(e.completed)) {
+        Object.keys(e.at).forEach(function (id) {
+          if (e.completed.indexOf(id) === -1) return;
+          var h = parseInt(e.at[id].slice(0, 2), 10);
+          if (h >= 4 && h < 12) r.morning++; else if (h >= 12 && h < 18) r.afternoon++; else r.evening++;
+          r.total++;
+        });
+      }
+      dk = rvAddDays(dk, 1);
+    }
+    return r;
+  }
+  function rvTimeSlotsHtml(S, E) {
+    var t = rvTimeSlots(S, E);
+    var h = '<div class="rv-sub">언제 많이 했나요 <span class="rv-sub-note">(완료한 시각 기준)</span></div>';
+    if (t.total < 5) return h + '<div class="rv-none">완료한 시각은 오늘부터 기록돼요. 며칠 쌓이면 아침·오후·저녁 중 언제 많이 했는지 보여드릴게요.</div>';
+    var rows = [["아침", t.morning, "sl-am"], ["오후", t.afternoon, "sl-pm"], ["저녁", t.evening, "sl-ev"]];
+    var max = Math.max(t.morning, t.afternoon, t.evening);
+    return h + rows.map(function (x) {
+      return '<div class="rv-catrow"><span class="rv-catname" style="max-width:none;flex:0 0 34px;">' + x[0] + '</span>' +
+        '<span class="rv-cattrack"><span class="rv-catfill ' + x[2] + '" style="width:' + Math.round(x[1] / max * 100) + '%"></span></span>' +
+        '<span class="rv-catnum">' + x[1] + '번</span></div>';
+    }).join("") + '<div class="rv-none" style="font-size:11px;">아침 4~12시 · 오후 12~18시 · 저녁 18시 이후</div>';
+  }
+
   // [자세히 보기]: 요일별 · 시간대(카테고리)별 달성률, 2번 연속 쉰 항목, 시작 전 항목
   function rvDetailWeeklyHtml(m) {
     var h = '<details class="rv-more"><summary>자세히 보기</summary><div class="rv-more-body">';
+    var bestPct = -1;
+    m.cur.days.forEach(function (d) { if (d.due) { var q = rvRate(d.done, d.due); if (q > bestPct) bestPct = q; } });
     h += '<div class="rv-sub">요일별 달성률</div><div class="rv-days">' + m.cur.days.map(function (d) {
       var pct = d.due ? rvRate(d.done, d.due) : null;
-      return '<div class="rv-day"><div class="rv-day-bar"><div class="rv-day-fill" style="height:' + (pct === null ? 0 : pct) + '%"></div></div>' +
+      return '<div class="rv-day"><div class="rv-day-bar"><div class="rv-day-fill' + (pct !== null && pct === bestPct ? ' best' : '') + '" style="height:' + (pct === null ? 0 : pct) + '%"></div></div>' +
         '<div class="rv-day-pct">' + (pct === null ? '–' : pct + '%') + '</div>' +
         '<div class="rv-day-lab">' + RV_DOW[parseKeyToDate(d.dk).getDay()] + '</div></div>';
     }).join("") + '</div>';
     var cats = Object.keys(m.cur.cats).map(function (k) { return m.cur.cats[k]; }).filter(function (c) { return c.due > 0; });
-    h += '<div class="rv-sub">시간대별 달성률</div>';
+    h += '<div class="rv-sub">카테고리별 달성률</div>';
     h += cats.length ? cats.map(function (c) {
       return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(c.cat.name || "이름 없음") + '</span>' +
         '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + rvRate(c.done, c.due) + '%"></span></span>' +
         '<span class="rv-catnum">' + c.done + '/' + c.due + '</span></div>';
     }).join("") : '<div class="rv-none">이번 주는 예정된 항목이 없었어요.</div>';
+    h += rvTimeSlotsHtml(m.S, m.E);
     h += '<div class="rv-sub">이어서 2번 이상 쉰 항목</div>';
     h += m.missRuns.length ? m.missRuns.map(function (r) {
       return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(rvItemName(r.item)) + '</span>' +
@@ -7058,12 +7122,13 @@
         '<div class="rv-none" style="margin:-2px 0 4px;font-size:11px;">' + c.range + '</div>';
     }).join("");
     var cats = Object.keys(m.cur.cats).map(function (k) { return m.cur.cats[k]; }).filter(function (c) { return c.due > 0; });
-    h += '<div class="rv-sub">시간대별 달성률</div>';
+    h += '<div class="rv-sub">카테고리별 달성률</div>';
     h += cats.length ? cats.map(function (c) {
       return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(c.cat.name || "이름 없음") + '</span>' +
         '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + rvRate(c.done, c.due) + '%"></span></span>' +
         '<span class="rv-catnum">' + rvRate(c.done, c.due) + '%</span></div>';
     }).join("") : '<div class="rv-none">이번 달은 예정된 항목이 없었어요.</div>';
+    h += rvTimeSlotsHtml(m.S, m.E);
     if (m.notStartedItems.length) {
       h += '<div class="rv-sub">시작 전 항목</div>' + m.notStartedItems.map(function (x) {
         return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(rvItemName(x.item)) + '</span><span class="rv-catnum" style="width:auto;">시작 전</span></div>';
