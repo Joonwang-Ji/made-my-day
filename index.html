@@ -5085,6 +5085,7 @@
       alarmFired: !!(resumed && startItem.seconds && startElapsed >= startItem.seconds), finished: false };
     showView("view-run");
     renderRun();
+    refreshRunHitTest();
     tickStart();
     if (resumed) {
       var rem = (startItem.seconds || 0) - startElapsed;
@@ -8465,6 +8466,26 @@
   // 밀면 뒤 화면이 같이 움직이는 걸 못 막는다(iOS Safari). 그래서 오버레이가 하나라도 떠 있으면
   // 터치/휠 이동을 검사해서, 손가락이 놓인 자리에서 실제로 스크롤 가능한 요소가 그 방향으로
   // 더 움직일 수 있을 때만 통과시키고 나머지는 막는다. 가로 제스처(뒤로가기 스와이프 등)는 그대로 둔다.
+  // ---- 회전 뒤 카운트다운 화면 터치 판정 어긋남 보정 ----
+  // 아이폰 홈 화면 앱에서 화면을 가로/세로로 여러 번 돌리면, 화면은 그대로인데 fixed 화면의
+  // 실제 터치 판정이 위로 밀리는 WebKit 문제가 있다. 회전이 끝난 뒤 카운트다운 화면을
+  // 한 프레임만 숨겼다 되돌려 레이아웃/터치 판정을 강제로 다시 계산시킨다(눈에는 거의 안 보임).
+  function refreshRunHitTest() {
+    var el = document.getElementById("view-run");
+    if (!el || el.classList.contains("hidden")) return;
+    var top = el.scrollTop;
+    el.style.display = "none";
+    void el.offsetHeight;
+    el.style.display = "";
+    if (top) el.scrollTop = top;
+  }
+  (function initRotationFix() {
+    var timer = null;
+    function later() { clearTimeout(timer); timer = setTimeout(refreshRunHitTest, 250); }
+    window.addEventListener("orientationchange", later);
+    window.addEventListener("resize", later);
+  })();
+
   (function initScrollLock() {
     var LOCK_SEL = ".tp-overlay:not(.hidden), .celeb-stage:not(.hidden), #view-run:not(.hidden), #view-friend-chat:not(.hidden)";
     var root = document.documentElement;
