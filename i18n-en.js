@@ -391,6 +391,213 @@
     [/^로그인에 실패했어요 \((.+)\)$/, function (c) { return "Sign-in failed (" + c + ")"; }]
   ];
 
+  // =====================================================================
+  // 2차: 통계 · 기록 · 지인/응원 · 실행(▶) 화면
+  // =====================================================================
+  var D2 = {
+    // ---------- 통계 ----------
+    "성공": "Success", "주간": "Weekly", "월간": "Monthly", "시간": "Time",
+    "제안만": "Suggested only", "전체": "All", "전체 기간": "All time",
+    "연속일": "Streak", "성공일": "Success days", "이번 달 달성률": "This month's rate",
+    "이 태그를 가진 항목이 없어요.": "No items have this tag.",
+    "아직 항목이 없어요. 카테고리에 루틴 항목을 추가해보세요.": "No items yet. Add routine items to a category.",
+    "지금 조정을 제안할 항목이 없어요.": "No items to suggest adjusting right now.",
+    "이 기간에 완료한 시간 항목이 없어요.": "No timed items were completed in this period.",
+    "딱 맞아요": "Right on",
+    "지금 시간이 맞아요": "Current time is right",
+    "이 항목은 제안 끄기": "Turn off suggestions for this item",
+    "시간 조정 제안 꺼짐 ·": "Time suggestions off ·",
+    "다시 켜기": "Turn on again",
+    "자주": "Often", "초과": "over time", "일찍 끝나요": "finishes early",
+    "시간 없는 항목 (횟수)": "Items without a time (counts)",
+    "실측 = 카운트다운(▶)으로 마친 기록, 지정시간 = 홈·기록에서 바로 체크해 지정 시간으로 저장된 기록이에요. 평균과 조정 제안은 실측 기록으로만 계산해요.":
+      "Measured = completions finished with the countdown (▶). Planned = completions checked on Home or in the log and saved with the set time. Averages and suggestions use measured records only.",
+    "🟡 쉬는 날인데 뭔가 한 날 (스트릭에는 반영되지 않아요)": "🟡 Rest day, but you did something (doesn't count toward the streak)",
+
+    // ---------- 기록 ----------
+    "날짜별": "By date", "항목별": "By item",
+    "항목 선택": "Choose an item",
+    "미래 날짜는 기록할 수 없어요.": "You can't log future dates.",
+    "이 날짜에 예정된 항목이 없어요.": "Nothing is scheduled on this date.",
+    "쉬는 날 · 선택 항목": "Rest day · optional items",
+    "불시·시작 전 항목": "Anytime / not-started items",
+    "검색 결과가 없어요.": "No results.",
+    "아직 남긴 하루 한 줄이 없어요.": "No one-liners yet.",
+    "되돌리기": "Undo changes",
+    "날짜를 탭해서 완료 여부를 바꾼 뒤 '저장'을 눌러야 반영돼요. 연한 칸(예정 없던 날)도 자유롭게 기록할 수 있어요. 카운트다운 없이 기록한 날은 지정된 시간으로 저장돼요.":
+      "Tap dates to change whether they're done, then press “Save” to apply. You can also log the faded cells (days it wasn't scheduled). Days logged without the countdown are saved with the set time.",
+    "미래 날짜는 기록할 수 없어요": "You can't log future dates",
+    "체크를 해제할까요?": "Uncheck this?",
+    "해제": "Uncheck",
+    "저장하지 않은 변경이 있어요": "You have unsaved changes",
+    "저장하지 않고 이동하면 변경한 내용이 사라져요.": "If you leave without saving, your changes will be lost.",
+    "저장하지 않고 나가면 변경한 내용이 사라져요.": "If you exit without saving, your changes will be lost.",
+    "이동": "Leave", "나가기": "Exit",
+    "저장하지 않고 닫을까요?": "Close without saving?",
+    "입력한 내용은 저장되지 않아요.": "What you typed won't be saved.",
+    "카테고리 완료! 🎉": "Category complete! 🎉",
+
+    // ---------- 시간 조정 토스트 ----------
+    "이 항목은 제안하지 않아요 · 통계 시간 탭에서 다시 켤 수 있어요": "Won't suggest for this item · you can turn it back on in the Stats Time tab",
+    "이 항목의 시간 조정 제안을 다시 켰어요": "Time suggestions turned back on for this item",
+
+    // ---------- 지인 ----------
+    "받은 요청": "Received requests", "수락": "Accept", "거절": "Decline",
+    "아직 연결된 지인이 없어요. 아래에서 초대 코드를 주고받아 연결해 보세요.": "No friends connected yet. Exchange invite codes below to connect.",
+    "아직 공개 전이에요": "Not shared yet",
+    "▴ 접기": "▴ Collapse",
+    "⚙ 공개 설정 · 초대 코드 · 지인 추가": "⚙ Sharing · Invite code · Add a friend",
+    "내 공개 설정": "My sharing settings",
+    "공개를 켜면": "When sharing is on,",
+    "서로 수락한 지인에게만": "only friends who accepted each other",
+    "타이틀 · 누적P · 연속일 · 성경 진행(%·권)이 보여요. 루틴 이름, 메모, 선물함, 이메일은 공개되지 않아요.":
+      "can see your title, total points, streak and Bible progress (% · book). Routine names, notes, gift box and email stay private.",
+    "닉네임 (1~12자)": "Nickname (1–12 characters)",
+    "오늘 진행률도 공개": "Also share today's progress",
+    "루틴 개수도 공개": "Also share routine count",
+    "공개 켜기": "Turn on sharing", "공개 끄기": "Turn off sharing",
+    "내 초대 코드": "My invite code",
+    "새 코드 만들기": "Create a new code",
+    "이 코드를 지인에게 알려 주세요. 지인이 코드를 입력해 요청을 보내면, 내가 수락한 사람만 연결돼요.":
+      "Share this code with a friend. When they enter it and send a request, only people you accept get connected.",
+    "지인 코드로 요청하기": "Request with a friend's code",
+    "지인의 코드 8자리": "Friend's 8-character code",
+    "이 코드의 주인": "this code's owner",
+    "님에게 지인 요청을 보낼까요?": " — send a friend request?",
+    "보낸 요청 · 수락 대기 중": "Sent requests · waiting for acceptance",
+    "공개를 켜면 초대 코드가 만들어지고, 지인과 연결할 수 있어요.": "Turn on sharing to get an invite code and connect with friends.",
+    "서버 규칙이 아직 적용되지 않았어요.": "The server rules haven't been applied yet.",
+    "Firebase 콘솔에서 규칙을 적용한 뒤 다시 열어주세요.": "Apply the rules in the Firebase console, then open this again.",
+    "불러오지 못했어요. 잠시 후 다시 시도해주세요.": "Couldn't load. Please try again in a moment.",
+    "지인 끊기": "Remove friend",
+    "끊으면 서로의 정보가 보이지 않게 돼요. 다시 연결하려면 새로 요청하고 상대가 수락해야 해요.":
+      "Once removed, you won't see each other's info. To reconnect, send a new request and have them accept.",
+    "연결을 끊었어요": "Friend removed",
+    "아직 주고받은 응원이 없어요.": "No cheers exchanged yet.",
+    "아래에서 먼저 마음을 전해 보세요 💌": "Send the first kind word below 💌",
+    "💌 응원": "💌 Cheer",
+    "지우기": "Delete",
+    "오늘은 다 보냈어요 🌙": "All sent for today 🌙",
+    "오늘은 이 지인에게 다 보냈어요. 내일 또 보내요 🌙": "You've sent all you can to this friend today. Send more tomorrow 🌙",
+    "응원": "Cheer", "칭찬": "Praise",
+    "💪 오늘도 힘내요!": "💪 Keep it up today!",
+    "🌿 천천히 해도 괜찮아요": "🌿 It's okay to go slowly",
+    "🤝 끝까지 함께해요": "🤝 Let's see it through together",
+    "🙏 기도하고 있어요": "🙏 I'm praying for you",
+    "🌅 내일은 더 좋을 거예요": "🌅 Tomorrow will be better",
+    "👏 오늘 정말 잘했어요": "👏 You did great today",
+    "🔥 꾸준함이 멋져요": "🔥 Your consistency is awesome",
+    "🏆 연속 기록 대단해요": "🏆 Your streak is amazing",
+    "🌱 조금씩 자라고 있어요": "🌱 You're growing little by little",
+    "✨ 덕분에 힘이 나요": "✨ You give me strength",
+    "오늘도 힘내요!": "Keep it up today!",
+    "천천히 해도 괜찮아요": "It's okay to go slowly",
+    "끝까지 함께해요": "Let's see it through together",
+    "기도하고 있어요": "I'm praying for you",
+    "내일은 더 좋을 거예요": "Tomorrow will be better",
+    "오늘 정말 잘했어요": "You did great today",
+    "꾸준함이 멋져요": "Your consistency is awesome",
+    "연속 기록 대단해요": "Your streak is amazing",
+    "조금씩 자라고 있어요": "You're growing little by little",
+    "덕분에 힘이 나요": "You give me strength",
+
+    // ---------- 지인·응원 토스트 ----------
+    "서버 권한이 아직 열리지 않았어요 · Firebase 규칙 적용을 확인해주세요": "Server permissions aren't open yet · check that the Firebase rules are applied",
+    "문제가 생겼어요 · 잠시 후 다시 시도해주세요": "Something went wrong · please try again in a moment",
+    "닉네임을 입력해주세요": "Please enter a nickname",
+    "닉네임은 12자까지예요": "Nicknames can be up to 12 characters",
+    "공개 설정을 저장했어요": "Sharing settings saved",
+    "공개를 껐어요": "Sharing turned off",
+    "새 코드를 만들었어요": "New code created",
+    "코드를 복사했어요": "Code copied",
+    "복사에 실패했어요 · 직접 적어주세요": "Couldn't copy · please write it down",
+    "코드는 8자리예요": "Codes are 8 characters",
+    "코드를 찾을 수 없어요": "Code not found",
+    "내 코드예요": "That's your own code",
+    "이미 연결된 지인이에요": "Already connected",
+    "이미 요청이 진행 중이에요": "A request is already pending",
+    "요청을 보냈어요 · 상대가 수락하면 연결돼요": "Request sent · you'll connect once they accept",
+    "연결됐어요": "Connected",
+    "연결된 지인이 아니에요": "Not a connected friend",
+    "닉네임을 먼저 정해주세요 · 지인 탭 → 공개 설정": "Set a nickname first · Friends tab → Sharing settings",
+    "오늘은 이 지인에게 다 보냈어요": "You've sent all you can to this friend today",
+
+    // ---------- 실행(▶) ----------
+    "시간 초과": "Over time"
+  };
+  Object.keys(D2).forEach(function (k) { D[k] = D2[k]; });
+
+  CTX.push({ sel: ".run-finish .big", map: { "완료": "complete" } });
+
+  var WDN = WD;
+  function dayTxt(n) { return plural(n, "day", "days"); }
+  function timesTxt(n) { return n + "×"; }
+
+  P.push(
+    // 통계
+    [/^(\d+)회$/, function (n) { return timesTxt(n); }],
+    [/^조정 제안 (\d+)개$/, function (n) { return plural(n, "suggestion", "suggestions"); }],
+    [/^최근 (\d+)일 기록 시간 합계 (.+) · 조정 제안 (\d+)개$/, function (d, t, n) { return "Last " + d + " days · time logged " + I.sub(t) + " · " + plural(n, "suggestion", "suggestions"); }],
+    [/^전체 기간 기록 시간 합계 (.+) · 조정 제안 (\d+)개$/, function (t, n) { return "All time · time logged " + I.sub(t) + " · " + plural(n, "suggestion", "suggestions"); }],
+    [/^지정 (.+?)(?: · 실측 평균 (.+))?$/, function (a, b) { return "Planned " + I.sub(a) + (b ? " · measured avg " + I.sub(b) : ""); }],
+    [/^완료 (\d+)회 \(실측 (\d+) · 지정시간 (\d+)\)(?: · 총 (.+))?$/, function (n, m, p, tot) {
+      return "Done " + n + "× (measured " + m + " · planned " + p + ")" + (tot ? " · total " + I.sub(tot) : "");
+    }],
+    [/^([+−])(.+?) \(([+−]?\d+%)\)$/, function (s, d, pct) { return s + I.sub(d) + " (" + pct + ")"; }],
+    [/^(돼요)? ?— 최근 (\d+)회 중 (\d+)회, 보통 (.+) 걸려요\.$/, function (x, tot, cnt, med) {
+      return (x ? " " : "") + "— " + cnt + " of your last " + tot + " runs; usually about " + I.sub(med) + ".";
+    }],
+    [/^(.+)으로 조정$/, function (t) { return "Adjust to " + I.sub(t); }],
+    [/^(새 기준|실측) (\d+)\/(\d+)회 모으는 중$/, function (k, a, b) { return (k === "새 기준" ? "New baseline" : "Measured") + " " + a + "/" + b + " · collecting"; }],
+    [/^(\d+)회(?: · 마지막 (\d+\/\d+))?$/, function (n, last) { return timesTxt(n) + (last ? " · last " + last : ""); }],
+
+    // 기록
+    [/^(\d+)월 (\d+)일 \(([일월화수목금토])\)$/, function (m, d, w) { return WDN[w] + ", " + mon(m) + " " + d; }],
+    [/^(\d+)년 (\d+)월 \((\d+)\)$/, function (y, m, n) { return mon(m) + " " + y + " (" + n + ")"; }],
+    [/^저장하지 않은 변경 (\d+)개 \(노란 테두리\)$/, function (n) { return plural(n, "unsaved change", "unsaved changes") + " (yellow border)"; }],
+    [/^(?:(\d+)일 완료)?(?: · )?(?:(\d+)일 해제)? 저장했어요$/, function (a, r) {
+      var parts = [];
+      if (a) parts.push(dayTxt(a) + " checked");
+      if (r) parts.push(dayTxt(r) + " unchecked");
+      return "Saved: " + parts.join(" · ");
+    }],
+    [/^"(.*)" 완료 기록이 지워져요\.$/, function (n) { return "The completion record for “" + n + "” will be erased."; }],
+    [/^"(.*)" \((.+)\) 기록이 지워져요\.$/, function (n, d) { return "The record for “" + n + "” (" + d + ") will be erased."; }],
+    [/^시간을 (.+)으로 조정했어요$/, function (t) { return "Time adjusted to " + I.sub(t); }],
+    [/^지금 시간을 유지해요\. 새 기록 (\d+)회가 쌓이면 다시 살펴볼게요$/, function (n) { return "Keeping the current time. We'll look again after " + n + " new records."; }],
+
+    // 지인
+    [/^내 지인 \((\d+)\)$/, function (n) { return "My friends (" + n + ")"; }],
+    [/^· (.+) 갱신$/, function (t) { return "· updated " + t; }],
+    [/^성경 (.+?) · (\d+)P · 🔥 (\d+)일(?: · 오늘 (\d+\/\d+))?$/, function (b, p, s, t) {
+      return "Bible " + I.sub(b) + " · " + p + "P · 🔥 " + dayTxt(s) + (t ? " · today " + t : "");
+    }],
+    [/^✨ (.+?)( 외 \d+)? · 칭찬해 보세요$/, function (l, more) { return "✨ " + I.sub(l) + (more ? " + " + more.replace(/[^\d]/g, "") + " more" : "") + " · send some praise"; }],
+    [/^✨ (.+) · 칭찬하기$/, function (l) { return "✨ " + I.sub(l) + " · Send praise"; }],
+    [/^🔥 (\d+)일 연속 달성$/, function (n) { return "🔥 " + n + "-day streak"; }],
+    [/^(\d+)일 연속이라니, 정말 대단해요!$/, function (n) { return n + " days in a row — amazing!"; }],
+    [/^📖 새 권 · (.+)$/, function (b) { return "📖 New book · " + I.sub(b); }],
+    [/^(.+) 시작을 축하해요!$/, function (b) { return "Congrats on starting " + I.sub(b) + "!"; }],
+    [/^(.+)님과 지인을 끊을까요\?$/, function (n) { return "Remove " + n + " as a friend?"; }],
+    [/^🎀 (.+)님께$/, function (n) { return "🎀 To " + n; }],
+    [/^💌 (.+)님께 보냈어요$/, function (n) { return "💌 Sent to " + n; }],
+    [/^하루에 한 사람에게 최대 (\d+)번\(직접 쓴 문장 포함\) · 오늘 (\d+\/\d+)$/, function (m, u) { return "Up to " + m + " a day per person (including your own words) · today " + u; }],
+    [/^오늘 (.+?)\/(\d+) \(문구·직접 쓴 문장 합쳐서\)$/, function (u, m) { return "Today " + u + "/" + m + " (preset + own words combined)"; }],
+    [/^(\d+)\/(\d+) \(([일월화수목금토])\)( · 오늘)?$/, function (m, d, w, t) { return WDN[w] + " " + m + "/" + d + (t ? " · Today" : ""); }],
+    [/^(오전|오후) (\d+):(\d+)$/, function (ap, h, m) { return h + ":" + m + " " + (ap === "오전" ? "AM" : "PM"); }],
+    [/^(\d+)자까지 보낼 수 있어요$/, function (n) { return "Up to " + n + " characters"; }],
+    [/^지인 요청이 (\d+)건 와 있어요 · 지인 탭$/, function (n) { return plural(n, "friend request", "friend requests") + " waiting · Friends tab"; }],
+    [/^💌 새 응원 (\d+)개가 왔어요$/, function (n) { return "💌 " + plural(n, "new cheer", "new cheers") + " arrived"; }],
+
+    // 실행(▶)
+    [/^(.+) · 시간 초과$/, function (t) { return I.sub(t) + " · Over time"; }],
+    [/^(\d+)\/(\d+)개 항목을 마쳤어요$/, function (a, b) { return "Finished " + a + " of " + b + " items"; }],
+    [/^"(.+)"으로 이동했어요$/, function (n) { return "Moved to “" + n + "”"; }]
+  );
+
+  // 이모지로 시작하는 문장: "이모지 + 한글" → 이모지 + 번역(번역이 없으면 건너뜀). 다른 패턴이 먼저 맞도록 맨 끝에 둔다.
+  P.push([/^([^\s가-힣A-Za-z0-9]+) (.+)$/, function (e, rest) { var t = I.sub(rest); return t === rest ? null : e + " " + t; }]);
+
   I.register(D, P, CTX);
   I.start();
 })();

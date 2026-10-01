@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-01-2";
+  var BUILD_VERSION = "2026-10-01-3";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -5309,7 +5309,7 @@
         '<div class="run-top"><button class="run-close" data-action="close-run"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button><div></div><div style="width:34px"></div></div>' +
         '<div class="run-body run-finish">' +
           '<div class="check-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>' +
-          '<div class="big">' + escapeHtml(cat.name) + ' 완료</div>' +
+          '<div class="big"><span>' + escapeHtml(cat.name) + '</span> 완료</div>' +
           '<div class="sub">' + doneCount + '/' + runState.items.length + '개 항목을 마쳤어요</div>' +
           '<button class="btn primary" data-action="close-run" style="max-width:200px">홈으로</button>' +
         '</div>' +
