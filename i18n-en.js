@@ -278,7 +278,7 @@
     "새로고침": "Refresh",
     "더보기": "More",
     "정해진 문구": "Quick phrases",
-    "응원의 한마디를 적어 보세요": "Write a few words of encouragement",
+    "응원의 한마디를 적어 보세요": "Cheer them on",
     "업적": "Achievements",
     "내 아바타": "My avatar",
     "탭해서 아바타 꾸미기": "Tap to customize avatar",
