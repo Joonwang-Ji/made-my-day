@@ -5011,10 +5011,10 @@
       card.className = "cat-card";
       var itemsHtml = cat.items.map(function (it) {
         var due = isDueForDate(it, todayK);
-        // 쉬는 날에는 예정(due)이 아닌 항목도 자유롭게 체크할 수 있게 열어둔다(보너스/선택).
-        // 스트릭 집계(overallStreakStatus)는 여전히 due 항목만 기준으로 삼으므로 이 체크는
-        // 스트릭에 영향을 주지 않고, 성공 달력에서 별도 표시로만 남는다.
-        var optional = !due && (todayIsRest || !!it.flex || !!it.notStarted);
+        // 예정(due)이 아닌 항목(쉬는 날·불시·시작 전·오늘 요일이 아닌 항목)도 자유롭게 체크할 수 있게
+        // 열어둔다(보너스/선택). 스트릭 집계(overallStreakStatus)는 여전히 due 항목만 기준으로 삼으므로
+        // 이 체크는 스트릭·달성률에 영향을 주지 않고, 완료 기록이 남아 포인트(1P)에만 반영된다.
+        var optional = !due;
         var checked = isDone(todayK, it.id);
         var overtimeDone = checked && isOvertimeDone(todayK, it.id);
         var itemCls = checked ? ' done' : (due ? '' : (optional ? ' optional' + ((it.flex || it.notStarted) ? ' flex' : '') : ' not-due'));
@@ -5023,7 +5023,7 @@
           ((due || optional) ? (' data-action="toggle-item" data-cat="' + cat.id + '" data-id="' + it.id + '"') : '') + '>' +
           '<span class="mini-dot' + dotCls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          '<span class="mini-dur">' + (!checked && due && runSaveRemaining(cat.id, it) !== null ? ("이어하기 · 남은 " + fmtMMSS(runSaveRemaining(cat.id, it))) : checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? (overtimeDone ? (fmtDur(it.seconds) + ' <span class="mini-over">+' + fmtDur(Math.max(0, actualSecsOf(todayK, it.id) - it.seconds)) + '</span>') : fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? fmtDur(it.seconds) : (due ? fmtDur(it.seconds) : (it.notStarted ? "시작 전" : (it.flex ? "불시" : (optional ? "쉬는 날 · 선택" : dayLabel(it)))))) + '</span></div>';
+          '<span class="mini-dur">' + (!checked && due && runSaveRemaining(cat.id, it) !== null ? ("이어하기 · 남은 " + fmtMMSS(runSaveRemaining(cat.id, it))) : checked && !it.flex && isTimedDone(todayK, it.id) && actualSecsOf(todayK, it.id) !== null ? (overtimeDone ? (fmtDur(it.seconds) + ' <span class="mini-over">+' + fmtDur(Math.max(0, actualSecsOf(todayK, it.id) - it.seconds)) + '</span>') : fmtDur(actualSecsOf(todayK, it.id))) : overtimeDone ? fmtDur(it.seconds) : (due ? fmtDur(it.seconds) : (it.notStarted ? "시작 전" : (it.flex ? "불시" : (optional ? (todayIsRest ? "쉬는 날 · 선택" : dayLabel(it) + " · 선택") : dayLabel(it)))))) + '</span></div>';
       }).join("");
       card.setAttribute("data-cat-card", cat.id);
       card.innerHTML =
