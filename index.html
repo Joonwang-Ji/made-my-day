@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-01-4";
+  var BUILD_VERSION = "2026-10-01-5";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -835,6 +835,11 @@
 <script src="bible-medals-data.js"></script>
 <script src="avatar-data.js"></script>
 <script src="review-data.js"></script>
+<script src="i18n-en-help.js"></script>
+<script src="i18n-en-review.js"></script>
+<script src="i18n-en-bible.js"></script>
+<script src="i18n-en-avatar.js"></script>
+<script src="i18n-en-extra.js"></script>
 <script>
 (function () {
   "use strict";
@@ -3661,7 +3666,7 @@
     var b = found.book, m = found.milestone, list = milestonesForBook(b);
     var idx = list.indexOf(m) + 1;
     var refShort = m.ref.indexOf(b.name) === 0 ? m.ref.slice(b.name.length).replace(/^\s+/, "") : m.ref;
-    var nfs = Math.min(11, 58 / Math.max(b.name.length, 1));
+    var nfs = Math.min(11, 58 / Math.max(b.name.length * (b.name.charCodeAt(0) > 0x2E80 ? 1 : 0.6), 1));   // 영어 이름은 글자 폭이 좁다
     return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><use href="#fr1"/><circle cx="50" cy="50" r="41" fill="#EADBB5"/>' +
       '<circle cx="50" cy="50" r="38" fill="none" stroke="#C2A25E" stroke-width=".6"/><use href="#fr2"/>' +
       '<use href="#st" transform="translate(50 25) scale(1.7)"/>' +
@@ -6608,6 +6613,7 @@
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
     ["지인 · 데이터", ["share", "cheers", "backup"]]
   ];
+  if (window.MMD_HELP_EN) { HELP_TOPICS = window.MMD_HELP_EN.topics; HELP_GROUPS = window.MMD_HELP_EN.groups; }   // 영어 모드: i18n-en-help.js
   function openHelp(id) {
     var tp = HELP_TOPICS[id];
     if (!tp) return;
@@ -6803,13 +6809,14 @@
     }
     return n;
   }
+  var RV_EN = !!(window.MMD_I18N && window.MMD_I18N.lang === "en");   // 영어 모드: 리뷰 문구 조각도 영어로
   function rvStreakText(it, n) {
     if (rvIsDailyish(it)) {
       var ms = [365, 300, 200, 150, 100, 60, 50, 30, 21, 14, 10, 7], m = null;
       for (var i = 0; i < ms.length; i++) if (n >= ms[i]) { m = ms[i]; break; }
-      return m ? (m + "일 넘게") : (n + "번 연속");
+      return m ? (RV_EN ? "over " + m + " days in a row" : m + "일 넘게") : (RV_EN ? n + " times in a row" : n + "번 연속");
     }
-    return n + "번 연속";
+    return RV_EN ? n + " times in a row" : n + "번 연속";
   }
   // 예정일 기준 "2번 이상 연속 쉰" 항목. 기간 앞 3주까지 거슬러 봐서, 주 1회 항목도 이어서 셀 수 있다.
   // trailing = 기간 끝 시점에도 아직 이어지는 중(최근 예정 2번이 연속으로 비었음)
@@ -6860,11 +6867,11 @@
     return out;
   }
 
-  function rvItemName(it) { return (it.name || "").trim() || "이름 없음"; }
+  function rvItemName(it) { return (it.name || "").trim() || (RV_EN ? "Unnamed" : "이름 없음"); }
   function rvNameList(recs, max) {
     var names = recs.slice(0, max).map(function (r) { return rvItemName(r.item); });
-    var s = names.join("·");
-    if (recs.length > max) s += " 외 " + (recs.length - max) + "개";
+    var s = names.join(RV_EN ? ", " : "·");
+    if (recs.length > max) s += RV_EN ? " +" + (recs.length - max) + " more" : " 외 " + (recs.length - max) + "개";
     return s;
   }
   function rvMissedList(cur) {
@@ -6878,8 +6885,8 @@
   }
   function rvMissedText(list) {
     if (!list.length) return "";
-    var s = list.slice(0, 2).map(function (x) { return rvItemName(x.item) + " " + x.count + "번"; }).join(", ");
-    if (list.length > 2) s += " 외 " + (list.length - 2) + "개";
+    var s = list.slice(0, 2).map(function (x) { return rvItemName(x.item) + (RV_EN ? " ×" + x.count : " " + x.count + "번"); }).join(", ");
+    if (list.length > 2) s += RV_EN ? " +" + (list.length - 2) + " more" : " 외 " + (list.length - 2) + "개";
     return s;
   }
   function rvNotStartedItems() {
@@ -6949,7 +6956,10 @@
     m.cheerKey = m.trailing ? "streakMiss" : (m.notStartedItems.length ? "notStarted" : (m.trend === "down" ? "down" : (m.trend === "up" ? "up" : "base")));
     return m;
   }
-  function rvTopBadge(list) { return list.reduce(function (a, b) { return b.days > a.days ? b : a; }, list[0]); }
+  function rvTopBadge(list) {
+    var top = list.reduce(function (a, b) { return b.days > a.days ? b : a; }, list[0]);
+    return RV_EN ? { label: top.days + "-day", days: top.days } : top;   // 영어: "7-day streak badge"
+  }
   function rvGoodCandidates(m) {
     var c = [];
     if (m.newBadges.length) c.push({ pool: "badge", vars: { badge: rvTopBadge(m.newBadges).label } });
