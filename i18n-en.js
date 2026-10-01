@@ -227,7 +227,7 @@
     "이 항목을 완료했던 기록이 있어요. 항목만 지우고 기록은 통계에 남길지, 기록까지 함께 지울지 선택해 주세요. 기록을 지우면 관련 포인트도 함께 줄어들고 되돌릴 수 없어요.": "This item has completion records. Choose whether to delete only the item and keep the records in your stats, or delete the records too. Deleting records also lowers your points and can't be undone.",
     "항목만 삭제, 기록은 남기기": "Delete item, keep records",
     "기록까지 함께 삭제": "Delete item and records",
-    "정말 삭제할까요?": "Delete for real?",
+    "정말 삭제할까요?": "Delete it?",
     "이동할 다른 카테고리가 없어요.": "No other category to move to.",
     "아직 태그가 없어요. 아래에서 추가해보세요.": "No tags yet. Add one below.",
     "지정된 요일이 없어요. 요일을 고르거나 '불시'를 선택해 주세요": "No days selected. Pick days or choose “Anytime”",
@@ -313,7 +313,9 @@
   // 같은 한글이 자리에 따라 다를 때
   var CTX = [
     { sel: ".rest-badge", map: { "쉬는 날": "Rest day" } },
-    { sel: ".day-toggle", map: { "일": "Sun", "월": "Mon", "화": "Tue", "수": "Wed", "목": "Thu", "금": "Fri", "토": "Sat" } }
+    { sel: ".day-toggle", map: { "일": "Sun", "월": "Mon", "화": "Tue", "수": "Wed", "목": "Thu", "금": "Fri", "토": "Sat" } },
+    // 요일 선택 창 맨 위 버튼: 칸이 좁아 "Every day"가 두 줄로 꺾이므로 짧게(정적 마크업이라 이 파일에 둬야 시작 시점에 적용된다)
+    { sel: ".day-presets button", map: { "매일": "Daily" } }
   ];
 
   var P = [
@@ -570,7 +572,7 @@
     [/^내 지인 \((\d+)\)$/, function (n) { return "My friends (" + n + ")"; }],
     [/^· (.+) 갱신$/, function (t) { return "· updated " + t; }],
     [/^성경 (.+?) · (\d+)P · 🔥 (\d+)일(?: · 오늘 (\d+\/\d+))?$/, function (b, p, s, t) {
-      return "Bible " + I.sub(b) + " · " + p + "P · 🔥 " + dayTxt(s) + (t ? " · today " + t : "");
+      return "Bible " + I.sub(b) + " · " + p + "P · 🔥 " + dayTxt(s) + (t ? " · today\u00a0" + t : "");
     }],
     [/^✨ (.+?)( 외 \d+)? · 칭찬해 보세요$/, function (l, more) { return "✨ " + I.sub(l) + (more ? " + " + more.replace(/[^\d]/g, "") + " more" : "") + " · send some praise"; }],
     [/^✨ (.+) · 칭찬하기$/, function (l) { return "✨ " + I.sub(l) + " · Send praise"; }],

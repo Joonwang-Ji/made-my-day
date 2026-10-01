@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-01-5";
+  var BUILD_VERSION = "2026-10-01-6";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -3220,22 +3220,24 @@
   }
   function catItemsDueOn(cat, dk) { return cat.items.filter(function (it) { return isDueForDate(it, dk); }); }
   function dayLabel(item) {
-    if (item.notStarted) return "시작 전 · " + dayLabel(Object.assign({}, item, { notStarted: false }));
-    if (item.flex) return "불시" + (item.muted ? " 🔕 무음" : "");
+    // 영어 모드: 요일 글자·꼬리표를 영어로(한국어 모드는 기존 그대로)
+    var EN = !!(window.MMD_I18N && window.MMD_I18N.lang === "en");
+    if (item.notStarted) return (EN ? "Not started · " : "시작 전 · ") + dayLabel(Object.assign({}, item, { notStarted: false }));
+    if (item.flex) return (EN ? "Anytime" : "불시") + (item.muted ? (EN ? " 🔕 Muted" : " 🔕 무음") : "");
     var days = item.days;
     var base;
-    if (!days || days.length === 0 || days.length >= 7) base = "매일";
+    if (!days || days.length === 0 || days.length >= 7) base = EN ? "Every day" : "매일";
     else {
       var set = days.slice().sort();
-      if (arraysEqual(set, [1,2,3,4,5])) base = "평일";
-      else if (arraysEqual(set, [0,6])) base = "주말";
+      if (arraysEqual(set, [1,2,3,4,5])) base = EN ? "Weekdays" : "평일";
+      else if (arraysEqual(set, [0,6])) base = EN ? "Weekends" : "주말";
       else {
         var order = [1,2,3,4,5,6,0];
-        var letters = {0:"일",1:"월",2:"화",3:"수",4:"목",5:"금",6:"토"};
-        base = order.filter(function (d) { return set.indexOf(d) !== -1; }).map(function (d) { return letters[d]; }).join("");
+        var letters = EN ? {0:"Sun",1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat"} : {0:"일",1:"월",2:"화",3:"수",4:"목",5:"금",6:"토"};
+        base = order.filter(function (d) { return set.indexOf(d) !== -1; }).map(function (d) { return letters[d]; }).join(EN ? "·" : "");
       }
     }
-    return base + (item.keepOnRest ? " · 쉬는날도" : "") + (item.muted ? " 🔕 무음" : "");
+    return base + (item.keepOnRest ? (EN ? " · Rest days too" : " · 쉬는날도") : "") + (item.muted ? (EN ? " 🔕 Muted" : " 🔕 무음") : "");
   }
 
   function catTotalSecondsOn(cat, dk) { return catItemsDueOn(cat, dk).reduce(function (a, it) { return a + (it.seconds || 0); }, 0); }
@@ -4430,7 +4432,12 @@
     celebNext();
   }
   // 배지 팝업의 추천 칩을 탭하면 입력 없이 바로 그 텍스트로 저장(celebBadgeOk와 같은 저장 로직, 입력창 대신 칩 텍스트 사용)
+  // 영어 모드에서는 추천 칩을 영어 문구로 저장한다(한국어 모드는 그대로)
+  function chipNoteText(text) {
+    return (window.MMD_I18N && window.MMD_I18N.lang === "en" && text) ? window.MMD_I18N.tr(text) : text;
+  }
   function celebChipTap(text) {
+    text = chipNoteText(text);
     var ev = celebQueue[0];
     if (ev && ev.id && text) {
       applyRewardNote(ev.id, text);
@@ -4709,6 +4716,7 @@
     closeRewardClaim();
   }
   function tapRewardChip(text) {
+    text = chipNoteText(text);
     if (applyRewardNote(claimingRewardId, text)) toast("기록했어요 🎁");
     closeRewardClaim();
   }
@@ -5327,7 +5335,7 @@
   function renderEditItems() {
     var cat = getCat(editingCatId);
     if (!cat) { showView("view-home"); renderHome(); return; }
-    document.getElementById("editItemsTitle").textContent = cat.name + " 항목";
+    document.getElementById("editItemsTitle").textContent = cat.name + ((window.MMD_I18N && window.MMD_I18N.lang === "en") ? " items" : " 항목");
     var el = document.getElementById("editItemsList");
     el.innerHTML = "";
     cat.items.forEach(function (it, idx) {

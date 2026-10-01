@@ -142,10 +142,40 @@
     } }
   ];
 
+  // ---- 4차 보완 ----
+  I.register({
+    "이 항목이 언제부터 있었는지 — 놓친 항목 통계 계산의 기준일": "When this item started — the base date for missed-item stats",
+    // 토스트·안내 문구 (가져오기/내보내기/삭제/알람/지인)
+    "JSON 형식이 아니에요": "That doesn't look like JSON",
+    "가져올 내용이 없어요": "There's nothing to import",
+    "이 앱에서 내보낸 파일이 아닌 것 같아요": "This doesn't look like a file exported from this app",
+    "파일로 저장했어요": "Saved as a file",
+    "파일을 읽지 못했어요": "Couldn't read the file",
+    "가져왔어요": "Imported",
+    "복사했어요": "Copied",
+    "복사에 실패했어요. 직접 선택해서 복사해주세요": "Couldn't copy. Please select the text and copy it yourself",
+    "항목과 지난 기록을 모두 삭제했어요": "Deleted the item and all its past records",
+    "항목을 삭제했어요. 지난 기록은 통계에 남아요": "Item deleted. Its past records stay in your stats",
+    "모든 알람을 껐어요": "All alarms turned off",
+    "알람을 다시 켰어요": "Alarms turned back on",
+    "한 번 더 눌러 끄기": "Tap again to turn off",
+    "한 번 더 눌러 바꾸기": "Tap again to change",
+    "거절했어요": "Declined",
+    "요청을 취소했어요": "Request canceled",
+    "🍿 간식": "🍿 A snack"
+  }, [
+    [/^(\d+)개 추가했어요 \((\d+)개는 형식이 안 맞아 건너뜀\)$/, function (a, b) { return a + " added (" + b + " skipped: wrong format)"; }],
+    [/^매년 반복 공휴일\((.+)\)$/, function (r) { return "Yearly holiday: " + I.sub(r); }]
+  ], [
+    { sel: ".bc-sec", map: { "성경": "Scripture" } }
+  ]);
+
   I.register(D, P, CTX);
   // 위 패턴보다 포괄적인 분할 규칙: "📖 창세기 · 첫째 날, 빛이 있으라" 같은 "A · B" 조합(지인 카드 등)
   I.register(null, [[/^(📖 )?([^·]+?) · (.+)$/, function (ic, b, t) {
     var a = I.sub(b), c = I.sub(t);
     return (a === b && c === t) ? null : (ic || "") + a + " · " + c;
   }]]);
+  // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
+  if (document.body) I.translateTree(document.body);
 })();
