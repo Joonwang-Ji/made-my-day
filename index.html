@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-09-29-2";
+  var BUILD_VERSION = "2026-10-01-1";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -92,7 +92,7 @@
 </div>
 
 <div class="wrap hidden" id="view-login">
-  <div class="fs-login-row"><span class="fs-login-btn" id="fsLoginBtn" data-action="fs-cycle">가 글씨 크기 · 보통</span></div>
+  <div class="fs-login-row"><span class="fs-login-btn" id="langLoginBtn" data-action="lang-toggle" style="margin-right:8px;">English</span><span class="fs-login-btn" id="fsLoginBtn" data-action="fs-cycle">가 글씨 크기 · 보통</span></div>
   <div style="min-height:70vh;display:flex;flex-direction:column;justify-content:center;">
     <div style="text-align:center;margin-bottom:28px;">
       <div class="day" style="font-size:1.625rem;">Made My Day</div>
@@ -340,8 +340,9 @@
   </div>
   <div class="btn" data-action="open-avatar" style="margin:0 0 16px;display:flex;align-items:center;justify-content:center;gap:10px;"><span class="av-mini" id="settingsAvatar"></span>내 아바타 꾸미기</div>
   <div class="set-menu">
+    <div class="set-row" data-action="open-set-sub" data-id="view-setDisplay"><span class="set-ico">🌐</span><span class="set-txt"><span class="set-t">언어 · Language</span><span class="set-v" id="setSumLang"></span></span><span class="set-arrow">›</span></div>
     <div class="set-row" data-action="open-set-sub" data-id="view-setDisplay"><span class="set-ico">🎨</span><span class="set-txt"><span class="set-t">화면</span><span class="set-v" id="setSumDisplay"></span></span><span class="set-arrow">›</span></div>
-    <div class="set-row" data-action="open-set-sub" data-id="view-setRules"><span class="set-ico">🎯</span><span class="set-txt"><span class="set-t">루틴 규칙</span><span class="set-v" id="setSumRules"></span></span><span class="set-arrow">›</span></div>
+    <div class="set-row" data-action="open-set-sub" data-id="view-setRules"><span class="set-ico">🎯</span><span class="set-txt"><span class="set-t">루틴 규칙 · 쉬는 날 관리</span><span class="set-v" id="setSumRules"></span></span><span class="set-arrow">›</span></div>
     <div class="set-row" data-action="open-set-sub" data-id="view-setNotify"><span class="set-ico">🔔</span><span class="set-txt"><span class="set-t">알림·리뷰</span><span class="set-v" id="setSumNotify"></span></span><span class="set-arrow">›</span></div>
   </div>
   <div class="set-menu">
@@ -358,7 +359,12 @@
     <button class="back-btn" data-action="go-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h2>화면</h2>
   </div>
-  <div class="section-label" style="margin-top:0;">글씨 크기</div>
+  <div class="section-label" style="margin-top:0;">언어 · Language</div>
+  <div class="theme-option-row" id="langOptionRow">
+    <div class="theme-option" data-action="lang-select" data-id="ko"><span>한국어</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="lang-select" data-id="en"><span>English</span><span class="dot"></span></div>
+  </div>
+  <div class="section-label">글씨 크기</div>
   <div class="fs-sample" id="fsSample">가나다라마바사 Aa 123<br>오늘도 좋은 하루 되세요</div>
   <div class="theme-option-row" id="fsOptionRow">
     <div class="theme-option" data-action="fs-select" data-id="100"><span>보통</span><span class="dot"></span></div>
@@ -494,7 +500,7 @@
   </div>
   <div class="theme-option" id="recurringToggle" data-action="toggle-recurring-add" style="margin-bottom:10px;"><span>매년 반복 공휴일로 등록</span><span class="dot"></span></div>
   <div class="btn" data-action="add-rest-range" style="margin-bottom:10px;">추가</div>
-  <div class="btn" data-action="open-holiday-picker" style="margin-bottom:16px;">공휴일 자동 추가</div>
+  <div class="btn" data-action="open-holiday-picker" style="margin-bottom:16px;">한국 공휴일 자동 추가</div>
 
   <div class="section-label" style="margin-top:0;">목록으로 한 번에 추가</div>
   <div class="export-note" style="margin:0 0 8px;">YYYY-MM-DD 뒤에 이름을 붙여 한 줄에 하나씩 붙여넣으세요 (이름은 생략 가능해요).</div>
@@ -693,7 +699,7 @@
 
 <div class="tp-overlay hidden" id="holidayFirstPromptOverlay">
   <div class="tp-card" style="max-width:300px;">
-    <div class="tp-title">공휴일을 불러올까요?</div>
+    <div class="tp-title">한국 공휴일을 불러올까요?</div>
     <div class="export-note" id="holidayFirstPromptText" style="margin:0 0 6px;text-align:center;"></div>
     <div class="tp-actions">
       <div class="btn" data-action="holiday-first-prompt-decline">괜찮아요</div>
@@ -704,7 +710,7 @@
 
 <div class="tp-overlay hidden" id="holidayPickerOverlay">
   <div class="tp-card" style="max-width:320px;">
-    <div class="tp-title">공휴일 불러오기</div>
+    <div class="tp-title">한국 공휴일 불러오기</div>
     <div class="export-note" style="margin:0 0 10px;">매년 반복되는 고정 공휴일과, 설날·추석·대체공휴일처럼 해마다 날짜가 바뀌는 공휴일을 한 번에 불러와요. 실제로 쉬지 않는 날은 체크를 해제하고 추가하세요.</div>
     <div style="text-align:right;margin-bottom:8px;"><span data-action="toggle-holiday-pick-all" style="font-size:0.75rem;text-decoration:underline;font-weight:700;cursor:pointer;color:var(--ink-dim);">전체 선택/해제</span></div>
     <div id="holidayPickerList" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;"></div>
@@ -817,6 +823,8 @@
 <div class="toast" id="toast"></div>
 
 <script type="module" src="firebase-service.js"></script>
+<script src="i18n.js"></script>
+<script src="i18n-en.js"></script>
 <script src="bible-medals-data.js"></script>
 <script src="avatar-data.js"></script>
 <script src="review-data.js"></script>
@@ -2142,7 +2150,7 @@
     el.classList.remove("hidden");
     el.setAttribute("data-year", nextYear);
     el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
-      '<span>' + nextYear + '년 공휴일을 불러올까요?</span>' +
+      '<span>' + nextYear + '년 한국 공휴일을 불러올까요?</span>' +
       '<button class="icon-btn" data-action="dismiss-holiday-banner" style="margin-left:auto;padding:2px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
   }
   function dismissHolidayBanner() {
@@ -6509,7 +6517,7 @@
     rest: { t: "쉬는 날 관리", sub: "휴일 · 공휴일 · 매년 반복", s: [
       ["오늘 쉬기", "맨 위 버튼으로 오늘을 쉬는 날로 표시하거나 해제해요."],
       ["기간 · 날짜 추가", "기간으로 한꺼번에 추가하거나 날짜 목록을 붙여 넣어 추가할 수 있어요. ‘매년 반복’으로 넣으면 해마다 같은 월·일이 쉬는 날이 돼요."],
-      ["공휴일 자동 추가", "‘공휴일 자동 추가’에서 고정 공휴일과 설날 · 추석 · 대체공휴일 등을 골라 넣어요. 이미 추가한 날은 목록에서 빠져서 중복되지 않아요. 실제로 쉬지 않는 날은 체크를 풀고 추가하면 돼요."],
+      ["한국 공휴일 자동 추가", "‘한국 공휴일 자동 추가’에서 한국의 고정 공휴일과 설날 · 추석 · 대체공휴일 등을 골라 넣어요. 이미 추가한 날은 목록에서 빠져서 중복되지 않아요. 실제로 쉬지 않는 날은 체크를 풀고 추가하면 돼요."],
       ["쉬는 날의 효과", "쉬는 날은 스트릭에서 건너뛰어요. 끊기지도, 세어지지도 않아요."]
     ], see: ["keeprest", "streak"] },
     timesuggest: { t: "시간 조정 제안", sub: "항목 시간이 맞는지 점검", s: [
