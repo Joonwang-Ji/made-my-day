@@ -138,8 +138,12 @@
     Array.prototype.forEach.call(opts, function (o) {
       o.classList.toggle("active", o.getAttribute("data-id") === lang);
     });
+    // 선택지 이름: 한국어 화면에서는 '한국어 / 영어', 영어 화면에서는 'Korean / English'
+    var NAMES = lang === "en" ? { ko: "Korean", en: "English" } : { ko: "한국어", en: "영어" };
+    var nm = document.querySelectorAll("[data-lang-name]");
+    Array.prototype.forEach.call(nm, function (e) { e.textContent = NAMES[e.getAttribute("data-lang-name")]; });
     var sum = document.getElementById("setSumLang");
-    if (sum) sum.textContent = lang === "en" ? "English" : "한국어";
+    if (sum) sum.textContent = NAMES[lang];
     var lb = document.getElementById("langLoginBtn");
     if (lb) lb.textContent = lang === "en" ? "한국어" : "English";
   }

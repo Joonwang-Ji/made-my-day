@@ -161,11 +161,11 @@
     "🔔 알람 소리 미리듣기": "🔔 Preview alarm sound",
     "리뷰": "Reviews",
     "주간 리뷰 받기": "Get a weekly review",
-    "일요일 저녁 8시 (기본)": "Sunday 8 PM (default)",
-    "월요일 아침 7시": "Monday 7 AM",
+    "일요일 저녁 8시 (기본)": "Sunday 8:00 PM (default)",
+    "월요일 아침 7시": "Monday 7:00 AM",
     "직접 정하기": "Set my own",
     "월간 리뷰 받기 (매월 마지막 날)": "Get a monthly review (last day of each month)",
-    "마지막 날 저녁 8시 (기본)": "Last day 8 PM (default)",
+    "마지막 날 저녁 8시 (기본)": "Last day 8:00 PM (default)",
     "시각 바꾸기": "Change time",
     "📚 지난 리뷰 보기": "📚 Past reviews",
     "지난 리뷰 보기": "Past reviews",
@@ -258,7 +258,7 @@
     "쉬는 이유 (선택)": "Reason (optional)",
     "시작일을 선택해주세요": "Please choose a start date",
     "종료일이 시작일보다 빠를 수 없어요": "The end date can't be before the start date",
-    "2026-02-16 설날 연휴\n2026-02-17 설날\n2026-02-18 설날 연휴": "2026-02-16 Seollal holiday\n2026-02-17 Seollal\n2026-02-18 Seollal holiday",
+    "2026-02-16 설날 연휴\n2026-02-17 설날\n2026-02-18 설날 연휴": "2026-12-24 Family trip\n2026-12-25 Christmas Day\n2026-12-26 Family trip",
     "오늘 하루를 한 줄로 남겨보세요": "Leave a line about today",
     "하루를 한 줄로 남겨보세요 (선택)": "Leave a line about your day (optional)",
     "내용 검색": "Search notes",
@@ -293,6 +293,12 @@
     "누적 0P": "0 P total",
     "과거 기록": "Past records",
     "크리스마스": "Christmas",
+    "이 기기에만 적용돼요. 바꾸면 화면이 새로 불러와져요.": "Applies to this device only. The screen reloads when you change it.",
+    "직접 정하기 (요일·시각)": "Custom (day & time)",
+    "월간 리뷰 받는 시각 (매월 마지막 날)": "Monthly review time (last day of each month)",
+    "주간 리뷰 받는 시점": "Weekly review day & time",
+    "주간 리뷰를 켰어요": "Weekly review turned on",
+    "월간 리뷰를 켰어요": "Monthly review turned on",
     "이번 주 리뷰가 도착했어요": "Your weekly review has arrived",
     "원하는 보상 혹은 이미 준 보상을 적어보세요": "Write the reward you want, or one you already gave yourself",
     "날짜 선택": "Pick a date",
@@ -306,7 +312,8 @@
 
   // 같은 한글이 자리에 따라 다를 때
   var CTX = [
-    { sel: ".rest-badge", map: { "쉬는 날": "Rest day" } }
+    { sel: ".rest-badge", map: { "쉬는 날": "Rest day" } },
+    { sel: ".day-toggle", map: { "일": "Sun", "월": "Mon", "화": "Tue", "수": "Wed", "목": "Thu", "금": "Fri", "토": "Sat" } }
   ];
 
   var P = [
@@ -317,6 +324,19 @@
     [/^(\d+)월 (\d+)일 - (\d+)월 (\d+)일$/, function (m1, d1, m2, d2) { return mon(m1) + " " + d1 + " – " + mon(m2) + " " + d2; }],
     [/^(\d+)년$/, function (y) { return y; }],
     [/^(\d+)월$/, function (m) { return mon(m); }],
+
+    // 시각: 아침 7시 / 저녁 8시 30분 → 7:00 AM / 8:30 PM
+    [/^(새벽|아침|오전|오후|저녁|밤) (\d+)시(?: (\d+)분)?$/, function (part, h, m) {
+      var ap = (part === "오후" || part === "저녁" || part === "밤") ? "PM" : "AM";
+      return h + ":" + ("0" + (m || "0")).slice(-2) + " " + ap;
+    }],
+    // 리뷰 일정: 9/21(일) 저녁 8시 → Sun 9/21 8:00 PM
+    [/^(\d+\/\d+)\(([일월화수목금토])\) ~ (\d+\/\d+)\(([일월화수목금토])\)$/, function (a, w1, b, w2) { return WD[w1] + " " + a + " – " + WD[w2] + " " + b; }],
+    [/^(\d+\/\d+)\(([일월화수목금토])\) (.+)$/, function (md, w, t) { return WD[w] + " " + md + " " + I.sub(t); }],
+    [/^직접 정하기 · ([일월화수목금토])요일 (.+)$/, function (w, t) { return "Custom · " + WD[w] + " " + I.sub(t); }],
+    [/^마지막 날 (.+)$/, function (t) { return "Last day " + I.sub(t); }],
+    [/^다음 (주간|월간) 리뷰는 (.+)에 도착해요$/, function (k, t) { return "Next " + (k === "주간" ? "weekly" : "monthly") + " review arrives " + I.sub(t); }],
+    [/^(\d+)년 돌아보기$/, function (y) { return y + " year in review"; }],
 
     // 공휴일 선택 목록: 2026-02-16 · 설날 연휴
     [/^(\d{4}-\d{2}-\d{2}) · (.+)$/, function (d, n) { return d + " · " + I.sub(n); }],

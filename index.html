@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-01-1";
+  var BUILD_VERSION = "2026-10-01-2";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -340,7 +340,7 @@
   </div>
   <div class="btn" data-action="open-avatar" style="margin:0 0 16px;display:flex;align-items:center;justify-content:center;gap:10px;"><span class="av-mini" id="settingsAvatar"></span>내 아바타 꾸미기</div>
   <div class="set-menu">
-    <div class="set-row" data-action="open-set-sub" data-id="view-setDisplay"><span class="set-ico">🌐</span><span class="set-txt"><span class="set-t">언어 · Language</span><span class="set-v" id="setSumLang"></span></span><span class="set-arrow">›</span></div>
+    <div class="set-row" data-action="open-set-sub" data-id="view-setLang"><span class="set-ico">🌐</span><span class="set-txt"><span class="set-t">언어 · Language</span><span class="set-v" id="setSumLang"></span></span><span class="set-arrow">›</span></div>
     <div class="set-row" data-action="open-set-sub" data-id="view-setDisplay"><span class="set-ico">🎨</span><span class="set-txt"><span class="set-t">화면</span><span class="set-v" id="setSumDisplay"></span></span><span class="set-arrow">›</span></div>
     <div class="set-row" data-action="open-set-sub" data-id="view-setRules"><span class="set-ico">🎯</span><span class="set-txt"><span class="set-t">루틴 규칙 · 쉬는 날 관리</span><span class="set-v" id="setSumRules"></span></span><span class="set-arrow">›</span></div>
     <div class="set-row" data-action="open-set-sub" data-id="view-setNotify"><span class="set-ico">🔔</span><span class="set-txt"><span class="set-t">알림·리뷰</span><span class="set-v" id="setSumNotify"></span></span><span class="set-arrow">›</span></div>
@@ -359,12 +359,7 @@
     <button class="back-btn" data-action="go-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h2>화면</h2>
   </div>
-  <div class="section-label" style="margin-top:0;">언어 · Language</div>
-  <div class="theme-option-row" id="langOptionRow">
-    <div class="theme-option" data-action="lang-select" data-id="ko"><span>한국어</span><span class="dot"></span></div>
-    <div class="theme-option" data-action="lang-select" data-id="en"><span>English</span><span class="dot"></span></div>
-  </div>
-  <div class="section-label">글씨 크기</div>
+  <div class="section-label" style="margin-top:0;">글씨 크기</div>
   <div class="fs-sample" id="fsSample">가나다라마바사 Aa 123<br>오늘도 좋은 하루 되세요</div>
   <div class="theme-option-row" id="fsOptionRow">
     <div class="theme-option" data-action="fs-select" data-id="100"><span>보통</span><span class="dot"></span></div>
@@ -382,6 +377,18 @@
     <div class="theme-option" data-action="theme-select" data-id="light"><span>항상 밝게</span><span class="dot"></span></div>
     <div class="theme-option" data-action="theme-select" data-id="dark"><span>항상 어둡게</span><span class="dot"></span></div>
   </div>
+</div>
+
+<div class="wrap hidden set-sub" id="view-setLang">
+  <div class="top-bar">
+    <button class="back-btn" data-action="go-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <h2>언어 · Language</h2>
+  </div>
+  <div class="theme-option-row" id="langOptionRow">
+    <div class="theme-option" data-action="lang-select" data-id="ko"><span data-lang-name="ko">한국어</span><span class="dot"></span></div>
+    <div class="theme-option" data-action="lang-select" data-id="en"><span data-lang-name="en">English</span><span class="dot"></span></div>
+  </div>
+  <div class="sub" style="margin-top:6px;">이 기기에만 적용돼요. 바꾸면 화면이 새로 불러와져요.</div>
 </div>
 
 <div class="wrap hidden set-sub" id="view-setRules">
@@ -4755,7 +4762,7 @@
 
   // ---------------- views ----------------
   var NAV_HIDDEN_VIEWS = ["view-checking", "view-login", "view-pending", "view-run"];
-  var ALL_VIEWS = ["view-checking","view-login","view-pending","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings","view-setDisplay","view-setRules","view-setNotify","view-setAccount","view-restDays","view-friends","view-help"];
+  var ALL_VIEWS = ["view-checking","view-login","view-pending","view-home","view-run","view-editItems","view-stats","view-export","view-backfill","view-settings","view-setDisplay","view-setLang","view-setRules","view-setNotify","view-setAccount","view-restDays","view-friends","view-help"];
   // 항목 편집 화면을 떠날 때의 검사: 이름도 없고 아무 설정도 안 건드린 빈 항목은 조용히 지우고,
   // 이름 없이 설정만 만진 항목이 있으면 떠나지 못하게 막고 안내한다. 떠나도 되면 true.
   function isPristineBlankItem(it) {
@@ -4800,10 +4807,10 @@
   // 끝나면 완전히 숨긴다.
   // 일부 화면은 홈이 아니라 자기를 연 화면(부모)으로 돌아간다: 데이터 → 설정
   var PARENT_VIEW = { "view-export": "view-settings", "view-help": "view-settings",
-    "view-setDisplay": "view-settings", "view-setRules": "view-settings", "view-setNotify": "view-settings", "view-setAccount": "view-settings",
+    "view-setDisplay": "view-settings", "view-setLang": "view-settings", "view-setRules": "view-settings", "view-setNotify": "view-settings", "view-setAccount": "view-settings",
     "view-restDays": "view-setRules" };
   // 설정 메인 + 하위 화면: 이 화면으로 돌아올 때는 선택 표시·값 요약을 다시 그린다
-  var SETTINGS_FAMILY = ["view-settings", "view-setDisplay", "view-setRules", "view-setNotify", "view-setAccount"];
+  var SETTINGS_FAMILY = ["view-settings", "view-setDisplay", "view-setLang", "view-setRules", "view-setNotify", "view-setAccount"];
   function goHomeAnimated(toParent) {
     var runEl = document.getElementById("view-run");
     if (runState && runEl && !runEl.classList.contains("hidden")) { requestCloseRun(); return; }
@@ -8222,7 +8229,7 @@
   // 원래 자리로 스프링백하는 방식. 단순 임계값 판정 후 사후 애니메이션이 아니라
   // touchmove마다 transform을 직접 갱신해 "붙어서 따라오는" 느낌을 준다.
   var EDGE_ZONE = 28, MAX_VERTICAL = 60, COMPLETE_RATIO = 0.32, FLICK_VELOCITY = 0.5;
-  var BACKABLE_VIEWS = ["view-editItems", "view-stats", "view-export", "view-backfill", "view-settings", "view-setDisplay", "view-setRules", "view-setNotify", "view-setAccount", "view-restDays", "view-friends", "view-help"];
+  var BACKABLE_VIEWS = ["view-editItems", "view-stats", "view-export", "view-backfill", "view-settings", "view-setDisplay", "view-setLang", "view-setRules", "view-setNotify", "view-setAccount", "view-restDays", "view-friends", "view-help"];
   var edgeSwipe = { active: false, dragging: false, startX: 0, startY: 0, current: null, width: 0, lastX: 0, lastT: 0, velocity: 0 };
   function findBackableCurrent() {
     var checkList = BACKABLE_VIEWS.concat(["view-run"]);
