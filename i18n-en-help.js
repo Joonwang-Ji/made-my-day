@@ -47,6 +47,7 @@
     ], see: ["badges", "points", "keeprest"] },
     days: { t: "Repeat days · Anytime", sub: "Choosing days, and Anytime items", s: [
       ["Choosing days", "Pick Every day, Weekdays or Weekends, or tap the day cells yourself. You can't save if you deselect every day."],
+      ["When you change the days", "The new days apply from the day you change them. Earlier dates keep the days they had at the time, so their scheduled items, successes, streaks and points stay the same. If you change an item's days several times in one day, only the last change is kept."],
       ["Anytime", "An item you do now and then, with no set days. Check it yourself on Home or in the log; it doesn't count toward streaks, the ▶ countdown or missed items — only points. You don't set a time for it either."],
       ["Other settings in the same window", "In this window you also set, per item, whether it stays on rest days, its timer end sound (mute), and whether to turn off time suggestions."]
     ], see: ["keeprest", "alarm", "timesuggest"] },
