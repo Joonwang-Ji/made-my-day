@@ -231,6 +231,7 @@
     "이동할 다른 카테고리가 없어요.": "No other category to move to.",
     "아직 태그가 없어요. 아래에서 추가해보세요.": "No tags yet. Add one below.",
     "지정된 요일이 없어요. 요일을 고르거나 '불시'를 선택해 주세요": "No days selected. Pick days or choose “Anytime”",
+    "요일을 바꿨어요 · 오늘부터 적용돼요 (지난 기록은 그대로)": "Days updated · applies from today (past records stay as they were)",
 
     // ---------- 쉬는 날 관리 · 공휴일 ----------
     "한국 공휴일 자동 추가": "Add Korean public holidays",
