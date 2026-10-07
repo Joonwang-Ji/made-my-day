@@ -1308,16 +1308,13 @@
     body.innerHTML = h;
   }
 
-  // ---- 지인 아바타 확대 보기: 큰 아바타 + 착용 중인 아이템 + 완주 아이템 진행 띠 ----
+  // ---- 지인 아바타 확대 보기: 큰 아바타 + 기본 정보 ----
   function openFriendAvatar(uid) {
     var pr = friendsData && friendsData.profiles && friendsData.profiles[uid];
     if (!pr) { toast("아직 공개 전이에요"); return; }
     var pts = pr.points || 0;
     var hasAv = !!pr.avatar;
     var a = hasAv ? sanitizeAvatar(pr.avatar) : AV_DEFAULT;
-    var total = AV_ITEMS.length;
-    var done = 0;
-    AV_ITEMS.forEach(function (it) { if (avItemUnlocked(it, pts)) done++; });
     var nm = pr.nickname || "이름 없음";
     document.getElementById("friendAvTitle").textContent = (pr.titleEmoji ? pr.titleEmoji + " " : "") + nm;
 
@@ -1326,57 +1323,7 @@
     h += '<div class="fav-stats">성경 ' + bibleProgress(pts).text + ' · ' + pts.toLocaleString() + 'P · 🔥 ' + (pr.streak || 0) + '일</div>';
     h += '<div class="fav-stats dim">' + escapeHtml((pr.bookIcon ? pr.bookIcon + " " : "") + (pr.bookName || "") + (pr.milestoneTitle ? " · " + pr.milestoneTitle : "")) + '</div>';
 
-    // 착용 중인 아이템 (완주 선물인지, 기본 아이템인지)
-    var worn = [], wornIds = {};
-    if (hasAv) {
-      ["hw", "gl", "fa", "ou", "cp", "bg", "fr"].forEach(function (slot) {
-        var v = a[slot];
-        if (!v || v === "none") return;
-        var it = AV_ITEM_BY_ID[v];
-        if (it) {
-          var bk = avBookOf(it);
-          worn.push({ slot: slot, name: it.name, gift: true, from: bk ? bk.name : "" });
-          wornIds[it.id] = true;
-        } else if (AV_BASE_NAMES[slot] && AV_BASE_NAMES[slot][v]) {
-          worn.push({ slot: slot, name: AV_BASE_NAMES[slot][v], gift: false, from: "" });
-        }
-      });
-    }
-    h += '<div class="section-label">착용 중인 아이템</div>';
-    if (!hasAv) {
-      h += '<div class="fr-note">아직 아바타를 공개하지 않았어요.</div>';
-    } else if (!worn.length) {
-      h += '<div class="fr-note">기본 모습 그대로예요.</div>';
-    } else {
-      h += '<div class="fav-worn">';
-      worn.forEach(function (w) {
-        h += '<div class="fav-row"><span class="fav-slot">' + escapeHtml(AV_SLOT_LABEL[w.slot]) + '</span>' +
-          '<span class="fav-name">' + escapeHtml(w.name) + '</span>' +
-          (w.gift ? '<span class="fav-gift">🎁 ' + escapeHtml(w.from) + ' 완주</span>' : '<span class="fav-base">기본</span>') + '</div>';
-      });
-      h += '</div>';
-    }
-
-    // 66권 완주 아이템 진행 띠
-    h += '<div class="section-label">완주 선물 ' + done + '/' + total + '개</div>';
-    var cellsOT = '', cellsNT = '';
-    AV_ITEMS.forEach(function (it) {
-      var bk = avBookOf(it), ok = avItemUnlocked(it, pts);
-      var cell = '<span class="bs-cell' + (ok ? ' done' : '') + (wornIds[it.id] ? ' cur' : '') + '"></span>';
-      if (bk && bk.testament === "NT") cellsNT += cell; else cellsOT += cell;
-    });
-    h += '<div class="bible-strip">' +
-      '<div class="bs-row"><span class="bs-lab">구약</span><span class="bs-cells">' + cellsOT + '</span></div>' +
-      '<div class="bs-row"><span class="bs-lab">신약</span><span class="bs-cells">' + cellsNT + '</span></div></div>';
-    var cap;
-    if (done >= total) {
-      cap = '모든 완주 선물을 모았어요' + (pr.gen > 1 ? ' · ' + pr.gen + '회독 중' : '') + ' 🎉';
-    } else {
-      var nx = AV_ITEMS[done], nb = nx ? avBookOf(nx) : null;
-      cap = nb ? '다음 선물: ' + nb.name + ' 완주까지 ' + Math.max(0, nb.cumEnd - pts).toLocaleString() + 'P' : '';
-    }
-    if (cap) h += '<div class="bible-strip-cap">' + escapeHtml(cap) + '</div>';
-    h += '<div class="fr-note" style="margin-top:0;">노란 칸은 받은 선물, <b>테두리</b>는 지금 착용 중인 선물이에요.</div>';
+    if (!hasAv) h += '<div class="fr-note" style="text-align:center;">아직 아바타를 공개하지 않았어요.</div>';
     h += '<div class="btn" data-action="friend-av-chat" data-id="' + uid + '" style="margin:10px 0 0;">💌 응원 보내러 가기</div>';
 
     document.getElementById("friendAvBody").innerHTML = h;
