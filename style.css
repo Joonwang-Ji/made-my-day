@@ -675,6 +675,20 @@
   .home-avatar svg, .fr-av svg, .av-mini svg, .av-ach svg { display: block; }
   .fr-av { flex: none; width: 44px; height: 44px; line-height: 0; }
   .fr-av.sm { width: 30px; height: 30px; }
+  .fr-av.zoomable { cursor: zoom-in; border-radius: 50%; }
+  /* 지인 아바타 확대 보기 */
+  #friendAvatarOverlay { z-index: 72; }
+  .fav-big { display: flex; justify-content: center; padding: 4px 0 10px; line-height: 0; }
+  .fav-big svg { display: block; border-radius: 50%; box-shadow: 0 6px 22px rgba(0,0,0,.14); }
+  .fav-sub { text-align: center; font-size: 0.75rem; color: var(--ink-dim); margin-bottom: 4px; }
+  .fav-stats { text-align: center; font-size: 0.8125rem; font-weight: 700; color: var(--ink); line-height: 1.5; }
+  .fav-stats.dim { font-weight: 400; font-size: 0.75rem; color: var(--ink-dim); }
+  .fav-worn { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .fav-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--bg-soft); }
+  .fav-slot { flex: none; width: 4.2rem; font-size: 0.6875rem; font-weight: 700; color: var(--ink-dim); }
+  .fav-name { flex: 1; min-width: 0; font-size: 0.8125rem; font-weight: 700; color: var(--ink); word-break: keep-all; }
+  .fav-gift { flex: none; font-size: 0.6562rem; color: var(--gold); font-weight: 700; }
+  .fav-base { flex: none; font-size: 0.6562rem; color: var(--ink-dim); }
   .av-mini { width: 34px; height: 34px; flex: none; line-height: 0; }
   .av-ach { width: 72px; height: 72px; margin: 0 auto 4px; cursor: pointer; line-height: 0; }
   .av-ach-cap { text-align: center; font-size: 0.6875rem; color: var(--ink-dim); margin-bottom: 10px; }

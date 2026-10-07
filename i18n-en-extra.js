@@ -162,9 +162,20 @@
     "한 번 더 눌러 바꾸기": "Tap again to change",
     "거절했어요": "Declined",
     "요청을 취소했어요": "Request canceled",
-    "🍿 간식": "🍿 A snack"
+    "🍿 간식": "🍿 A snack",
+    // ---- 지인 아바타 확대 보기 ----
+    "지인 아바타": "Friend's avatar", "이름 없음": "No name", "아직 공개 전이에요": "Not shared yet",
+    "착용 중인 아이템": "Wearing now", "기본": "Default",
+    "아직 아바타를 공개하지 않았어요.": "This avatar isn't shared yet.",
+    "기본 모습 그대로예요.": "Just the default look.",
+    "노란 칸은 받은 선물, 테두리는 지금 착용 중인 선물이에요.": "Gold cells are gifts received; the outlined one is what they're wearing now.",
+    "💌 응원 보내러 가기": "💌 Send a cheer"
   }, [
     [/^(\d+)개 추가했어요 \((\d+)개는 형식이 안 맞아 건너뜀\)$/, function (a, b) { return a + " added (" + b + " skipped: wrong format)"; }],
+    [/^완주 선물 (\d+)\/(\d+)개$/, function (a, b) { return "Completion gifts " + a + "/" + b; }],
+    [/^다음 선물: (.+) 완주까지 ([\d,]+)P$/, function (b, p) { return "Next gift: " + p + "P until " + I.sub(b) + " is complete"; }],
+    [/^모든 완주 선물을 모았어요(?: · (\d+)회독 중)? 🎉$/, function (g) { return "All completion gifts collected" + (g ? " · reading #" + g : "") + " 🎉"; }],
+    [/^🎁 (.+) 완주$/, function (b) { return "🎁 " + I.sub(b) + " done"; }],
     [/^매년 반복 공휴일\((.+)\)$/, function (r) { return "Yearly holiday: " + I.sub(r); }]
   ], [
     { sel: ".bc-sec", map: { "성경": "Scripture" } }
