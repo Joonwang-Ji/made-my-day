@@ -695,7 +695,7 @@
 <div class="tp-overlay hidden" id="deleteItemOverlay" style="z-index:95;">
   <div class="tp-card" style="max-width:300px;">
     <div class="tp-title">지난 기록을 남겨둘까요?</div>
-    <div class="export-note" style="margin:0 0 10px;text-align:center;">이 항목을 완료했던 기록이 있어요. 항목만 지우고 기록은 통계에 남길지, 기록까지 함께 지울지 선택해 주세요. 기록을 지우면 관련 포인트도 함께 줄어들고 되돌릴 수 없어요.</div>
+    <div class="export-note" style="margin:0 0 10px;text-align:center;">이 항목을 완료했던 기록이 있어요. 항목만 지우고 지난 기록과 평가(연속 달성 · 포인트)는 그대로 둘지, 기록까지 함께 지울지 선택해 주세요. 기록을 지우면 관련 포인트도 함께 줄어들고 되돌릴 수 없어요.</div>
     <div class="tp-actions" style="flex-direction:column;gap:8px;">
       <div class="btn" data-action="delete-item-keep">항목만 삭제, 기록은 남기기</div>
       <div class="btn" style="color:var(--danger);" data-action="delete-item-purge">기록까지 함께 삭제</div>
@@ -2386,6 +2386,7 @@
       recurringHolidays: [],
       streakThreshold: 100,
       thresholdHistory: [],
+      archivedItems: [],
       overtimeGrace: 10,
       avatar: { sk: 1, hs: 0, hc: 1, ex: 0, hw: "none", fa: "none", ou: "tee", oc: 0, cp: "none", bg: "c0", fr: "thin" },
       avatarSeen: null,
@@ -2492,6 +2493,13 @@
         else if (canon(nh) !== canon(it.daysHistory)) it.daysHistory = nh;
       });
     });
+    // 시작 전 구간·카테고리 이동 이력: 형식이 어긋난 것은 정리한다.
+    (p.categories || []).forEach(function (cat) {
+      (cat.items || []).forEach(function (it) {
+        if (it.pauseHistory !== undefined) { var np = normalizePauseHistory(it.pauseHistory); if (np.length) it.pauseHistory = np; else delete it.pauseHistory; }
+        if (it.catLog !== undefined) { var nl = normalizeCatLog(it.catLog); if (nl.length) it.catLog = nl; else delete it.catLog; }
+      });
+    });
     if (!p.restDays || !Array.isArray(p.restDays)) p.restDays = [];
     if (!p.recurringHolidays || !Array.isArray(p.recurringHolidays)) p.recurringHolidays = [];
     if (!p.memos || typeof p.memos !== "object") p.memos = {};
@@ -2514,6 +2522,7 @@
     if (typeof p.requestedAt === "undefined") p.requestedAt = null;
     if (!p.streakThreshold) p.streakThreshold = 100;
     p.thresholdHistory = normalizeThresholdHistory(p.thresholdHistory);
+    p.archivedItems = normalizeArchivedItems(p.archivedItems);
     if ([5, 10, 15, 30].indexOf(p.overtimeGrace) === -1) p.overtimeGrace = 10;
     if (typeof AV_ITEM_BY_ID !== "undefined") p.avatar = sanitizeAvatar(p.avatar);
     else if (!p.avatar || typeof p.avatar !== "object") p.avatar = { sk: 1, hs: 0, hc: 1, ex: 0, hw: "none", fa: "none", ou: "tee", oc: 0, cp: "none", bg: "c0", fr: "thin" };
@@ -3167,9 +3176,13 @@
     });
   }
   var pendingDeleteItemId = null;
-  function removeItemFromCategory(itemId) {
+  function removeItemFromCategory(itemId, keepPast) {
     var cat = getCat(editingCatId);
     if (!cat) return;
+    if (keepPast) {
+      var gone = cat.items.filter(function (it) { return it.id === itemId; })[0];
+      if (gone) archiveItem(gone, cat.id);   // 지난 날짜의 예정·성공·스트릭·포인트가 그대로 남도록 보관
+    }
     cat.items = cat.items.filter(function (it) { return it.id !== itemId; });
   }
   // ---- generic confirm dialog ----
@@ -3225,6 +3238,7 @@
     }).map(function (e) {
       var r = { from: e.from, days: normDays(e.days) };
       if (e.flex === true) r.flex = true;
+      if (typeof e.keep === "boolean") r.keep = e.keep;   // 쉬는 날에도 유지(없으면 항목의 현재 값을 따른다)
       return r;
     });
     list.sort(function (a, b) { return a.from < b.from ? -1 : a.from > b.from ? 1 : 0; });
@@ -3241,28 +3255,169 @@
     if (Array.isArray(h) && h.length > 1) {
       var idx = 0;
       for (var i = 0; i < h.length; i++) { if (h[i].from <= dk) idx = i; else break; }
-      if (idx < h.length - 1) return { days: h[idx].days, flex: h[idx].flex === true };
+      if (idx < h.length - 1) {
+        return { days: h[idx].days, flex: h[idx].flex === true, keep: (typeof h[idx].keep === "boolean") ? h[idx].keep : !!item.keepOnRest };
+      }
     }
-    return { days: item.days, flex: !!item.flex };
+    return { days: item.days, flex: !!item.flex, keep: !!item.keepOnRest };
   }
   function flexOn(item, dk) { return ruleAt(item, dk).flex; }
-  // 요일/불시를 바꿀 때 호출(항목에 새 값을 넣은 직후). prev·next = {days, flex}. 규칙이 실제로 바뀌어 이력을 남겼으면 true.
+  // dk 날짜에 이 항목이 "쉬는 날에도 유지" 상태였는지
+  function keepOn(item, dk) { return ruleAt(item, dk).keep; }
+
+  // ---- "시작 전" 구간(pauseHistory) ----
+  // item.pauseHistory = [{from:"YYYY-MM-DD", to?:"YYYY-MM-DD"}, ...]  from 포함 ~ to 미포함(to가 없으면 지금도 시작 전).
+  // "시작 전"을 켜면 켠 날부터만 평가에서 빠지고, 그 전 날짜의 판정은 그대로 남는다. 끄면 구간이 닫히고
+  // 시작일(createdAt)은 건드리지 않는다. 구간 정보가 없는 예전 "시작 전" 항목(notStarted만 true)은
+  // 예전처럼 켜져 있는 동안 모든 날짜를 제외하고, 끄는 날 시작일을 오늘로 갱신한다.
+  function normalizePauseHistory(h) {
+    if (!Array.isArray(h)) return [];
+    var re = /^\d{4}-\d{2}-\d{2}$/;
+    var list = h.filter(function (e) {
+      return e && typeof e.from === "string" && re.test(e.from) &&
+        (e.to === undefined || e.to === null || (typeof e.to === "string" && re.test(e.to) && e.to > e.from));
+    }).map(function (e) { var r = { from: e.from }; if (e.to) r.to = e.to; return r; });
+    list.sort(function (a, b) { return a.from < b.from ? -1 : a.from > b.from ? 1 : 0; });
+    return list;
+  }
+  function pausedOn(item, dk) {
+    var ph = item.pauseHistory, hasOpen = false;
+    if (Array.isArray(ph)) {
+      for (var i = 0; i < ph.length; i++) {
+        var r = ph[i];
+        if (!r.to) hasOpen = true;
+        if (dk >= r.from && (r.to ? dk < r.to : !!item.notStarted)) return true;
+      }
+    }
+    if (item.notStarted && !hasOpen) return true;   // 구간 정보가 없는 예전 "시작 전" 항목
+    return false;
+  }
+  // 시작 전을 켜거나 끈다. 실제로 바뀌었으면 true.
+  function setNotStarted(it, on) {
+    on = !!on;
+    if (on === !!it.notStarted) return false;
+    var today = todayKey();
+    var ph = normalizePauseHistory(it.pauseHistory);
+    var last = ph.length ? ph[ph.length - 1] : null;
+    if (on) {
+      it.notStarted = true;
+      // 오늘 만든 항목은 지난 날짜가 없으니 구간을 따로 두지 않는다
+      if (!(it.createdAt && it.createdAt >= today)) {
+        if (last && last.to === today) delete last.to;   // 오늘 껐다가 다시 켠 것 → 이어진 구간
+        else ph.push({ from: today });
+      }
+    } else {
+      delete it.notStarted;
+      var open = (last && !last.to) ? last : null;
+      if (open) {
+        if (open.from >= today) ph.pop(); else open.to = today;   // 오늘 켰다가 오늘 끔 → 없던 일로
+      } else {
+        it.createdAt = today;   // 구간 정보가 없는 예전 "시작 전" 항목: 끄는 날이 시작일
+      }
+    }
+    if (ph.length) it.pauseHistory = ph; else delete it.pauseHistory;
+    return true;
+  }
+
+  // ---- 카테고리 이동 이력(catLog)과 삭제한 항목 보관(archivedItems) ----
+  // 그날 "카테고리를 모두 채우면 +3P" 판정은 그 날짜에 항목이 속해 있던 카테고리 기준이어야 하므로,
+  // 항목을 다른 카테고리로 옮기면 옮기기 전 소속을 item.catLog = [{until:"YYYY-MM-DD", cat:id}]로 남긴다
+  // (until 미포함: 그 날짜 전까지는 cat 소속, 이후는 지금 소속).
+  // 항목을 "기록은 남기기"로 삭제하면 평가에 필요한 필드만 state.archivedItems로 옮겨 지난 날짜의
+  // 예정·성공·스트릭·포인트가 그대로 유지된다(endedAt 이후는 예정이 아니다). 화면 목록·통계에는 나오지 않는다.
+  function normalizeCatLog(h) {
+    if (!Array.isArray(h)) return [];
+    var re = /^\d{4}-\d{2}-\d{2}$/;
+    var list = h.filter(function (e) { return e && typeof e.until === "string" && re.test(e.until) && typeof e.cat === "string" && e.cat; })
+      .map(function (e) { return { until: e.until, cat: e.cat }; });
+    list.sort(function (a, b) { return a.until < b.until ? -1 : a.until > b.until ? 1 : 0; });
+    var out = [];
+    list.forEach(function (e) {
+      if (out.length && out[out.length - 1].until === e.until) out[out.length - 1] = e; else out.push(e);
+    });
+    return out;
+  }
+  function itemCatAt(item, curCatId, dk) {
+    var log = item.catLog;
+    if (Array.isArray(log)) {
+      for (var i = 0; i < log.length; i++) { if (dk < log[i].until) return log[i].cat; }
+    }
+    return curCatId;
+  }
+  function recordCatMove(item, fromId, toId) {
+    var today = todayKey();
+    if (item.createdAt && item.createdAt >= today) return;   // 오늘 만든 항목은 지난 날짜가 없다
+    var log = normalizeCatLog(item.catLog);
+    var last = log.length ? log[log.length - 1] : null;
+    if (last && last.until === today) {
+      if (last.cat === toId) log.pop();   // 같은 날 원래 카테고리로 돌아옴
+    } else {
+      log.push({ until: today, cat: fromId });
+    }
+    if (log.length) item.catLog = log; else delete item.catLog;
+  }
+  function archivedItems() { return Array.isArray(state.archivedItems) ? state.archivedItems : []; }
+  function normalizeArchivedItems(list) {
+    if (!Array.isArray(list)) return [];
+    var re = /^\d{4}-\d{2}-\d{2}$/, out = [], seen = {};
+    list.forEach(function (a) {
+      if (!a || typeof a.id !== "string" || typeof a.catId !== "string" || !a.catId) return;
+      if (typeof a.endedAt !== "string" || !re.test(a.endedAt) || seen[a.id]) return;
+      seen[a.id] = true;
+      var r = { id: a.id, name: typeof a.name === "string" ? a.name : "", catId: a.catId, endedAt: a.endedAt, days: normDays(a.days), keepOnRest: !!a.keepOnRest };
+      if (typeof a.createdAt === "string" && a.createdAt) r.createdAt = a.createdAt;
+      if (a.flex === true) r.flex = true;
+      if (a.notStarted === true) r.notStarted = true;
+      var dh = normalizeDaysHistory(a.daysHistory); if (dh.length > 1) r.daysHistory = dh;
+      var ph = normalizePauseHistory(a.pauseHistory); if (ph.length) r.pauseHistory = ph;
+      var cl = normalizeCatLog(a.catLog); if (cl.length) r.catLog = cl;
+      out.push(r);
+    });
+    return out;
+  }
+  // 항목을 삭제하되 지난 날짜의 평가는 그대로 두기 위해 보관한다. 오늘 만든 항목은 지난 날짜가 없어 보관하지 않는다.
+  function archiveItem(it, catId) {
+    var today = todayKey();
+    if (it.createdAt && it.createdAt >= today) return false;
+    var rec = normalizeArchivedItems([{
+      id: it.id, name: it.name, catId: catId, endedAt: today, createdAt: it.createdAt, days: it.days, flex: it.flex,
+      keepOnRest: it.keepOnRest, notStarted: it.notStarted, daysHistory: it.daysHistory, pauseHistory: it.pauseHistory, catLog: it.catLog
+    }])[0];
+    if (!rec) return false;
+    if (!Array.isArray(state.archivedItems)) state.archivedItems = [];
+    state.archivedItems = state.archivedItems.filter(function (a) { return a.id !== rec.id; });
+    state.archivedItems.push(rec);
+    return true;
+  }
+  // 평가(스트릭·포인트·카테고리 완료 보너스)를 계산할 때 훑는 카테고리 목록: 지금 있는 카테고리 + 지난 날짜에 항목이
+  // 속해 있었지만 지금은 없는 카테고리(삭제했거나 항목을 옮겨 간 곳).
+  function evalCats() {
+    var cats = state.categories, seen = {}, out = cats.slice();
+    cats.forEach(function (c) { seen[c.id] = true; });
+    function add(id) { if (id && !seen[id]) { seen[id] = true; out.push({ id: id, name: "", items: [] }); } }
+    cats.forEach(function (c) { c.items.forEach(function (it) { (it.catLog || []).forEach(function (e) { add(e.cat); }); }); });
+    archivedItems().forEach(function (a) { add(a.catId); (a.catLog || []).forEach(function (e) { add(e.cat); }); });
+    return out;
+  }
+  // 요일/불시/쉬는 날 유지를 바꿀 때 호출(항목에 새 값을 넣은 직후). prev·next = {days, flex, keep}. 규칙이 실제로 바뀌어 이력을 남겼으면 true.
   function recordDaysChange(item, prev, next) {
     var pd = normDays(prev.days), nd = normDays(next.days);
-    var pf = !!prev.flex, nf = !!next.flex;
-    if (canon(pd) === canon(nd) && pf === nf) return false;
+    var pf = !!prev.flex, nf = !!next.flex, pk = !!prev.keep, nk = !!next.keep;
+    if (canon(pd) === canon(nd) && pf === nf && pk === nk) return false;
     var today = todayKey();
     var h = normalizeDaysHistory(item.daysHistory);
+    function firstEntry() { var e = { from: "0000-00-00", days: pd, keep: pk }; if (pf) e.flex = true; return e; }
     if (h.length < 2) {
       // 오늘 만든 항목은 지난 날짜가 없으니 이력이 필요 없다
       if (item.createdAt && item.createdAt >= today) { delete item.daysHistory; return false; }
-      h = [{ from: "0000-00-00", days: pd }];
-      if (pf) h[0].flex = true;
+      h = [firstEntry()];
     }
+    // 쉬는 날 유지 값을 모르는(이전 버전이 남긴) 이력 항목은 바꾸기 전 값으로 고정해 둔다
+    h.forEach(function (e) { if (typeof e.keep !== "boolean") e.keep = pk; });
     // 같은 날 다시 바꾸면 그날 항목을 교체
     h = h.filter(function (e) { return e.from !== today; });
-    if (h.length === 0) { h.push({ from: "0000-00-00", days: pd }); if (pf) h[0].flex = true; }
-    var ne = { from: today, days: nd };
+    if (h.length === 0) h.push(firstEntry());
+    var ne = { from: today, days: nd, keep: nk };
     if (nf) ne.flex = true;
     h.push(ne);
     h = normalizeDaysHistory(h);
@@ -3270,7 +3425,7 @@
     var merged = [];
     h.forEach(function (e) {
       var last = merged[merged.length - 1];
-      if (last && canon(last.days) === canon(e.days) && (last.flex === true) === (e.flex === true)) return;
+      if (last && canon(last.days) === canon(e.days) && (last.flex === true) === (e.flex === true) && last.keep === e.keep) return;
       merged.push(e);
     });
     if (merged.length < 2) delete item.daysHistory; else item.daysHistory = merged;
@@ -3294,10 +3449,11 @@
   function isDueForDate(item, dk) {
     // 19차: "시작 전" 항목은 목록에는 보이지만 어떤 날에도 "예정"이 아니다 — 달성률·스트릭·놓친 항목·
     // 리뷰 하이라이트에서 모두 빠진다(끄는 날 createdAt을 오늘로 갱신하므로 그날부터 평가에 들어간다).
-    if (item.notStarted) return false;
+    if (pausedOn(item, dk)) return false;                      // 시작 전 구간(켠 날부터만)
+    if (item.endedAt && dk >= item.endedAt) return false;       // 삭제해 보관된 항목: 삭제한 날부터는 예정이 아니다
     if (!itemExistedOn(item, dk)) return false;
     if (!dueOnKey(item, dk)) return false;
-    if (isRestDay(dk) && !item.keepOnRest) return false;
+    if (isRestDay(dk) && !keepOn(item, dk)) return false;       // 쉬는 날에도 유지는 그 날짜 당시의 설정
     return true;
   }
   // item.createdAt(생성일, "YYYY-MM-DD")이 있는 항목은 그 날짜 이전에는 "존재하지 않았던 것"으로
@@ -3308,7 +3464,19 @@
   function itemExistedOn(item, dk) {
     return !item.createdAt || dk >= item.createdAt;
   }
-  function catItemsDueOn(cat, dk) { return cat.items.filter(function (it) { return isDueForDate(it, dk); }); }
+  // cat 카테고리에 그 날짜 "예정"이던 항목들. 항목의 소속은 그 날짜 당시 기준(이동 이력)이고, 삭제해 보관된 항목도 포함한다.
+  function catItemsDueOn(cat, dk) {
+    var out = [];
+    state.categories.forEach(function (c) {
+      c.items.forEach(function (it) {
+        if (itemCatAt(it, c.id, dk) === cat.id && isDueForDate(it, dk)) out.push(it);
+      });
+    });
+    archivedItems().forEach(function (a) {
+      if (itemCatAt(a, a.catId, dk) === cat.id && isDueForDate(a, dk)) out.push(a);
+    });
+    return out;
+  }
   function dayLabel(item) {
     // 영어 모드: 요일 글자·꼬리표를 영어로(한국어 모드는 기존 그대로)
     var EN = !!(window.MMD_I18N && window.MMD_I18N.lang === "en");
@@ -3345,12 +3513,12 @@
   }
   function allCategoriesDone(dateKey) {
     dateKey = dateKey || todayKey();
-    var withDue = state.categories.filter(function (c) { return catItemsDueOn(c, dateKey).length > 0; });
+    var withDue = evalCats().filter(function (c) { return catItemsDueOn(c, dateKey).length > 0; });
     if (withDue.length === 0) return false;
     return withDue.every(function (c) { return catFullyDone(c, dateKey); });
   }
   function hasAnyDueItems(dateKey) {
-    return state.categories.some(function (c) { return catItemsDueOn(c, dateKey).length > 0; });
+    return evalCats().some(function (c) { return catItemsDueOn(c, dateKey).length > 0; });
   }
   function isRestDay(dateKey) {
     if (state.restDays.some(function (e) { return restDayDate(e) === dateKey; })) return true;
@@ -3404,7 +3572,7 @@
   // 이렇게 하면 항목 수가 적은 카테고리 하나 때문에(그 카테고리만 기준 미달) 다른
   // 카테고리를 다 채웠는데도 그날 전체가 실패 처리되는 문제가 없다.
   function overallStreakStatus(k) {
-    var withDue = state.categories.filter(function (c) { return catItemsDueOn(c, k).length > 0; });
+    var withDue = evalCats().filter(function (c) { return catItemsDueOn(c, k).length > 0; });
     if (withDue.length === 0) return null;
     var threshold = thresholdFor(k);
     var totalDue = 0, totalDone = 0;
@@ -3644,7 +3812,7 @@
       var entry = state.history[dateKey];
       var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
       points += completed.length;
-      state.categories.forEach(function (cat) {
+      evalCats().forEach(function (cat) {
         var due = catItemsDueOn(cat, dateKey);
         if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) points += 3;
       });
@@ -3741,7 +3909,7 @@
       var entry = state.history[d];
       var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
       cum += completed.length;
-      state.categories.forEach(function (cat) {
+      evalCats().forEach(function (cat) {
         var due = catItemsDueOn(cat, d);
         if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) cum += 3;
       });
@@ -5181,8 +5349,12 @@
       document.getElementById("catDeleteBtn").textContent = "정말 삭제할까요?";
       return;
     }
+    // 기록이 있는 항목은 보관해서, 카테고리를 지워도 지난 날짜의 예정·성공·스트릭·포인트가 달라지지 않게 한다.
+    var delCat = getCat(catModalId), kept = 0;
+    if (delCat) delCat.items.forEach(function (it) { if (itemHasHistory(it.id) && archiveItem(it, delCat.id)) kept++; });
     state.categories = state.categories.filter(function (c) { return c.id !== catModalId; });
     saveState(); closeCatModal(); renderHome();
+    if (kept > 0) toast("카테고리를 삭제했어요. 지난 기록과 평가는 그대로 남아요");
   }
 
   // ---- run mode ----
@@ -5521,6 +5693,7 @@
     var idx = fromCat.items.findIndex(function (it) { return it.id === moveCatItemId; });
     if (idx === -1) { closeMoveCategory(); return; }
     var item = fromCat.items.splice(idx, 1)[0];
+    recordCatMove(item, fromCat.id, toCat.id);   // 지난 날짜의 "카테고리 완료 보너스"는 옮기기 전 소속 기준으로 유지
     toCat.items.push(item);
     saveState();
     toast('"' + (toCat.name || "이름 없음") + '"으로 이동했어요');
@@ -5665,23 +5838,28 @@
       toast("지정된 요일이 없어요. 요일을 고르거나 '불시'를 선택해 주세요");
       return;
     }
-    var daysChanged = false;
+    var changes = [];
     if (it) {
-      var prevRule = { days: it.days, flex: !!it.flex };
+      var prevRule = { days: it.days, flex: !!it.flex, keep: !!it.keepOnRest };
       if (dpFlex) { it.flex = true; it.days = null; }
       else { delete it.flex; it.days = dpSel.length >= 7 ? null : dpSel.slice().sort(); }
-      // 요일·불시를 실제로 바꿨다면 바꾼 날부터만 새 규칙이 적용되도록 이력에 남긴다(지난 날짜의 판정은 그대로).
-      daysChanged = recordDaysChange(it, prevRule, { days: it.days, flex: !!it.flex });
       it.keepOnRest = dpKeepOnRest; it.muted = dpMuted;
+      // 요일·불시·쉬는 날 유지를 실제로 바꿨다면 바꾼 날부터만 새 규칙이 적용되도록 이력에 남긴다(지난 날짜의 판정은 그대로).
+      var nextRule = { days: it.days, flex: !!it.flex, keep: !!it.keepOnRest };
+      if (recordDaysChange(it, prevRule, nextRule)) {
+        if (canon(normDays(prevRule.days)) !== canon(normDays(nextRule.days)) || prevRule.flex !== nextRule.flex) changes.push("days");
+        if (prevRule.keep !== nextRule.keep) changes.push("keep");
+      }
       if (!dpFlex) { if (dpNoSug) it.noTimeSuggest = true; else delete it.noTimeSuggest; }
-      // 시작 전: 켜면 그대로 표시만 하고, 끄는 순간(켜져 있던 항목을 끔) 시작일을 오늘로 갱신해 그날부터 평가에 넣는다.
-      var wasNotStarted = !!it.notStarted;
-      if (dpNotStarted) it.notStarted = true;
-      else { delete it.notStarted; if (wasNotStarted) it.createdAt = todayKey(); }
+      // 시작 전: 켠 날부터만 평가에서 빠지고(그 전 기록은 그대로), 끄면 그날부터 다시 평가에 들어간다.
+      if (setNotStarted(it, dpNotStarted)) changes.push(dpNotStarted ? "pause" : "resume");
       saveState();
     }
     closeDayPicker(); renderEditItems();
-    if (daysChanged) toast("요일을 바꿨어요 · 오늘부터 적용돼요 (지난 기록은 그대로)");
+    if (changes.indexOf("days") !== -1) toast("요일을 바꿨어요 · 오늘부터 적용돼요 (지난 기록은 그대로)");
+    else if (changes.indexOf("keep") !== -1) toast("쉬는 날 유지 설정을 바꿨어요 · 오늘부터 적용돼요 (지난 기록은 그대로)");
+    else if (changes.indexOf("pause") !== -1) toast("시작 전으로 바꿨어요 · 오늘부터 평가에서 빠져요 (지난 기록은 그대로)");
+    else if (changes.indexOf("resume") !== -1) toast("시작 전을 껐어요 · 오늘부터 평가에 들어가요");
   }
 
   // ---- completion alarm ----
@@ -6149,6 +6327,7 @@
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
       thresholdHistory: state.thresholdHistory,
+      archivedItems: state.archivedItems,
       overtimeGrace: state.overtimeGrace,
       avatar: state.avatar,
       avatarSeen: state.avatarSeen,
@@ -6192,6 +6371,8 @@
         if (it.flex === true) normItem.flex = true;
         if (Array.isArray(it.daysHistory)) { var dh = normalizeDaysHistory(it.daysHistory); if (dh.length > 1) normItem.daysHistory = dh; }
         if (it.notStarted === true) normItem.notStarted = true;
+        if (Array.isArray(it.pauseHistory)) { var pH = normalizePauseHistory(it.pauseHistory); if (pH.length) normItem.pauseHistory = pH; }
+        if (Array.isArray(it.catLog)) { var cL = normalizeCatLog(it.catLog); if (cL.length) normItem.catLog = cL; }
         if (typeof it.timeBasis === "string" && it.timeBasis) normItem.timeBasis = it.timeBasis;
         if (it.timeKept === true) normItem.timeKept = true;
         if (it.noTimeSuggest === true) normItem.noTimeSuggest = true;
@@ -6214,6 +6395,7 @@
     if (Array.isArray(parsed.recurringHolidays)) state.recurringHolidays = parsed.recurringHolidays;
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
     state.thresholdHistory = normalizeThresholdHistory(parsed.thresholdHistory);
+    state.archivedItems = normalizeArchivedItems(parsed.archivedItems);
     if ([5, 10, 15, 30].indexOf(parsed.overtimeGrace) !== -1) state.overtimeGrace = parsed.overtimeGrace;
     if (parsed.avatar && typeof parsed.avatar === "object") state.avatar = sanitizeAvatar(parsed.avatar);
     if (typeof parsed.avatarSeen === "number") state.avatarSeen = parsed.avatarSeen;
@@ -6414,17 +6596,17 @@
     var html = "";
     state.categories.forEach(function (cat) {
       var due = catItemsDueOn(cat, dk).filter(function (it) { return itemExistedOn(it, dk); });
-      var list = cat.items.filter(function (it) { return itemExistedOn(it, dk) && (restDay || flexOn(it, dk) || it.notStarted || due.indexOf(it) !== -1); });
+      var list = cat.items.filter(function (it) { return itemExistedOn(it, dk) && (restDay || flexOn(it, dk) || pausedOn(it, dk) || due.indexOf(it) !== -1); });
       if (list.length === 0) return;
       var doneCount = due.filter(function (it) { return isDone(dk, it.id); }).length;
       var itemsHtml = list.map(function (it) {
         var isItemDue = due.indexOf(it) !== -1;
         var d = isDone(dk, it.id);
-        var cls = d ? ' done' : (isItemDue ? '' : ' optional' + ((flexOn(it, dk) || it.notStarted) ? ' flex' : ''));
+        var cls = d ? ' done' : (isItemDue ? '' : ' optional' + ((flexOn(it, dk) || pausedOn(it, dk)) ? ' flex' : ''));
         return '<div class="mini-item' + cls + '" data-action="toggle-backfill-item" data-id="' + it.id + '">' +
           '<span class="mini-dot' + cls + '"></span>' +
           '<span class="mini-name">' + escapeHtml(it.name || "이름 없음") + '</span>' +
-          (it.notStarted ? '<span class="mini-dur">시작 전</span>' : (flexOn(it, dk) ? '<span class="mini-dur">불시</span>' : '')) + '</div>';
+          (pausedOn(it, dk) ? '<span class="mini-dur">시작 전</span>' : (flexOn(it, dk) ? '<span class="mini-dur">불시</span>' : '')) + '</div>';
       }).join("");
       html += '<div class="cat-card"><div class="cat-top"><div><div class="cat-name">' + escapeHtml(cat.name || "이름 없음") + '</div>' +
         '<div class="cat-meta">' + (due.length ? (doneCount + '/' + due.length + ' 완료') : (restDay ? '쉬는 날 · 선택 항목' : '불시·시작 전 항목')) + '</div></div></div>' +
@@ -6526,6 +6708,7 @@
       recurringHolidays: state.recurringHolidays,
       streakThreshold: state.streakThreshold,
       thresholdHistory: state.thresholdHistory,
+      archivedItems: state.archivedItems,
       overtimeGrace: state.overtimeGrace,
       avatar: state.avatar,
       avatarSeen: state.avatarSeen,
@@ -6609,6 +6792,7 @@
     days: { t: "반복 요일 · 불시", sub: "요일 정하기와 불시 항목", s: [
       ["요일 정하기", "매일 · 평일 · 주말 중에서 고르거나 요일 칸을 직접 눌러 정해요. 요일을 모두 해제하면 저장할 수 없어요."],
       ["요일을 바꾸면", "바꾼 날부터 새 요일이 적용돼요. 그 전 날짜의 예정 · 성공 · 연속일 · 포인트는 당시 요일 그대로 유지돼요. 같은 날 여러 번 바꾸면 마지막 것만 남아요."],
+      ["쉬는 날 유지 · 시작 전도 같아요", "‘쉬는 날에도 유지’를 바꾸거나 ‘시작 전’을 켜고 꺼도 바꾼 날부터만 적용돼요. 지난 날짜의 평가는 그대로예요."],
       ["불시", "정해진 요일 없이 가끔 하는 항목이에요. 홈과 기록에서 직접 체크하고, 스트릭 · ▶ 카운트다운 · 놓친 항목에는 들어가지 않고 포인트에만 반영돼요. 시간도 지정하지 않아요."],
       ["같은 창의 다른 설정", "이 창에서 쉬는 날 유지, 타이머 종료음(무음), 시간 조정 제안 끄기도 항목마다 정해요."]
     ], see: ["keeprest", "alarm", "timesuggest"] },
@@ -6625,11 +6809,11 @@
     notstarted: { t: "시작 전", sub: "아직 시작하지 않은 항목", s: [
       ["언제 쓰나요", "해 보고 싶지만 아직 시작하지 않은 항목을 미리 넣어 둘 때 써요."],
       ["계산에서 빠져요", "달성률 · 연속 성공 · 놓친 항목 · 리뷰에 들어가지 않아요. 홈에서는 ‘선택’처럼 보이고, 체크하면 포인트만 반영돼요."],
-      ["시작하기", "‘시작 전’을 끄면 그날이 시작일이 되고, 그날부터 기록으로 세요."]
+      ["켜고 끌 때", "‘시작 전’을 켜면 그날부터 평가에서 빠지고(그 전 기록은 그대로), 끄면 그날부터 다시 기록으로 세요."]
     ], see: ["review", "days"] },
     keeprest: { t: "쉬는 날 처리", sub: "쉬는 날에도 유지 · 자발적 체크", s: [
       ["기본 동작", "쉬는 날로 표시된 날에는 항목들이 ‘해야 할 일’에서 빠져요."],
-      ["쉬는 날에도 유지", "켜 두면 그 항목은 쉬는 날에도 해야 할 항목으로 남아요. 쉬는 날에도 꼭 지키고 싶은 항목에 쓰세요."],
+      ["쉬는 날에도 유지", "켜 두면 그 항목은 쉬는 날에도 해야 할 항목으로 남아요. 쉬는 날에도 꼭 지키고 싶은 항목에 쓰세요. 나중에 바꿔도 바꾼 날부터만 적용돼요."],
       ["자발적으로 하기", "유지 설정이 없는 항목도 쉬는 날에는 ‘쉬는 날 · 선택’으로 보이고, 하고 싶으면 체크할 수 있어요. 포인트에는 들어가지만 스트릭에는 들어가지 않아요."]
     ], see: ["rest", "streak"] },
     rest: { t: "쉬는 날 관리", sub: "휴일 · 공휴일 · 매년 반복", s: [
@@ -6879,6 +7063,13 @@
         r.cats[p.cat.id].due++;
         if (done) r.cats[p.cat.id].done++;
         dDue++; if (done) dDone++;
+      });
+      // 삭제해 보관된 항목: 항목별 하이라이트에는 나오지 않지만, 그날의 전체 달성률에는 그대로 들어간다
+      archivedItems().forEach(function (a) {
+        if (!isDueForDate(a, dk)) return;
+        var adone = isDone(dk, a.id);
+        if (dk === today && !adone) return;
+        dDue++; if (adone) dDone++;
       });
       var e = state.history[dk];
       if (e && Array.isArray(e.completed) && e.completed.length) r.recordedDays++;
@@ -7319,7 +7510,7 @@
       if (k >= dk) return;
       var entry = state.history[k], completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
       pts += completed.length;
-      state.categories.forEach(function (cat) {
+      evalCats().forEach(function (cat) {
         var due = catItemsDueOn(cat, k);
         if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) pts += 3;
       });
@@ -8018,9 +8209,9 @@
     else if (action === "delete-item-keep") {
       document.getElementById("deleteItemOverlay").classList.add("hidden");
       if (pendingDeleteItemId) {
-        removeItemFromCategory(pendingDeleteItemId);
+        removeItemFromCategory(pendingDeleteItemId, true);
         saveState(); renderEditItems();
-        toast("항목을 삭제했어요. 지난 기록은 통계에 남아요");
+        toast("항목을 삭제했어요. 지난 기록과 평가는 그대로 남아요");
       }
       pendingDeleteItemId = null;
     }

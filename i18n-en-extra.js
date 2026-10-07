@@ -155,7 +155,7 @@
     "복사했어요": "Copied",
     "복사에 실패했어요. 직접 선택해서 복사해주세요": "Couldn't copy. Please select the text and copy it yourself",
     "항목과 지난 기록을 모두 삭제했어요": "Deleted the item and all its past records",
-    "항목을 삭제했어요. 지난 기록은 통계에 남아요": "Item deleted. Its past records stay in your stats",
+    "항목을 삭제했어요. 지난 기록과 평가는 그대로 남아요": "Item deleted. Its past records and evaluation stay as they were",
     "모든 알람을 껐어요": "All alarms turned off",
     "알람을 다시 켰어요": "Alarms turned back on",
     "한 번 더 눌러 끄기": "Tap again to turn off",

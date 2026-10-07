@@ -224,7 +224,7 @@
     "항목 이름": "Item name",
     "복제": "Duplicate",
     "지난 기록을 남겨둘까요?": "Keep the past records?",
-    "이 항목을 완료했던 기록이 있어요. 항목만 지우고 기록은 통계에 남길지, 기록까지 함께 지울지 선택해 주세요. 기록을 지우면 관련 포인트도 함께 줄어들고 되돌릴 수 없어요.": "This item has completion records. Choose whether to delete only the item and keep the records in your stats, or delete the records too. Deleting records also lowers your points and can't be undone.",
+    "이 항목을 완료했던 기록이 있어요. 항목만 지우고 지난 기록과 평가(연속 달성 · 포인트)는 그대로 둘지, 기록까지 함께 지울지 선택해 주세요. 기록을 지우면 관련 포인트도 함께 줄어들고 되돌릴 수 없어요.": "This item has completion records. Choose whether to delete only the item and keep its past records and evaluation (streaks and points) as they were, or delete the records too. Deleting records also lowers your points and can't be undone.",
     "항목만 삭제, 기록은 남기기": "Delete item, keep records",
     "기록까지 함께 삭제": "Delete item and records",
     "정말 삭제할까요?": "Delete it?",
@@ -232,6 +232,10 @@
     "아직 태그가 없어요. 아래에서 추가해보세요.": "No tags yet. Add one below.",
     "지정된 요일이 없어요. 요일을 고르거나 '불시'를 선택해 주세요": "No days selected. Pick days or choose “Anytime”",
     "요일을 바꿨어요 · 오늘부터 적용돼요 (지난 기록은 그대로)": "Days updated · applies from today (past records stay as they were)",
+    "쉬는 날 유지 설정을 바꿨어요 · 오늘부터 적용돼요 (지난 기록은 그대로)": "Rest-day setting updated · applies from today (past records stay as they were)",
+    "시작 전으로 바꿨어요 · 오늘부터 평가에서 빠져요 (지난 기록은 그대로)": "Set to not started · left out of your rate from today (past records stay as they were)",
+    "시작 전을 껐어요 · 오늘부터 평가에 들어가요": "Not started turned off · counted from today",
+    "카테고리를 삭제했어요. 지난 기록과 평가는 그대로 남아요": "Category deleted. Past records and evaluation stay as they were",
 
     // ---------- 쉬는 날 관리 · 공휴일 ----------
     "한국 공휴일 자동 추가": "Add Korean public holidays",

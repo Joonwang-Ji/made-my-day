@@ -48,6 +48,7 @@
     days: { t: "Repeat days · Anytime", sub: "Choosing days, and Anytime items", s: [
       ["Choosing days", "Pick Every day, Weekdays or Weekends, or tap the day cells yourself. You can't save if you deselect every day."],
       ["When you change the days", "The new days apply from the day you change them. Earlier dates keep the days they had at the time, so their scheduled items, successes, streaks and points stay the same. If you change an item's days several times in one day, only the last change is kept."],
+      ["Rest-day keep and Not started work the same way", "Changing “Keep on rest days” or turning “Not started” on or off also applies only from that day. Earlier dates' evaluation stays as it was."],
       ["Anytime", "An item you do now and then, with no set days. Check it yourself on Home or in the log; it doesn't count toward streaks, the ▶ countdown or missed items — only points. You don't set a time for it either."],
       ["Other settings in the same window", "In this window you also set, per item, whether it stays on rest days, its timer end sound (mute), and whether to turn off time suggestions."]
     ], see: ["keeprest", "alarm", "timesuggest"] },
@@ -64,11 +65,11 @@
     notstarted: { t: "Not started", sub: "Items you haven't started yet", s: [
       ["When to use it", "Use it to add an item in advance that you want to try but haven't started yet."],
       ["Left out of calculations", "It isn't counted in completion rate, streak, missed items or reviews. On Home it looks like an optional item, and checking it adds points only."],
-      ["Starting", "When you turn “Not started” off, that day becomes the start date and it counts as a record from then on."]
+      ["Turning it on and off", "Turning “Not started” on leaves the item out of your rate from that day (earlier records stay as they were); turning it off counts it again from that day."]
     ], see: ["review", "days"] },
     keeprest: { t: "On rest days", sub: "Keep on rest days · optional check-offs", s: [
       ["Default behavior", "On days marked as rest days, items are removed from “things to do”."],
-      ["Keep on rest days", "When on, the item stays something to do even on rest days. Use it for items you really want to keep on rest days too."],
+      ["Keep on rest days", "When on, the item stays something to do even on rest days. Use it for items you really want to keep on rest days too. If you change it later, it applies only from that day."],
       ["Doing it by choice", "Items without the keep setting also show as “Rest day · optional” on rest days, and you can check them if you want. They give points but don't count toward the streak."]
     ], see: ["rest", "streak"] },
     rest: { t: "Manage rest days", sub: "Days off · public holidays · yearly recurring", s: [
