@@ -442,7 +442,7 @@
     <div class="theme-option" data-action="rv-monthly-preset" data-id="def"><span>마지막 날 저녁 8시 (기본)</span><span class="dot"></span></div>
     <div class="theme-option" data-action="rv-monthly-preset" data-id="custom"><span id="rvMonthlyCustomLabel">시각 바꾸기</span><span class="dot"></span></div>
   </div>
-  <div class="btn" data-action="open-review-history" id="rvReopenBtn" style="margin-top:10px;">📚 지난 리뷰 보기</div>
+  <div class="rv-set-note">지난 리뷰는 통계 › 리뷰 탭에서 볼 수 있어요.</div>
 </div>
 
 <div class="wrap hidden set-sub" id="view-setAccount">
@@ -755,23 +755,6 @@
       <span class="tp-close-x" data-action="missed-close">✕</span>
     </div>
     <div class="tp-card-body" id="missedOverlayBody"></div>
-  </div>
-</div>
-
-<div class="tp-overlay hidden" id="reviewHistOverlay">
-  <div class="tp-card tp-card-scroll" style="max-width:340px;">
-    <div class="tp-card-head">
-      <div class="tp-title">지난 리뷰 보기</div>
-      <span class="tp-close-x" data-action="review-hist-close">✕</span>
-    </div>
-    <div class="tp-card-body">
-      <div class="theme-option-row" id="rvHistTabs">
-        <div class="theme-option" data-action="review-hist-tab" data-id="weekly"><span>주간 (최근 12주)</span><span class="dot"></span></div>
-        <div class="theme-option" data-action="review-hist-tab" data-id="monthly"><span>월간 (최근 12개월)</span><span class="dot"></span></div>
-        <div class="theme-option" data-action="review-hist-tab" data-id="yearly"><span>연간 (올해 돌아보기)</span><span class="dot"></span></div>
-      </div>
-      <div id="rvHistList" style="margin-top:10px;"></div>
-    </div>
   </div>
 </div>
 
@@ -6017,12 +6000,14 @@
   function addNewTag() {
     var inp = document.getElementById("tagNewInput");
     var v = inp.value.trim();
+    if (v === "미분류" || v.toLowerCase() === "untagged") { toast("'미분류'는 태그가 없는 항목을 모아 보는 이름이라 태그로 쓸 수 없어요."); return; }
     if (v && tgSel.indexOf(v) === -1) { tgSel.push(v); inp.value = ""; renderTagToggles(); inp.focus(); }
   }
 
   // ---- stats ----
   var statsView = "success";
   var statsTagFilter = null;
+  var TAG_UNTAGGED = "__untagged__";   // 통계 태그 필터 전용 값(저장되는 태그 이름이 아님)
   var statsMonth = new Date(); statsMonth.setDate(1);
   var statsWeekStart = startOfWeek(new Date());
 
@@ -6041,7 +6026,7 @@
   function renderStatsViewTabs() {
     var el = document.getElementById("statsViewTabs");
     el.innerHTML = "";
-    [["success","성공"],["weekly","주간"],["monthly","월간"],["time","시간"]].forEach(function (m) {
+    [["success","성공"],["weekly","주간"],["monthly","월간"],["time","시간"],["review","리뷰"]].forEach(function (m) {
       var t = document.createElement("div");
       t.className = "tab" + (statsView === m[0] ? " active" : "");
       t.textContent = m[1];
@@ -6060,6 +6045,16 @@
     allTab.textContent = "전체";
     allTab.setAttribute("data-action", "stats-tag"); allTab.setAttribute("data-id", "all");
     el.appendChild(allTab);
+    // "미분류": 태그가 하나도 없는 항목을 자동으로 모아 본다(태그를 달면 저절로 빠짐). 실제 태그가 아니라 필터 전용.
+    var untaggedN = allItemsFlat().filter(function (p) { return !(p.item.tags && p.item.tags.length); }).length;
+    var unTab = document.createElement("div");
+    unTab.className = "tab" + (statsTagFilter === TAG_UNTAGGED ? " active" : "") + (untaggedN === 0 ? " tab-zero" : "");
+    unTab.appendChild(document.createTextNode("미분류"));
+    var unCount = document.createElement("span");
+    unCount.className = "tab-count"; unCount.textContent = String(untaggedN);
+    unTab.appendChild(unCount);
+    unTab.setAttribute("data-action", "stats-tag"); unTab.setAttribute("data-id", TAG_UNTAGGED);
+    el.appendChild(unTab);
     tags.forEach(function (t) {
       var b = document.createElement("div");
       b.className = "tab" + (statsTagFilter === t ? " active" : "");
@@ -6076,11 +6071,17 @@
       body.innerHTML = successStatsHtml();
       return;
     }
+    if (statsView === "review") {
+      document.getElementById("statsTagTabs").classList.add("hidden");
+      body.innerHTML = reviewTabHtml();
+      return;
+    }
     renderStatsTagTabs();
     var flat = allItemsFlat();
-    if (statsTagFilter) flat = flat.filter(function (p) { return (p.item.tags || []).indexOf(statsTagFilter) !== -1; });
+    if (statsTagFilter === TAG_UNTAGGED) flat = flat.filter(function (p) { return !(p.item.tags && p.item.tags.length); });
+    else if (statsTagFilter) flat = flat.filter(function (p) { return (p.item.tags || []).indexOf(statsTagFilter) !== -1; });
     if (flat.length === 0) {
-      body.innerHTML = '<div class="empty">' + (statsTagFilter ? "이 태그를 가진 항목이 없어요." : "아직 항목이 없어요. 카테고리에 루틴 항목을 추가해보세요.") + '</div>';
+      body.innerHTML = '<div class="empty">' + (statsTagFilter === TAG_UNTAGGED ? "태그가 없는 항목이 없어요. 모든 항목에 태그가 있어요." : (statsTagFilter ? "이 태그를 가진 항목이 없어요." : "아직 항목이 없어요. 카테고리에 루틴 항목을 추가해보세요.")) + '</div>';
       return;
     }
     body.innerHTML = statsView === "monthly" ? monthlyStatsHtml(flat) : (statsView === "time" ? timeReviewHtml(flat) : weeklyStatsHtml(flat));
@@ -6836,8 +6837,8 @@
       ["리뷰가 뭐예요", "지난 7일의 기록을 앱이 그 자리에서 계산해 짧게 보여줘요. 점수나 등급은 없고, 잘한 점과 다음 주에 바꿔 볼 것 하나만 알려줘요. 따로 저장하지 않아서 언제 열어도 그때 기록으로 다시 계산돼요."],
       ["도착 시간", "서버 알림이 아니라, 정한 시간이 지난 뒤 앱을 열면 홈에 ‘이번 주 리뷰 도착’ 카드가 떠요. 눌러야만 열리고, 새 리뷰가 오면 이전 카드는 사라져요. 기본은 일요일 저녁 8시예요."],
       ["월간 리뷰", "매월 마지막 날 저녁 8시(시각은 바꿀 수 있어요)가 지나면 도착해요. 한 달의 달성률, 하이라이트, 다음 달에 해 볼 것 하나를 보여줘요. 지난달에 기록한 날이 7일 이상이면 지난달과, 작년 같은 달에 14일 이상이면 작년 이맘때와도 비교해요."],
-      ["올해 돌아보기", "월간 리뷰를 켜 두면 12월 31일 저녁(월간 리뷰 받는 시각)부터 한 해를 돌아보는 화면이 도착해요. 달별 달성률 흐름, 가장 꾸준한 항목, 성경 여정, 새해에 해 볼 것 하나를 보여줘요. 홈 카드는 다음 해 1월 말까지 뜨고, 그 뒤에는 ‘지난 리뷰 보기’에서 열 수 있어요."],
-      ["지난 리뷰", "설정의 ‘지난 리뷰 보기’에서 주간은 최근 12주, 월간은 최근 12개월, 연간은 해마다 다시 볼 수 있어요. 지난 리뷰도 그때 기록으로 다시 계산해요."],
+      ["올해 돌아보기", "월간 리뷰를 켜 두면 12월 31일 저녁(월간 리뷰 받는 시각)부터 한 해를 돌아보는 화면이 도착해요. 달별 달성률 흐름, 가장 꾸준한 항목, 성경 여정, 새해에 해 볼 것 하나를 보여줘요. 홈 카드는 다음 해 1월 말까지 뜨고, 그 뒤에는 통계의 ‘리뷰’ 탭에서 열 수 있어요."],
+      ["지난 리뷰", "통계의 ‘리뷰’ 탭에서 주간은 최근 12주, 월간은 최근 12개월, 연간은 해마다 다시 볼 수 있어요. 지난 리뷰도 그때 기록으로 다시 계산해요."],
       ["완료한 시각", "이제 오늘 체크한 항목은 완료한 시각이 함께 저장돼요. ‘자세히 보기’에서 아침(4~12시)·오후(12~18시)·저녁(18시 이후) 중 언제 많이 했는지 볼 수 있어요. 지난 날짜를 나중에 채운 기록에는 시각이 없어요."],
       ["기록이 적을 때", "기록된 날이 3일보다 적으면 리뷰 대신 환영 메시지가 나와요."],
       ["시작 전 항목", "항목 편집의 ‘시작 전’을 켜 두면 목록에는 보이지만 달성률 · 스트릭 · 리뷰 계산에서 빠져요. 끄는 날부터 시작한 것으로 세요."]
@@ -7958,7 +7959,6 @@
     tg.classList.toggle("active", !!w.enabled);
     document.getElementById("rvWeeklyOpts").classList.toggle("hidden", !w.enabled);
     var mo = state.monthlyReview;
-    document.getElementById("rvReopenBtn").classList.toggle("hidden", !w.enabled && !(mo && mo.enabled));
     if (mo) {
       document.getElementById("rvMonthlyToggle").classList.toggle("active", !!mo.enabled);
       document.getElementById("rvMonthlyOpts").classList.toggle("hidden", !mo.enabled);
@@ -8055,29 +8055,22 @@
     }
     return out;
   }
-  function renderReviewHistory() {
-    Array.prototype.forEach.call(document.querySelectorAll("#rvHistTabs .theme-option"), function (o) {
-      o.classList.toggle("active", o.getAttribute("data-id") === rvHistTab);
-    });
+  // 통계 › 리뷰 탭: 주간(최근 12주) · 월간(최근 12개월) · 연간 목록. 항목을 누르면 기존 리뷰 창(reviewOverlay)이 열린다.
+  function reviewTabHtml() {
+    if (!rvReady()) return '<div class="rv-none">리뷰 자료(review-data.js)가 없어 리뷰를 볼 수 없어요.</div>';
     var list = [];
     try { list = rvHistKeys(rvHistTab); } catch (err) { console.error("review history failed", err); }
-    var host = document.getElementById("rvHistList");
+    var h = '<div class="tabs">' + [["weekly", "주간 (최근 12주)"], ["monthly", "월간 (최근 12개월)"], ["yearly", "연간 (올해 돌아보기)"]].map(function (m) {
+      return '<div class="tab' + (rvHistTab === m[0] ? ' active' : '') + '" data-action="review-hist-tab" data-id="' + m[0] + '">' + m[1] + '</div>';
+    }).join("") + '</div>';
     if (!list.length) {
-      host.innerHTML = '<div class="rv-none">' + (rvHistTab === "weekly" ? '주간 리뷰가 꺼져 있거나 아직 도착한 리뷰가 없어요.' : (rvHistTab === "monthly" ? '월간 리뷰가 꺼져 있거나 아직 도착한 리뷰가 없어요.' : '올해 돌아보기는 12월 31일 저녁에 도착해요. (월간 리뷰를 켜 둔 경우)')) + '</div>';
-      return;
+      return h + '<div class="rv-none">' + (rvHistTab === "weekly" ? '주간 리뷰가 꺼져 있거나 아직 도착한 리뷰가 없어요.' : (rvHistTab === "monthly" ? '월간 리뷰가 꺼져 있거나 아직 도착한 리뷰가 없어요.' : '올해 돌아보기는 12월 31일 저녁에 도착해요. (월간 리뷰를 켜 둔 경우)')) + '</div>';
     }
-    host.innerHTML = list.map(function (r) {
+    return h + list.map(function (r) {
       return '<div class="rv-hist-row" data-action="open-review-past" data-type="' + rvHistTab + '" data-id="' + r.key + '">' +
         '<span>' + escapeHtml(r.label) + '</span><span class="rc-chev">›</span></div>';
     }).join("");
   }
-  function openReviewHistory() {
-    if (!rvReady()) { toast("review-data.js 파일이 있어야 리뷰를 볼 수 있어요"); return; }
-    if (!state.weeklyReview.enabled && state.monthlyReview.enabled) rvHistTab = "monthly";
-    renderReviewHistory();
-    document.getElementById("reviewHistOverlay").classList.remove("hidden");
-  }
-  function closeReviewHistory() { document.getElementById("reviewHistOverlay").classList.add("hidden"); }
 
   // ---- 받는 시각 고르기(요일 + 기존 시간 휠 재사용) ----
   var rvTpMode = null, rvTpDay = 0, rvTpH = 20, rvTpM = 0;
@@ -8133,9 +8126,7 @@
     else if (action === "open-review-pending") { var pend = rvPending(); openReview(pend.length ? pend[0].type : "weekly"); }
     else if (action === "rv-toggle-monthly") { rvToggleMonthly(); }
     else if (action === "rv-monthly-preset") { rvMonthlyPreset(id); }
-    else if (action === "open-review-history") { openReviewHistory(); }
-    else if (action === "review-hist-close") { closeReviewHistory(); }
-    else if (action === "review-hist-tab") { rvHistTab = id; renderReviewHistory(); }
+    else if (action === "review-hist-tab") { rvHistTab = id; renderStats(); }
     else if (action === "open-review-past") { openReview(el.getAttribute("data-type"), id); }
     else if (action === "review-close") { closeReview(); }
     else if (action === "go-back") { goHomeAnimated(true); }
@@ -8502,7 +8493,11 @@
       else bfPending[bfDk] = bfWant;
       renderBackfillItemMode();
     }
-    else if (action === "stats-view") { statsView = id; renderStats(); }
+    else if (action === "stats-view") {
+      statsView = id;
+      if (id === "review" && state.weeklyReview && state.monthlyReview && !state.weeklyReview.enabled && state.monthlyReview.enabled) rvHistTab = "monthly";   // 주간을 꺼 두었으면 월간부터
+      renderStats();
+    }
     else if (action === "time-range") { statsTimeRange = parseInt(id, 10) || 0; renderStats(); }
     else if (action === "time-only-suggest") { statsTimeOnlySuggest = (id === "1"); renderStats(); }
     else if (action === "time-adopt") {
@@ -8733,7 +8728,7 @@
       chatMenuOverlay: "chat-menu-close", cheerPickOverlay: "cheer-pick-close", todayMemoOverlay: "today-memo-cancel",
       titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
       missedOverlay: "missed-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
-      rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewHistOverlay: "review-hist-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", catOverlay: null
+      rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", catOverlay: null
     };
     function forceDismiss(ov) {
       var act = CLOSE_ACTION[ov.id];
@@ -8856,6 +8851,57 @@
     window.addEventListener("resize", later);
   })();
 
+  // 가로로 넘치는 목록(.tabs 태그·카테고리 줄, .av-tabs 아바타 카테고리): 마우스로 끌어서 이동 + 더 있는 쪽 끝 흐리게.
+  // 폰의 터치 스크롤은 그대로 두고, 마우스 입력에서만 동작한다.
+  (function initHScrollLists() {
+    var SEL = ".tabs, .av-tabs";
+    var drag = null, justDragged = false, fadeQueued = false;
+    function fade(el) {
+      var max = el.scrollWidth - el.clientWidth;
+      el.classList.toggle("fade-l", max > 1 && el.scrollLeft > 1);
+      el.classList.toggle("fade-r", max > 1 && el.scrollLeft < max - 1);
+    }
+    function fadeAll() {
+      fadeQueued = false;
+      var list = document.querySelectorAll(SEL);
+      for (var i = 0; i < list.length; i++) fade(list[i]);
+    }
+    function queueFade() { if (!fadeQueued) { fadeQueued = true; requestAnimationFrame(fadeAll); } }
+    document.addEventListener("scroll", function (e) {
+      var t = e.target;
+      if (t && t.nodeType === 1 && t.matches && t.matches(SEL)) fade(t);
+    }, true);
+    window.addEventListener("resize", queueFade);
+    new MutationObserver(queueFade).observe(document.body, { childList: true, subtree: true });
+    queueFade();
+
+    document.addEventListener("mousedown", function (e) {
+      if (e.button !== 0) return;
+      var el = e.target.closest && e.target.closest(SEL);
+      if (!el || el.scrollWidth <= el.clientWidth + 1) return;
+      drag = { el: el, x: e.clientX, left: el.scrollLeft, moved: false };
+    });
+    document.addEventListener("mousemove", function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x;
+      if (!drag.moved && Math.abs(dx) < 5) return;
+      if (!drag.moved) { drag.moved = true; drag.el.classList.add("dragging"); }
+      drag.el.scrollLeft = drag.left - dx;
+      e.preventDefault();
+    });
+    function endDrag() {
+      if (!drag) return;
+      drag.el.classList.remove("dragging");
+      if (drag.moved) { justDragged = true; setTimeout(function () { justDragged = false; }, 0); }   // 끌고 놓을 때 칩이 눌리지 않게
+      drag = null;
+    }
+    document.addEventListener("mouseup", endDrag);
+    window.addEventListener("blur", endDrag);
+    document.addEventListener("click", function (e) {
+      if (justDragged) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  })();
+
   (function initScrollLock() {
     var LOCK_SEL = ".tp-overlay:not(.hidden), .celeb-stage:not(.hidden), #view-run:not(.hidden), #view-friend-chat:not(.hidden)";
     var root = document.documentElement;
@@ -8882,8 +8928,23 @@
       if (Math.abs(dx) > Math.abs(dy)) return;
       if (!canScrollWithin(e.target, dy < 0)) e.preventDefault();
     }, { passive: false });
+    // 가로로 스크롤되는 칸(카테고리·태그 목록 등)이 있으면 가로 휠·트랙패드 입력을 통과시킨다.
+    function canScrollSideways(el, right) {
+      while (el && el.nodeType === 1 && el !== document.body && el !== root) {
+        var ox = getComputedStyle(el).overflowX;
+        if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth + 1) {
+          return right ? (el.scrollLeft + el.clientWidth < el.scrollWidth - 1) : (el.scrollLeft > 0);
+        }
+        el = el.parentNode;
+      }
+      return false;
+    }
     document.addEventListener("wheel", function (e) {
       if (!root.classList.contains("scroll-locked")) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        if (!canScrollSideways(e.target, e.deltaX > 0)) e.preventDefault();   // 끝에 닿았거나 가로 칸이 없으면 뒤 화면·브라우저 뒤로가기로 새지 않게 막는다
+        return;
+      }
       if (!canScrollWithin(e.target, e.deltaY > 0)) e.preventDefault();
     }, { passive: false });
   })();
