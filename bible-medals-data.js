@@ -148,7 +148,7 @@
       text: "아버지가 입혀준 채색옷 위로, 형들의 곡식단이 절하는 꿈이 시기의 불씨를 당기다.",
       verse: "야곱은 요셉을 유난히 사랑하여 채색옷을 지어 입혔다. 요셉이 전한 꿈 — 형들의 곡식단이 자기 단에 절하고, 해와 달과 별 열하나가 자기에게 절하는 꿈 — 에 형들의 시기는 더욱 깊어졌다.",
       genealogy: [{ name: "요셉", relation: "야곱의 열한째 아들, 라헬의 첫 아들" }] },
-    { id: "gen25", need: 478, ref: "창세기 37:12-36", title: "구덩이, 팔려가다",  icon: "pit",
+    { id: "gen25", need: 478, ref: "창세기 37:12-36", title: "요셉이 애굽에 팔려가다",  icon: "pit",
       text: "형제들의 손에 구덩이로 던져지고, 은 이십 개에 팔려 애굽으로 끌려가는 길이 시작되다.",
       verse: "형들은 요셉을 구덩이에 던졌다가, 지나가는 상인들에게 은 이십 개를 받고 팔아넘겼다. 그들은 요셉의 옷에 짐승의 피를 묻혀 아버지에게 가져가 그가 죽었다고 믿게 했다." },
     { id: "gen26", need: 490, ref: "창세기 41장",     title: "총리가 된 노예",    icon: "throne",
@@ -3903,3 +3903,189 @@ MEDAL_ART.beasts = BEASTS_BASE.slice(0, beastMan) +
   // 하늘의 새
   MP.bird(24, 36, 0.8, '#6B5A48') + MP.bird(31, 30, 0.6, '#6B5A48') + MP.bird(52, 20, 0.7, '#6B5A48');
 // <<END MEDALS fix=2>>
+// <<MEDALS fix=3>>
+// 메달 디자인 수정 3차: 소돔과 고모라 / 얍복강 / 요셉이 애굽에 팔려가다 / 형제들과의 재회 / 요셉의 유언 / 갈대 상자 속의 아기 / 열 가지 재앙
+(function () {
+  var N = {};
+  function glowS(x, y, r, c, max) { var o = '', i, n = 8; for (i = 0; i < n; i++) o += '<circle cx="' + x + '" cy="' + y + '" r="' + (r * (1 - i / n)).toFixed(1) + '" fill="' + c + '" fill-opacity="' + (max / n).toFixed(3) + '"/>'; return o; }
+  function glow(x, y, r, c, o) { return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + c + '" fill-opacity="' + o + '"/>'; }
+
+  // ───────── 18 소돔과 고모라 ─────────
+  N.fire = (function () {
+    var o = MP.bg('#4A2B2E') + MP.band(0, 26, '#2E1B26') + MP.band(26, 20, '#5A2F31') + MP.band(46, 20, '#7A3F34'), i;
+    // 하늘에서 떨어지는 불덩이: 둥근 쪽이 머리(아래), 뾰족한 불꽃 끝이 꼬리(위) = 똑바른 불꽃
+    var fall = [[18, 24, 1], [38, 32, 0.8], [56, 20, 1.05], [80, 32, 0.8], [46, 48, 0.7], [86, 24, 0.6]];
+    for (i = 0; i < fall.length; i++) o += '<g transform="translate(' + fall[i][0] + ' ' + fall[i][1] + ') rotate(-16) scale(' + fall[i][2] + ')">' + MP.flame(0, 0, 1, '#E9944A', '#F8E2A4') + '</g>';
+    // 불타는 성읍(왼쪽)
+    o += glowS(28, 68, 24, '#E9944A', 0.3) +
+      MP.path('M4 88V74H12V66H18V76H24V62H32V74H38V68H46V76H52V88Z', '#241619') + MP.band(86, 16, '#241619') +
+      MP.rect(14, 78, 2, 3, '#F0B060') + MP.rect(27, 77, 2, 3, '#F0B060') + MP.rect(41, 80, 2, 3, '#F0B060') +
+      MP.flame(14, 66, 0.8, '#E9944A', '#F8E2A4') + MP.flame(28, 62, 1.15, '#E9944A', '#F8E2A4') + MP.flame(41, 68, 0.85, '#E9944A', '#F8E2A4') + MP.flame(50, 74, 0.55, '#E9944A', '#F8E2A4');
+    // 소금 기둥: 롯의 아내가 뒤를 돌아보다 하얀 소금 결정으로 굳은 모습(왼쪽, 불타는 성을 향해 팔을 뻗음)
+    var s = '#F4F8F6', sh = '#C4D2D8', dk = '#8FA6B0';
+    o += glowS(66, 62, 24, '#F4F8F6', 0.22) +
+      MP.person(66, 82, 1.05, s, { robe: 1, arms: 'l', skin: s, hair: '#DCE6EA' }) +
+      MP.path('M66 51.6L72.6 52.4L75.9 82L66 83Z', sh) +
+      MP.path('M62.5 44.8L60.4 46.6L62.6 47.2Z', s) +
+      MP.line('M60 64L73 68M62 74L74 77M66 54L66 82', dk, 0.6, 0.7) + MP.circle(51.4, 48.8, 1.6, s) +
+      '<g fill="' + s + '" stroke="' + dk + '" stroke-width="0.6"><rect x="55" y="80" width="6" height="6" transform="rotate(14 58 83)"/><rect x="73" y="79" width="5" height="5" transform="rotate(-10 75 81)"/><rect x="62" y="86" width="4" height="4" transform="rotate(30 64 88)"/></g>' +
+      MP.star(76, 40, 1.1) + MP.star(57, 38, 0.8) + MP.star(79, 58, 0.7);
+    return o;
+  })();
+
+  // ───────── 23 얍복강, 천사와 씨름 ─────────
+  N.wrestle = (function () {
+    var o = MP.bg('#EBBB8A') + MP.band(0, 24, '#6E6A9C') + MP.band(24, 14, '#A98AAE') + MP.band(38, 14, '#D9A08E') +
+      glowS(50, 64, 22, '#FBEBC2', 0.3) + MP.circle(50, 64, 13, '#F6DCA0') + MP.circle(50, 64, 9, '#FBEBC2') +
+      MP.path('M-6 64Q14 52 30 62T62 60T106 62V68H-6Z', '#8C7490') + MP.band(66, 14, '#7F9FB0') + MP.wave(70, '#C9DCE0', 1, 0.8) + MP.wave(76, '#C9DCE0', 1, 0.7) +
+      MP.ground(80, '#B89868');
+    // 천사: 후광 고리 대신, 몸 전체에서 부드럽게 번지는 빛과 날개
+    o += glowS(58, 56, 30, '#FFF6D8', 0.34);
+    var R1 = '#6F4F86', R2 = '#FBF6EA';
+    // 다리(무릎을 굽혀 버티는 자세)
+    o += MP.line('M34 66L31 75L28 82M34 66L40 75L44 82', R1, 4.6) + MP.line('M66 66L69 75L72 82M66 66L60 75L56 82', '#D8CBA8', 5.2) + MP.line('M66 66L69 75L72 82M66 66L60 75L56 82', R2, 4.2) +
+      // 몸통: 앞으로 숙여 어깨를 맞댐
+      MP.line('M34 66L44 51', R1, 10) + MP.line('M66 66L56 51', '#D8CBA8', 11) + MP.line('M66 66L56 51', R2, 10) +
+      MP.circle(28, 82.6, 2.6, '#4A3428') + MP.circle(44.5, 82.6, 2.6, '#4A3428') + MP.circle(55.5, 82.6, 2.6, '#E9DCC0') + MP.circle(72, 82.6, 2.6, '#E9DCC0') +
+      '<ellipse cx="34" cy="85.4" rx="13" ry="1.6" fill="#8C6E48" fill-opacity=".35"/><ellipse cx="66" cy="85.4" rx="13" ry="1.6" fill="#8C6E48" fill-opacity=".35"/>' +
+      // 머리: 어깨 너머로 맞댄 두 얼굴
+      MP.circle(46, 43.4, 4.2, '#C08A6A') + MP.path('M41.6 43Q41.8 38.4 46 38.4Q50.4 38.4 50.4 42.4Q46 40.4 41.6 43Z', '#3E2C4A') +
+      MP.circle(54.8, 43.4, 4.2, '#F8EAD0') + MP.path('M50.4 43Q50.6 38.4 54.8 38.4Q59.2 38.4 59.2 42.4Q54.8 40.4 50.4 43Z', '#E6CF8A') +
+      // 서로의 허리를 감싸 쥔 팔 (X자로 교차)
+      MP.line('M56 54L41 61', '#D8CBA8', 4) + MP.line('M56 54L41 61', R2, 3) + MP.circle(40.6, 61.2, 2, '#F8EAD0') +
+      MP.line('M44 54L59 61', R1, 3.6) + MP.circle(59.4, 61.2, 2, '#C08A6A');
+    return o;
+  })();
+
+  // ───────── 25 요셉이 애굽에 팔려가다 ─────────
+  N.pit = (function () {
+    function camel(x, y, s, c, d) {
+      return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+        '<path d="M-10-16V0M-5-16V0M6-16V0M11-16V0" stroke="' + d + '" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<path d="M-15-24Q-20-22-18-14" fill="none" stroke="' + d + '" stroke-width="1.6" stroke-linecap="round"/>' +
+        '<ellipse cy="-22" rx="16" ry="7" fill="' + c + '"/><ellipse cx="-3" cy="-29.5" rx="5" ry="5.5" fill="' + c + '"/>' +
+        '<path d="M10-24Q21-26 20-38" fill="none" stroke="' + c + '" stroke-width="5" stroke-linecap="round"/>' +
+        '<ellipse cx="23.4" cy="-40" rx="6" ry="3.2" transform="rotate(14 23.4 -40)" fill="' + c + '"/><circle cx="22.6" cy="-41.6" r="0.9" fill="' + d + '"/>' +
+        // 안장 담요
+        '<path d="M-12-26Q-3-33 6-26L7-17Q-3-13-12-17Z" fill="#A6432F"/><path d="M-12-22Q-3-18 7-22" fill="none" stroke="#E2C77E" stroke-width="1"/>' +
+        // 상인 (두건 쓴 이스마엘 상인)
+        '<path d="M-9-31Q-3-37 3-31L4-26H-10Z" fill="#3E6B86"/><circle cx="-3" cy="-38.6" r="3.4" fill="#B9805A"/><ellipse cx="-3" cy="-42.2" rx="4.4" ry="2.4" fill="#F4EBD5"/>' +
+        '</g>';
+    }
+    var o = MP.bg('#EBD2A0') + MP.band(0, 30, '#F3E2B8') + glow(80, 22, 14, '#F6E3A8', 0.35) + MP.circle(80, 22, 7, '#F6E3A8') +
+      // 멀리 보이는 애굽의 피라미드
+      MP.path('M33 68L43 49L53 68Z', '#C9A96E') + MP.path('M43 49L53 68H43Z', '#B58F55') + MP.path('M46 68L52 57L58 68Z', '#C2A25E') + MP.path('M52 57L58 68H52Z', '#A88448') +
+      MP.ground(70, '#E6CD98') + MP.ground(78, '#D2AE72') + MP.band(84, 16, '#D2AE72');
+    // 왼쪽 먼 곳: 은을 들고 서 있는 형들
+    o += MP.person(14, 68, 0.34, '#5A4636', { robe: 1, arms: 'd' }) + MP.person(21, 69, 0.34, '#7A5A3E', { robe: 1, arms: 'd' });
+    // 낙타 + 상인
+    o += camel(59, 84, 0.95, '#9C7544', '#6B4F3A');
+    // 요셉: 채색옷, 손이 묶여 끌려감
+    o += MP.line('M30.4 62.4Q40 70 48.5 63', '#7A5A3E', 1.1) + MP.person(28, 84, 0.95, '#B9714F', { robe: 1, arms: 'f', skin: '#C08A6A' }) +
+      // 채색옷 줄무늬(소매 끝/옷단)
+      MP.line('M22 79H34', '#E0B06A', 1.2) + MP.line('M22.6 75H33.4', '#6F9BB8', 1.2) + MP.line('M23.2 71H32.8', '#9DB98A', 1.2) +
+      // 발자국
+      '<ellipse cx="14" cy="85.5" rx="2" ry="0.8" fill="#8C6E48" fill-opacity=".5"/><ellipse cx="19" cy="87" rx="2" ry="0.8" fill="#8C6E48" fill-opacity=".5"/>';
+    return o;
+  })();
+
+  // ───────── 27 형제들과의 재회 ─────────
+  N.embrace = (function () {
+    var o = MP.bg('#EAD8B6') + MP.band(0, 14, '#C9A96E') + MP.rect(8, 16, 8, 56, '#D9C59A') + MP.rect(6, 14, 12, 3, '#C2A25E') + MP.rect(84, 16, 8, 56, '#D9C59A') + MP.rect(82, 14, 12, 3, '#C2A25E') +
+      MP.band(70, 30, '#B89868') + MP.band(70, 2, '#A98A58') +
+      '<path d="M30 44V30Q30 20 36 20Q42 20 42 30V44ZM44 44V30Q44 20 50 20Q56 20 56 30V44ZM58 44V30Q58 20 64 20Q70 20 70 30V44Z" fill="#D8C196"/>' + glowS(51, 64, 24, '#FFF3C8', 0.4), i;
+    // 뒷줄: 멀리 서 있는 형제들 (웅성웅성)
+    var back = [[18, '#B9714F', 'u'], [28, '#6F9BB8', 'h'], [39, '#9DB98A', 'd'], [61, '#8C82B0', 'u'], [72, '#E0B06A', 'h'], [82, '#7A8C9A', 'd']];
+    for (i = 0; i < back.length; i++) o += MP.person(back[i][0], 66, 0.52, back[i][1], { robe: 1, arms: back[i][2] });
+    // 중간줄: 놀라고 우는 형제들
+    var mid = [[14, '#8C6E5A', 'h'], [26, '#5F8FA8', 'u'], [74, '#B87A5A', 'l'], [86, '#6F8C5E', 'r']];
+    for (i = 0; i < mid.length; i++) o += MP.person(mid[i][0], 78, 0.72, mid[i][1], { robe: 1, arms: mid[i][2] });
+    // 가운데: 요셉과 베냐민이 서로의 등을 감싸 안는다 (팔은 몸 뒤로 돌아가 손만 반대편 어깨 너머로 보인다)
+    o += glowS(51, 66, 22, '#FFF3C8', 0.35) +
+      MP.line('M46 53L64 58.4', '#2F5F86', 2.6) + MP.circle(64.6, 58.6, 1.7, '#C08A6A') +
+      MP.line('M57 58L39 54', '#B9714F', 2.4) + MP.circle(38.6, 54, 1.6, '#C08A6A') +
+      '<g transform="rotate(-7 58 85)">' + MP.person(58, 85, 0.86, '#B9714F', { robe: 1, arms: 'd', skin: '#C08A6A' }) + '</g>' +
+      '<g transform="rotate(7 44 85)">' + MP.person(44, 85, 1, '#2F5F86', { robe: 1, arms: 'd', skin: '#C08A6A' }) + '<ellipse cx="44" cy="45.4" rx="4.4" ry="1.1" fill="#E2C77E"/>' + MP.line('M38.4 56.8Q44 59.8 49.6 56.8', '#E2C77E', 1.8) + '</g>';
+    return o;
+  })();
+
+  // ───────── 28 요셉의 유언 ─────────
+  N.scroll = (function () {
+    var o = MP.bg('#4A3A30') + MP.band(76, 24, '#352920') +
+      // 창밖의 별(약속)
+      '<path d="M60 40V28Q60 18 68 18Q76 18 76 28V40Z" fill="#1F2A4A" stroke="#8C6E5A" stroke-width="1.2"/>' + MP.star(68, 28, 1.1) + MP.star(72, 35, 0.6) +
+      // 걸린 등잔 + 따뜻한 빛
+      glowS(26, 28, 26, '#F6DFA0', 0.4) + MP.line('M26 8V24', '#8C6E5A', 1) + MP.path('M20 25Q26 32 32 25Z', '#C9A96E') + MP.flame(26, 25, 0.55, '#E9944A', '#F8E2A4');
+    // 침상 뒤에 선 가족들
+    o += MP.person(31, 68, 0.6, '#8C82B0', { robe: 1, arms: 'd' }) + MP.person(58, 69, 0.6, '#B9714F', { robe: 1, arms: 'd' }) + MP.person(69, 70, 0.6, '#6F9BB8', { robe: 1, arms: 'd' });
+    // 침상
+    o += MP.rect(20, 56, 3, 20, '#6B4F3A', 1) + MP.rect(24, 70, 52, 4, '#6B4F3A', 1) + MP.rect(26, 74, 3, 8, '#5A4030') + MP.rect(71, 74, 3, 8, '#5A4030') +
+      MP.path('M26 70V64Q26 62 30 62H72Q74 62 74 64V70Z', '#D8C8A8') +
+      // 누운 요셉(백십 세): 베개, 흰 수염, 이불, 들어올린 손
+      '<ellipse cx="33" cy="61" rx="7.2" ry="3.4" fill="#EFE6CC"/>' + MP.circle(32.4, 57, 5.2, '#EDE8D8') + '<ellipse cx="32.4" cy="57.6" rx="3.3" ry="3.1" fill="#C9966E"/><ellipse cx="32.8" cy="61.6" rx="3.4" ry="2.6" fill="#EDE8D8"/>' + MP.line('M30.6 57.2q.9.7 1.8 0M33 57.2q.9.7 1.8 0', '#6B4A3A', 0.5) +
+      MP.path('M38 62Q54 54 74 62V70H38Z', '#A6704F') + MP.line('M42 63.5Q56 59 72 64', '#E2C77E', 1) +
+      MP.line('M40 60L46 49', '#EDE8D8', 2.8) + MP.circle(46.6, 47.8, 1.9, '#C9966E');
+    // 앞쪽에서 둘러싼 가족
+    o += MP.person(17, 72, 0.78, '#6F9BB8', { robe: 1, arms: 'd' }) + MP.person(84, 72, 0.78, '#B9714F', { robe: 1, arms: 'd' }) + MP.person(46, 88, 0.5, '#9DB98A', { robe: 1, arms: 'd' }) + MP.person(58, 88, 0.46, '#C2A25E', { robe: 1, arms: 'd' });
+    return o;
+  })();
+
+  // ───────── 갈대 상자 속의 아기 ─────────
+  N.exo_nile = (function () {
+    var o = MP.bg('#BDD3C6') + glow(80, 18, 12, '#F6E7B4', 0.4) + MP.circle(80, 18, 6, '#F6E7B4') + MP.band(52, 48, '#5D8A8F') +
+      MP.line('M14 60C12 44 14 30 12 20M22 60C22 46 26 34 28 24M84 60C86 44 84 30 88 20M76 60C76 46 72 34 70 26', '#4F7A56', 1.6) +
+      MP.path('M12 20Q6 26 8 34Q14 30 12 20Z', '#4F7A56') + MP.path('M88 20Q94 26 92 34Q86 30 88 20Z', '#4F7A56') + MP.path('M28 24Q34 28 32 36Q26 32 28 24Z', '#5F8C63') + MP.path('M70 26Q64 30 66 38Q72 34 70 26Z', '#5F8C63');
+    // 상자 안쪽(뒤 테두리와 안감)
+    o += '<ellipse cx="50" cy="53" rx="22" ry="5.2" fill="#7A5C3A"/><ellipse cx="50" cy="53.4" rx="19.6" ry="4" fill="#E8D8B0"/>' +
+      // 아기: 얼굴은 왼쪽, 몸은 포대기로 감싸 오른쪽으로 누움
+      '<ellipse cx="55" cy="52" rx="13" ry="5" transform="rotate(-3 55 52)" fill="#F4EBD5"/>' + MP.line('M50 48.4Q52 52 50 55.4M56 47.6Q58 52 56 55.8M62 47.8Q64 52 62 55.4', '#D9C9A0', 0.8) +
+      '<g transform="rotate(-90 40 49)">' + MP.circle(40, 49, 6.4, '#EDBF9F') + MP.circle(36.6, 51.4, 1.8, '#E89A88') + MP.circle(43.4, 51.4, 1.8, '#E89A88') +
+      MP.path('M35.6 45.6Q38 41 43 42.6Q41 41.6 40 44Q38 42.6 35.6 45.6Z', '#4A3428') +
+      MP.line('M36.4 48.6q1.3 1.1 2.6 0M41.2 48.4q1.3 1.1 2.6 0', '#6B4A3A', 0.7) + MP.line('M39 52Q40 53 41 52', '#B8665A', 0.7) + '</g>' +
+      MP.circle(46, 53.4, 1.9, '#EDBF9F') +
+      // 상자 앞면과 엮은 무늬
+      '<path d="M28 53Q50 62 72 53Q70 70 50 70Q30 70 28 53Z" fill="#B08D5E"/>' + MP.line('M28 53Q50 62 72 53', '#8C6E48', 2.2) +
+      MP.line('M30 59Q50 67 70 59M33 65Q50 71 67 65', '#8C6E48', 0.8) + MP.line('M36 57V68M43 59V70M50 61V70M57 59V70M64 57V68', '#8C6E48', 0.7) +
+      MP.wave(74, '#F4EBD5', 1, 0.6) + MP.wave(84, '#7FA8AC', 1) + MP.wave(94, '#7FA8AC', 1);
+    return o;
+  })();
+
+  // ───────── 열 가지 재앙 (네 칸: 피 · 개구리 · 메뚜기 · 흑암) ─────────
+  N.exo_plague = (function () {
+    function q(x, y, inner) { return '<svg x="' + x + '" y="' + y + '" width="50" height="50" viewBox="0 0 50 50">' + inner + '</svg>'; }
+    function loc(x, y, s, r) {
+      return '<g transform="translate(' + x + ' ' + y + ') rotate(' + r + ') scale(' + s + ')">' +
+        '<path d="M2 1.4L-2 7L-9 7.4M4 1.6L6 7M7 1.4L10 6" fill="none" stroke="#4F5E26" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<ellipse cx="-4" cy="0" rx="9" ry="2.6" fill="#6B7A3A"/><ellipse cx="6" cy="-0.5" rx="4" ry="2.9" fill="#7C8C44"/><ellipse cx="11" cy="0.2" rx="3.2" ry="2.5" fill="#6B7A3A"/>' +
+        '<ellipse cx="-5" cy="-2.6" rx="10" ry="2" transform="rotate(-6 -5 -2.6)" fill="#F3E4B0" fill-opacity=".92" stroke="#C9AE70" stroke-width="0.4"/>' +
+        '<circle cx="12.2" cy="-0.8" r="0.7" fill="#1E2410"/><path d="M13 -1.6Q16-6 21-7" fill="none" stroke="#4F5E26" stroke-width="0.8" stroke-linecap="round"/></g>';
+    }
+    // 1) 나일이 피로 변함
+    var blood = '<rect width="50" height="50" fill="#8E3B34"/>' + MP.wave(40, '#B65A50', 1) + MP.wave(46, '#C98B7B', 1) +
+      '<path d="M32 12C32 12 22 26 22 33A10 10 0 0 0 42 33C42 26 32 12 32 12Z" fill="#E0594C"/><path d="M27 33Q27 28 30.4 24.4" fill="none" stroke="#F4B7A8" stroke-width="1.6" stroke-linecap="round"/>';
+    // 2) 개구리
+    var frog = '<rect width="50" height="50" fill="#5E7F52"/><ellipse cx="18" cy="42" rx="15" ry="4.4" fill="#476A42"/>' +
+      '<path d="M10 36Q3 38 6 44L14 42Z" fill="#A9CB7C" stroke="#3E5A36" stroke-width="0.6"/><path d="M26 36Q33 38 30 44L22 42Z" fill="#A9CB7C" stroke="#3E5A36" stroke-width="0.6"/>' +
+      '<ellipse cx="18" cy="34" rx="9.5" ry="7" fill="#B5D184" stroke="#3E5A36" stroke-width="0.6"/>' +
+      '<circle cx="12.6" cy="26.6" r="3.9" fill="#B5D184" stroke="#3E5A36" stroke-width="0.6"/><circle cx="23.4" cy="26.6" r="3.9" fill="#B5D184" stroke="#3E5A36" stroke-width="0.6"/>' +
+      '<circle cx="12.6" cy="26.4" r="1.9" fill="#2F3A2A"/><circle cx="23.4" cy="26.4" r="1.9" fill="#2F3A2A"/><circle cx="13.2" cy="25.7" r="0.6" fill="#F4EBD5"/><circle cx="24" cy="25.7" r="0.6" fill="#F4EBD5"/>' +
+      '<path d="M12.5 33Q18 37.4 23.5 33" fill="none" stroke="#3E5A36" stroke-width="0.9" stroke-linecap="round"/>';
+    // 3) 메뚜기
+    var locust = '<rect width="50" height="50" fill="#D8B46A"/><ellipse cx="20" cy="50" rx="36" ry="9" fill="#C79F62"/>' + loc(22, 9, 1.0, -10) + loc(36, 20, 0.95, 8) + loc(24, 26, 0.9, -4) +
+      '<g fill="#6B7A3A"><circle cx="40" cy="8" r="1"/><circle cx="46" cy="14" r="0.8"/><circle cx="10" cy="22" r="0.9"/><circle cx="44" cy="36" r="0.8"/></g>';
+    // 4) 흑암 (해가 가려져 어두워짐)
+    var dark = '<rect width="50" height="50" fill="#1B2036"/>' + MP.cloud(36, 40, 1.1, '#262C4A') + MP.cloud(6, 6, 0.9, '#262C4A') +
+      glow(18, 22, 15, '#8A7AA8', 0.18) + '<circle cx="18" cy="22" r="11" fill="none" stroke="#E2C77E" stroke-width="0.8" stroke-opacity=".7"/>' +
+      '<circle cx="18" cy="22" r="9.4" fill="#080A14"/>';
+    return q(0, 0, blood) + q(50, 0, frog) + q(0, 50, locust) + q(50, 50, dark) +
+      MP.line('M50 9V91M9 50H91', '#F4EBD5', 1.6) + MP.circle(50, 50, 5.6, '#F4EBD5') + MP.circle(50, 50, 3.2, '#C2A25E');
+  })();
+  MEDAL_ART.fire = N.fire;
+  MEDAL_ART.wrestle = N.wrestle;
+  MEDAL_ART.pit = N.pit;
+  MEDAL_ART.embrace = N.embrace;
+  MEDAL_ART.scroll = N.scroll;
+  MEDAL_ART.exo_nile = N.exo_nile;
+  MEDAL_ART.exo_plague = N.exo_plague;
+})();
+// <<END MEDALS fix=3>>
