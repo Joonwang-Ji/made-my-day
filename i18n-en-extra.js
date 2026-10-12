@@ -175,6 +175,55 @@
   ]);
 
   I.register(D, P, CTX);
+
+  // ---- 쉬어가기(streak pass) ----
+  var PASS_D = {
+    "☕ 쉬어가기": "☕ Streak pass", "쉬어가기": "Streak pass", "쉬어가기 보기": "Open streak pass",
+    "기준에 못 미친 날의 스트릭을 지켜 주는 안전망이에요. 개수는 모으는 방식이라 아껴 쓰는 게 좋아요.": "A safety net that protects your streak on a day that fell short. You collect them over time, so it's best to use them sparingly.",
+    "쉬어가기 사용됨": "Pass used", "쓸 수 있어요": "You can use one", "필요 없어요": "Not needed", "해당 없음": "Not applicable", "쓸 수 없어요": "Can't use",
+    "연속일이 그대로 이어져요": "Your streak carries on",
+    "오늘 기준을 넘기면 쓰지 않은 것으로 돌아와요": "If you pass the requirement today, it counts as not used",
+    "이미 기준을 달성했어요": "You already met the requirement",
+    "예정된 항목이 없거나 쉬는 날이에요": "Nothing was due, or it's a rest day",
+    "바로 앞이나 뒤 날에 이미 썼어요 (연속 이틀은 안 돼요)": "Already used the day before or after (not two days in a row)",
+    "이번 주에 이미 썼어요 (한 주에 한 번)": "Already used this week (once a week)",
+    "보유한 쉬어가기가 없어요": "You have no streak passes",
+    "취소하기": "Cancel pass", "쉬어가기 쓰기": "Use a streak pass", "쓰기": "Use",
+    "얻는 방법": "How to earn", "쓰는 규칙": "Rules for using", "내역": "History",
+    "연속 7일 성공할 때마다 1개": "1 for every 7 successful days in a row",
+    "매월 1일에 1개": "1 on the 1st of each month",
+    "가득 차면 더 모이지 않아요": "Once full, no more pile up",
+    "오늘이나 어제, 기준에 못 미친 날만 써요": "Only for today or yesterday, on a day that fell short",
+    "놓친 항목이 2개 이하일 때만 써요": "Only when you missed 2 items or fewer",
+    "한 주(월~일)에 한 번, 연속 이틀은 안 돼요": "Once per week (Mon–Sun), never two days in a row",
+    "쓴 날은 연속일이 +1 되진 않지만 끊기지도 않아요": "A pass day doesn't add to your streak, but doesn't break it either",
+    "아직 내역이 없어요": "No history yet",
+    "시작 선물 +1": "Starting gift +1", "새 달 선물 +1": "New-month gift +1", "연속 7일 성공 +1": "7-day streak +1", "쉬어가기 사용 −1": "Pass used −1",
+    "시작 선물 (가득 차서 못 담았어요)": "Starting gift (full, not added)", "새 달 선물 (가득 차서 못 담았어요)": "New-month gift (full, not added)",
+    "연속 7일 성공 (가득 차서 못 담았어요)": "7-day streak (full, not added)",
+    "쉬어가기를 쓸까요?": "Use a streak pass?", "쉬어가기를 취소할까요?": "Cancel the streak pass?",
+    "1개를 돌려받고, 그날은 다시 기준 미달로 계산돼요": "You get 1 back, and that day goes back to counting as short of the requirement.",
+    "지금은 쓸 수 없어요": "You can't use one right now",
+    "쉬어가기를 썼어요": "Streak pass used",
+    "쉬어가기를 취소했어요 · 1개를 돌려받았어요": "Streak pass canceled · you got 1 back",
+    "기준을 넘겨서 쉬어가기를 쓰지 않은 것으로 돌려놨어요": "You passed the requirement, so the streak pass is back as unused",
+    "☕ 오늘 쉬어가기 중": "☕ Streak pass active today",
+    "쉬어가기 중 · 스트릭은 그대로예요": "Pass active · your streak is safe",
+    "☕ 쉬어가기를 쓴 날 (연속일은 이어지고, 성공일에는 세지 않아요)": "☕ Streak pass day (your streak carries on; not counted as a success day)",
+    "☕ 이 날은 쉬어가기를 썼어요 (연속일은 이어져요)": "☕ You used a streak pass on this day (your streak carries on)"
+  };
+  var PASS_P = [
+    [/^(어제|오늘) · (.+)$/, function (t, rest) { var r = I.sub(rest); return r === rest ? null : (t === "어제" ? "Yesterday" : "Today") + " · " + r; }],
+    [/^놓친 항목 (\d+)개 · 쓰면 연속 (\d+)일이 이어져요$/, function (n, k) { return plural(n, "item", "items") + " missed · using one keeps a " + k + "-day streak"; }],
+    [/^놓친 항목이 (\d+)개예요 \((\d+)개 이하일 때만 쓸 수 있어요\)$/, function (n, m) { return plural(n, "item", "items") + " missed (you can use one only if you missed " + m + " or fewer)"; }],
+    [/^보유 (\d+)개 · 최대 (\d+)개$/, function (n, m) { return n + " held · max " + m; }],
+    [/^다음 적립까지 연속 (\d+)일 \(지금 연속 (\d+)일\)$/, function (n, k) { return "Next one in " + plural(n, "more day", "more days") + " of streak (now " + k + ")"; }],
+    [/^놓친 항목 (\d+)개 · 연속 (\d+)일이 이어져요 · 보유 (\d+)개 → (\d+)개$/, function (n, k, a, b) { return plural(n, "item", "items") + " missed · keeps a " + k + "-day streak · you have " + a + " → " + b; }],
+    [/^☕ 쉬어가기 (\d+)$/, function (n) { return "☕ " + plural(n, "streak pass", "streak passes"); }],
+    [/^☕ 어제는 기준 (\d+)%에 못 미쳤어요 \(놓친 항목 (\d+)개\)\. 쉬어가기로 연속 (\d+)일을 지킬 수 있어요$/, function (th, n, k) {
+      return "☕ Yesterday fell short of the " + th + "% requirement (" + plural(n, "item", "items") + " missed). A streak pass keeps your " + k + "-day streak."; }]
+  ];
+  I.register(PASS_D, PASS_P);
   // 위 패턴보다 포괄적인 분할 규칙: "📖 창세기 · 첫째 날, 빛이 있으라" 같은 "A · B" 조합(지인 카드 등)
   I.register(null, [[/^(📖 )?([^·]+?) · (.+)$/, function (ic, b, t) {
     var a = I.sub(b), c = I.sub(t);

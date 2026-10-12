@@ -42,9 +42,19 @@
       ["What a successful day is", "Add up everything due that day; if the completion rate reaches your requirement, the day is a success. It's the total across all categories, not per category, so missing one small category won't break your streak."],
       ["Choosing the requirement", "In Settings you can choose 100%, 90%, 80% or 70%. When you change it, the new requirement applies from that day on, and earlier days keep the requirement they had at the time."],
       ["How it carries on", "Rest days and days with nothing due are skipped — they neither break nor add to the streak. “Anytime” items and items you chose to do on a rest day don't count toward the streak."],
+      ["Streak pass", "A day that falls a little short can be skipped with a “streak pass”. A pass day neither breaks nor grows your streak. See the “Streak pass” help for the full rules."],
       ["What the numbers cover", "“Streak” in Stats is the full run of consecutive days up to today, regardless of the month you're viewing. “Success days” next to it counts only within the month on screen, so the ranges differ."],
       ["Relation to points", "Even if your streak breaks, your total points and Bible journey stay. Badges you've earned don't disappear either."]
-    ], see: ["badges", "points", "keeprest"] },
+    ], see: ["pass", "badges", "points", "keeprest"] },
+    pass: { t: "Streak pass", sub: "Protecting your streak on a day you fell short", s: [
+      ["What it is", "A safety net for when you miss the requirement by an item or two. A pass day is skipped like a rest day, so your streak neither breaks nor grows. It doesn't count as a success day."],
+      ["How you earn them", "You get 1 for every 7 successful days in a row and 1 on the 1st of each month. You also get 1 when you start. You can hold up to 3; once full, no more pile up."],
+      ["When you can use one", "Only on today or yesterday, and only on a day that fell short of the requirement. You must have missed 2 items or fewer that day, and you can use only one per week (Mon–Sun), never on two days in a row."],
+      ["Where to use it", "Open it from the ☕ Streak pass badge on Home (a reminder card also appears if you fell short yesterday), or from Settings › Routine rules › Streak pass. You're asked to confirm first."],
+      ["Getting it back", "If you later fill that day past the requirement, it counts as not used and the pass comes back. You can also cancel a pass for today or yesterday to get it back."],
+      ["Weekly reward", "A pass day is left out of the weekly reward. Even when rest days or passes shrink the days to evaluate, with 3 or more days you may miss one."],
+      ["Calendar and records", "Pass days are marked with ☕ on the Stats calendar, and a note shows when you open that date in Records. Points for what you did that day still count."]
+    ], see: ["streak", "rewards", "rest"] },
     days: { t: "Repeat days · Anytime", sub: "Choosing days, and Anytime items", s: [
       ["Choosing days", "Pick Every day, Weekdays or Weekends, or tap the day cells yourself. You can't save if you deselect every day."],
       ["When you change the days", "The new days apply from the day you change them. Earlier dates keep the days they had at the time, so their scheduled items, successes, streaks and points stay the same. If you change an item's days several times in one day, only the last change is kept."],
@@ -113,7 +123,7 @@
     ], see: ["rewards", "badges", "achieve"] },
     rewards: { t: "Gift box and rewards", sub: "Daily · weekly · badge · quarterly rewards", s: [
       ["Daily box", "When you meet the day's success requirement, a bonus box arrives. Opening it adds 5P. If you press [Later], a box card stays on Home."],
-      ["Weekly reward", "If you succeed on 4 or more of the 5 weekdays (Mon–Fri), a “small reward” opens. It's judged on Fri, Sat and Sun. If rest days leave fewer than 5 days to evaluate, you need to succeed on all of them."],
+      ["Weekly reward", "If you succeed on 4 or more of the 5 weekdays (Mon–Fri), a “small reward” opens. It's judged on Fri, Sat and Sun. Even when rest days or streak passes shrink the days to evaluate, with 3 or more days you may miss one (with 4 days, 3 successes); with 2 or fewer you need all of them."],
       ["Badge reward", "It opens each time you earn a streak badge (3 · 7 · 14 · 30 · 60 · 100 · 200 · 365 days). Under 30 days is a small reward and 30 or more is a big reward, with different suggestion chips."],
       ["Quarterly reward", "Each time your total points pass 3000P · 6000P · 9000P… (every 3000P), a “big reward” opens, repeating. It celebrates in full screen, with no suggestion chips — you just type your own."],
       ["All in one place", "Daily, weekly, badge and quarterly reward records are all gathered in one gift box. Tap an entry to fill it in later, edit what you already wrote, or delete it."]
@@ -155,7 +165,7 @@
 
   var G = [
     ["Screen guides", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
-    ["Routine & stats rules", ["colors", "streak", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
+    ["Routine & stats rules", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
     ["Friends & data", ["share", "cheers", "backup"]]
   ];

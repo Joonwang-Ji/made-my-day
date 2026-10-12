@@ -941,3 +941,29 @@
   html.fs-big .btn { display: flex; align-items: center; justify-content: center; }
   html.fs-big .play-btn { width: 2.25rem; height: 2.25rem; }
 .rv-set-note { margin-top: 10px; font-size: 0.75rem; color: var(--ink-dim); line-height: 1.6; }
+
+/* ---- 쉬어가기 ---- */
+.sub-row .pass-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem;
+  font-weight: 700; white-space: nowrap; background: var(--rest-soft); color: var(--rest); cursor: pointer; }
+.sub-row .pass-badge.can { background: var(--gold-soft); color: var(--gold); }
+.sub-row .pass-badge.on { background: var(--sage-soft); color: var(--sage); }
+.nudge-banner.pass-banner { background: var(--rest-soft); color: var(--rest); }
+.pass-bal { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 2px 0 12px; }
+.pass-dots { font-size: 1.25rem; letter-spacing: 0.25em; color: var(--rest); }
+.pass-bal-t { font-size: 0.8125rem; font-weight: 800; color: var(--ink); }
+.pass-row { background: var(--bg-soft); border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; margin-bottom: 8px; }
+.pass-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pass-row-day { font-size: 0.8125rem; font-weight: 800; color: var(--ink); }
+.pass-row-state { font-size: 0.7188rem; font-weight: 700; color: var(--ink-dim); white-space: nowrap; }
+.pass-row-state.good { color: var(--sage); }
+.pass-row-note { margin-top: 5px; font-size: 0.75rem; line-height: 1.5; color: var(--ink-dim); }
+.pass-sec { font-size: 0.75rem; font-weight: 800; color: var(--ink-dim); margin: 16px 0 6px 2px; }
+.pass-line { font-size: 0.75rem; line-height: 1.6; color: var(--ink); padding-left: 10px; position: relative; }
+.pass-line::before { content: "·"; position: absolute; left: 1px; color: var(--ink-dim); }
+.pass-line.pass-next { color: var(--rest); font-weight: 700; margin-top: 2px; }
+.pass-ev { display: flex; gap: 10px; font-size: 0.75rem; line-height: 1.6; padding: 2px 2px; color: var(--ink); }
+.pass-ev-d { flex: none; min-width: 5.6em; white-space: nowrap; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.success-cell.pass { background: var(--rest-soft); color: var(--rest); font-weight: 800; }
+.success-cell .pass-mark { position: absolute; top: 1px; right: 2px; font-size: 0.5rem; line-height: 1; }
+.pass-day-note { background: var(--rest-soft); color: var(--rest); border-radius: 12px; padding: 9px 12px; margin-bottom: 10px;
+  font-size: 0.75rem; font-weight: 700; line-height: 1.5; }

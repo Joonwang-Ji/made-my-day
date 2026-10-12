@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-01-6";
+  var BUILD_VERSION = "2026-10-12-1";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -49,6 +49,15 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 홈 화면 앱 설정(2026-10-12): 아이콘·이름·상태 표시줄. 이미 추가해 둔 아이콘은 지웠다가 다시 추가해야 새 아이콘이 보인다. 아이콘 PNG는 저장소 맨 위(루트)에 둔다. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Made My Day">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" id="themeColorMeta" content="#EFE8D6">
 <title>Made My Day</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -150,6 +159,7 @@
   <div id="reviewCards"></div>
   <div id="weeklyProgressBanner" class="weekly-card hidden"></div>
   <div id="nudgeBanner" class="nudge-banner hidden" data-action="open-missed-overlay"></div>
+  <div id="passBanner" class="nudge-banner pass-banner hidden" data-action="open-pass"></div>
   <div id="holidayBanner" class="nudge-banner hidden" data-action="open-holiday-banner-year"></div>
   <div id="todayRingCard" class="today-ring-card hidden" data-action="open-achievements">
     <span class="help-q" data-action="help" data-id="home">?</span>
@@ -412,6 +422,9 @@
   </div>
   <div class="section-label">쉬는 날<span class="help-q" data-action="help" data-id="rest">?</span></div>
   <div class="btn" data-action="open-rest-modal" style="margin:0;">쉬는 날 관리</div>
+  <div class="section-label">쉬어가기<span class="help-q" data-action="help" data-id="pass">?</span></div>
+  <div class="btn" data-action="open-pass" style="margin:0;">쉬어가기 보기</div>
+  <div class="sub" style="margin-top:6px;">기준에 못 미친 날의 스트릭을 지켜 주는 안전망이에요. 개수는 모으는 방식이라 아껴 쓰는 게 좋아요.</div>
 </div>
 
 <div class="wrap hidden set-sub" id="view-setNotify">
@@ -758,6 +771,16 @@
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="passOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:320px;">
+    <div class="tp-card-head">
+      <div class="tp-title">☕ 쉬어가기</div>
+      <span class="tp-close-x" data-action="pass-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="passOverlayBody"></div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="reviewOverlay">
   <div class="tp-card tp-card-scroll" style="max-width:340px;">
     <div class="tp-card-head">
@@ -859,13 +882,21 @@
   function loadTheme() {
     try { return localStorage.getItem(THEME_KEY) || "auto"; } catch (e) { return "auto"; }
   }
+  // 브라우저·홈 화면 앱의 상단 색(theme-color)을 지금 테마의 배경색에 맞춘다
+  function syncThemeColor(v) {
+    var dark = v === "dark" || (v !== "light" && !!window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    var m = document.getElementById("themeColorMeta");
+    if (m) m.setAttribute("content", dark ? "#1B231E" : "#EFE8D6");
+  }
   function applyTheme(v) {
     if (v === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", v);
     try { localStorage.setItem(THEME_KEY, v); } catch (e) {}
+    syncThemeColor(v);
   }
   var currentTheme = loadTheme();
   applyTheme(currentTheme);
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { syncThemeColor(currentTheme); }); } catch (e) {}
 
   // ---- 글씨 크기 / 선명하게 보기 (이 기기에만 저장) ----
   var FS_KEY = "mmd_font_scale", FS_SEEN_KEY = "mmd_fs_seen", VIVID_KEY = "mmd_vivid";
@@ -2403,6 +2434,7 @@
       historyArchivedYears: [],
       restDays: [],
       recurringHolidays: [],
+      passDays: [],
       streakThreshold: 100,
       thresholdHistory: [],
       archivedItems: [],
@@ -2521,6 +2553,7 @@
     });
     if (!p.restDays || !Array.isArray(p.restDays)) p.restDays = [];
     if (!p.recurringHolidays || !Array.isArray(p.recurringHolidays)) p.recurringHolidays = [];
+    p.passDays = normalizePassDays(p.passDays);
     if (!p.memos || typeof p.memos !== "object") p.memos = {};
     if (typeof p.holidayPromptSeen !== "boolean") p.holidayPromptSeen = false;
     if (typeof p.holidayBannerDismissedYear === "undefined") p.holidayBannerDismissedYear = null;
@@ -2587,6 +2620,7 @@
       p.lastSeenBibleKey = gNow.bookIndex * 1000 + gNow.milestoneIndex;
       p.lastSeenGen = gNow.gen;
     }
+    passInvalidate();
     return p;
   }
   function loadFromLocalStorage() {
@@ -2684,6 +2718,10 @@
     [base, local, server].forEach(function (o) { Object.keys(o).forEach(function (k) { keys[k] = true; }); });
     Object.keys(keys).forEach(function (k) {
       if (k === "history" || k === "historyArchivedYears") return;   // 이 둘은 아래에서 따로 합친다
+      if (k === "passDays") {   // 쉬어가기 쓴 날짜: 두 기기에서 따로 쓰거나 취소한 것도 날짜 단위로 합친다
+        out.passDays = normalizePassDays(mergeIdList(base.passDays, local.passDays, server.passDays));
+        return;
+      }
       var lv = local[k], bv = base[k], sv = server[k];
       if (canon(lv) !== canon(bv)) { if (lv !== undefined) out[k] = lv; }   // 내가 바꾼 필드는 내 값
       else if (sv !== undefined) out[k] = sv;                                // 아니면 서버 값
@@ -2877,6 +2915,7 @@
   });
 
   function saveState() {
+    passInvalidate();
     if (currentUid && !synced) return;   // 서버 확정 전에는 캐시로 그린 화면에서 아무것도 저장하지 않는다
     saveToLocalStorage(state);
     if (!currentUid) return;
@@ -3590,7 +3629,7 @@
   // 풀로 모아 합산 달성률(완료/예정)이 인정 기준(%) 이상이면 성공으로 잡는다.
   // 이렇게 하면 항목 수가 적은 카테고리 하나 때문에(그 카테고리만 기준 미달) 다른
   // 카테고리를 다 채웠는데도 그날 전체가 실패 처리되는 문제가 없다.
-  function overallStreakStatus(k) {
+  function rawStreakStatus(k) {
     var withDue = evalCats().filter(function (c) { return catItemsDueOn(c, k).length > 0; });
     if (withDue.length === 0) return null;
     var threshold = thresholdFor(k);
@@ -3602,6 +3641,140 @@
     if (totalDue === 0) return null;
     return (totalDone / totalDue * 100) >= threshold;
   }
+  // 쉬어가기를 쓴 날(passDays)은, 실제로 기준에 못 미친 경우에만 "건너뛰는 날(null)"로 취급한다.
+  // 나중에 기록을 더 채워 기준을 넘기면 그냥 성공(true)이 되고 쉬어가기는 쓰지 않은 것으로 돌아간다.
+  function overallStreakStatus(k) {
+    var s = rawStreakStatus(k);
+    if (s === false && passMarked(k)) return null;
+    return s;
+  }
+
+  // ---- 쉬어가기 ----
+  // 기준에 못 미친 날(오늘·어제)을 스트릭에서 "건너뛰는 날"로 바꿔 주는 안전망. 남발을 막으려고 보유 개수를 둔다.
+  //  · 적립: 연속 7일 성공할 때마다 +1, 매월 1일 +1, 시작할 때 +1(PASS_EPOCH 이후 기록 기준). 최대 PASS_CAP개까지만 모인다.
+  //  · 사용: 오늘·어제만, 기준에 못 미친 날만, 놓친 항목이 PASS_MAX_MISSED개 이하일 때만. 같은 주(월~일) 1회, 연속 이틀 불가.
+  //  · 보유 개수는 저장하지 않고 기록(history)에서 매번 계산한다(포인트와 같은 방식). 저장하는 건 쓴 날짜 목록 passDays뿐.
+  var PASS_EPOCH = "2026-10-12", PASS_CAP = 3, PASS_EVERY = 7, PASS_MAX_MISSED = 2;
+  function normalizePassDays(a) {
+    if (!Array.isArray(a)) return [];
+    var seen = {}, out = [];
+    a.forEach(function (k) {
+      if (typeof k === "string" && /^\d{4}-\d{2}-\d{2}$/.test(k) && !seen[k]) { seen[k] = true; out.push(k); }
+    });
+    out.sort();
+    return out;
+  }
+  function passMarked(k) { return Array.isArray(state.passDays) && state.passDays.length > 0 && state.passDays.indexOf(k) !== -1; }
+  function passApplied(k) { return passMarked(k) && rawStreakStatus(k) === false; }
+  function yesterdayKey() { return keyFor(new Date(Date.now() - 86400000)); }
+  function dayDueDone(k) {
+    var due = 0, done = 0;
+    evalCats().forEach(function (c) {
+      var n = catItemsDueOn(c, k).length;
+      if (n > 0) { due += n; done += catDoneCount(c, k); }
+    });
+    return { due: due, done: done };
+  }
+  var passCache = null;
+  function passInvalidate() { passCache = null; }
+  // 기록 전체를 훑어 보유 개수·적립 내역을 계산한다. 같은 상태에서는 결과를 재사용한다(saveState가 비운다).
+  function passSig() {
+    var t = todayKey(), y = yesterdayKey(), h = state.history || {};
+    function n(k) { return (h[k] && Array.isArray(h[k].completed)) ? h[k].completed.length : 0; }
+    return t + "|" + (state.passDays || []).join(",") + "|" + n(t) + "|" + n(y);
+  }
+  function passLedger() {
+    var today = todayKey(), sig = passSig();
+    if (passCache && passCache.sig === sig) return passCache.res;
+    var keys = Object.keys(state.history || {}).sort();
+    var first = keys.length ? keys[0] : today;
+    var start = first > PASS_EPOCH ? first : PASS_EPOCH;
+    var cursor = parseKeyToDate(first < today ? first : today);
+    var end = parseKeyToDate(today);
+    var run = 0, bal = 0, earned = 0, used = 0, events = [];
+    while (cursor <= end) {
+      var k = keyFor(cursor);
+      var s = overallStreakStatus(k);
+      if (s === true) run++; else if (s === false) run = 0;
+      if (k >= start) {
+        var g = [];
+        if (k === start) g.push("start");
+        else if (k.slice(8) === "01") g.push("month");
+        if (s === true && run > 0 && run % PASS_EVERY === 0) g.push("streak");
+        g.forEach(function (type) {
+          earned++;
+          var full = bal >= PASS_CAP;
+          if (!full) bal++;
+          events.push({ d: k, t: type, full: full });
+        });
+      }
+      if (passApplied(k)) { used++; if (bal > 0) bal--; events.push({ d: k, t: "use" }); }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    var streak = computeStreakGeneric(overallStreakStatus);
+    var res = { bal: bal, earned: earned, used: used, events: events, streak: streak,
+      toNext: PASS_EVERY - (streak % PASS_EVERY) };
+    passCache = { sig: sig, res: res };
+    return res;
+  }
+  function passBalance() { return passLedger().bal; }
+  function weekKeyMon(k) { return keyFor(mondayOfAny(parseKeyToDate(k))); }
+  // 월요일 시작 주의 월요일(일요일이면 직전 월요일)
+  function mondayOfAny(d) {
+    var m = new Date(d); m.setHours(0, 0, 0, 0);
+    var dow = m.getDay();
+    m.setDate(m.getDate() - (dow === 0 ? 6 : dow - 1));
+    return m;
+  }
+  function shiftKey(k, delta) { var d = parseKeyToDate(k); d.setDate(d.getDate() + delta); return keyFor(d); }
+  // k날에 쉬어가기를 쓸 수 있는가. reason: range|used|none|met|toomany|adjacent|week|empty|ok
+  function passCheck(k) {
+    var today = todayKey();
+    var info = { k: k, ok: false, reason: "range", missed: 0, due: 0 };
+    if (k !== today && k !== yesterdayKey()) return info;
+    if (passApplied(k)) { info.reason = "used"; return info; }
+    var raw = rawStreakStatus(k);
+    var dd = dayDueDone(k);
+    info.due = dd.due; info.missed = Math.max(0, dd.due - dd.done);
+    if (raw === null) { info.reason = "none"; return info; }
+    if (raw === true) { info.reason = "met"; return info; }
+    if (info.missed > PASS_MAX_MISSED) { info.reason = "toomany"; return info; }
+    if (passApplied(shiftKey(k, -1)) || passApplied(shiftKey(k, 1))) { info.reason = "adjacent"; return info; }
+    var wk = weekKeyMon(k);
+    for (var i = 0; i < 7; i++) {
+      var dk = shiftKey(wk, i);
+      if (dk !== k && passApplied(dk)) { info.reason = "week"; return info; }
+    }
+    if (passBalance() < 1) { info.reason = "empty"; return info; }
+    info.ok = true; info.reason = "ok";
+    return info;
+  }
+  // k날에 쓰면 연속일이 몇 일이 되는지(미리보기)
+  function streakIfPass(k) {
+    var had = passMarked(k);
+    if (!had) { state.passDays = (state.passDays || []).concat([k]); passInvalidate(); }
+    var n = computeStreakGeneric(overallStreakStatus);
+    if (!had) { state.passDays = state.passDays.filter(function (x) { return x !== k; }); passInvalidate(); }
+    return n;
+  }
+  function usePass(k) {
+    var c = passCheck(k);
+    if (!c.ok) { toast("지금은 쓸 수 없어요"); return false; }
+    state.passDays = normalizePassDays((state.passDays || []).concat([k]));
+    passInvalidate();
+    saveState();
+    return true;
+  }
+  function cancelPass(k) {
+    if (!passMarked(k)) return false;
+    if (k !== todayKey() && k !== yesterdayKey()) return false;
+    state.passDays = state.passDays.filter(function (x) { return x !== k; });
+    passInvalidate();
+    saveState();
+    return true;
+  }
+  // 주간 보상에서 필요한 성공 일수: 평가할 날이 5일이면 4일, 쉬는 날·쉬어가기로 줄어 3~4일이면 하루만 놓쳐도 되고, 2일 이하면 전부.
+  function weeklyNeeded(counted) { return counted >= 5 ? 4 : (counted >= 3 ? counted - 1 : counted); }
   // ---- 놓친 항목 배너 ----
   function missedItemsFor(dateKey) {
     var out = [];
@@ -3659,6 +3832,90 @@
   }
   function openMissedOverlay() { renderMissedOverlay(); document.getElementById("missedOverlay").classList.remove("hidden"); }
   function closeMissedOverlay() { document.getElementById("missedOverlay").classList.add("hidden"); }
+
+  // ---- 쉬어가기 화면 ----
+  var PASS_DOW = ["일", "월", "화", "수", "목", "금", "토"];
+  function passMD(k) { var d = parseKeyToDate(k); return (d.getMonth() + 1) + "월 " + d.getDate() + "일"; }
+  function passDayLabel(k, tag) { return tag + " · " + passMD(k) + " (" + PASS_DOW[parseKeyToDate(k).getDay()] + ")"; }
+  // 오늘·어제에 걸린 쉬어가기 표시 중, 이미 기준을 넘긴 날은 표시를 걷어 "쓰지 않은 것"으로 되돌린다(개수 자동 반환).
+  function passCleanup() {
+    if (!state.passDays || !state.passDays.length) return false;
+    var t = todayKey(), y = yesterdayKey(), removedToday = false, changed = false;
+    state.passDays = state.passDays.filter(function (k) {
+      if (k !== t && k !== y) return true;
+      if (rawStreakStatus(k) === true) { changed = true; if (k === t) removedToday = true; return false; }
+      return true;
+    });
+    if (changed) { passInvalidate(); saveState(); if (removedToday) toast("기준을 넘겨서 쉬어가기를 쓰지 않은 것으로 돌려놨어요"); }
+    return changed;
+  }
+  function passRowHtml(k, tag) {
+    var c = passCheck(k), st = "", note = "", note2 = "", btn = "", good = false;
+    if (c.reason === "used") {
+      st = "쉬어가기 사용됨"; good = true; note = "연속일이 그대로 이어져요";
+      btn = '<div class="btn" data-action="pass-cancel" data-id="' + k + '" style="margin:8px 0 0;">취소하기</div>';
+    } else if (c.reason === "ok") {
+      st = "쓸 수 있어요"; good = true;
+      note = "놓친 항목 " + c.missed + "개 · 쓰면 연속 " + streakIfPass(k) + "일이 이어져요";
+      if (k === todayKey()) note2 = "오늘 기준을 넘기면 쓰지 않은 것으로 돌아와요";
+      btn = '<div class="btn primary" data-action="pass-use" data-id="' + k + '" style="margin:8px 0 0;">쉬어가기 쓰기</div>';
+    } else if (c.reason === "met") { st = "필요 없어요"; note = "이미 기준을 달성했어요"; }
+    else if (c.reason === "none") { st = "해당 없음"; note = "예정된 항목이 없거나 쉬는 날이에요"; }
+    else if (c.reason === "toomany") { st = "쓸 수 없어요"; note = "놓친 항목이 " + c.missed + "개예요 (" + PASS_MAX_MISSED + "개 이하일 때만 쓸 수 있어요)"; }
+    else if (c.reason === "adjacent") { st = "쓸 수 없어요"; note = "바로 앞이나 뒤 날에 이미 썼어요 (연속 이틀은 안 돼요)"; }
+    else if (c.reason === "week") { st = "쓸 수 없어요"; note = "이번 주에 이미 썼어요 (한 주에 한 번)"; }
+    else if (c.reason === "empty") { st = "쓸 수 없어요"; note = "보유한 쉬어가기가 없어요"; }
+    return '<div class="pass-row"><div class="pass-row-top"><span class="pass-row-day">' + passDayLabel(k, tag) + '</span>' +
+      '<span class="pass-row-state' + (good ? ' good' : '') + '">' + st + '</span></div>' +
+      (note ? '<div class="pass-row-note">' + note + '</div>' : '') +
+      (note2 ? '<div class="pass-row-note">' + note2 + '</div>' : '') + btn + '</div>';
+  }
+  function renderPassSheet() {
+    var L = passLedger(), h = "", i;
+    var dots = "";
+    for (i = 0; i < PASS_CAP; i++) dots += (i < L.bal ? "●" : "○");
+    h += '<div class="pass-bal"><span class="pass-dots">' + dots + '</span><span class="pass-bal-t">보유 ' + L.bal + '개 · 최대 ' + PASS_CAP + '개</span></div>';
+    h += passRowHtml(yesterdayKey(), "어제") + passRowHtml(todayKey(), "오늘");
+    h += '<div class="pass-sec">얻는 방법</div>';
+    h += '<div class="pass-line">연속 ' + PASS_EVERY + '일 성공할 때마다 1개</div><div class="pass-line">매월 1일에 1개</div>';
+    h += '<div class="pass-line">가득 차면 더 모이지 않아요</div>';
+    h += '<div class="pass-line pass-next">다음 적립까지 연속 ' + L.toNext + '일 (지금 연속 ' + L.streak + '일)</div>';
+    h += '<div class="pass-sec">쓰는 규칙</div>';
+    h += '<div class="pass-line">오늘이나 어제, 기준에 못 미친 날만 써요</div>';
+    h += '<div class="pass-line">놓친 항목이 ' + PASS_MAX_MISSED + '개 이하일 때만 써요</div>';
+    h += '<div class="pass-line">한 주(월~일)에 한 번, 연속 이틀은 안 돼요</div>';
+    h += '<div class="pass-line">쓴 날은 연속일이 +1 되진 않지만 끊기지도 않아요</div>';
+    h += '<div class="pass-sec">내역</div>';
+    var ev = L.events.slice(-6).reverse();
+    if (!ev.length) h += '<div class="pass-line">아직 내역이 없어요</div>';
+    ev.forEach(function (e) {
+      var tx = e.t === "start" ? "시작 선물 +1" : e.t === "month" ? "새 달 선물 +1" : e.t === "streak" ? "연속 " + PASS_EVERY + "일 성공 +1" : "쉬어가기 사용 −1";
+      if (e.full) tx = (e.t === "month" ? "새 달 선물" : e.t === "streak" ? "연속 " + PASS_EVERY + "일 성공" : "시작 선물") + " (가득 차서 못 담았어요)";
+      h += '<div class="pass-ev"><span class="pass-ev-d">' + passMD(e.d) + '</span><span>' + tx + '</span></div>';
+    });
+    document.getElementById("passOverlayBody").innerHTML = h;
+  }
+  function openPassSheet() { renderPassSheet(); document.getElementById("passOverlay").classList.remove("hidden"); }
+  function closePassSheet() { document.getElementById("passOverlay").classList.add("hidden"); }
+  function afterPassChange() {
+    try { checkRewardEvents(); } catch (e) {}
+    renderHome();
+    if (!document.getElementById("passOverlay").classList.contains("hidden")) renderPassSheet();
+  }
+  function askUsePass(k) {
+    var c = passCheck(k);
+    if (!c.ok) { renderPassSheet(); return; }
+    var n = streakIfPass(k), bal = passBalance();
+    askConfirm("쉬어가기를 쓸까요?", "놓친 항목 " + c.missed + "개 · 연속 " + n + "일이 이어져요 · 보유 " + bal + "개 → " + (bal - 1) + "개", "쓰기", function () {
+      if (usePass(k)) { toast("쉬어가기를 썼어요"); afterPassChange(); } else { renderPassSheet(); }
+    });
+  }
+  function askCancelPass(k) {
+    if (!passMarked(k)) return;
+    askConfirm("쉬어가기를 취소할까요?", "1개를 돌려받고, 그날은 다시 기준 미달로 계산돼요", "취소하기", function () {
+      if (cancelPass(k)) { toast("쉬어가기를 취소했어요 · 1개를 돌려받았어요"); afterPassChange(); }
+    });
+  }
   var TITLE_EMOJI_PRESET = [
     "🔥","💪","🚀","⚡","💯","🏆","🥇","🎯","🧨","💥",
     "☀️","🌅","🌄","🌞","🌤️","🌈","✨","⭐","🌟","💫",
@@ -4781,7 +5038,7 @@
     return true;
   }
 
-  // ---- 주간 보상(평일 월~금 5일 중 4일 이상 성공) ----
+  // ---- 주간 보상(평일 월~금 5일 중 4일 이상 성공 · 쉬는 날/쉬어가기로 평가일이 줄면 weeklyNeeded 참고) ----
   function mondayOf(d) {
     var s = startOfWeek(d);
     s.setDate(s.getDate() + 1);
@@ -4808,7 +5065,7 @@
     if (friday > today) return;
     var info = weekdaySuccessInfo(monday);
     if (info.counted === 0) return;
-    var needed = info.counted >= 5 ? 4 : info.counted;
+    var needed = weeklyNeeded(info.counted);
     if (info.success >= needed) {
       state.celebratedWeeks.push(mondayKey);
       if (!Array.isArray(state.pendingRewards)) state.pendingRewards = [];
@@ -4829,7 +5086,7 @@
     if (state.celebratedWeeks.indexOf(mondayKey) !== -1) return null;
     var info = weekdaySuccessInfo(monday); // 오늘(금)의 현재 진행 상태도 5일 중 하나로 포함됨
     if (info.counted === 0) return null;
-    var needed = info.counted >= 5 ? 4 : info.counted;
+    var needed = weeklyNeeded(info.counted);
     var remaining = Math.max(0, needed - info.success);
     return { success: info.success, counted: info.counted, needed: needed, remaining: remaining };
   }
@@ -5165,6 +5422,7 @@
   document.addEventListener("touchcancel", onTouchRelease, { passive: true, capture: true });
 
   function renderHome() {
+    try { passCleanup(); } catch (e) {}
     renderTitleRow();
     renderAvatarSlots();
     var d = new Date();
@@ -5189,6 +5447,10 @@
       if (state.memos && state.memos[todayK]) badges.push('<span class="memo-badge">✎ 오늘 메모</span>');
       var timeSugN = timeSuggestionCount();
       if (timeSugN > 0) badges.push('<span class="time-badge" data-action="open-time-suggest">⏱ 시간 조정 제안 ' + timeSugN + '</span>');
+      try {
+        if (passApplied(todayK)) badges.push('<span class="pass-badge on" data-action="open-pass">☕ 오늘 쉬어가기 중</span>');
+        else badges.push('<span class="pass-badge' + (passCheck(yesterdayKey()).ok ? ' can' : '') + '" data-action="open-pass">☕ 쉬어가기 ' + passBalance() + '</span>');
+      } catch (e) {}
     }
     try { var rvb = rvBadgeHtml(); if (rvb) badges.push(rvb); } catch (e) {}
     if (cheerUnread > 0) badges.push('<span class="cheer-badge" data-action="open-cheers">💌 새 응원 ' + cheerUnread + '</span>');
@@ -5202,6 +5464,15 @@
       nudgeEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>어제 놓친 부분이 있었어요 — 오늘 한 번 챙겨볼까요?</span>';
     } else {
       nudgeEl.classList.add("hidden");
+    }
+    var passEl = document.getElementById("passBanner");
+    if (passEl) {
+      var yc = null;
+      try { yc = passCheck(yKey); } catch (e) {}
+      if (yc && yc.ok) {
+        passEl.classList.remove("hidden");
+        passEl.innerHTML = '<span>☕ 어제는 기준 ' + thresholdFor(yKey) + '%에 못 미쳤어요 (놓친 항목 ' + yc.missed + '개). 쉬어가기로 연속 ' + streakIfPass(yKey) + '일을 지킬 수 있어요</span><span class="nb-chev">›</span>';
+      } else { passEl.classList.add("hidden"); }
     }
     renderHolidayBanner();
     renderWeeklyProgressBanner();
@@ -5250,6 +5521,7 @@
           : unreachable
             ? "오늘은 기준 " + threshold + "% 달성이 어려워요"
             : needed + "개만 더 하면 기준 " + threshold + "% 달성이에요";
+        if (passApplied(todayK)) document.getElementById("ringInfoSub").textContent = "쉬어가기 중 · 스트릭은 그대로예요";
       }
     }
 
@@ -6315,7 +6587,7 @@
       '<button data-action="stats-next-month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button></div>';
 
     var streak = computeStreakGeneric(overallStreakStatus);
-    var successDays = 0, ratedDays = 0, anyBonus = false;
+    var successDays = 0, ratedDays = 0, anyBonus = false, anyPass = false;
     var leadDow = new Date(year, month, 1).getDay();
     var cellsHtml = "";
     for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="success-cell pad"></div>';
@@ -6323,6 +6595,13 @@
       var dk = year + "-" + pad(month+1) + "-" + pad(day);
       if (dk > todayStr) { cellsHtml += '<div class="success-cell future">' + day + '</div>'; continue; }
       var s = overallStreakStatus(dk);
+      if (s === null && passApplied(dk)) {
+        // 쉬어가기를 쓴 날: 연속일은 이어지지만 성공일로는 세지 않는다
+        anyPass = true;
+        var dotHtml0 = (state.memos && state.memos[dk]) ? '<span class="memo-dot"></span>' : '';
+        cellsHtml += '<div class="success-cell pass" data-action="success-cell-goto" data-id="' + dk + '">' + day + '<span class="pass-mark">☕</span>' + dotHtml0 + '</div>';
+        continue;
+      }
       if (s === null) {
         // due 항목이 없어(주로 쉬는 날) 스트릭 집계에서 건너뛴 날. 그래도 그날 뭔가
         // 체크한 기록이 있으면(위 홈 화면의 "선택" 항목 등) 스트릭에는 영향을 주지
@@ -6349,6 +6628,7 @@
     html += '<div class="success-header">' + ["S","M","T","W","T","F","S"].map(function(d){return '<div>'+d+'</div>';}).join("") + '</div>';
     html += '<div class="success-grid">' + cellsHtml + '</div>';
     if (anyBonus) html += '<div style="margin-top:10px;font-size:0.7188rem;color:var(--ink-dim);">🟡 쉬는 날인데 뭔가 한 날 (스트릭에는 반영되지 않아요)</div>';
+    if (anyPass) html += '<div style="margin-top:6px;font-size:0.7188rem;color:var(--ink-dim);">☕ 쉬어가기를 쓴 날 (연속일은 이어지고, 성공일에는 세지 않아요)</div>';
     return html;
   }
 
@@ -6362,6 +6642,7 @@
       history: state.history,
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
+      passDays: state.passDays,
       streakThreshold: state.streakThreshold,
       thresholdHistory: state.thresholdHistory,
       archivedItems: state.archivedItems,
@@ -6430,6 +6711,7 @@
     state.history = migrateHistory((parsed.history && typeof parsed.history === "object") ? parsed.history : {});
     if (Array.isArray(parsed.restDays)) state.restDays = parsed.restDays;
     if (Array.isArray(parsed.recurringHolidays)) state.recurringHolidays = parsed.recurringHolidays;
+    if (Array.isArray(parsed.passDays)) state.passDays = normalizePassDays(parsed.passDays);
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
     state.thresholdHistory = normalizeThresholdHistory(parsed.thresholdHistory);
     state.archivedItems = normalizeArchivedItems(parsed.archivedItems);
@@ -6650,6 +6932,7 @@
         '<div class="cat-items-preview">' + itemsHtml + '</div></div>';
     });
     if (!html) html = '<div class="empty">이 날짜에 예정된 항목이 없어요.</div>';
+    if (passApplied(dk)) html = '<div class="pass-day-note">☕ 이 날은 쉬어가기를 썼어요 (연속일은 이어져요)</div>' + html;
     el.innerHTML = html;
     loadMemoBox(dk);
   }
@@ -6743,6 +7026,7 @@
       history: state.history,
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
+      passDays: state.passDays,
       streakThreshold: state.streakThreshold,
       thresholdHistory: state.thresholdHistory,
       archivedItems: state.archivedItems,
@@ -6823,9 +7107,19 @@
       ["성공한 날이란", "그날 해야 하는 모든 항목을 합쳐서 완료 비율이 기준 이상이면 성공이에요. 카테고리별이 아니라 전체 합산이라, 작은 카테고리 하나를 놓쳐도 무너지지 않아요."],
       ["기준 고르기", "설정에서 100% · 90% · 80% · 70% 중에 고를 수 있어요. 기준을 바꾸면 바꾼 날부터 새 기준이 적용되고, 그 전 날짜의 성공·연속일은 당시 기준 그대로 유지돼요."],
       ["이어지는 규칙", "쉬는 날이나 할 일이 하나도 없는 날은 건너뛰어요. 끊기지도, 세어지지도 않아요. ‘불시’ 항목과 쉬는 날에 자발적으로 한 항목은 스트릭에 들어가지 않아요."],
+      ["쉬어가기", "기준에 한두 개 모자란 날은 ‘쉬어가기’로 건너뛸 수 있어요. 쓴 날은 연속일이 끊기지도, 늘지도 않아요. 자세한 규칙은 ‘쉬어가기’ 도움말을 보세요."],
       ["표시 범위", "통계의 ‘연속일’은 지금 보고 있는 달과 상관없이, 오늘까지 이어진 전체 연속 일수예요. 옆의 ‘성공일’은 지금 보고 있는 달 안에서만 센 숫자라 범위가 달라요."],
       ["포인트와의 관계", "연속일이 끊겨도 누적 포인트와 성경 여정은 그대로 남아요. 이미 얻은 배지도 사라지지 않아요."]
-    ], see: ["badges", "points", "keeprest"] },
+    ], see: ["pass", "badges", "points", "keeprest"] },
+    pass: { t: "쉬어가기", sub: "기준에 못 미친 날 스트릭 지키기", s: [
+      ["쉬어가기란", "기준에 한두 개 모자라 스트릭이 끊길 때 쓰는 안전망이에요. 쓴 날은 쉬는 날처럼 건너뛰어서 연속일이 끊기지도, 늘지도 않아요. 성공일로는 세지 않아요."],
+      ["얻는 방법", "연속 7일 성공할 때마다 1개, 매월 1일에 1개를 받아요. 처음 시작할 때도 1개를 받아요. 최대 3개까지만 모이고, 가득 차면 더 쌓이지 않아요."],
+      ["쓸 수 있는 때", "오늘이나 어제, 기준에 못 미친 날에만 쓸 수 있어요. 그날 놓친 항목이 2개 이하여야 하고, 한 주(월~일)에 한 번만, 연속 이틀은 쓸 수 없어요."],
+      ["어디서 쓰나요", "홈의 ☕ 쉬어가기 뱃지(어제 못 채웠으면 알림 카드도 떠요)나 설정 › 루틴 규칙 › 쉬어가기에서 열어요. 쓰기 전에 한 번 더 확인해요."],
+      ["돌려받기", "쓴 날을 나중에 기준 이상으로 채우면 쓰지 않은 것으로 돌아와서 개수가 되돌아와요. 오늘·어제는 직접 취소해도 돌려받아요."],
+      ["주간 보상과의 관계", "쉬어가기를 쓴 날은 주간 보상 평가에서 빠져요. 쉬는 날이나 쉬어가기로 평가할 날이 줄어도 3일 이상이면 하루는 놓쳐도 돼요."],
+      ["달력과 기록", "통계 달력에 ☕로 표시되고, 기록 탭에서 그 날짜를 열면 안내가 나와요. 포인트는 그날 한 만큼 그대로 쌓여요."]
+    ], see: ["streak", "rewards", "rest"] },
     days: { t: "반복 요일 · 불시", sub: "요일 정하기와 불시 항목", s: [
       ["요일 정하기", "매일 · 평일 · 주말 중에서 고르거나 요일 칸을 직접 눌러 정해요. 요일을 모두 해제하면 저장할 수 없어요."],
       ["요일을 바꾸면", "바꾼 날부터 새 요일이 적용돼요. 그 전 날짜의 예정 · 성공 · 연속일 · 포인트는 당시 요일 그대로 유지돼요. 같은 날 여러 번 바꾸면 마지막 것만 남아요."],
@@ -6894,7 +7188,7 @@
     ], see: ["rewards", "badges", "achieve"] },
     rewards: { t: "선물함과 보상", sub: "매일 · 주간 · 배지 · 분기 보상", s: [
       ["매일 상자", "하루의 성공 기준을 채우면 보너스 상자가 도착해요. 열면 5P가 더해져요. [나중에]를 누르면 홈에 상자 카드가 남아요."],
-      ["주간 보상", "평일(월~금) 5일 중 4일 이상 성공하면 ‘작은 보상’이 열려요. 금·토·일에 판정해요. 쉬는 날 등으로 평가할 날이 5일보다 적으면 그날들을 모두 성공해야 해요."],
+      ["주간 보상", "평일(월~금) 5일 중 4일 이상 성공하면 ‘작은 보상’이 열려요. 금·토·일에 판정해요. 쉬는 날이나 쉬어가기로 평가할 날이 줄어도 3일 이상이면 하루는 놓쳐도 되고(4일이면 3일 성공), 2일 이하면 그날들을 모두 성공해야 해요."],
       ["배지 보상", "연속일 배지(3·7·14·30·60·100·200·365일)를 얻을 때마다 열려요. 30일 미만은 작은 보상, 30일 이상은 큰 보상 칩으로 추천이 달라져요."],
       ["분기 보상", "누적 포인트가 3000P · 6000P · 9000P… 3000P를 넘을 때마다 반복해서 ‘큰 보상’이 열려요. 전체화면으로 크게 축하하고, 추천 칩 없이 직접 입력만 받아요."],
       ["한 곳에 모아 보기", "매일 · 주간 · 배지 · 분기 보상 기록이 전부 선물함 하나에 모여요. 항목을 탭하면 나중에 입력하거나, 이미 쓴 내용을 고치거나, 삭제할 수 있어요."]
@@ -6935,7 +7229,7 @@
   };
   var HELP_GROUPS = [
     ["화면별 안내", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
-    ["루틴 · 통계 규칙", ["colors", "streak", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
+    ["루틴 · 통계 규칙", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
     ["지인 · 데이터", ["share", "cheers", "backup"]]
   ];
@@ -8332,6 +8626,10 @@
       if (SETTINGS_FAMILY.indexOf(id) > 0) { resetLogoutBtn(); showView(id); updateSettingsModalUI(); }
     }
     else if (action === "open-missed-overlay") { openMissedOverlay(); }
+    else if (action === "open-pass") { openPassSheet(); }
+    else if (action === "pass-close") { closePassSheet(); }
+    else if (action === "pass-use") { askUsePass(id); }
+    else if (action === "pass-cancel") { askCancelPass(id); }
     else if (action === "missed-close") { closeMissedOverlay(); }
     else if (action === "open-today-memo") { openTodayMemoOverlay(); }
     else if (action === "today-rest-toggle") { toggleTodayRestInOverlay(); }
@@ -8727,7 +9025,7 @@
       changePwOverlay: "changepw-cancel", achieveOverlay: "achieve-close", bibleShelfOverlay: "bible-shelf-close",
       chatMenuOverlay: "chat-menu-close", cheerPickOverlay: "cheer-pick-close", todayMemoOverlay: "today-memo-cancel",
       titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
-      missedOverlay: "missed-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
+      missedOverlay: "missed-close", passOverlay: "pass-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
       rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", catOverlay: null
     };
     function forceDismiss(ov) {
