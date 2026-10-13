@@ -21,7 +21,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-12-1";
+  var BUILD_VERSION = "2026-10-13-1";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -246,6 +246,7 @@
     <h2>데이터</h2><span class="help-q" data-action="help" data-id="backup">?</span>
   </div>
   <div class="section-label" style="margin-top:0;">백업 (파일)</div>
+  <div class="backup-age" id="backupAge"></div>
   <div class="export-note">기록 전체를 파일 하나로 저장해두세요. 기기를 바꾸거나 데이터가 지워졌을 때 이 파일로 복원할 수 있어요.</div>
   <div class="bottom-row" style="margin-top:0;">
     <div class="btn primary" data-action="download-json">파일로 저장</div>
@@ -356,7 +357,7 @@
     <div class="set-row" data-action="open-set-sub" data-id="view-setNotify"><span class="set-ico">🔔</span><span class="set-txt"><span class="set-t">알림·리뷰</span><span class="set-v" id="setSumNotify"></span></span><span class="set-arrow">›</span></div>
   </div>
   <div class="set-menu">
-    <div class="set-row" data-action="open-export"><span class="set-ico">💾</span><span class="set-txt"><span class="set-t">데이터 백업·복원</span><span class="set-v">파일·텍스트로 저장하고 복원</span></span><span class="set-arrow">›</span></div>
+    <div class="set-row" data-action="open-export"><span class="set-ico">💾</span><span class="set-txt"><span class="set-t">데이터 백업·복원</span><span class="set-v" id="setSumData">파일·텍스트로 저장하고 복원</span></span><span class="set-arrow">›</span></div>
     <div class="set-row" data-action="open-set-sub" data-id="view-setAccount"><span class="set-ico">👤</span><span class="set-txt"><span class="set-t">계정</span><span class="set-v" id="setSumAccount"></span></span><span class="set-arrow">›</span></div>
   </div>
   <div class="set-menu">
@@ -422,9 +423,12 @@
   </div>
   <div class="section-label">쉬는 날<span class="help-q" data-action="help" data-id="rest">?</span></div>
   <div class="btn" data-action="open-rest-modal" style="margin:0;">쉬는 날 관리</div>
-  <div class="section-label">쉬어가기<span class="help-q" data-action="help" data-id="pass">?</span></div>
-  <div class="btn" data-action="open-pass" style="margin:0;">쉬어가기 보기</div>
-  <div class="sub" style="margin-top:6px;">기준에 못 미친 날의 스트릭을 지켜 주는 안전망이에요. 개수는 모으는 방식이라 아껴 쓰는 게 좋아요.</div>
+  <div class="section-label">징검다리 · 쉼표<span class="help-q" data-action="help" data-id="pass">?</span></div>
+  <div class="bottom-row" style="margin-top:0;">
+    <div class="btn" data-action="open-pass" data-id="stone">🪨 징검다리</div>
+    <div class="btn" data-action="open-pass" data-id="comma">⏸️ 쉼표</div>
+  </div>
+  <div class="sub" style="margin-top:6px;">징검다리는 한두 개 모자란 날을 성공으로 이어 주고, 쉼표는 손 쓸 수 없는 날 하루를 통째로 쉬게 해 줘요. 둘 다 모으는 방식이라 아껴 쓰는 게 좋아요.</div>
 </div>
 
 <div class="wrap hidden set-sub" id="view-setNotify">
@@ -511,7 +515,8 @@
     <button class="back-btn" data-action="go-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h2>쉬는 날 관리</h2><span class="help-q" data-action="help" data-id="rest">?</span>
   </div>
-  <div class="btn primary" id="restTodayBtn" data-action="toggle-today-rest" style="margin-bottom:16px;">오늘을 쉬는 날로 표시</div>
+  <div class="btn primary" id="restTodayBtn" data-action="toggle-today-rest" style="margin-bottom:6px;">오늘을 쉬는 날로 표시</div>
+  <div id="restQuotaNote" style="margin:0 2px 16px;font-size:0.75rem;line-height:1.5;color:var(--ink-dim);"></div>
 
   <div class="section-label" style="margin-top:0;">기간으로 추가</div>
   <div class="rest-range-row" style="display:flex;gap:8px;margin-bottom:10px;">
@@ -671,6 +676,7 @@
     <div class="theme-option" id="todayRestToggle" data-action="today-rest-toggle"><span>오늘은 쉬는 날</span><span class="dot"></span></div>
     <input type="text" class="cat-name-input hidden" id="todayRestReason" maxlength="30" placeholder="쉬는 이유 (선택)" style="margin-top:8px;font-size:0.8125rem;font-weight:600;">
     <div class="day-ov-note hidden" id="todayRestNote"></div>
+    <div class="day-ov-note hidden" id="todayRestQuota"></div>
     <div class="day-ov-label">하루 한 줄</div>
     <div class="export-box" style="margin-bottom:4px;"><textarea id="todayMemoInput" maxlength="150" placeholder="오늘 하루를 한 줄로 남겨보세요" style="min-height:70px;"></textarea></div>
     <div class="tp-actions">
@@ -774,7 +780,7 @@
 <div class="tp-overlay hidden" id="passOverlay">
   <div class="tp-card tp-card-scroll" style="max-width:320px;">
     <div class="tp-card-head">
-      <div class="tp-title">☕ 쉬어가기</div>
+      <div class="tp-title">징검다리 · 쉼표</div>
       <span class="tp-close-x" data-action="pass-close">✕</span>
     </div>
     <div class="tp-card-body" id="passOverlayBody"></div>
@@ -844,6 +850,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
 <script type="module" src="firebase-service.js"></script>
 <script src="i18n.js"></script>
@@ -1000,6 +1007,10 @@
     put("setSumNotify", (alarmAllOff ? "알람 꺼짐" : "알람 켜짐") + " · " + (rv.length ? "리뷰 " + rv.join("·") : "리뷰 꺼짐"));
     var em = currentEmail || state.email || "";
     put("setSumAccount", (isAdminUser ? "관리자 · " : "") + (em || "로그인 정보 없음"));
+    var bd = backupAgeDays();
+    put("setSumData", bd === null ? "아직 백업한 적이 없어요" : bd === 0 ? "마지막 백업 오늘" : "마지막 백업 " + bd + "일 전");
+    var sd = document.getElementById("setSumData");
+    if (sd) sd.classList.toggle("warn-age", bd === null || bd >= 7);
     put("accountEmail", em || "(이메일 없음)");
   }
 
@@ -2316,6 +2327,15 @@
   }
   function updateRestTodayBtnLabel() {
     document.getElementById("restTodayBtn").textContent = isRestDay(todayKey()) ? "오늘 쉬는 날 표시 해제" : "오늘을 쉬는 날로 표시";
+    var qn = document.getElementById("restQuotaNote");
+    if (qn) qn.textContent = "오늘·지난 날짜를 새로 쉬는 날로 정하는 건 한 달에 " + LATE_REST_MAX + "번까지예요 (이번 달 " + lateRestLeft() + "번 남음 · 공휴일은 횟수에서 빠져요)";
+  }
+  // 쉬는 날 하나를 새로 넣기 전에 당일·지난 날짜 횟수를 확인하고 기록한다. 못 넣으면 false.
+  function lateRestTake(dk) {
+    if (!lateRestNeedsSlot(dk)) return true;
+    if (lateRestLeft() < 1) return false;
+    lateRestRecord(dk);
+    return true;
   }
   function updateRecurringToggleUI() {
     document.getElementById("recurringToggle").classList.toggle("active", restAddRecurring);
@@ -2327,7 +2347,11 @@
   function toggleTodayRest() {
     var k = todayKey();
     var idx = findRestIdx(k);
-    if (idx === -1) state.restDays.push(k); else state.restDays.splice(idx, 1);
+    if (idx === -1) {
+      if (commaOn(k)) { toast("오늘은 이미 쉼표를 썼어요"); return; }
+      if (!lateRestTake(k)) { toast(LATE_REST_FULL_MSG); return; }
+      state.restDays.push(k);
+    } else { state.restDays.splice(idx, 1); lateRestRelease(k); }
     saveState(); updateRestTodayBtnLabel(); renderRestList(); renderHome();
   }
   function addRestRange() {
@@ -2337,14 +2361,20 @@
     if (!e) e = s;
     var startD = new Date(s + "T00:00:00"), endD = new Date(e + "T00:00:00");
     if (endD < startD) { toast("종료일이 시작일보다 빠를 수 없어요"); return; }
-    var cur = new Date(startD), added = 0;
+    var cur = new Date(startD), added = 0, blocked = 0;
     while (cur <= endD) {
+      var dk = keyFor(cur);
       if (restAddRecurring) {
-        var md = keyFor(cur).slice(5);
-        if (state.recurringHolidays.indexOf(md) === -1) { state.recurringHolidays.push(md); added++; }
+        var md = dk.slice(5);
+        if (state.recurringHolidays.indexOf(md) === -1) {
+          if (!isRestDay(dk) && !lateRestTake(dk)) blocked++;
+          else { state.recurringHolidays.push(md); added++; }
+        }
       } else {
-        var dk = keyFor(cur);
-        if (findRestIdx(dk) === -1) { state.restDays.push(dk); added++; }
+        if (findRestIdx(dk) === -1) {
+          if (!isRestDay(dk) && !lateRestTake(dk)) blocked++;
+          else { state.restDays.push(dk); added++; }
+        }
       }
       cur.setDate(cur.getDate() + 1);
     }
@@ -2352,30 +2382,31 @@
     document.getElementById("restStartInput").value = "";
     document.getElementById("restEndInput").value = "";
     renderRestList(); renderRecurringList(); updateRestTodayBtnLabel(); renderHome();
-    toast(added + "개 추가했어요");
+    toast(added + "개 추가했어요" + (blocked ? " (당일·지난 날짜 " + blocked + "개는 이번 달 횟수를 넘어서 뺐어요)" : ""));
   }
   function addRestBulk() {
     var raw = document.getElementById("restBulkInput").value;
     var lines = raw.split(/\n/).map(function (l) { return l.trim(); }).filter(Boolean);
     var re = /^(\d{4}-\d{2}-\d{2})\s*[·:,\-]?\s*(.*)$/;
-    var added = 0, invalid = 0;
+    var added = 0, invalid = 0, blocked = 0;
     lines.forEach(function (line) {
       var m = line.match(re);
       if (!m) { invalid++; return; }
       var dk = m[1], label = m[2] ? m[2].trim() : "";
       if (findRestIdx(dk) !== -1) return;
+      if (!isRestDay(dk) && !lateRestTake(dk)) { blocked++; return; }
       state.restDays.push(label ? { date: dk, label: label } : dk);
       added++;
     });
     if (added > 0) saveState();
     document.getElementById("restBulkInput").value = "";
     renderRestList(); updateRestTodayBtnLabel(); renderHome();
-    toast(added + "개 추가했어요" + (invalid > 0 ? " (" + invalid + "개는 형식이 안 맞아 건너뜀)" : ""));
+    toast(added + "개 추가했어요" + (invalid > 0 ? " (" + invalid + "개는 형식이 안 맞아 건너뜀)" : "") + (blocked ? " (당일·지난 날짜 " + blocked + "개는 이번 달 횟수를 넘어서 뺐어요)" : ""));
   }
   function removeRestDay(dk) {
     var idx = findRestIdx(dk);
     if (idx !== -1) {
-      state.restDays.splice(idx, 1); saveState();
+      state.restDays.splice(idx, 1); lateRestRelease(dk); saveState();
       if (restEditingDk === dk) restEditingDk = null;
       renderRestList(); updateRestTodayBtnLabel(); renderHome();
     }
@@ -2435,6 +2466,9 @@
       restDays: [],
       recurringHolidays: [],
       passDays: [],
+      commaDays: [],
+      commaWhy: {},
+      lateRestLog: [],
       streakThreshold: 100,
       thresholdHistory: [],
       archivedItems: [],
@@ -2554,6 +2588,9 @@
     if (!p.restDays || !Array.isArray(p.restDays)) p.restDays = [];
     if (!p.recurringHolidays || !Array.isArray(p.recurringHolidays)) p.recurringHolidays = [];
     p.passDays = normalizePassDays(p.passDays);
+    p.commaDays = normalizePassDays(p.commaDays);
+    if (!p.commaWhy || typeof p.commaWhy !== "object" || Array.isArray(p.commaWhy)) p.commaWhy = {};
+    p.lateRestLog = normalizeLateLog(p.lateRestLog);
     if (!p.memos || typeof p.memos !== "object") p.memos = {};
     if (typeof p.holidayPromptSeen !== "boolean") p.holidayPromptSeen = false;
     if (typeof p.holidayBannerDismissedYear === "undefined") p.holidayBannerDismissedYear = null;
@@ -2718,8 +2755,16 @@
     [base, local, server].forEach(function (o) { Object.keys(o).forEach(function (k) { keys[k] = true; }); });
     Object.keys(keys).forEach(function (k) {
       if (k === "history" || k === "historyArchivedYears") return;   // 이 둘은 아래에서 따로 합친다
-      if (k === "passDays") {   // 쉬어가기 쓴 날짜: 두 기기에서 따로 쓰거나 취소한 것도 날짜 단위로 합친다
+      if (k === "passDays") {   // 징검다리 쓴 날짜: 두 기기에서 따로 쓰거나 취소한 것도 날짜 단위로 합친다
         out.passDays = normalizePassDays(mergeIdList(base.passDays, local.passDays, server.passDays));
+        return;
+      }
+      if (k === "commaDays") {   // 쉼표 쓴 날짜: 징검다리와 같은 방식으로 날짜 단위로 합친다
+        out.commaDays = normalizePassDays(mergeIdList(base.commaDays, local.commaDays, server.commaDays));
+        return;
+      }
+      if (k === "lateRestLog") { // 당일·지난 날짜 쉬는 날 지정 기록
+        out.lateRestLog = normalizeLateLog(mergeIdList(base.lateRestLog, local.lateRestLog, server.lateRestLog));
         return;
       }
       var lv = local[k], bv = base[k], sv = server[k];
@@ -3507,6 +3552,7 @@
   function isDueForDate(item, dk) {
     // 19차: "시작 전" 항목은 목록에는 보이지만 어떤 날에도 "예정"이 아니다 — 달성률·스트릭·놓친 항목·
     // 리뷰 하이라이트에서 모두 빠진다(끄는 날 createdAt을 오늘로 갱신하므로 그날부터 평가에 들어간다).
+    if (commaOn(dk)) return false;                             // 쉼표를 쓴 날: 하루 전체가 평가에서 빠진다
     if (pausedOn(item, dk)) return false;                      // 시작 전 구간(켠 날부터만)
     if (item.endedAt && dk >= item.endedAt) return false;       // 삭제해 보관된 항목: 삭제한 날부터는 예정이 아니다
     if (!itemExistedOn(item, dk)) return false;
@@ -3641,20 +3687,28 @@
     if (totalDue === 0) return null;
     return (totalDone / totalDue * 100) >= threshold;
   }
-  // 쉬어가기를 쓴 날(passDays)은, 실제로 기준에 못 미친 경우에만 "건너뛰는 날(null)"로 취급한다.
-  // 나중에 기록을 더 채워 기준을 넘기면 그냥 성공(true)이 되고 쉬어가기는 쓰지 않은 것으로 돌아간다.
+  // 징검다리를 쓴 날(passDays)은, 실제로 기준에 못 미친 경우에만 "성공(true)"으로 인정한다.
+  // 나중에 기록을 더 채워 기준을 넘기면 그냥 성공이 되고 징검다리는 쓰지 않은 것으로 돌아간다.
+  // 쉼표를 쓴 날(commaDays)은 isDueForDate에서 모든 항목이 예정에서 빠지므로 자연히 "건너뛰는 날(null)"이 된다.
   function overallStreakStatus(k) {
     var s = rawStreakStatus(k);
-    if (s === false && passMarked(k)) return null;
+    if (s === false && passMarked(k)) return true;
     return s;
   }
 
-  // ---- 쉬어가기 ----
-  // 기준에 못 미친 날(오늘·어제)을 스트릭에서 "건너뛰는 날"로 바꿔 주는 안전망. 남발을 막으려고 보유 개수를 둔다.
-  //  · 적립: 연속 7일 성공할 때마다 +1, 매월 1일 +1, 시작할 때 +1(PASS_EPOCH 이후 기록 기준). 최대 PASS_CAP개까지만 모인다.
-  //  · 사용: 오늘·어제만, 기준에 못 미친 날만, 놓친 항목이 PASS_MAX_MISSED개 이하일 때만. 같은 주(월~일) 1회, 연속 이틀 불가.
+  // ---- 징검다리(옛 쉬어가기) ----
+  // 기준에 한두 개 모자란 날(오늘·어제)을 스트릭 "성공"으로 인정해 주는 안전망. 남발을 막으려고 보유 개수를 둔다.
+  //  · 적립: 연속 7일 성공할 때마다 +1(징검다리로 이어 붙인 날은 7일 셈에 넣지 않음), 시작할 때 +1. 최대 PASS_CAP개.
+  //  · 사용: 오늘·어제만, 기준에 못 미친 날만, 기준까지 모자란 항목이 PASS_MAX_SHORT개 이하일 때만. 같은 주(월~일) 1회, 연속 이틀 불가.
   //  · 보유 개수는 저장하지 않고 기록(history)에서 매번 계산한다(포인트와 같은 방식). 저장하는 건 쓴 날짜 목록 passDays뿐.
-  var PASS_EPOCH = "2026-10-12", PASS_CAP = 3, PASS_EVERY = 7, PASS_MAX_MISSED = 2;
+  var PASS_EPOCH = "2026-10-12", PASS_CAP = 3, PASS_EVERY = 7, PASS_MAX_SHORT = 2;
+  // ---- 쉼표 ----
+  // 아프거나 손 쓸 수 없는 날 하루 전체를 쉬는 날처럼 빼 준다(스트릭은 끊기지도 늘지도 않음). 그날은 체크 불가·포인트 0.
+  //  · 적립: 매월 1일 +1, 시작할 때 +1. 최대 COMMA_CAP개.  · 사용: 오늘·어제, 기준에 못 미친 날.
+  var COMMA_EPOCH = "2026-10-13", COMMA_CAP = 2;
+  // ---- 당일·지난 날짜 쉬는 날 ----
+  // 오늘이나 지난 날짜를 새로 쉬는 날로 지정하는 것은 한 달(지정한 달)에 LATE_REST_MAX번까지. 공휴일 표에 있는 날은 횟수에서 빠진다.
+  var LATE_REST_MAX = 3;
   function normalizePassDays(a) {
     if (!Array.isArray(a)) return [];
     var seen = {}, out = [];
@@ -3666,6 +3720,8 @@
   }
   function passMarked(k) { return Array.isArray(state.passDays) && state.passDays.length > 0 && state.passDays.indexOf(k) !== -1; }
   function passApplied(k) { return passMarked(k) && rawStreakStatus(k) === false; }
+  var commaBypass = false;   // 쉼표를 "쓰기 전" 상태를 계산할 때 잠깐 켠다
+  function commaOn(k) { return !commaBypass && Array.isArray(state.commaDays) && state.commaDays.length > 0 && state.commaDays.indexOf(k) !== -1; }
   function yesterdayKey() { return keyFor(new Date(Date.now() - 86400000)); }
   function dayDueDone(k) {
     var due = 0, done = 0;
@@ -3675,13 +3731,20 @@
     });
     return { due: due, done: done };
   }
-  var passCache = null;
-  function passInvalidate() { passCache = null; }
+  // 기준까지 몇 개가 모자란지(0이면 이미 달성)
+  function shortOf(k) {
+    var dd = dayDueDone(k);
+    if (dd.due === 0) return { due: 0, done: 0, need: 0, short: 0 };
+    var need = Math.ceil(dd.due * thresholdFor(k) / 100 - 1e-9);
+    return { due: dd.due, done: dd.done, need: need, short: Math.max(0, need - dd.done) };
+  }
+  var passCache = null, commaCache = null;
+  function passInvalidate() { passCache = null; commaCache = null; }
   // 기록 전체를 훑어 보유 개수·적립 내역을 계산한다. 같은 상태에서는 결과를 재사용한다(saveState가 비운다).
   function passSig() {
     var t = todayKey(), y = yesterdayKey(), h = state.history || {};
     function n(k) { return (h[k] && Array.isArray(h[k].completed)) ? h[k].completed.length : 0; }
-    return t + "|" + (state.passDays || []).join(",") + "|" + n(t) + "|" + n(y);
+    return t + "|" + (state.passDays || []).join(",") + "|" + (state.commaDays || []).join(",") + "|" + n(t) + "|" + n(y);
   }
   function passLedger() {
     var today = todayKey(), sig = passSig();
@@ -3695,12 +3758,12 @@
     while (cursor <= end) {
       var k = keyFor(cursor);
       var s = overallStreakStatus(k);
-      if (s === true) run++; else if (s === false) run = 0;
+      var applied = passApplied(k);
+      if (!applied) { if (s === true) run++; else if (s === false) run = 0; }
       if (k >= start) {
         var g = [];
         if (k === start) g.push("start");
-        else if (k.slice(8) === "01") g.push("month");
-        if (s === true && run > 0 && run % PASS_EVERY === 0) g.push("streak");
+        if (s === true && !applied && run > 0 && run % PASS_EVERY === 0) g.push("streak");
         g.forEach(function (type) {
           earned++;
           var full = bal >= PASS_CAP;
@@ -3708,16 +3771,41 @@
           events.push({ d: k, t: type, full: full });
         });
       }
-      if (passApplied(k)) { used++; if (bal > 0) bal--; events.push({ d: k, t: "use" }); }
+      if (applied) { used++; if (bal > 0) bal--; events.push({ d: k, t: "use" }); }
       cursor.setDate(cursor.getDate() + 1);
     }
     var streak = computeStreakGeneric(overallStreakStatus);
     var res = { bal: bal, earned: earned, used: used, events: events, streak: streak,
-      toNext: PASS_EVERY - (streak % PASS_EVERY) };
+      toNext: PASS_EVERY - (run % PASS_EVERY) };
     passCache = { sig: sig, res: res };
     return res;
   }
   function passBalance() { return passLedger().bal; }
+  // 쉼표 보유 개수: 시작 +1, 매월 1일 +1(최대 COMMA_CAP), 쓴 날마다 −1. 기록과 무관하게 날짜만으로 계산한다.
+  function commaLedger() {
+    var today = todayKey(), sig = today + "|" + (state.commaDays || []).join(",") + "|" + Object.keys(state.history || {}).length;
+    if (commaCache && commaCache.sig === sig) return commaCache.res;
+    var keys = Object.keys(state.history || {}).sort();
+    var first = keys.length ? keys[0] : today;
+    var start = first > COMMA_EPOCH ? first : COMMA_EPOCH;
+    var bal = 0, events = [], used = 0;
+    if (start <= today) {
+      var cursor = parseKeyToDate(start), end = parseKeyToDate(today);
+      while (cursor <= end) {
+        var k = keyFor(cursor), type = null;
+        if (k === start) type = "start";
+        else if (k.slice(8) === "01") type = "month";
+        if (type) { var full = bal >= COMMA_CAP; if (!full) bal++; events.push({ d: k, t: type, full: full }); }
+        if ((state.commaDays || []).indexOf(k) !== -1) { used++; if (bal > 0) bal--; events.push({ d: k, t: "use" }); }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    }
+    var nx = parseKeyToDate(today); nx.setDate(1); nx.setMonth(nx.getMonth() + 1);
+    var res = { bal: bal, used: used, events: events, nextMonth: keyFor(nx) };
+    commaCache = { sig: sig, res: res };
+    return res;
+  }
+  function commaBalance() { return commaLedger().bal; }
   function weekKeyMon(k) { return keyFor(mondayOfAny(parseKeyToDate(k))); }
   // 월요일 시작 주의 월요일(일요일이면 직전 월요일)
   function mondayOfAny(d) {
@@ -3727,18 +3815,19 @@
     return m;
   }
   function shiftKey(k, delta) { var d = parseKeyToDate(k); d.setDate(d.getDate() + delta); return keyFor(d); }
-  // k날에 쉬어가기를 쓸 수 있는가. reason: range|used|none|met|toomany|adjacent|week|empty|ok
+  // k날에 징검다리를 쓸 수 있는가. reason: range|used|comma|none|met|toomany|adjacent|week|empty|ok
   function passCheck(k) {
     var today = todayKey();
-    var info = { k: k, ok: false, reason: "range", missed: 0, due: 0 };
+    var info = { k: k, ok: false, reason: "range", missed: 0, short: 0, due: 0 };
     if (k !== today && k !== yesterdayKey()) return info;
     if (passApplied(k)) { info.reason = "used"; return info; }
+    if (commaOn(k)) { info.reason = "comma"; return info; }
     var raw = rawStreakStatus(k);
-    var dd = dayDueDone(k);
-    info.due = dd.due; info.missed = Math.max(0, dd.due - dd.done);
+    var so = shortOf(k);
+    info.due = so.due; info.missed = Math.max(0, so.due - so.done); info.short = so.short;
     if (raw === null) { info.reason = "none"; return info; }
     if (raw === true) { info.reason = "met"; return info; }
-    if (info.missed > PASS_MAX_MISSED) { info.reason = "toomany"; return info; }
+    if (info.short > PASS_MAX_SHORT) { info.reason = "toomany"; return info; }
     if (passApplied(shiftKey(k, -1)) || passApplied(shiftKey(k, 1))) { info.reason = "adjacent"; return info; }
     var wk = weekKeyMon(k);
     for (var i = 0; i < 7; i++) {
@@ -3773,7 +3862,90 @@
     saveState();
     return true;
   }
-  // 주간 보상에서 필요한 성공 일수: 평가할 날이 5일이면 4일, 쉬는 날·쉬어가기로 줄어 3~4일이면 하루만 놓쳐도 되고, 2일 이하면 전부.
+  // k날에 쉼표를 쓸 수 있는가. reason: range|used|stone|rest|none|met|empty|ok
+  function commaCheck(k) {
+    var today = todayKey();
+    var info = { k: k, ok: false, reason: "range", done: 0, due: 0 };
+    if (k !== today && k !== yesterdayKey()) return info;
+    if (commaOn(k)) { info.reason = "used"; return info; }
+    if (passApplied(k)) { info.reason = "stone"; return info; }
+    var e = state.history[k];
+    info.done = (e && Array.isArray(e.completed)) ? e.completed.length : 0;
+    if (isRestDay(k)) { info.reason = "rest"; return info; }
+    var raw = rawStreakStatus(k);
+    info.due = dayDueDone(k).due;
+    if (raw === null) { info.reason = "none"; return info; }
+    if (raw === true) { info.reason = "met"; return info; }
+    if (commaBalance() < 1) { info.reason = "empty"; return info; }
+    info.ok = true; info.reason = "ok";
+    return info;
+  }
+  // k날에 체크해 둔 것 중 쉼표를 쓰면 빠지는 포인트(항목 1P + 카테고리 완료 보너스)
+  function dayPointsOf(k) {
+    var entry = state.history[k];
+    var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
+    var pts = completed.length;
+    evalCats().forEach(function (cat) {
+      var due = catItemsDueOn(cat, k);
+      if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) pts += 3;
+    });
+    return pts;
+  }
+  var COMMA_WHY = { sick: "아파요", busy: "너무 바빠요", etc: "기타" };
+  function useComma(k, why, memo) {
+    var c = commaCheck(k);
+    if (!c.ok) { toast("지금은 쓸 수 없어요"); return false; }
+    state.commaDays = normalizePassDays((state.commaDays || []).concat([k]));
+    if (!state.commaWhy || typeof state.commaWhy !== "object") state.commaWhy = {};
+    if (COMMA_WHY[why]) state.commaWhy[k] = why; else delete state.commaWhy[k];
+    if (typeof memo === "string") {
+      if (!state.memos) state.memos = {};
+      if (memo.trim()) state.memos[k] = memo.trim(); else delete state.memos[k];
+    }
+    passInvalidate();
+    saveState();
+    return true;
+  }
+  function cancelComma(k) {
+    if (!commaOn(k)) return false;
+    if (k !== todayKey() && k !== yesterdayKey()) return false;
+    state.commaDays = state.commaDays.filter(function (x) { return x !== k; });
+    if (state.commaWhy) delete state.commaWhy[k];
+    passInvalidate();
+    saveState();
+    return true;
+  }
+  function commaWhyLabel(k) { var w = state.commaWhy && state.commaWhy[k]; return COMMA_WHY[w] || ""; }
+  // ---- 당일·지난 날짜 쉬는 날 횟수 ----
+  // lateRestLog: "지정한날>쉬는날" 문자열 목록(두 기기 합치기 쉽게 문자열로 둔다)
+  function normalizeLateLog(a) {
+    if (!Array.isArray(a)) return [];
+    var seen = {}, out = [];
+    a.forEach(function (x) {
+      if (typeof x === "string" && /^\d{4}-\d{2}-\d{2}>\d{4}-\d{2}-\d{2}$/.test(x) && !seen[x]) { seen[x] = true; out.push(x); }
+    });
+    out.sort();
+    return out;
+  }
+  function isOfficialHoliday(dk) {
+    var y = dk.slice(0, 4);
+    if ((KR_HOLIDAY_TABLE[y] || []).some(function (h) { return h.date === dk; })) return true;
+    return !!KNOWN_KR_HOLIDAYS[dk.slice(5)];
+  }
+  function lateRestNeedsSlot(dk) { return dk <= todayKey() && !isOfficialHoliday(dk); }
+  function lateRestUsed() {
+    var m = todayKey().slice(0, 7);
+    return (state.lateRestLog || []).filter(function (x) { return x.slice(0, 7) === m; }).length;
+  }
+  function lateRestLeft() { return Math.max(0, LATE_REST_MAX - lateRestUsed()); }
+  function lateRestRecord(dk) { state.lateRestLog = normalizeLateLog((state.lateRestLog || []).concat([todayKey() + ">" + dk])); }
+  // 쉬는 날을 해제하면 그 날짜로 쓴 횟수를 돌려준다
+  function lateRestRelease(dk) {
+    if (!state.lateRestLog || !state.lateRestLog.length) return;
+    state.lateRestLog = state.lateRestLog.filter(function (x) { return x.slice(11) !== dk; });
+  }
+  var LATE_REST_FULL_MSG = "이번 달 당일·지난 날짜 쉬는 날은 3번을 다 썼어요. 내일 이후 날짜는 그대로 정할 수 있고, 손 쓸 수 없는 날은 쉼표를 써 보세요";
+  // 주간 보상에서 필요한 성공 일수: 평가할 날이 5일이면 4일, 쉬는 날·쉼표로 줄어 3~4일이면 하루만 놓쳐도 되고, 2일 이하면 전부.
   function weeklyNeeded(counted) { return counted >= 5 ? 4 : (counted >= 3 ? counted - 1 : counted); }
   // ---- 놓친 항목 배너 ----
   function missedItemsFor(dateKey) {
@@ -3833,11 +4005,13 @@
   function openMissedOverlay() { renderMissedOverlay(); document.getElementById("missedOverlay").classList.remove("hidden"); }
   function closeMissedOverlay() { document.getElementById("missedOverlay").classList.add("hidden"); }
 
-  // ---- 쉬어가기 화면 ----
+  // ---- 징검다리 · 쉼표 화면 ----
   var PASS_DOW = ["일", "월", "화", "수", "목", "금", "토"];
+  var passTab = "stone";          // "stone"(징검다리) | "comma"(쉼표)
+  var commaForm = null;           // 쉼표 쓰기 입력 중인 날짜와 고른 이유 {k, why}
   function passMD(k) { var d = parseKeyToDate(k); return (d.getMonth() + 1) + "월 " + d.getDate() + "일"; }
   function passDayLabel(k, tag) { return tag + " · " + passMD(k) + " (" + PASS_DOW[parseKeyToDate(k).getDay()] + ")"; }
-  // 오늘·어제에 걸린 쉬어가기 표시 중, 이미 기준을 넘긴 날은 표시를 걷어 "쓰지 않은 것"으로 되돌린다(개수 자동 반환).
+  // 오늘·어제에 걸린 징검다리 표시 중, 이미 기준을 넘긴 날은 표시를 걷어 "쓰지 않은 것"으로 되돌린다(개수 자동 반환).
   function passCleanup() {
     if (!state.passDays || !state.passDays.length) return false;
     var t = todayKey(), y = yesterdayKey(), removedToday = false, changed = false;
@@ -3846,57 +4020,123 @@
       if (rawStreakStatus(k) === true) { changed = true; if (k === t) removedToday = true; return false; }
       return true;
     });
-    if (changed) { passInvalidate(); saveState(); if (removedToday) toast("기준을 넘겨서 쉬어가기를 쓰지 않은 것으로 돌려놨어요"); }
+    if (changed) { passInvalidate(); saveState(); if (removedToday) toast("기준을 넘겨서 징검다리를 쓰지 않은 것으로 돌려놨어요"); }
     return changed;
   }
   function passRowHtml(k, tag) {
     var c = passCheck(k), st = "", note = "", note2 = "", btn = "", good = false;
     if (c.reason === "used") {
-      st = "쉬어가기 사용됨"; good = true; note = "연속일이 그대로 이어져요";
-      btn = '<div class="btn" data-action="pass-cancel" data-id="' + k + '" style="margin:8px 0 0;">취소하기</div>';
+      st = "징검다리 사용됨"; good = true; note = "이 날은 성공으로 인정돼요";
+      btn = (state.openedBoxes && state.openedBoxes[k]) ? '' :
+        '<div class="btn" data-action="pass-cancel" data-id="' + k + '" style="margin:8px 0 0;">취소하기</div>';
     } else if (c.reason === "ok") {
       st = "쓸 수 있어요"; good = true;
-      note = "놓친 항목 " + c.missed + "개 · 쓰면 연속 " + streakIfPass(k) + "일이 이어져요";
+      note = "기준까지 " + c.short + "개 모자라요 · 쓰면 연속 " + streakIfPass(k) + "일이 돼요";
       if (k === todayKey()) note2 = "오늘 기준을 넘기면 쓰지 않은 것으로 돌아와요";
-      btn = '<div class="btn primary" data-action="pass-use" data-id="' + k + '" style="margin:8px 0 0;">쉬어가기 쓰기</div>';
+      btn = '<div class="btn primary" data-action="pass-use" data-id="' + k + '" style="margin:8px 0 0;">징검다리 쓰기</div>';
     } else if (c.reason === "met") { st = "필요 없어요"; note = "이미 기준을 달성했어요"; }
+    else if (c.reason === "comma") { st = "해당 없음"; note = "쉼표를 쓴 날이에요"; }
     else if (c.reason === "none") { st = "해당 없음"; note = "예정된 항목이 없거나 쉬는 날이에요"; }
-    else if (c.reason === "toomany") { st = "쓸 수 없어요"; note = "놓친 항목이 " + c.missed + "개예요 (" + PASS_MAX_MISSED + "개 이하일 때만 쓸 수 있어요)"; }
+    else if (c.reason === "toomany") { st = "쓸 수 없어요"; note = "기준까지 " + c.short + "개 모자라요 (" + PASS_MAX_SHORT + "개 이하일 때만 쓸 수 있어요)"; }
     else if (c.reason === "adjacent") { st = "쓸 수 없어요"; note = "바로 앞이나 뒤 날에 이미 썼어요 (연속 이틀은 안 돼요)"; }
     else if (c.reason === "week") { st = "쓸 수 없어요"; note = "이번 주에 이미 썼어요 (한 주에 한 번)"; }
-    else if (c.reason === "empty") { st = "쓸 수 없어요"; note = "보유한 쉬어가기가 없어요"; }
+    else if (c.reason === "empty") { st = "쓸 수 없어요"; note = "보유한 징검다리가 없어요"; }
     return '<div class="pass-row"><div class="pass-row-top"><span class="pass-row-day">' + passDayLabel(k, tag) + '</span>' +
       '<span class="pass-row-state' + (good ? ' good' : '') + '">' + st + '</span></div>' +
       (note ? '<div class="pass-row-note">' + note + '</div>' : '') +
       (note2 ? '<div class="pass-row-note">' + note2 + '</div>' : '') + btn + '</div>';
   }
-  function renderPassSheet() {
-    var L = passLedger(), h = "", i;
+  function commaRowHtml(k, tag) {
+    var c = commaCheck(k), st = "", note = "", btn = "", good = false, form = "";
+    if (c.reason === "used") {
+      st = "쉼표 사용됨"; good = true;
+      var w = commaWhyLabel(k);
+      note = (w ? w + " · " : "") + "스트릭은 그대로, 이 날은 포인트 0이에요";
+      btn = '<div class="btn" data-action="comma-cancel" data-id="' + k + '" style="margin:8px 0 0;">취소하기</div>';
+    } else if (c.reason === "ok") {
+      st = "쓸 수 있어요"; good = true;
+      note = "하루를 통째로 쉬어요 · 연속일은 끊기지 않아요";
+      if (commaForm && commaForm.k === k) {
+        var pts = dayPointsOf(k);
+        form = '<div class="comma-form"><div class="comma-why">' + Object.keys(COMMA_WHY).map(function (key) {
+            return '<span class="comma-chip' + (commaForm.why === key ? ' on' : '') + '" data-action="comma-why" data-id="' + key + '">' + COMMA_WHY[key] + '</span>';
+          }).join("") + '</div>' +
+          '<input type="text" id="commaMemoInput" class="comma-memo" maxlength="80" placeholder="하루 한 줄 (선택)" value="' + escapeHtml((state.memos && state.memos[k]) || "") + '">' +
+          (pts > 0 ? '<div class="pass-row-note warn">체크해 둔 ' + c.done + '개의 포인트 ' + pts + 'P가 빠져요</div>' : '') +
+          '<div class="pass-row-note">쓴 날은 항목을 체크할 수 없어요</div>' +
+          '<div class="bottom-row" style="margin-top:8px;"><div class="btn" data-action="comma-form-close">닫기</div>' +
+          '<div class="btn primary" data-action="comma-use" data-id="' + k + '">쉼표 쓰기</div></div></div>';
+      } else {
+        btn = '<div class="btn primary" data-action="comma-open" data-id="' + k + '" style="margin:8px 0 0;">쉼표 쓰기</div>';
+      }
+    } else if (c.reason === "met") { st = "필요 없어요"; note = "이미 기준을 달성했어요"; }
+    else if (c.reason === "stone") { st = "해당 없음"; note = "징검다리를 쓴 날이에요"; }
+    else if (c.reason === "rest") { st = "해당 없음"; note = "이미 쉬는 날이에요"; }
+    else if (c.reason === "none") { st = "해당 없음"; note = "예정된 항목이 없는 날이에요"; }
+    else if (c.reason === "empty") { st = "쓸 수 없어요"; note = "보유한 쉼표가 없어요"; }
+    return '<div class="pass-row"><div class="pass-row-top"><span class="pass-row-day">' + passDayLabel(k, tag) + '</span>' +
+      '<span class="pass-row-state' + (good ? ' good' : '') + '">' + st + '</span></div>' +
+      (note ? '<div class="pass-row-note">' + note + '</div>' : '') + btn + form + '</div>';
+  }
+  function passDotsHtml(bal, cap, unit) {
     var dots = "";
-    for (i = 0; i < PASS_CAP; i++) dots += (i < L.bal ? "●" : "○");
-    h += '<div class="pass-bal"><span class="pass-dots">' + dots + '</span><span class="pass-bal-t">보유 ' + L.bal + '개 · 최대 ' + PASS_CAP + '개</span></div>';
-    h += passRowHtml(yesterdayKey(), "어제") + passRowHtml(todayKey(), "오늘");
-    h += '<div class="pass-sec">얻는 방법</div>';
-    h += '<div class="pass-line">연속 ' + PASS_EVERY + '일 성공할 때마다 1개</div><div class="pass-line">매월 1일에 1개</div>';
-    h += '<div class="pass-line">가득 차면 더 모이지 않아요</div>';
-    h += '<div class="pass-line pass-next">다음 적립까지 연속 ' + L.toNext + '일 (지금 연속 ' + L.streak + '일)</div>';
-    h += '<div class="pass-sec">쓰는 규칙</div>';
-    h += '<div class="pass-line">오늘이나 어제, 기준에 못 미친 날만 써요</div>';
-    h += '<div class="pass-line">놓친 항목이 ' + PASS_MAX_MISSED + '개 이하일 때만 써요</div>';
-    h += '<div class="pass-line">한 주(월~일)에 한 번, 연속 이틀은 안 돼요</div>';
-    h += '<div class="pass-line">쓴 날은 연속일이 +1 되진 않지만 끊기지도 않아요</div>';
-    h += '<div class="pass-sec">내역</div>';
-    var ev = L.events.slice(-6).reverse();
-    if (!ev.length) h += '<div class="pass-line">아직 내역이 없어요</div>';
-    ev.forEach(function (e) {
-      var tx = e.t === "start" ? "시작 선물 +1" : e.t === "month" ? "새 달 선물 +1" : e.t === "streak" ? "연속 " + PASS_EVERY + "일 성공 +1" : "쉬어가기 사용 −1";
-      if (e.full) tx = (e.t === "month" ? "새 달 선물" : e.t === "streak" ? "연속 " + PASS_EVERY + "일 성공" : "시작 선물") + " (가득 차서 못 담았어요)";
-      h += '<div class="pass-ev"><span class="pass-ev-d">' + passMD(e.d) + '</span><span>' + tx + '</span></div>';
-    });
+    for (var i = 0; i < cap; i++) dots += (i < bal ? "●" : "○");
+    return '<div class="pass-bal"><span class="pass-dots">' + dots + '</span><span class="pass-bal-t">보유 ' + bal + '개 · 최대 ' + cap + '개</span></div>';
+  }
+  function renderPassSheet() {
+    var h = "";
+    h += '<div class="pass-tabs"><span class="pass-tab' + (passTab === "stone" ? ' on' : '') + '" data-action="pass-tab" data-id="stone">🪨 징검다리</span>' +
+      '<span class="pass-tab' + (passTab === "comma" ? ' on' : '') + '" data-action="pass-tab" data-id="comma">⏸️ 쉼표</span></div>';
+    if (passTab === "stone") {
+      var L = passLedger();
+      h += '<div class="pass-intro">대부분 했는데 한두 개 모자란 날, 그날을 성공으로 이어 줘요.</div>';
+      h += passDotsHtml(L.bal, PASS_CAP);
+      h += passRowHtml(yesterdayKey(), "어제") + passRowHtml(todayKey(), "오늘");
+      h += '<div class="pass-sec">얻는 방법</div>';
+      h += '<div class="pass-line">연속 ' + PASS_EVERY + '일 성공할 때마다 1개</div>';
+      h += '<div class="pass-line">가득 차면 더 모이지 않아요</div>';
+      h += '<div class="pass-line pass-next">다음 적립까지 ' + L.toNext + '일 더 성공하면 돼요</div>';
+      h += '<div class="pass-sec">쓰는 규칙</div>';
+      h += '<div class="pass-line">오늘이나 어제, 기준에 못 미친 날만 써요</div>';
+      h += '<div class="pass-line">기준까지 모자란 항목이 ' + PASS_MAX_SHORT + '개 이하일 때만 써요</div>';
+      h += '<div class="pass-line">한 주(월~일)에 한 번, 연속 이틀은 안 돼요</div>';
+      h += '<div class="pass-line">쓴 날은 성공으로 인정돼 연속일이 +1 돼요</div>';
+      h += passHistoryHtml(L.events, "stone");
+    } else {
+      var C = commaLedger();
+      h += '<div class="pass-intro">아프거나 손 쓸 수 없는 날, 하루를 통째로 쉬어요.</div>';
+      h += passDotsHtml(C.bal, COMMA_CAP);
+      h += commaRowHtml(yesterdayKey(), "어제") + commaRowHtml(todayKey(), "오늘");
+      h += '<div class="pass-sec">얻는 방법</div>';
+      h += '<div class="pass-line">매월 1일에 1개 (최대 ' + COMMA_CAP + '개까지 모여요)</div>';
+      h += '<div class="pass-line pass-next">다음 적립: ' + passMD(C.nextMonth) + '</div>';
+      h += '<div class="pass-sec">쓰는 규칙</div>';
+      h += '<div class="pass-line">오늘이나 어제, 기준에 못 미친 날만 써요</div>';
+      h += '<div class="pass-line">쓴 날은 연속일이 끊기지도 늘지도 않아요</div>';
+      h += '<div class="pass-line">쓴 날은 체크할 수 없고 포인트는 0이에요</div>';
+      h += '<div class="pass-line">미리 아는 휴일·여행은 쉬는 날로 정하세요</div>';
+      h += passHistoryHtml(C.events, "comma");
+    }
     document.getElementById("passOverlayBody").innerHTML = h;
   }
-  function openPassSheet() { renderPassSheet(); document.getElementById("passOverlay").classList.remove("hidden"); }
-  function closePassSheet() { document.getElementById("passOverlay").classList.add("hidden"); }
+  function passHistoryHtml(events, kind) {
+    var h = '<div class="pass-sec">내역</div>';
+    var ev = events.slice(-6).reverse();
+    if (!ev.length) h += '<div class="pass-line">아직 내역이 없어요</div>';
+    ev.forEach(function (e) {
+      var name = e.t === "start" ? "시작 선물" : e.t === "month" ? "새 달 선물" : "연속 " + PASS_EVERY + "일 성공";
+      var tx = e.t === "use" ? (kind === "stone" ? "징검다리 사용 −1" : "쉼표 사용 −1") : (e.full ? name + " (가득 차서 못 담았어요)" : name + " +1");
+      h += '<div class="pass-ev"><span class="pass-ev-d">' + passMD(e.d) + '</span><span>' + tx + '</span></div>';
+    });
+    return h;
+  }
+  function openPassSheet(tab) {
+    if (tab === "stone" || tab === "comma") passTab = tab;
+    commaForm = null;
+    renderPassSheet();
+    document.getElementById("passOverlay").classList.remove("hidden");
+  }
+  function closePassSheet() { commaForm = null; document.getElementById("passOverlay").classList.add("hidden"); }
   function afterPassChange() {
     try { checkRewardEvents(); } catch (e) {}
     renderHome();
@@ -3906,15 +4146,71 @@
     var c = passCheck(k);
     if (!c.ok) { renderPassSheet(); return; }
     var n = streakIfPass(k), bal = passBalance();
-    askConfirm("쉬어가기를 쓸까요?", "놓친 항목 " + c.missed + "개 · 연속 " + n + "일이 이어져요 · 보유 " + bal + "개 → " + (bal - 1) + "개", "쓰기", function () {
-      if (usePass(k)) { toast("쉬어가기를 썼어요"); afterPassChange(); } else { renderPassSheet(); }
+    askConfirm("징검다리를 쓸까요?", "기준까지 " + c.short + "개 모자라요 · 연속 " + n + "일이 돼요 · 보유 " + bal + "개 → " + (bal - 1) + "개", "쓰기", function () {
+      if (usePass(k)) { toast("징검다리를 썼어요"); afterPassChange(); } else { renderPassSheet(); }
     });
   }
   function askCancelPass(k) {
     if (!passMarked(k)) return;
-    askConfirm("쉬어가기를 취소할까요?", "1개를 돌려받고, 그날은 다시 기준 미달로 계산돼요", "취소하기", function () {
-      if (cancelPass(k)) { toast("쉬어가기를 취소했어요 · 1개를 돌려받았어요"); afterPassChange(); }
+    askConfirm("징검다리를 취소할까요?", "1개를 돌려받고, 그날은 다시 기준 미달로 계산돼요", "취소하기", function () {
+      if (cancelPass(k)) { toast("징검다리를 취소했어요 · 1개를 돌려받았어요"); afterPassChange(); }
     });
+  }
+  function doUseComma(k) {
+    if (!commaForm || commaForm.k !== k) return;
+    var inp = document.getElementById("commaMemoInput");
+    if (useComma(k, commaForm.why, inp ? inp.value : undefined)) {
+      commaForm = null;
+      toast("쉼표를 썼어요 · 푹 쉬어요");
+      afterPassChange();
+    } else { commaForm = null; renderPassSheet(); }
+  }
+  function askCancelComma(k) {
+    if (!commaOn(k)) return;
+    askConfirm("쉼표를 취소할까요?", "1개를 돌려받고, 그날은 다시 체크할 수 있어요", "취소하기", function () {
+      if (cancelComma(k)) { toast("쉼표를 취소했어요 · 1개를 돌려받았어요"); afterPassChange(); }
+    });
+  }
+  // 쉼표를 쓴 날 체크하려 할 때
+  function commaBlocks(k) {
+    if (!commaOn(k)) return false;
+    toast("쉼표를 쓴 날은 체크할 수 없어요 (취소는 홈의 ⏸️ 쉼표에서)");
+    return true;
+  }
+  // ---- 징검다리·쉼표를 얻었을 때 한 번 알려주기 ----
+  // restEarnSeen = { stone: "마지막으로 알린 적립 날짜", comma: "..." }, restEarnOff = { stone: bool, comma: bool }
+  function latestEarn(events) {
+    for (var i = events.length - 1; i >= 0; i--) if (events[i].t !== "use" && !events[i].full) return events[i];
+    return null;
+  }
+  function checkRestEarnNotice() {
+    if (!state.restEarnSeen || typeof state.restEarnSeen !== "object") state.restEarnSeen = {};
+    if (!state.restEarnOff || typeof state.restEarnOff !== "object") state.restEarnOff = {};
+    var changed = false;
+    [["stone", passLedger().events], ["comma", commaLedger().events]].forEach(function (p) {
+      var kind = p[0], ev = latestEarn(p[1]);
+      if (!ev) return;
+      var seen = state.restEarnSeen[kind] || "";
+      if (ev.d <= seen) return;
+      state.restEarnSeen[kind] = ev.d;
+      changed = true;
+      if (state.restEarnOff[kind]) return;
+      queueCeleb({ type: "restEarn", kind: kind, why: ev.t });
+    });
+    return changed;
+  }
+  function restEarnHtml(ev) {
+    var stone = ev.kind === "stone";
+    var how = ev.why === "start" ? "새 기능 선물로 1개를 드려요" : ev.why === "month" ? "새 달 선물로 1개를 얻었어요" : "연속 " + PASS_EVERY + "일 성공으로 1개를 얻었어요";
+    var body = stone
+      ? "대부분 했는데 기준까지 1~2개 모자란 날, 오늘·어제에 쓰면 그날을 성공으로 이어 줘요. 연속 7일 성공할 때마다 1개씩, 최대 3개까지 모여요."
+      : "아프거나 너무 바빠 손 쓸 수 없는 날, 하루를 통째로 쉬어요. 연속일은 끊기지 않고, 그날은 체크할 수 없고 포인트는 0이에요. 매월 1일에 1개씩, 최대 2개까지 모여요.";
+    return '<div class="tp-card celeb-window"><span class="emoji">' + (stone ? "🪨" : "⏸️") + '</span>' +
+      '<div class="label">' + (stone ? "징검다리" : "쉼표") + ' +1</div>' +
+      '<div class="sub">' + how + '</div>' +
+      '<div class="sub rest-earn-body">' + body + '</div>' +
+      '<label class="rest-earn-mute"><input type="checkbox" id="restEarnMute"> 다음부터 이 알림 보지 않기</label>' +
+      '<div class="btn primary" data-action="rest-earn-ok" data-id="' + ev.kind + '">확인</div></div>';
   }
   var TITLE_EMOJI_PRESET = [
     "🔥","💪","🚀","⚡","💯","🏆","🥇","🎯","🧨","💥",
@@ -3993,6 +4289,17 @@
     var note = document.getElementById("todayRestNote");
     note.classList.toggle("hidden", !recurring);
     if (recurring) note.textContent = "매년 반복 공휴일" + (todayRestReason() ? "(" + todayRestReason() + ")" : "") + "이라 쉬는 날이에요. 해제는 설정 › 쉬는 날에서 할 수 있어요.";
+    // 당일 지정 횟수 안내(이미 쉬는 날이던 날·공휴일은 해당 없음)
+    var q = document.getElementById("todayRestQuota"), k = todayKey();
+    var needSlot = !recurring && findRestIdx(k) === -1 && lateRestNeedsSlot(k);
+    var full = needSlot && lateRestLeft() < 1;
+    if (full) tog.classList.add("disabled");
+    if (q) {
+      q.classList.toggle("hidden", !needSlot);
+      if (needSlot) q.textContent = commaOn(k) ? "오늘은 이미 쉼표를 썼어요"
+        : full ? LATE_REST_FULL_MSG
+        : "당일 쉬는 날 지정은 이번 달 " + lateRestLeft() + "번 남았어요 (한 달 " + LATE_REST_MAX + "번 · 공휴일 제외)";
+    }
   }
   function openTodayMemoOverlay() {
     var input = document.getElementById("todayMemoInput");
@@ -4007,6 +4314,10 @@
   }
   function toggleTodayRestInOverlay() {
     if (todayIsRecurringRest() && findRestIdx(todayKey()) === -1) return;
+    if (!todayRestOn && findRestIdx(todayKey()) === -1) {
+      if (commaOn(todayKey())) { toast("오늘은 이미 쉼표를 썼어요"); return; }
+      if (lateRestNeedsSlot(todayKey()) && lateRestLeft() < 1) { toast(LATE_REST_FULL_MSG); return; }
+    }
     todayRestOn = !todayRestOn;
     syncTodayRestUI();
     if (todayRestOn) document.getElementById("todayRestReason").focus();
@@ -4022,9 +4333,13 @@
       if (todayRestOn) {
         var why = document.getElementById("todayRestReason").value.trim();
         var entry = why ? { date: k, label: why } : k;
-        if (ri === -1) state.restDays.push(entry); else state.restDays[ri] = entry;
+        if (ri !== -1) state.restDays[ri] = entry;
+        else if (commaOn(k)) toast("오늘은 이미 쉼표를 썼어요");
+        else if (lateRestTake(k)) state.restDays.push(entry);
+        else toast(LATE_REST_FULL_MSG);
       } else if (ri !== -1) {
         state.restDays.splice(ri, 1);
+        lateRestRelease(k);
       }
     }
     saveState();
@@ -4085,6 +4400,7 @@
     if (gamifMemo) return gamifMemo;
     var points = 0;
     Object.keys(state.history).forEach(function (dateKey) {
+      if (commaOn(dateKey)) return;   // 쉼표를 쓴 날은 포인트 0
       var entry = state.history[dateKey];
       var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
       points += completed.length;
@@ -4182,6 +4498,7 @@
     if (!dates.length) return null;
     var cum = 0, i;
     function addDay(d) {
+      if (commaOn(d)) { if (state.openedBoxes && state.openedBoxes[d]) cum += DAILY_BOX_BONUS; return; }
       var entry = state.history[d];
       var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
       cum += completed.length;
@@ -4611,6 +4928,7 @@
     });
     checkWeeklyReward();
     checkQuarterReward();
+    try { checkRestEarnNotice(); } catch (e) {}
     saveState();
     renderPendingIndicator();
     maybeInviteDailyBox();
@@ -4859,6 +5177,12 @@
       return;
     }
 
+    if (ev.type === "restEarn") {
+      st.className = "celeb-stage window";
+      st.innerHTML = restEarnHtml(ev);
+      return;
+    }
+
     st.className = "celeb-stage full";
 
     if (ev.type === "dailyOpen") {
@@ -5038,7 +5362,7 @@
     return true;
   }
 
-  // ---- 주간 보상(평일 월~금 5일 중 4일 이상 성공 · 쉬는 날/쉬어가기로 평가일이 줄면 weeklyNeeded 참고) ----
+  // ---- 주간 보상(평일 월~금 5일 중 4일 이상 성공 · 쉬는 날/쉼표로 평가일이 줄면 weeklyNeeded 참고) ----
   function mondayOf(d) {
     var s = startOfWeek(d);
     s.setDate(s.getDate() + 1);
@@ -5432,6 +5756,7 @@
 
     document.getElementById("dailyBoxCard").classList.toggle("hidden", !(dailyBoxDeferred && todayBoxAvailable()));
     if (homeIsVisible()) maybeInviteDailyBox();
+    if (homeIsVisible() && state.approved) { try { if (checkRestEarnNotice()) saveState(); } catch (e) {} }
     renderPendingIndicator();
 
     var todayK = todayKey();
@@ -5448,8 +5773,12 @@
       var timeSugN = timeSuggestionCount();
       if (timeSugN > 0) badges.push('<span class="time-badge" data-action="open-time-suggest">⏱ 시간 조정 제안 ' + timeSugN + '</span>');
       try {
-        if (passApplied(todayK)) badges.push('<span class="pass-badge on" data-action="open-pass">☕ 오늘 쉬어가기 중</span>');
-        else badges.push('<span class="pass-badge' + (passCheck(yesterdayKey()).ok ? ' can' : '') + '" data-action="open-pass">☕ 쉬어가기 ' + passBalance() + '</span>');
+        if (commaOn(todayK)) badges.push('<span class="pass-badge on" data-action="open-pass" data-id="comma">⏸️ 오늘은 쉼표</span>');
+        else if (passApplied(todayK)) badges.push('<span class="pass-badge on" data-action="open-pass" data-id="stone">🪨 오늘 징검다리 중</span>');
+        else {
+          badges.push('<span class="pass-badge' + (passCheck(yesterdayKey()).ok ? ' can' : '') + '" data-action="open-pass" data-id="stone">🪨 징검다리 ' + passBalance() + '</span>');
+          badges.push('<span class="pass-badge' + (!passCheck(yesterdayKey()).ok && commaCheck(yesterdayKey()).ok ? ' can' : '') + '" data-action="open-pass" data-id="comma">⏸️ 쉼표 ' + commaBalance() + '</span>');
+        }
       } catch (e) {}
     }
     try { var rvb = rvBadgeHtml(); if (rvb) badges.push(rvb); } catch (e) {}
@@ -5467,11 +5796,16 @@
     }
     var passEl = document.getElementById("passBanner");
     if (passEl) {
-      var yc = null;
-      try { yc = passCheck(yKey); } catch (e) {}
+      var yc = null, ycc = null;
+      try { yc = passCheck(yKey); ycc = commaCheck(yKey); } catch (e) {}
       if (yc && yc.ok) {
         passEl.classList.remove("hidden");
-        passEl.innerHTML = '<span>☕ 어제는 기준 ' + thresholdFor(yKey) + '%에 못 미쳤어요 (놓친 항목 ' + yc.missed + '개). 쉬어가기로 연속 ' + streakIfPass(yKey) + '일을 지킬 수 있어요</span><span class="nb-chev">›</span>';
+        passEl.setAttribute("data-id", "stone");
+        passEl.innerHTML = '<span>🪨 어제는 기준까지 ' + yc.short + '개 모자랐어요. 징검다리로 연속 ' + streakIfPass(yKey) + '일을 이어 갈 수 있어요</span><span class="nb-chev">›</span>';
+      } else if (ycc && ycc.ok && (ycc.done === 0 || (yc && yc.reason === "toomany"))) {
+        passEl.classList.remove("hidden");
+        passEl.setAttribute("data-id", "comma");
+        passEl.innerHTML = '<span>⏸️ 어제는 기준에 많이 못 미쳤어요. 아팠거나 손 쓸 수 없었다면 쉼표로 연속일을 지킬 수 있어요</span><span class="nb-chev">›</span>';
       } else { passEl.classList.add("hidden"); }
     }
     renderHolidayBanner();
@@ -5500,8 +5834,8 @@
       if (todayPct === null) {
         fillCircle.style.strokeDashoffset = CIRC.toFixed(2);
         document.getElementById("ringPctText").textContent = "–";
-        document.getElementById("ringInfoMain").textContent = todayIsRest ? "오늘은 쉬는 날" : "오늘 예정된 항목 없음";
-        document.getElementById("ringInfoSub").textContent = "스트릭에 영향 없어요";
+        document.getElementById("ringInfoMain").textContent = commaOn(todayKey()) ? "오늘은 쉼표" : todayIsRest ? "오늘은 쉬는 날" : "오늘 예정된 항목 없음";
+        document.getElementById("ringInfoSub").textContent = commaOn(todayKey()) ? "푹 쉬어요 · 스트릭은 그대로예요" : "스트릭에 영향 없어요";
       } else {
         fillCircle.style.strokeDashoffset = (CIRC * (1 - todayPct / 100)).toFixed(2);
         document.getElementById("ringPctText").textContent = todayPct + "%";
@@ -5521,7 +5855,7 @@
           : unreachable
             ? "오늘은 기준 " + threshold + "% 달성이 어려워요"
             : needed + "개만 더 하면 기준 " + threshold + "% 달성이에요";
-        if (passApplied(todayK)) document.getElementById("ringInfoSub").textContent = "쉬어가기 중 · 스트릭은 그대로예요";
+        if (passApplied(todayK)) document.getElementById("ringInfoSub").textContent = "징검다리 중 · 오늘은 성공으로 인정돼요";
       }
     }
 
@@ -5653,6 +5987,7 @@
     var cat = getCat(catId);
     if (!cat) return;
     var tk = todayKey();
+    if (commaBlocks(tk)) return;
     var dueItems = catItemsDueOn(cat, tk);
     if (dueItems.length === 0) { toast("오늘 예정된 항목이 없어요"); return; }
     // 이미 완료한 항목은 건너뛰고, 아직 안 한 항목만 카운트다운에 올린다
@@ -6587,7 +6922,7 @@
       '<button data-action="stats-next-month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button></div>';
 
     var streak = computeStreakGeneric(overallStreakStatus);
-    var successDays = 0, ratedDays = 0, anyBonus = false, anyPass = false;
+    var successDays = 0, ratedDays = 0, anyBonus = false, anyPass = false, anyComma = false;
     var leadDow = new Date(year, month, 1).getDay();
     var cellsHtml = "";
     for (var lc = 0; lc < leadDow; lc++) cellsHtml += '<div class="success-cell pad"></div>';
@@ -6595,11 +6930,19 @@
       var dk = year + "-" + pad(month+1) + "-" + pad(day);
       if (dk > todayStr) { cellsHtml += '<div class="success-cell future">' + day + '</div>'; continue; }
       var s = overallStreakStatus(dk);
-      if (s === null && passApplied(dk)) {
-        // 쉬어가기를 쓴 날: 연속일은 이어지지만 성공일로는 세지 않는다
+      if (commaOn(dk)) {
+        // 쉼표를 쓴 날: 연속일은 끊기지도 늘지도 않고, 달성률 계산에서도 빠진다
+        anyComma = true;
+        var dotHtmlC = (state.memos && state.memos[dk]) ? '<span class="memo-dot"></span>' : '';
+        cellsHtml += '<div class="success-cell pass" data-action="success-cell-goto" data-id="' + dk + '">' + day + '<span class="pass-mark">⏸️</span>' + dotHtmlC + '</div>';
+        continue;
+      }
+      if (s === true && passApplied(dk)) {
+        // 징검다리를 쓴 날: 성공으로 인정한다
         anyPass = true;
+        ratedDays++; successDays++;
         var dotHtml0 = (state.memos && state.memos[dk]) ? '<span class="memo-dot"></span>' : '';
-        cellsHtml += '<div class="success-cell pass" data-action="success-cell-goto" data-id="' + dk + '">' + day + '<span class="pass-mark">☕</span>' + dotHtml0 + '</div>';
+        cellsHtml += '<div class="success-cell done" data-action="success-cell-goto" data-id="' + dk + '">' + day + '<span class="pass-mark">🪨</span>' + dotHtml0 + '</div>';
         continue;
       }
       if (s === null) {
@@ -6613,12 +6956,13 @@
         cellsHtml += '<div class="success-cell na' + (didSomething ? ' bonus' : '') + '" data-action="success-cell-goto" data-id="' + dk + '">' + day + dotHtml1 + '</div>';
         continue;
       }
-      ratedDays++;
+      if (!(dk === todayStr && !s)) ratedDays++;   // 오늘은 아직 진행 중이라 성공한 경우에만 센다
       if (s) successDays++;
       var dotHtml2 = (state.memos && state.memos[dk]) ? '<span class="memo-dot"></span>' : '';
       cellsHtml += '<div class="success-cell' + (s ? ' done' : '') + '" data-action="success-cell-goto" data-id="' + dk + '">' + day + dotHtml2 + '</div>';
     }
-    var rate = daysElapsed > 0 ? Math.round(successDays / daysElapsed * 100) : 0;
+    // 달성률 = 성공일 ÷ 평가한 날(쉬는 날·쉼표·예정 없는 날·아직 진행 중인 오늘은 분모에서 뺀다)
+    var rate = ratedDays > 0 ? Math.round(successDays / ratedDays * 100) : 0;
 
     html += '<div class="stat-row">' +
       '<div class="stat-box"><div class="num">' + streak + '</div><div class="lbl">연속일<span class="help-q" data-action="help" data-id="streak">?</span></div></div>' +
@@ -6628,7 +6972,9 @@
     html += '<div class="success-header">' + ["S","M","T","W","T","F","S"].map(function(d){return '<div>'+d+'</div>';}).join("") + '</div>';
     html += '<div class="success-grid">' + cellsHtml + '</div>';
     if (anyBonus) html += '<div style="margin-top:10px;font-size:0.7188rem;color:var(--ink-dim);">🟡 쉬는 날인데 뭔가 한 날 (스트릭에는 반영되지 않아요)</div>';
-    if (anyPass) html += '<div style="margin-top:6px;font-size:0.7188rem;color:var(--ink-dim);">☕ 쉬어가기를 쓴 날 (연속일은 이어지고, 성공일에는 세지 않아요)</div>';
+    if (anyPass) html += '<div style="margin-top:6px;font-size:0.7188rem;color:var(--ink-dim);">🪨 징검다리를 쓴 날 (성공일로 인정돼요)</div>';
+    if (anyComma) html += '<div style="margin-top:6px;font-size:0.7188rem;color:var(--ink-dim);">⏸️ 쉼표를 쓴 날 (연속일은 그대로, 달성률에서 빠져요)</div>';
+    html += '<div style="margin-top:6px;font-size:0.7188rem;color:var(--ink-dim);">이번 달 달성률은 쉬는 날·쉼표를 뺀, 평가한 날 중 성공한 날의 비율이에요</div>';
     return html;
   }
 
@@ -6643,6 +6989,10 @@
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
       passDays: state.passDays,
+      commaDays: state.commaDays,
+      commaWhy: state.commaWhy,
+      lateRestLog: state.lateRestLog,
+      lastBackupAt: state.lastBackupAt,
       streakThreshold: state.streakThreshold,
       thresholdHistory: state.thresholdHistory,
       archivedItems: state.archivedItems,
@@ -6664,12 +7014,38 @@
     };
     document.getElementById("exportText").value = JSON.stringify(data, null, 2);
   }
+  // 마지막으로 파일 저장·복사로 백업한 뒤 며칠이 지났는지(한 번도 없으면 null)
+  function backupAgeDays() {
+    var k = state.lastBackupAt;
+    if (typeof k !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(k)) return null;
+    return Math.max(0, Math.round((parseKeyToDate(todayKey()) - parseKeyToDate(k)) / 86400000));
+  }
+  function markBackedUp() { state.lastBackupAt = todayKey(); saveState(); renderBackupAge(); }
+  function renderBackupAge() {
+    var el = document.getElementById("backupAge");
+    if (!el) return;
+    var bd = backupAgeDays();
+    el.textContent = bd === null ? "아직 백업한 적이 없어요" : bd === 0 ? "마지막 백업: 오늘" : "마지막 백업: " + bd + "일 전 (" + state.lastBackupAt + ")";
+    el.classList.toggle("old", bd === null || bd >= 7);
+  }
+  // ---- 되돌리기 막대(삭제 직후 6초) ----
+  var undoFn = null, undoTimer = null;
+  function showUndo(msg, fn) {
+    undoFn = fn;
+    document.getElementById("undoMsg").textContent = msg;
+    document.getElementById("undoBar").classList.remove("hidden");
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(hideUndo, 6000);
+  }
+  function hideUndo() { clearTimeout(undoTimer); undoFn = null; document.getElementById("undoBar").classList.add("hidden"); }
+  function runUndo() { var f = undoFn; hideUndo(); if (f) f(); }
   function copyExport() {
     var ta = document.getElementById("exportText");
     ta.focus(); ta.select();
     var copied = false;
     try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(ta.value); copied = true; } } catch (e) {}
     if (!copied) { try { copied = document.execCommand("copy"); } catch (e) {} }
+    if (copied) markBackedUp();
     toast(copied ? "복사했어요" : "복사에 실패했어요. 직접 선택해서 복사해주세요");
   }
   function normalizeImportedCategories(rawCats) {
@@ -6712,6 +7088,9 @@
     if (Array.isArray(parsed.restDays)) state.restDays = parsed.restDays;
     if (Array.isArray(parsed.recurringHolidays)) state.recurringHolidays = parsed.recurringHolidays;
     if (Array.isArray(parsed.passDays)) state.passDays = normalizePassDays(parsed.passDays);
+    if (Array.isArray(parsed.commaDays)) state.commaDays = normalizePassDays(parsed.commaDays);
+    if (parsed.commaWhy && typeof parsed.commaWhy === "object" && !Array.isArray(parsed.commaWhy)) state.commaWhy = parsed.commaWhy;
+    if (Array.isArray(parsed.lateRestLog)) state.lateRestLog = normalizeLateLog(parsed.lateRestLog);
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
     state.thresholdHistory = normalizeThresholdHistory(parsed.thresholdHistory);
     state.archivedItems = normalizeArchivedItems(parsed.archivedItems);
@@ -6932,7 +7311,8 @@
         '<div class="cat-items-preview">' + itemsHtml + '</div></div>';
     });
     if (!html) html = '<div class="empty">이 날짜에 예정된 항목이 없어요.</div>';
-    if (passApplied(dk)) html = '<div class="pass-day-note">☕ 이 날은 쉬어가기를 썼어요 (연속일은 이어져요)</div>' + html;
+    if (passApplied(dk)) html = '<div class="pass-day-note">🪨 이 날은 징검다리를 썼어요 (성공으로 인정돼요)</div>' + html;
+    if (commaOn(dk)) html = '<div class="pass-day-note">⏸️ 이 날은 쉼표를 썼어요' + (commaWhyLabel(dk) ? ' · ' + commaWhyLabel(dk) : '') + ' (체크할 수 없고 포인트는 0이에요)</div>' + html;
     el.innerHTML = html;
     loadMemoBox(dk);
   }
@@ -7027,6 +7407,10 @@
       restDays: state.restDays,
       recurringHolidays: state.recurringHolidays,
       passDays: state.passDays,
+      commaDays: state.commaDays,
+      commaWhy: state.commaWhy,
+      lateRestLog: state.lateRestLog,
+      lastBackupAt: state.lastBackupAt,
       streakThreshold: state.streakThreshold,
       thresholdHistory: state.thresholdHistory,
       archivedItems: state.archivedItems,
@@ -7056,6 +7440,7 @@
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    markBackedUp();
     toast("파일로 저장했어요");
   }
   function pickImportFile() {
@@ -7107,18 +7492,20 @@
       ["성공한 날이란", "그날 해야 하는 모든 항목을 합쳐서 완료 비율이 기준 이상이면 성공이에요. 카테고리별이 아니라 전체 합산이라, 작은 카테고리 하나를 놓쳐도 무너지지 않아요."],
       ["기준 고르기", "설정에서 100% · 90% · 80% · 70% 중에 고를 수 있어요. 기준을 바꾸면 바꾼 날부터 새 기준이 적용되고, 그 전 날짜의 성공·연속일은 당시 기준 그대로 유지돼요."],
       ["이어지는 규칙", "쉬는 날이나 할 일이 하나도 없는 날은 건너뛰어요. 끊기지도, 세어지지도 않아요. ‘불시’ 항목과 쉬는 날에 자발적으로 한 항목은 스트릭에 들어가지 않아요."],
-      ["쉬어가기", "기준에 한두 개 모자란 날은 ‘쉬어가기’로 건너뛸 수 있어요. 쓴 날은 연속일이 끊기지도, 늘지도 않아요. 자세한 규칙은 ‘쉬어가기’ 도움말을 보세요."],
+      ["징검다리 · 쉼표", "한두 개 모자란 날은 ‘징검다리’로 성공을 이어 가고, 손 쓸 수 없는 날은 ‘쉼표’로 하루를 쉬어 갈 수 있어요. 자세한 규칙은 ‘징검다리 · 쉼표’ 도움말을 보세요."],
       ["표시 범위", "통계의 ‘연속일’은 지금 보고 있는 달과 상관없이, 오늘까지 이어진 전체 연속 일수예요. 옆의 ‘성공일’은 지금 보고 있는 달 안에서만 센 숫자라 범위가 달라요."],
       ["포인트와의 관계", "연속일이 끊겨도 누적 포인트와 성경 여정은 그대로 남아요. 이미 얻은 배지도 사라지지 않아요."]
     ], see: ["pass", "badges", "points", "keeprest"] },
-    pass: { t: "쉬어가기", sub: "기준에 못 미친 날 스트릭 지키기", s: [
-      ["쉬어가기란", "기준에 한두 개 모자라 스트릭이 끊길 때 쓰는 안전망이에요. 쓴 날은 쉬는 날처럼 건너뛰어서 연속일이 끊기지도, 늘지도 않아요. 성공일로는 세지 않아요."],
-      ["얻는 방법", "연속 7일 성공할 때마다 1개, 매월 1일에 1개를 받아요. 처음 시작할 때도 1개를 받아요. 최대 3개까지만 모이고, 가득 차면 더 쌓이지 않아요."],
-      ["쓸 수 있는 때", "오늘이나 어제, 기준에 못 미친 날에만 쓸 수 있어요. 그날 놓친 항목이 2개 이하여야 하고, 한 주(월~일)에 한 번만, 연속 이틀은 쓸 수 없어요."],
-      ["어디서 쓰나요", "홈의 ☕ 쉬어가기 뱃지(어제 못 채웠으면 알림 카드도 떠요)나 설정 › 루틴 규칙 › 쉬어가기에서 열어요. 쓰기 전에 한 번 더 확인해요."],
-      ["돌려받기", "쓴 날을 나중에 기준 이상으로 채우면 쓰지 않은 것으로 돌아와서 개수가 되돌아와요. 오늘·어제는 직접 취소해도 돌려받아요."],
-      ["주간 보상과의 관계", "쉬어가기를 쓴 날은 주간 보상 평가에서 빠져요. 쉬는 날이나 쉬어가기로 평가할 날이 줄어도 3일 이상이면 하루는 놓쳐도 돼요."],
-      ["달력과 기록", "통계 달력에 ☕로 표시되고, 기록 탭에서 그 날짜를 열면 안내가 나와요. 포인트는 그날 한 만큼 그대로 쌓여요."]
+    pass: { t: "징검다리 · 쉼표", sub: "기준에 못 미친 날 스트릭 지키기", s: [
+      ["두 가지 안전망", "‘징검다리’는 대부분 했는데 한두 개 모자란 날을 성공으로 이어 주고, ‘쉼표’는 아프거나 손 쓸 수 없는 날 하루를 통째로 쉬게 해 줘요. 미리 아는 휴일·여행은 ‘쉬는 날’로 정하세요."],
+      ["징검다리", "오늘이나 어제, 기준까지 모자란 항목이 2개 이하일 때 써요. 쓴 날은 성공으로 인정돼 연속일이 +1 되고 그날 선물도 받아요. 한 주(월~일)에 한 번, 연속 이틀은 안 돼요."],
+      ["징검다리 얻기", "연속 7일 성공할 때마다 1개(징검다리로 이은 날은 7일에 넣지 않아요). 최대 3개까지 모여요."],
+      ["쉼표", "오늘이나 어제, 기준에 못 미친 날에 써요. 그날은 쉬는 날처럼 건너뛰어 연속일이 끊기지도 늘지도 않아요. 대신 그날은 항목을 체크할 수 없고 포인트는 0이에요. 쓸 때 이유(아파요·너무 바빠요·기타)와 하루 한 줄을 남길 수 있어요."],
+      ["쉼표 얻기", "매월 1일에 1개를 받고, 최대 2개까지 모여요(쓰지 않은 1개는 다음 달로 이어져요)."],
+      ["어디서 쓰나요", "홈의 🪨 징검다리 · ⏸️ 쉼표 뱃지(어제 못 채웠으면 알림 카드도 떠요)나 설정 › 루틴 규칙에서 열어요."],
+      ["돌려받기", "징검다리를 쓴 날을 나중에 기준 이상으로 채우면 쓰지 않은 것으로 돌아와요. 오늘·어제는 직접 취소해도 돌려받아요(징검다리는 그날 선물을 이미 열었으면 취소할 수 없어요)."],
+      ["얻었을 때 알림", "새로 얻으면 한 번 알려 줘요. 알림 창의 ‘다음부터 이 알림 보지 않기’를 체크하면 그 종류는 더 알리지 않아요."],
+      ["주간 보상·통계", "징검다리를 쓴 날은 성공일로 세요. 쉼표를 쓴 날은 주간 보상 평가와 이번 달 달성률에서 빠져요. 통계 달력에 🪨 · ⏸️로 표시돼요."]
     ], see: ["streak", "rewards", "rest"] },
     days: { t: "반복 요일 · 불시", sub: "요일 정하기와 불시 항목", s: [
       ["요일 정하기", "매일 · 평일 · 주말 중에서 고르거나 요일 칸을 직접 눌러 정해요. 요일을 모두 해제하면 저장할 수 없어요."],
@@ -7148,7 +7535,8 @@
       ["자발적으로 하기", "유지 설정이 없는 항목도 쉬는 날에는 ‘쉬는 날 · 선택’으로 보이고, 하고 싶으면 체크할 수 있어요. 포인트에는 들어가지만 스트릭에는 들어가지 않아요."]
     ], see: ["rest", "streak"] },
     rest: { t: "쉬는 날 관리", sub: "휴일 · 공휴일 · 매년 반복", s: [
-      ["오늘 쉬기", "맨 위 버튼으로 오늘을 쉬는 날로 표시하거나 해제해요."],
+      ["오늘 쉬기", "맨 위 버튼이나 홈의 날짜를 눌러 오늘을 쉬는 날로 표시하거나 해제해요."],
+      ["당일·지난 날짜는 한 달 3번", "오늘이나 지난 날짜를 새로 쉬는 날로 정하는 건 한 달에 3번까지예요. 공휴일 표에 있는 날(설날·추석·대체공휴일 등)은 횟수에서 빠지고, 내일 이후 날짜는 제한 없이 정할 수 있어요. 해제하면 횟수를 돌려받아요."],
       ["기간 · 날짜 추가", "기간으로 한꺼번에 추가하거나 날짜 목록을 붙여 넣어 추가할 수 있어요. ‘매년 반복’으로 넣으면 해마다 같은 월·일이 쉬는 날이 돼요."],
       ["한국 공휴일 자동 추가", "‘한국 공휴일 자동 추가’에서 한국의 고정 공휴일과 설날 · 추석 · 대체공휴일 등을 골라 넣어요. 이미 추가한 날은 목록에서 빠져서 중복되지 않아요. 실제로 쉬지 않는 날은 체크를 풀고 추가하면 돼요."],
       ["쉬는 날의 효과", "쉬는 날은 스트릭에서 건너뛰어요. 끊기지도, 세어지지도 않아요."]
@@ -7188,7 +7576,7 @@
     ], see: ["rewards", "badges", "achieve"] },
     rewards: { t: "선물함과 보상", sub: "매일 · 주간 · 배지 · 분기 보상", s: [
       ["매일 상자", "하루의 성공 기준을 채우면 보너스 상자가 도착해요. 열면 5P가 더해져요. [나중에]를 누르면 홈에 상자 카드가 남아요."],
-      ["주간 보상", "평일(월~금) 5일 중 4일 이상 성공하면 ‘작은 보상’이 열려요. 금·토·일에 판정해요. 쉬는 날이나 쉬어가기로 평가할 날이 줄어도 3일 이상이면 하루는 놓쳐도 되고(4일이면 3일 성공), 2일 이하면 그날들을 모두 성공해야 해요."],
+      ["주간 보상", "평일(월~금) 5일 중 4일 이상 성공하면 ‘작은 보상’이 열려요. 금·토·일에 판정해요. 쉬는 날이나 쉼표로 평가할 날이 줄어도 3일 이상이면 하루는 놓쳐도 되고(4일이면 3일 성공), 2일 이하면 그날들을 모두 성공해야 해요."],
       ["배지 보상", "연속일 배지(3·7·14·30·60·100·200·365일)를 얻을 때마다 열려요. 30일 미만은 작은 보상, 30일 이상은 큰 보상 칩으로 추천이 달라져요."],
       ["분기 보상", "누적 포인트가 3000P · 6000P · 9000P… 3000P를 넘을 때마다 반복해서 ‘큰 보상’이 열려요. 전체화면으로 크게 축하하고, 추천 칩 없이 직접 입력만 받아요."],
       ["한 곳에 모아 보기", "매일 · 주간 · 배지 · 분기 보상 기록이 전부 선물함 하나에 모여요. 항목을 탭하면 나중에 입력하거나, 이미 쓴 내용을 고치거나, 삭제할 수 있어요."]
@@ -7765,6 +8153,27 @@
   }
 
   // [자세히 보기]: 요일별 · 시간대(카테고리)별 달성률, 2번 연속 쉰 항목, 시작 전 항목
+  // 기간 안에서 징검다리·쉼표·쉬는 날을 쓴 횟수(오늘까지)
+  function rvRestUse(S, E) {
+    var r = { stone: 0, comma: 0, rest: 0 }, today = todayKey(), dk = S, guard = 0;
+    while (dk <= E && dk <= today && guard++ < 400) {
+      if (commaOn(dk)) r.comma++;
+      else if (passApplied(dk)) r.stone++;
+      if (isRestDay(dk)) r.rest++;
+      dk = rvAddDays(dk, 1);
+    }
+    return r;
+  }
+  function rvRestUseHtml(S, E, sub) {
+    var u = rvRestUse(S, E);
+    var parts = [];
+    if (u.stone) parts.push("🪨 징검다리 " + u.stone + "번");
+    if (u.comma) parts.push("⏸️ 쉼표 " + u.comma + "번");
+    if (u.rest) parts.push("쉬는 날 " + u.rest + "일");
+    var line = parts.length ? parts.join(" · ") : "쓰지 않았어요";
+    return sub ? '<div class="rv-sub">쉼과 안전망</div><div class="rv-catrow"><span class="rv-catname" style="max-width:none;">' + line + '</span></div>'
+      : '<div class="rv-block"><div class="rv-h">쉼과 안전망</div><div class="rv-line">' + line + '</div></div>';
+  }
   function rvDetailWeeklyHtml(m) {
     var h = '<details class="rv-more"><summary>자세히 보기</summary><div class="rv-more-body">';
     var bestPct = -1;
@@ -7793,7 +8202,8 @@
         return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(rvItemName(x.item)) + '</span><span class="rv-catnum" style="width:auto;">시작 전</span></div>';
       }).join("");
     }
-    h += '<div class="rv-foot">시작 전·불시 항목, 쉬는 날은 달성률에서 빠져요. 오늘이 기간에 들어 있으면 오늘 아직 못 한 항목은 세지 않아요.</div>';
+    h += rvRestUseHtml(m.S, m.E, true);
+    h += '<div class="rv-foot">시작 전·불시 항목, 쉬는 날·쉼표를 쓴 날은 달성률에서 빠져요. 오늘이 기간에 들어 있으면 오늘 아직 못 한 항목은 세지 않아요.</div>';
     h += '</div></details>';
     return h;
   }
@@ -7839,6 +8249,7 @@
     var pts = 0;
     Object.keys(state.history).forEach(function (k) {
       if (k >= dk) return;
+      if (commaOn(k)) return;
       var entry = state.history[k], completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
       pts += completed.length;
       evalCats().forEach(function (cat) {
@@ -8020,7 +8431,8 @@
         return '<div class="rv-catrow"><span class="rv-catname">' + escapeHtml(rvItemName(x.item)) + '</span><span class="rv-catnum" style="width:auto;">시작 전</span></div>';
       }).join("");
     }
-    h += '<div class="rv-foot">쉬는 날 ' + m.cur.restDays + '일, 시작 전·불시 항목은 달성률에서 빠져요. 지난달·작년 비교는 그 달에 기록한 날이 충분할 때만 보여요.</div>';
+    h += rvRestUseHtml(m.cur.S, m.cur.E, true);
+    h += '<div class="rv-foot">쉬는 날 ' + m.cur.restDays + '일, 쉼표를 쓴 날, 시작 전·불시 항목은 달성률에서 빠져요. 지난달·작년 비교는 그 달에 기록한 날이 충분할 때만 보여요.</div>';
     h += '</div></details>';
     return h;
   }
@@ -8135,6 +8547,7 @@
         '<span class="rv-cattrack"><span class="rv-catfill" style="width:' + (x.rate === null ? 0 : x.rate) + '%"></span></span>' +
         '<span class="rv-catnum">' + (x.rate === null ? '–' : x.rate + '%') + '</span></div>';
     }).join("") + '</div>';
+    h += rvRestUseHtml(m.S, m.E, false);
     if (goods.length) {
       h += '<div class="rv-block"><div class="rv-h">올해의 하이라이트</div><ul>' +
         goods.map(function (g) { return '<li>' + escapeHtml(g) + '</li>'; }).join("") + '</ul></div>';
@@ -8442,6 +8855,7 @@
     else if (action === "toggle-item") {
       var tCat = getCat(el.getAttribute("data-cat"));
       var tItemId = id;
+      if (tCat && commaBlocks(todayKey())) tCat = null;
       if (tCat) {
         var wasDone = isDone(todayKey(), tItemId);
         var doHomeToggle = function () {
@@ -8519,8 +8933,19 @@
         pendingDeleteItemId = id;
         document.getElementById("deleteItemOverlay").classList.remove("hidden");
       } else {
+        var ucat = getCat(editingCatId), uidx = ucat ? ucat.items.findIndex(function (x) { return x.id === id; }) : -1;
+        var usnap = uidx !== -1 ? JSON.parse(JSON.stringify(ucat.items[uidx])) : null, ucatId = editingCatId;
         removeItemFromCategory(id);
         saveState(); renderEditItems();
+        if (usnap) showUndo("‘" + (usnap.name || "이름 없음") + "’ 항목을 삭제했어요", function () {
+          var c = getCat(ucatId);
+          if (!c || c.items.some(function (x) { return x.id === usnap.id; })) return;
+          c.items.splice(Math.min(uidx, c.items.length), 0, usnap);
+          saveState();
+          if (editingCatId === ucatId && !document.getElementById("view-editItems").classList.contains("hidden")) renderEditItems();
+          renderHome();
+          toast("되돌렸어요");
+        });
       }
     }
     else if (action === "delete-item-cancel") {
@@ -8626,7 +9051,20 @@
       if (SETTINGS_FAMILY.indexOf(id) > 0) { resetLogoutBtn(); showView(id); updateSettingsModalUI(); }
     }
     else if (action === "open-missed-overlay") { openMissedOverlay(); }
-    else if (action === "open-pass") { openPassSheet(); }
+    else if (action === "open-pass") { openPassSheet(id); }
+    else if (action === "pass-tab") { passTab = id === "comma" ? "comma" : "stone"; commaForm = null; renderPassSheet(); }
+    else if (action === "comma-open") { commaForm = { k: id, why: "sick" }; renderPassSheet(); }
+    else if (action === "comma-why") {
+      if (commaForm) { var cmi = document.getElementById("commaMemoInput"); var cmv = cmi ? cmi.value : null; commaForm.why = id; renderPassSheet(); var cmi2 = document.getElementById("commaMemoInput"); if (cmi2 && cmv !== null) cmi2.value = cmv; }
+    }
+    else if (action === "comma-form-close") { commaForm = null; renderPassSheet(); }
+    else if (action === "comma-use") { doUseComma(id); }
+    else if (action === "comma-cancel") { askCancelComma(id); }
+    else if (action === "rest-earn-ok") {
+      var rem = document.getElementById("restEarnMute");
+      if (rem && rem.checked) { if (!state.restEarnOff || typeof state.restEarnOff !== "object") state.restEarnOff = {}; state.restEarnOff[id] = true; saveState(); }
+      celebNext();
+    }
     else if (action === "pass-close") { closePassSheet(); }
     else if (action === "pass-use") { askUsePass(id); }
     else if (action === "pass-cancel") { askCancelPass(id); }
@@ -8738,6 +9176,7 @@
     else if (action === "open-stats") { statsView = "success"; statsTimeOnlySuggest = true; statsTagFilter = null; statsMonth = new Date(); statsMonth.setDate(1); statsWeekStart = startOfWeek(new Date()); showView("view-stats"); renderStats(); }
     else if (action === "open-backfill") { openBackfill(); }
     else if (action === "toggle-backfill-item") {
+      if (commaBlocks(backfillDate)) return;
       var wasD = isDone(backfillDate, id);
       var bfDateNow = backfillDate;
       var doBfToggle = function () {
@@ -8831,7 +9270,8 @@
     else if (action === "stats-next-month") { statsMonth.setMonth(statsMonth.getMonth()+1); renderStats(); }
     else if (action === "stats-prev-week") { statsWeekStart.setDate(statsWeekStart.getDate()-7); renderStats(); }
     else if (action === "stats-next-week") { statsWeekStart.setDate(statsWeekStart.getDate()+7); renderStats(); }
-    else if (action === "open-export") { showView("view-export"); renderExport(); }
+    else if (action === "undo-do") { runUndo(); }
+    else if (action === "open-export") { showView("view-export"); renderExport(); renderBackupAge(); }
     else if (action === "copy-json") { copyExport(); }
     else if (action === "do-import") { doImport(); }
     else if (action === "download-json") { downloadJson(); }

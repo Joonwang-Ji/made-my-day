@@ -967,3 +967,26 @@
 .success-cell .pass-mark { position: absolute; top: 1px; right: 2px; font-size: 0.5rem; line-height: 1; }
 .pass-day-note { background: var(--rest-soft); color: var(--rest); border-radius: 12px; padding: 9px 12px; margin-bottom: 10px;
   font-size: 0.75rem; font-weight: 700; line-height: 1.5; }
+
+/* ---- 21차: 징검다리 · 쉼표 ---- */
+.pass-tabs { display: flex; gap: 6px; background: var(--bg-soft); border: 1px solid var(--line); border-radius: 999px; padding: 3px; margin: 0 0 12px; }
+.pass-tab { flex: 1; text-align: center; padding: 7px 0; border-radius: 999px; font-size: 0.8125rem; font-weight: 800; color: var(--ink-dim); cursor: pointer; -webkit-user-select: none; user-select: none; }
+.pass-tab.on { background: var(--card, var(--bg)); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.pass-intro { font-size: 0.75rem; line-height: 1.5; color: var(--ink-dim); text-align: center; margin: 0 0 10px; }
+.pass-row-note.warn { color: var(--gold); font-weight: 700; }
+.comma-form { margin-top: 10px; }
+.comma-why { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.comma-chip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-size: 0.75rem; font-weight: 700; color: var(--ink-dim); cursor: pointer; -webkit-user-select: none; user-select: none; }
+.comma-chip.on { background: var(--rest-soft); border-color: var(--rest); color: var(--rest); }
+.comma-memo { width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font-size: 16px; background: var(--bg); color: var(--ink); font-family: inherit; }
+.comma-form .bottom-row { margin-bottom: 0; }
+.rest-earn-body { text-align: left; line-height: 1.55; margin-bottom: 12px !important; }
+.rest-earn-mute { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; color: var(--ink-dim); margin: 0 0 12px; cursor: pointer; }
+.rest-earn-mute input { width: 16px; height: 16px; margin: 0; accent-color: var(--sage); }
+.backup-age { font-size: 0.75rem; font-weight: 700; color: var(--ink-dim); margin: -2px 0 10px 2px; }
+.backup-age.old { color: var(--gold); }
+.undo-bar { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 9500; display: flex; align-items: center; gap: 14px;
+  background: var(--ink); color: var(--bg); border-radius: 999px; padding: 10px 10px 10px 16px; font-size: 0.8125rem; font-weight: 700; box-shadow: 0 6px 20px rgba(0,0,0,0.2); max-width: calc(100% - 32px); }
+.undo-bar.hidden { display: none; }
+.undo-bar .undo-btn { background: transparent; border: 1px solid currentColor; color: inherit; border-radius: 999px; padding: 5px 12px; font-size: 0.75rem; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.set-v.warn-age { color: var(--gold); }
