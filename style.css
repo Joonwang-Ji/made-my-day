@@ -1001,3 +1001,36 @@
 .cat-card.comma-off .cat-name { opacity: 0.6; }
 .cat-card.comma-off .cat-itemline { color: var(--rest, var(--ink-dim)); font-weight: 700; }
 .mini-item.comma-off { cursor: default; }
+
+/* ---------------- 홈 화면에 앱으로 추가 · 앱 안 브라우저 안내 (23차) ---------------- */
+.install-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 22px auto 0; padding: 10px 16px;
+  border-radius: 999px; background: var(--sage-soft); color: var(--sage); font-size: 0.8125rem; font-weight: 700; cursor: pointer; width: fit-content; }
+.install-link.hidden { display: none; }
+.inapp-banner { background: var(--gold-soft); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 8px 0 12px; }
+.inapp-banner.hidden { display: none; }
+.inapp-title { font-size: 0.8438rem; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
+.inapp-text { font-size: 0.7812rem; line-height: 1.6; color: var(--ink-dim); }
+.inapp-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.inapp-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  font-size: 0.7812rem; font-weight: 700; cursor: pointer; }
+.inapp-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.ig-tabs { display: flex; gap: 6px; background: var(--bg); border-radius: 12px; padding: 4px; margin: 6px 0 4px; }
+.ig-tab { flex: 1; text-align: center; padding: 9px 6px; border-radius: 9px; font-size: 0.8125rem; font-weight: 700; color: var(--ink-dim); cursor: pointer; }
+.ig-tab.active { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.ig-steps { margin: 4px 0 8px; padding-left: 1.4em; font-size: 0.8125rem; line-height: 1.7; color: var(--ink); }
+.ig-steps li { margin-bottom: 4px; }
+.ig-steps li::marker { color: var(--sage); font-weight: 800; }
+.ig-note { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--bg); font-size: 0.7812rem; line-height: 1.6; color: var(--ink-dim); }
+.ig-note.ok { margin: 0 0 10px; background: var(--sage-soft); color: var(--sage); font-weight: 700; }
+.ig-install { margin: 12px 0 4px; text-align: center; }
+.ig-install .btn { display: inline-flex; min-width: 180px; justify-content: center; margin-bottom: 6px; }
+
+/* ---------------- 오프라인 표시 (23차) ---------------- */
+.offline-pill { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 6px); z-index: 98;
+  display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: var(--bg);
+  font-size: 0.7188rem; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.2); pointer-events: none; white-space: nowrap; }
+.offline-pill.hidden { display: none; }
+
+/* ---------------- 접근성 (23차): 키보드로 옮겨 다닐 때만 보이는 테두리 ---------------- */
+[data-action]:focus { outline: none; }
+[data-action]:focus-visible, .ig-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 10px; }

@@ -328,6 +328,55 @@
     var a = I.sub(b), c = I.sub(t);
     return (a === b && c === t) ? null : (ic || "") + a + " · " + c;
   }]]);
+  // ---- 23차: 홈 화면에 앱으로 추가 · 오프라인 · 접근성(화면낭독기용 이름) ----
+  I.register({
+    "홈 화면에 앱으로 추가하는 방법": "How to add the app to your home screen",
+    "홈 화면에 앱으로 추가": "Add to Home Screen",
+    "앱 설치": "Install the app",
+    "아이폰 · 안드로이드": "iPhone · Android",
+    "아이폰 · 아이패드": "iPhone · iPad",
+    "안드로이드": "Android",
+    "Safari에서": "In Safari",
+    "Chrome에서": "In Chrome",
+    "삼성 인터넷에서": "In Samsung Internet",
+    "Safari로 이 앱 주소를 열어요.": "Open this app's address in Safari.",
+    "화면 아래쪽의 공유 버튼(□↑)을 눌러요.": "Tap the Share button (□↑) at the bottom of the screen.",
+    "아이패드는 주소창 오른쪽 위에 있고, 안 보이면 ⋯ 버튼 안에 있어요.": "On iPad it's at the top right by the address bar; if you can't see it, look inside the ⋯ button.",
+    "목록을 조금 내려 ‘홈 화면에 추가’를 눌러요.": "Scroll down a little and tap “Add to Home Screen”.",
+    "오른쪽 위 ‘추가’를 누르면 끝이에요.": "Tap “Add” at the top right, and you're done.",
+    "아이폰의 Chrome 앱에서도 공유 버튼에서 같은 방법으로 추가할 수 있어요.": "In the Chrome app on iPhone, you can add it the same way from the Share button.",
+    "홈 화면 아이콘으로 처음 열면 한 번 더 로그인해 주세요. 아이폰은 Safari와 홈 화면 앱의 저장 공간이 따로예요.": "The first time you open it from the home screen icon, please sign in once more. On iPhone, Safari and home screen apps keep separate storage.",
+    "지금 설치하기": "Install now",
+    "버튼을 누르고 ‘설치’를 고르면 바로 홈 화면에 생겨요.": "Tap the button and choose “Install” — it appears on your home screen right away.",
+    "오른쪽 위 ⋮ 메뉴를 눌러요.": "Tap the ⋮ menu at the top right.",
+    "‘홈 화면에 추가’ 또는 ‘앱 설치’를 눌러요.": "Tap “Add to Home screen” or “Install app”.",
+    "‘설치’(또는 ‘추가’)를 누르면 끝이에요.": "Tap “Install” (or “Add”), and you're done.",
+    "아래쪽 ≡ 메뉴를 눌러요.": "Tap the ≡ menu at the bottom.",
+    "‘현재 페이지 추가’를 누르고 ‘홈 화면’을 골라요.": "Tap “Add page to” and choose “Home screen”.",
+    "홈 화면 아이콘으로 열면 주소창 없이 앱처럼 전체 화면으로 열려요.": "Opened from the home screen icon, it runs full screen like an app, without the address bar.",
+    "지금 홈 화면 앱으로 쓰고 계세요 🙂 다른 기기에 추가할 때 아래 방법을 참고하세요.": "You're already using the home screen app 🙂 Use the steps below to add it on another device.",
+    "⚠️ 카카오톡 같은 앱 안에서 열려 있어요": "⚠️ This page is open inside another app (like KakaoTalk)",
+    "여기서는 홈 화면에 추가할 수 없어요. Safari로 다시 열어 주세요.": "You can't add it to the home screen from here. Please open it again in Safari.",
+    "여기서는 홈 화면에 추가할 수 없어요. Chrome으로 다시 열어 주세요.": "You can't add it to the home screen from here. Please open it again in Chrome.",
+    "화면 구석의 ⋯ 또는 공유 메뉴에서 ‘Safari로 열기’를 누르면 돼요.": "Tap “Open in Safari” from the ⋯ or Share menu in a corner of the screen.",
+    "기본 브라우저로 열기": "Open in browser",
+    "주소 복사": "Copy address",
+    "주소를 복사했어요 · 브라우저 주소창에 붙여넣어 주세요": "Address copied · paste it into your browser's address bar",
+    "이 주소를 복사해 주세요": "Please copy this address",
+    "이 브라우저에서는 메뉴에서 직접 추가해 주세요": "In this browser, please add it from the menu",
+    "홈 화면에 추가했어요": "Added to your home screen",
+    "오프라인 · 연결되면 합쳐서 저장해요": "Offline · will merge and save when you reconnect",
+    "서버 연결 확인 중 · 기록은 기기에 먼저 저장돼요": "Checking the connection · changes are saved on this device first",
+    "다시 연결됐어요 · 기록을 합쳐서 저장해요": "Back online · merging and saving your records",
+    "인터넷에 연결되면 열려요": "It will open once you're connected to the internet",
+    "저장 안 된 기록이 있어요 · 로그아웃할까요?": "Some records aren't saved yet · Log out anyway?",
+    "뒤로": "Back", "홈으로": "Home", "도움말": "Help", "메모 검색": "Search notes",
+    "이전 달": "Previous month", "다음 달": "Next month", "이전 주": "Previous week", "다음 주": "Next week",
+    "위로 옮기기": "Move up", "아래로 옮기기": "Move down", "항목 복제": "Duplicate item", "카운트다운 시작": "Start countdown"
+  }, [
+    [/^(.+) 도움말$/, function (t) { return "Help: " + I.sub(t); }],
+    [/^(.+) 카운트다운 시작$/, function (c) { return "Start countdown: " + I.sub(c); }]
+  ]);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();

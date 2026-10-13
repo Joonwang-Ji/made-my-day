@@ -163,14 +163,20 @@
       ["Save as file", "Download all your records as one file and keep it. You can restore from this file if you switch devices or lose your data."],
       ["As text", "You can copy it as text, or paste text in to import. Text is handy for pasting into a chat with Claude."],
       ["Before importing", "It's safest to back up your current state before importing."]
-    ], see: ["settings"] }
+    ], see: ["settings", "offline"] },
+    offline: { t: "When you're offline", sub: "Offline records · merged saving", s: [
+      ["You can still check items", "Even without internet, checks and records are saved on this device first. They stay even if you close the app. A small <b>Offline</b> label appears at the top."],
+      ["Opening without internet", "If you've opened the app on this device while connected at least once, it opens to your last records even without internet. On a brand-new device, it opens once you're connected."],
+      ["Merged when you reconnect", "When you're back online, your records are <b>merged by date and item</b> with your other devices' records and saved. Checks made on other devices are not lost. If the same item was changed differently on both, this device (saving last) wins."],
+      ["Not available offline", "Features that need the server — friends and cheers — work once you're connected. If you log out, records not yet saved are merged when you log back in with the same account."]
+    ], see: ["backup", "streak"] }
   };
 
   var G = [
     ["Screen guides", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
     ["Routine & stats rules", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
-    ["Friends & data", ["share", "cheers", "backup"]]
+    ["Friends & data", ["share", "cheers", "backup", "offline"]]
   ];
 
   window.MMD_HELP_EN = { topics: T, groups: G };

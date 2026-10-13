@@ -9,6 +9,7 @@
     bible-medals-data.js   66권 성경 마일스톤 데이터: BIBLE_BOOKS, MEDAL_ART, SVG 부품 생성기 MP/D2~D7/DF/G2
     avatar-data.js         아바타 SVG 부품(SVG_P/BIBLE_ICONS 구 아이콘셋) + 아바타 아이템·조합 로직(AV_*, avatarSVG 등)
     review-data.js         주간·월간·연간 리뷰(19차)의 문구 풀·전문가 한마디 데이터: REVIEW_DATA (문구만 — 고르는 로직은 index.html)
+    sw.js                  서비스워커(23차): 앱 파일만 기기에 보관(네트워크 우선). 새 파일을 저장소에 추가하면 sw.js의 SHELL_FILES에도 넣을 것
     index.html 본문 <script> 하나 (state/렌더링/이벤트 등 핵심 로직) — 위 다섯 파일이 먼저 로드된 뒤
       순서대로 실행되는 하나의 IIFE. 이 안의 코드는 위 파일들이 선언한 전역 변수(BIBLE_BOOKS, MEDAL_ART,
       MP, AV_DEFAULT 등)를 그냥 참조만 함 — 모듈 import 없이 전역 스코프로 연결된 구조.
@@ -21,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-13-2";
+  var BUILD_VERSION = "2026-10-13-3";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -47,6 +48,16 @@
     if (localStorage.getItem("mmd_vivid") === "1") r.classList.add("vivid");
   } catch (e) {}
 })();
+</script>
+<script>
+// 23차: 안드로이드 Chrome의 "앱 설치" 창은 페이지가 열릴 때 한 번만 신호(beforeinstallprompt)를 준다.
+// 본문 script보다 먼저 받아 두었다가, 홈 화면 추가 안내의 [지금 설치하기] 버튼에서 쓴다.
+window.__mmdInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", function (e) {
+  e.preventDefault();
+  window.__mmdInstallPrompt = e;
+  if (window.__mmdOnInstallPrompt) window.__mmdOnInstallPrompt();
+});
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- 홈 화면 앱 설정(2026-10-12): 아이콘·이름·상태 표시줄. 이미 추가해 둔 아이콘은 지웠다가 다시 추가해야 새 아이콘이 보인다. 아이콘 PNG는 저장소 맨 위(루트)에 둔다. -->
@@ -102,6 +113,8 @@
 
 <div class="wrap hidden" id="view-login">
   <div class="fs-login-row"><span class="fs-login-btn" id="langLoginBtn" data-action="lang-toggle" style="margin-right:8px;">English</span><span class="fs-login-btn" id="fsLoginBtn" data-action="fs-cycle">가 글씨 크기 · 보통</span></div>
+  <!-- 23차: 카카오톡 등 앱 안의 브라우저로 열렸을 때만 보이는 안내(그 안에서는 홈 화면 추가가 안 된다) -->
+  <div class="inapp-banner hidden" id="inappBannerLogin"></div>
   <div style="min-height:70vh;display:flex;flex-direction:column;justify-content:center;">
     <div style="text-align:center;margin-bottom:28px;">
       <div class="day" style="font-size:1.625rem;">Made My Day</div>
@@ -116,6 +129,8 @@
     </div>
     <div data-action="auth-forgot" style="text-align:center;margin-top:16px;font-size:0.7812rem;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">비밀번호를 잊으셨나요?</div>
     <div class="sub" style="text-align:center;margin-top:18px;">가입 후 관리자 승인이 있어야 이용할 수 있어요</div>
+    <!-- 23차: 홈 화면에 추가하는 방법(홈 화면 아이콘으로 연 경우에는 숨긴다) -->
+    <div class="install-link hidden" id="installLoginLink" data-action="open-install-guide"><span aria-hidden="true">📱</span><span>홈 화면에 앱으로 추가하는 방법</span></div>
   </div>
 </div>
 
@@ -825,6 +840,17 @@
   </div>
 </div>
 
+<!-- 23차: 홈 화면에 앱으로 추가하는 방법(로그인 화면 링크 · 설정 > 사용법에서 연다) -->
+<div class="tp-overlay help-overlay hidden" id="installOverlay">
+  <div class="help-sheet">
+    <div class="help-head">
+      <div class="help-title">홈 화면에 앱으로 추가</div>
+      <span class="tp-close-x" data-action="install-close">✕</span>
+    </div>
+    <div class="help-body" id="installBody"></div>
+  </div>
+</div>
+
 <div class="celeb-stage hidden" id="celebStage"></div>
 
 <div class="tp-overlay hidden" id="pendingRewardsOverlay">
@@ -851,7 +877,9 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- 23차: 인터넷이 끊겼을 때 위쪽에 작게 뜨는 표시 -->
+<div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
 <script type="module" src="firebase-service.js"></script>
@@ -1102,7 +1130,7 @@
   }
   function publishProfile(force) {
     var uid = currentUid;
-    if (!uid || !synced || !state.social || !state.social.shareOn) return Promise.resolve();
+    if (!uid || !synced || offlineMode || !state.social || !state.social.shareOn) return Promise.resolve();   // 오프라인으로 연 동안은 공개 요약을 올리지 않는다(합친 뒤에 올림)
     var p = buildPublicProfile();
     var j = uid + "|" + JSON.stringify(p);
     if (!force && j === lastPubJson) return Promise.resolve();
@@ -2673,8 +2701,45 @@
   // Firestore 응답을 기다리는 대신 이 캐시로 먼저 홈 화면을 그리고, 실제 서버 값이 오면
   // 조용히 다시 그린다(경합 방지를 위해 500ms 넘게 걸릴 때만 디바운스 없이 즉시 쓴다).
   function saveToLocalStorage(s) {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch (e) {}
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(s));
+      if (currentUid) localStorage.setItem(CACHE_OWNER_KEY, currentUid);   // 23차: 이 캐시가 어느 계정 것인지
+    } catch (e) {}
   }
+
+  // ---- 오프라인 기록 (23차) ------------------------------------------------------------
+  // 기존 3방향 합치기(내가 마지막으로 본 서버 상태 · 내 상태 · 지금 서버 상태)를 앱을 껐다 켜도 쓸 수 있게,
+  // "내가 마지막으로 본 서버 상태(syncedBase)"를 기기에 함께 저장해 둔다.
+  //  · 서버에 아직 못 올린 변경이 있으면 표시(UNSYNCED_KEY = 계정 uid)를 남긴다. 서버 저장이 끝나면 지운다.
+  //  · 인터넷 없이 앱을 열면(또는 서버 응답이 5초 넘게 없으면) 기기의 마지막 상태로 홈을 열고 체크도 받는다.
+  //    이때는 서버에 쓰지 않는다(offlineMode).
+  //  · 서버에서 확정된 값이 처음 오면, 표시가 남아 있으면 서버 값으로 덮어쓰지 않고 3방향 합치기로 저장한다.
+  //    양쪽 기기의 체크가 날짜·항목 단위로 모두 남는다. 시계(시각 비교)는 쓰지 않는다.
+  //  · 저장된 기준·캐시가 다른 계정 것이거나 없으면(용량 부족 등) 예전처럼 서버 응답을 기다린다.
+  var CACHE_OWNER_KEY = "mmd_cache_owner_v1", SYNC_BASE_KEY = "mmd_sync_base_v1", UNSYNCED_KEY = "mmd_unsynced_v1";
+  var offlineMode = false;     // 서버 확인 없이 기기 상태로 연 상태(서버 저장은 미룬다)
+  function persistSyncBase() {
+    if (!currentUid) return;
+    try {
+      if (syncedBase) localStorage.setItem(SYNC_BASE_KEY, JSON.stringify({ uid: currentUid, base: syncedBase }));
+      else localStorage.removeItem(SYNC_BASE_KEY);
+    } catch (e) {
+      try { localStorage.removeItem(SYNC_BASE_KEY); } catch (e2) {}   // 옛 기준이 남아 엉뚱하게 합쳐지지 않게 지운다
+    }
+  }
+  function loadSyncBase(uid) {
+    try {
+      var o = JSON.parse(localStorage.getItem(SYNC_BASE_KEY) || "null");
+      return (o && o.uid === uid && o.base && typeof o.base === "object") ? o.base : null;
+    } catch (e) { return null; }
+  }
+  function loadCachedStateFor(uid) {
+    try { if (localStorage.getItem(CACHE_OWNER_KEY) !== uid) return null; } catch (e) { return null; }
+    return loadFromLocalStorage();
+  }
+  function markUnsynced() { try { if (currentUid) localStorage.setItem(UNSYNCED_KEY, currentUid); } catch (e) {} }
+  function clearUnsynced() { try { localStorage.removeItem(UNSYNCED_KEY); } catch (e) {} }
+  function hasUnsynced(uid) { try { return !!uid && localStorage.getItem(UNSYNCED_KEY) === uid; } catch (e) { return false; } }
 
   var state = defaultState();
   var currentUid = null;
@@ -2687,6 +2752,7 @@
   // 이 기기의 예전 캐시(localStorage / Firestore 오프라인 캐시)로 그린 화면에서 저장이 일어나
   // 서버의 더 새로운 기록을 통째로 덮어쓰는 사고를 막는다.
   //  1) 서버에서 확정된 첫 응답(synced)이 오기 전에는 저장하지 않고 화면도 잠근다.
+  //     (23차 예외: 기기에 저장해 둔 합치기 기준이 있으면 오프라인으로 열어 기기에만 저장하고, 연결되면 2)로 합친다)
   //  2) 저장은 트랜잭션으로 서버의 현재 문서를 읽어, 내가 마지막으로 본 서버 값(syncedBase)과 달라졌으면
   //     3-way 병합(기록은 날짜·항목 단위)해서 쓴다. 다른 기기가 체크한 기록이 사라지지 않는다.
   //  3) 하루 첫 동기화 때 서버 상태를 users/{uid}/snapshots/{날짜} 로 백업한다.
@@ -2807,8 +2873,10 @@
   function showSyncNotice() {
     var sub = document.querySelector("#view-checking .splash-sub");
     var chk = document.getElementById("view-checking");
-    if (sub && chk && !chk.classList.contains("hidden")) sub.textContent = syncNoticeMsg;
-    toast(syncNoticeMsg);
+    // 23차: 인터넷이 끊겨 있으면(이 기기에 합치기 기준이 아직 없어 오프라인으로 못 여는 경우) 그렇게 알려 준다
+    var msg = navigator.onLine === false ? "인터넷에 연결되면 열려요" : syncNoticeMsg;
+    if (sub && chk && !chk.classList.contains("hidden")) sub.textContent = msg;
+    toast(msg);
   }
   function startSyncNotice() {
     stopSyncNotice();
@@ -2918,6 +2986,9 @@
 
   function doServerSave() {
     if (!currentUid || !synced) return Promise.resolve();
+    // 23차: 오프라인으로 연 상태이거나 인터넷이 끊겨 있으면 서버 저장을 미룬다(변경은 기기에 남고 '저장 안 됨' 표시가 있다).
+    // 연결되면 online 이벤트·서버 첫 응답에서 다시 저장한다. 끊긴 상태에서 매번 실패 알림이 뜨지 않게 하기 위함이기도 하다.
+    if (offlineMode || navigator.onLine === false) return Promise.resolve();
     var snapshot = JSON.parse(JSON.stringify(state));
     var baseAtStart = syncedBase, rawAtStart = syncedRaw, uidAtStart = currentUid;
     var yearsToFlush = Object.keys(touchedArchivedYears);
@@ -2942,11 +3013,15 @@
           state = normalizeLoaded(JSON.parse(JSON.stringify(res.out)));
           attachArchivedHistory();
           saveToLocalStorage(state);
+          persistSyncBase(); clearUnsynced();
           try { renderHomeWhenIdle(); } catch (e) {}
           toast("다른 기기의 기록과 합쳤어요");
         }
       } else {
         syncedBase = JSON.parse(JSON.stringify(res.out)); syncedRaw = canon(res.out);
+        persistSyncBase();
+        // 저장한 뒤로 더 바뀐 게 없으면 '서버에 못 올린 변경' 표시를 지운다(더 바뀌었으면 곧 다음 저장이 온다)
+        if (!saveDebounceTimer && canon(state) === canon(snapshot)) clearUnsynced();
       }
       return archiveFlush;
     }).catch(function (err) {
@@ -2965,6 +3040,7 @@
     passInvalidate();
     if (currentUid && !synced) return;   // 서버 확정 전에는 캐시로 그린 화면에서 아무것도 저장하지 않는다
     saveToLocalStorage(state);
+    markUnsynced();   // 23차: 서버 저장이 끝날 때까지 '아직 못 올린 변경 있음' 표시(앱을 꺼도 남는다)
     if (!currentUid) return;
     schedulePublish(20000);
     clearTimeout(saveDebounceTimer);
@@ -3046,7 +3122,9 @@
   function doSignOutRequest() {
     if (!logoutArmed) {
       logoutArmed = true;
-      Array.prototype.forEach.call(document.querySelectorAll('[data-action="auth-logout"]'), function (b) { b.textContent = "정말 로그아웃할까요?"; });
+      // 23차: 서버에 아직 못 올린 기록이 있으면 함께 알린다(같은 계정으로 다시 로그인하면 합쳐서 올라간다)
+      var unsavedMsg = hasUnsynced(currentUid) ? "저장 안 된 기록이 있어요 · 로그아웃할까요?" : "정말 로그아웃할까요?";
+      Array.prototype.forEach.call(document.querySelectorAll('[data-action="auth-logout"]'), function (b) { b.textContent = unsavedMsg; });
       return;
     }
     logoutArmed = false;
@@ -3082,10 +3160,72 @@
         if (needFontPrompt()) showFontPrompt(checkHolidayFirstPrompt); else checkHolidayFirstPrompt();
       }
     }
+    // ---- 23차: 오프라인 기록 ----
+    // localFirst: 이 기기에 서버에 못 올린 변경이 있거나(앞 세션에서 끊긴 채 앱을 닫음), 오프라인으로 열었다.
+    //             → 서버의 첫 확정 값이 와도 덮어쓰지 않고 3방향 합치기로 저장한다.
+    var serverSeen = false;
+    var localFirst = hasUnsynced(uid) && !!loadSyncBase(uid) && !!loadCachedStateFor(uid);
+    offlineMode = false; updateOfflinePill();
+    function startFromDevice() {
+      if (uid !== currentUid || synced || serverSeen) return;
+      var b = loadSyncBase(uid), c = loadCachedStateFor(uid);
+      if (!b || !c || !(isAdminUser || c.approved)) return;   // 기준·캐시가 없거나 승인 전이면 예전처럼 기다린다
+      offlineMode = true; localFirst = true;
+      syncedBase = b; syncedRaw = canon(b);
+      state = c;
+      if (isAdminUser) state.approved = true;
+      synced = true; stopSyncNotice();
+      updateOfflinePill();
+      finishRender();
+    }
+    var localStartTimer = null;
+    function onWentOffline() { startFromDevice(); }
+    if (navigator.onLine === false) setTimeout(startFromDevice, 0);
+    else localStartTimer = setTimeout(startFromDevice, 5000);   // 연결은 됐다는데 서버 응답이 없을 때(지하·엘리베이터 등)
+    window.addEventListener("offline", onWentOffline);
+
     stateUnsub = window.__fb.subscribeState(uid, function (data, hasPendingWrites, fromCache) {
       if (fromCache) return;                 // 기기 안의 오래된 캐시 응답은 무시하고 서버에서 확정된 값만 쓴다
       if (hasPendingWrites) return; // this tab's own write echoing back; local state is already current
+      if (uid !== currentUid) return;
+      if (!serverSeen) {
+        serverSeen = true;
+        clearTimeout(localStartTimer);
+        window.removeEventListener("offline", onWentOffline);
+      }
+      if (localFirst && data) {
+        // 서버 확정 값이 처음 왔는데 이 기기에 못 올린 변경이 있다 → 덮어쓰지 않고 합쳐서 저장
+        localFirst = false;
+        var wasOffline = offlineMode;
+        offlineMode = false; updateOfflinePill();
+        if (!synced) {   // 기기 상태로 열지 않았던 경우(온라인으로 바로 열림): 여기서 기기 상태를 꺼낸다
+          var pb = loadSyncBase(uid), pc = loadCachedStateFor(uid);
+          if (pb && pc) { syncedBase = pb; syncedRaw = canon(pb); state = pc; synced = true; stopSyncNotice(); }
+        }
+        if (synced) {
+          if (isAdminUser) state.approved = true;
+          var bk0 = "mmd_snapshot_" + uid + "_" + todayKey();
+          var doneBk0 = false; try { doneBk0 = !!localStorage.getItem(bk0); } catch (e) {}
+          if (!doneBk0) window.__fb.saveSnapshot(uid, todayKey(), JSON.parse(JSON.stringify(data))).then(function () { try { localStorage.setItem(bk0, "1"); } catch (e) {} }).catch(function () {});
+          socialOnFirstSync();
+          clearTimeout(saveRetryTimer);
+          saveChain = saveChain.then(doServerSave);   // 서버가 바뀌었으면 mergeStates로 합쳐서 쓴다
+          if (wasOffline) toast("다시 연결됐어요 · 기록을 합쳐서 저장해요");
+          if (!archiveBootstrapped) {
+            archiveBootstrapped = true;
+            loadArchivedYearsInto(uid).then(function () { return runArchiveRolloverIfNeeded(); })
+              .catch(function (err) { console.warn("archive bootstrap failed", err && err.code); })
+              .then(finishRender);
+          } else finishRender();
+          return;
+        }
+        // 기기 상태를 못 꺼냈으면(지워짐 등) 아래 예전 흐름대로 서버 값을 쓴다
+      }
+      localFirst = false;
+      if (offlineMode) { offlineMode = false; updateOfflinePill(); }
       if (!firstLoad && (saveDebounceTimer || saveInFlight)) return; // 저장 중인 내 변경이 있으면 저장 때 병합한다
+      // 23차: 저장이 실패해 다시 시도를 기다리는 중(못 올린 변경 있음)이면, 새 서버 값으로 덮어쓰지 않고 합쳐서 저장한다
+      if (!firstLoad && synced && hasUnsynced(uid)) { clearTimeout(saveRetryTimer); saveChain = saveChain.then(doServerSave); return; }
       if (!firstLoad && data && canon(data) === syncedRaw) return;    // 메타데이터만 바뀐 알림
       var needsArchiveBootstrap = false;
       if (data) {
@@ -3094,6 +3234,7 @@
         var rawApproved = data.approved === true;
         syncedBase = JSON.parse(JSON.stringify(data)); syncedRaw = canon(data);
         var wasSynced = synced;
+        if (firstLoad) clearUnsynced();   // 23차: 서버 값을 그대로 쓰는 경우(합칠 기기 상태가 없음) 옛 표시는 지운다
         state = normalizeLoaded(data);
         attachArchivedHistory();   // 메인 문서에는 없는(아카이브된) 연도를, 이미 읽어둔 캐시에서 다시 붙인다
         synced = true; stopSyncNotice();
@@ -3101,6 +3242,7 @@
         // 뜨지 않게 한다(문서에 approved 필드가 아예 없던 과거 관리자 계정 포함).
         if (isAdminUser) state.approved = true;
         if (state.approved) saveToLocalStorage(state);
+        persistSyncBase();   // 23차: 합치기 기준을 기기에도 저장(오프라인으로 열 때 씀)
         if (!wasSynced) {
           var bk = "mmd_snapshot_" + uid + "_" + todayKey();
           var doneBk = false; try { doneBk = !!localStorage.getItem(bk); } catch (e) {}
@@ -3151,6 +3293,7 @@
         stopCheerWatch();
         isAdminUser = false;
         synced = false; syncedRaw = null; syncedBase = null; stopSyncNotice();
+        offlineMode = false; updateOfflinePill();
         if (stateUnsub) { stateUnsub(); stateUnsub = null; }
         showView("view-login");
       }
@@ -7661,13 +7804,19 @@
       ["파일로 저장", "기록 전체를 파일 하나로 내려받아 두세요. 기기를 바꾸거나 데이터가 지워졌을 때 이 파일로 복원할 수 있어요."],
       ["텍스트로", "텍스트로 복사해 두거나, 붙여넣어 가져올 수도 있어요. 텍스트는 Claude 대화에 붙여넣어 보여줄 때 편해요."],
       ["가져오기 전에", "가져오기 전에 현재 상태를 먼저 백업해 두면 안전해요."]
-    ], see: ["settings"] }
+    ], see: ["settings", "offline"] },
+    offline: { t: "인터넷이 끊겼을 때", sub: "오프라인 기록 · 합쳐서 저장", s: [
+      ["끊겨도 체크할 수 있어요", "인터넷이 끊겨도 체크와 기록은 이 기기에 먼저 저장돼요. 앱을 껐다 켜도 남아 있어요. 위쪽에 작은 <b>오프라인</b> 표시가 떠요."],
+      ["인터넷 없이 열기", "이 기기에서 한 번이라도 연결된 상태로 열었던 적이 있으면, 인터넷 없이 열어도 마지막 기록으로 홈이 열려요. 처음 쓰는 기기는 연결된 뒤에 열려요."],
+      ["연결되면 합쳐요", "다시 연결되면 다른 기기의 기록과 <b>날짜·항목 단위로 합쳐서</b> 저장해요. 다른 기기에서 체크한 것도 사라지지 않아요. 같은 항목을 양쪽에서 다르게 바꿨다면 나중에 저장하는 이 기기 쪽이 남아요."],
+      ["오프라인일 때 안 되는 것", "지인 · 응원처럼 서버가 필요한 기능은 연결된 뒤에 써 주세요. 로그아웃하면 아직 저장 안 된 기록은 같은 계정으로 다시 로그인했을 때 합쳐져요."]
+    ], see: ["backup", "streak"] }
   };
   var HELP_GROUPS = [
     ["화면별 안내", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
     ["루틴 · 통계 규칙", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
-    ["지인 · 데이터", ["share", "cheers", "backup"]]
+    ["지인 · 데이터", ["share", "cheers", "backup", "offline"]]
   ];
   if (window.MMD_HELP_EN) { HELP_TOPICS = window.MMD_HELP_EN.topics; HELP_GROUPS = window.MMD_HELP_EN.groups; }   // 영어 모드: i18n-en-help.js
   function openHelp(id) {
@@ -7700,8 +7849,235 @@
         h += '<div class="help-row" data-action="help" data-id="' + id + '"><span>' + tp.t + '<span class="help-row-sub">' + tp.sub + '</span></span><span class="chev">›</span></div>';
       });
     });
+    // 23차: 홈 화면에 앱으로 추가하는 방법(도움말 주제가 아니라 전용 안내 창을 연다)
+    h += '<div class="section-label" style="margin-top:18px;">앱 설치</div>' +
+      '<div class="help-row" data-action="open-install-guide"><span>홈 화면에 앱으로 추가<span class="help-row-sub">아이폰 · 안드로이드</span></span><span class="chev">›</span></div>';
     document.getElementById("helpListBody").innerHTML = h;
   }
+
+  // ---------------- 홈 화면에 앱으로 추가 (23차) ----------------
+  // 아이폰은 사파리 공유 메뉴에서 직접 추가해야 해서 안내만 하고, 안드로이드 Chrome은 설치 신호
+  // (beforeinstallprompt, <head>에서 미리 받아 둠)가 있으면 [지금 설치하기] 버튼으로 바로 설치 창을 띄운다.
+  // 카카오톡 등 앱 안의 브라우저에서는 홈 화면 추가가 안 되므로 바깥 브라우저로 열도록 먼저 안내한다.
+  var IG_UA = navigator.userAgent || "";
+  var igIsIOS = /iPhone|iPad|iPod/.test(IG_UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var igIsAndroid = /Android/i.test(IG_UA);
+  var igIsKakao = /KAKAOTALK/i.test(IG_UA);
+  var igIsInapp = igIsKakao || /NAVER\(inapp|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps|everytimeApp|BAND\/|KAKAOSTORY/i.test(IG_UA) ||
+    (igIsAndroid && /; wv\)/.test(IG_UA));
+  var igTab = igIsAndroid ? "android" : "ios";
+  function igIsStandalone() {
+    try { if (window.navigator.standalone === true) return true; } catch (e) {}
+    try { if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return true; } catch (e) {}
+    return false;
+  }
+  function igAppUrl() { return location.origin + location.pathname; }
+  function igInappHtml() {
+    var h = '<div class="inapp-title">⚠️ 카카오톡 같은 앱 안에서 열려 있어요</div>' +
+      '<div class="inapp-text">여기서는 홈 화면에 추가할 수 없어요. ' + (igIsIOS ? 'Safari로' : 'Chrome으로') + ' 다시 열어 주세요.</div>';
+    if (!igIsKakao && igIsIOS) h += '<div class="inapp-text">화면 구석의 ⋯ 또는 공유 메뉴에서 ‘Safari로 열기’를 누르면 돼요.</div>';
+    h += '<div class="inapp-btns">';
+    if (igIsKakao || igIsAndroid) h += '<span class="inapp-btn primary" data-action="inapp-open-external">기본 브라우저로 열기</span>';
+    h += '<span class="inapp-btn" data-action="install-copy-url">주소 복사</span></div>';
+    return h;
+  }
+  function renderInstallBanner() {
+    var b = document.getElementById("inappBannerLogin");
+    if (b) { if (igIsInapp) { b.innerHTML = igInappHtml(); b.classList.remove("hidden"); } else b.classList.add("hidden"); }
+    var link = document.getElementById("installLoginLink");
+    if (link) link.classList.toggle("hidden", igIsStandalone());
+  }
+  function renderInstallGuide() {
+    var h = "";
+    if (igIsStandalone()) h += '<div class="ig-note ok">지금 홈 화면 앱으로 쓰고 계세요 🙂 다른 기기에 추가할 때 아래 방법을 참고하세요.</div>';
+    if (igIsInapp) h += '<div class="inapp-banner">' + igInappHtml() + '</div>';
+    h += '<div class="ig-tabs" role="tablist">' +
+      '<span class="ig-tab' + (igTab === "ios" ? ' active' : '') + '" role="tab" aria-selected="' + (igTab === "ios") + '" data-action="install-tab" data-id="ios">아이폰 · 아이패드</span>' +
+      '<span class="ig-tab' + (igTab === "android" ? ' active' : '') + '" role="tab" aria-selected="' + (igTab === "android") + '" data-action="install-tab" data-id="android">안드로이드</span></div>';
+    function steps(list) {
+      return '<ol class="ig-steps">' + list.map(function (s) { return '<li>' + s + '</li>'; }).join("") + '</ol>';
+    }
+    if (igTab === "ios") {
+      h += '<div class="help-h">Safari에서</div>' + steps([
+        "Safari로 이 앱 주소를 열어요.",
+        "화면 아래쪽의 공유 버튼(□↑)을 눌러요.",
+        "목록을 조금 내려 ‘홈 화면에 추가’를 눌러요.",
+        "오른쪽 위 ‘추가’를 누르면 끝이에요."
+      ]) +
+      '<div class="help-p">아이패드는 주소창 오른쪽 위에 있고, 안 보이면 ⋯ 버튼 안에 있어요.</div>' +
+      '<div class="help-p">아이폰의 Chrome 앱에서도 공유 버튼에서 같은 방법으로 추가할 수 있어요.</div>' +
+      '<div class="ig-note">홈 화면 아이콘으로 처음 열면 한 번 더 로그인해 주세요. 아이폰은 Safari와 홈 화면 앱의 저장 공간이 따로예요.</div>';
+    } else {
+      if (window.__mmdInstallPrompt) {
+        h += '<div class="ig-install"><span class="btn primary" data-action="install-now">지금 설치하기</span>' +
+          '<div class="help-p">버튼을 누르고 ‘설치’를 고르면 바로 홈 화면에 생겨요.</div></div>';
+      }
+      h += '<div class="help-h">Chrome에서</div>' + steps([
+        "오른쪽 위 ⋮ 메뉴를 눌러요.",
+        "‘홈 화면에 추가’ 또는 ‘앱 설치’를 눌러요.",
+        "‘설치’(또는 ‘추가’)를 누르면 끝이에요."
+      ]) +
+      '<div class="help-h">삼성 인터넷에서</div>' + steps([
+        "아래쪽 ≡ 메뉴를 눌러요.",
+        "‘현재 페이지 추가’를 누르고 ‘홈 화면’을 골라요."
+      ]);
+    }
+    h += '<div class="ig-note">홈 화면 아이콘으로 열면 주소창 없이 앱처럼 전체 화면으로 열려요.</div>';
+    var body = document.getElementById("installBody");
+    body.innerHTML = h;
+  }
+  function openInstallGuide() {
+    renderInstallGuide();
+    document.getElementById("installBody").scrollTop = 0;
+    document.getElementById("installOverlay").classList.remove("hidden");
+  }
+  function closeInstallGuide() { document.getElementById("installOverlay").classList.add("hidden"); }
+  function installNow() {
+    var p = window.__mmdInstallPrompt;
+    if (!p) { toast("이 브라우저에서는 메뉴에서 직접 추가해 주세요"); return; }
+    window.__mmdInstallPrompt = null;   // 설치 신호는 한 번만 쓸 수 있다
+    try {
+      p.prompt();
+      (p.userChoice || Promise.resolve({})).then(function (r) {
+        if (r && r.outcome === "accepted") toast("홈 화면에 추가했어요");
+        if (!document.getElementById("installOverlay").classList.contains("hidden")) renderInstallGuide();
+      }).catch(function () {});
+    } catch (e) { toast("이 브라우저에서는 메뉴에서 직접 추가해 주세요"); }
+  }
+  function inappOpenExternal() {
+    var url = igAppUrl();
+    if (igIsKakao) { location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(url); return; }
+    if (igIsAndroid) {
+      location.href = "intent://" + url.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;end";
+      return;
+    }
+    installCopyUrl();
+  }
+  function installCopyUrl() {
+    var url = igAppUrl();
+    function done() { toast("주소를 복사했어요 · 브라우저 주소창에 붙여넣어 주세요"); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(done, function () { window.prompt("이 주소를 복사해 주세요", url); }); return; }
+    } catch (e) {}
+    window.prompt("이 주소를 복사해 주세요", url);
+  }
+  window.__mmdOnInstallPrompt = function () {
+    var ov = document.getElementById("installOverlay");
+    if (ov && !ov.classList.contains("hidden")) renderInstallGuide();
+  };
+  window.addEventListener("appinstalled", function () { window.__mmdInstallPrompt = null; });
+  renderInstallBanner();
+
+  // ---------------- 오프라인 1단계 (23차) ----------------
+  // sw.js가 앱 파일만 기기에 보관한다(네트워크 우선 — 인터넷이 되면 언제나 최신 파일). 자세한 원칙과
+  // 문제가 생겼을 때의 비상 해제 방법은 sw.js 맨 위 설명 참고. https(GitHub Pages)에서만 동작한다.
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (err) { console.warn("sw register failed", err); });
+    });
+  }
+  // 인터넷이 끊겼거나 오프라인으로 열었으면 위쪽에 작게 알려 준다. 그동안의 체크는 기기에 남았다가(앱을 꺼도 유지),
+  // 연결되면 다른 기기 기록과 합쳐서 저장된다(위 '오프라인 기록 (23차)' 설명 참고). 로그인 전 화면에서는 띄우지 않는다.
+  function updateOfflinePill() {
+    var p = document.getElementById("offlinePill");
+    if (!p) return;
+    var off = navigator.onLine === false;
+    var show = !!currentUid && (offlineMode || off);
+    p.classList.toggle("hidden", !show);
+    // 인터넷은 연결돼 있는데 서버 응답만 늦어 기기 상태로 연 경우에는 '오프라인'이라고 하지 않는다
+    var tx = document.getElementById("offlinePillText");
+    if (tx && show) tx.textContent = off ? "오프라인 · 연결되면 합쳐서 저장해요" : "서버 연결 확인 중 · 기록은 기기에 먼저 저장돼요";
+  }
+  window.addEventListener("online", updateOfflinePill);
+  window.addEventListener("offline", updateOfflinePill);
+  updateOfflinePill();
+
+  // ---------------- 접근성 (23차) ----------------
+  // 버튼 대부분이 <div data-action>이라 화면낭독기(VoiceOver 등)와 키보드가 버튼으로 알아보지 못했다.
+  // 마크업을 하나하나 <button>으로 바꾸는 대신, 화면이 그려질 때마다 공통으로 이름표를 붙인다:
+  //  · role="button" + tabindex="0" (키보드 Tab으로 옮겨 다니고 Enter/Space로 누를 수 있게)
+  //  · 아이콘만 있는 버튼(?, ‹ ›, ▶, ✕ 등)에는 aria-label로 이름을 붙인다(영어 화면은 i18n이 aria-label도 번역)
+  //  · 항목 체크는 role="checkbox" + aria-checked, 설정의 켜기/고르기 줄은 aria-pressed로 상태를 알린다
+  //  · 창(.tp-overlay)은 role="dialog", 토스트는 role="status"(마크업에 있음)
+  // 화면 모양과 기존 동작(클릭 처리)은 바꾸지 않는다. 속성만 덧붙인다.
+  var A11Y_LABELS = {
+    "go-back": "뒤로", "go-home": "홈으로", "close-run": "닫기", "toggle-memo-search": "메모 검색",
+    "stats-prev-month": "이전 달", "stats-next-month": "다음 달", "stats-prev-week": "이전 주", "stats-next-week": "다음 주",
+    "item-up": "위로 옮기기", "item-down": "아래로 옮기기", "duplicate-item": "항목 복제", "friends-refresh": "새로고침",
+    "edit-items": "항목 편집", "open-settings-view": "설정", "open-stats": "통계", "open-friends-view": "지인", "open-backfill": "기록"
+  };
+  var A11Y_NATIVE = { BUTTON: 1, A: 1, INPUT: 1, SELECT: 1, TEXTAREA: 1, LABEL: 1, OPTION: 1 };
+  function a11yIconOnly(el) {
+    var tx = (el.textContent || "").replace(/\s+/g, "");
+    return !tx || tx === "?" || !/[0-9A-Za-z가-힣]/.test(tx);
+  }
+  function a11yLabel(el, action) {
+    if (action === "help") {
+      var tp = HELP_TOPICS[el.getAttribute("data-id")];
+      return (tp ? tp.t + " " : "") + "도움말";
+    }
+    if (action === "run-category") {
+      var c = getCat(el.getAttribute("data-id"));
+      return (c && c.name ? c.name + " " : "") + "카운트다운 시작";
+    }
+    if (A11Y_LABELS[action]) return A11Y_LABELS[action];
+    if (/-(close|cancel)$/.test(action)) return "닫기";
+    if (/^(remove|delete)-|-delete$/.test(action)) return "삭제";
+    return "";
+  }
+  function a11yApplyOne(el) {
+    var action = el.getAttribute("data-action") || "";
+    if (/backdrop$/.test(action) || el.classList.contains("tp-overlay")) return;   // 바깥 배경(닫기용)은 버튼이 아니다
+    var native = !!A11Y_NATIVE[el.tagName];
+    if (action === "toggle-item") {
+      if (el.getAttribute("role") !== "checkbox") el.setAttribute("role", "checkbox");
+      var on = el.classList.contains("done") ? "true" : "false";
+      if (el.getAttribute("aria-checked") !== on) el.setAttribute("aria-checked", on);
+      var dis = el.classList.contains("comma-off");
+      if (dis) { if (el.getAttribute("aria-disabled") !== "true") el.setAttribute("aria-disabled", "true"); }
+      else if (el.hasAttribute("aria-disabled")) el.removeAttribute("aria-disabled");
+    } else if (!native && !el.hasAttribute("role")) {
+      el.setAttribute("role", "button");
+    }
+    if (!native && !el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
+    if (el.classList.contains("theme-option") || el.classList.contains("tp-chip")) {   // 켜기/고르기 줄: 지금 선택됐는지
+      var pr = (el.classList.contains("active") || el.classList.contains("on")) ? "true" : "false";
+      if (el.getAttribute("aria-pressed") !== pr) el.setAttribute("aria-pressed", pr);
+    }
+    if (!el.hasAttribute("aria-label") && a11yIconOnly(el)) {
+      var lb = a11yLabel(el, action);
+      if (lb) el.setAttribute("aria-label", lb);
+    }
+  }
+  var a11yQueued = false;
+  function a11yApplyAll() {
+    a11yQueued = false;
+    try {
+      var list = document.querySelectorAll("[data-action]");
+      for (var i = 0; i < list.length; i++) a11yApplyOne(list[i]);
+      var ovs = document.querySelectorAll(".tp-overlay:not([role])");
+      for (var j = 0; j < ovs.length; j++) { ovs[j].setAttribute("role", "dialog"); ovs[j].setAttribute("aria-modal", "true"); }
+    } catch (e) { console.warn("a11y", e); }
+  }
+  function a11yQueue() {
+    if (a11yQueued) return;
+    a11yQueued = true;
+    (window.requestAnimationFrame || setTimeout)(a11yApplyAll);
+  }
+  if (typeof MutationObserver !== "undefined") {
+    // 새로 그려진 요소와 class 변화(체크·선택 상태)만 지켜본다. 여기서 바꾸는 role·aria·tabindex는 지켜보지 않아 되먹임이 없다.
+    new MutationObserver(a11yQueue).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  }
+  a11yApplyAll();
+  // 키보드: 버튼 역할을 붙인 요소는 Enter·Space로 누를 수 있게(진짜 <button>·입력칸은 브라우저 기본 동작 그대로)
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    var el = e.target;
+    if (!el || !el.getAttribute || A11Y_NATIVE[el.tagName] || el.isContentEditable) return;
+    if (!el.hasAttribute("data-action") || el.getAttribute("aria-disabled") === "true") return;
+    e.preventDefault();
+    el.click();
+  });
 
   // =====================================================================================
   // 리뷰 (19차) — 주간·월간·연간 리뷰
@@ -8890,6 +9266,12 @@
     else if (action === "help-close") { closeHelp(); }
     else if (action === "help-backdrop") { if (e.target === el) closeHelp(); }
     else if (action === "open-help-view") { showView("view-help"); renderHelpList(); }
+    else if (action === "open-install-guide") { openInstallGuide(); }
+    else if (action === "install-close") { closeInstallGuide(); }
+    else if (action === "install-tab") { igTab = id === "android" ? "android" : "ios"; renderInstallGuide(); }
+    else if (action === "install-now") { installNow(); }
+    else if (action === "inapp-open-external") { inappOpenExternal(); }
+    else if (action === "install-copy-url") { installCopyUrl(); }
     else if (action === "auth-signin") { doSignIn(); }
     else if (action === "auth-signup") { doSignUp(); }
     else if (action === "auth-forgot") { doForgotPassword(); }
@@ -9515,7 +9897,7 @@
       chatMenuOverlay: "chat-menu-close", cheerPickOverlay: "cheer-pick-close", todayMemoOverlay: "today-memo-cancel",
       titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
       missedOverlay: "missed-close", passOverlay: "pass-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
-      rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", catOverlay: null
+      rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", installOverlay: "install-close", catOverlay: null
     };
     function forceDismiss(ov) {
       var act = CLOSE_ACTION[ov.id];
@@ -9550,6 +9932,15 @@
       }
       return top;
     }
+    // 23차 접근성: 키보드 Esc로 맨 위 창 닫기(바깥 탭과 같은 규칙 — 확인창 등 CLOSE_ACTION에 없는 창은 제외)
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" && e.key !== "Esc") return;
+      if (document.querySelector(".celeb-stage:not(.hidden)")) return;
+      var ov = topOverlay();
+      if (!ov || !(ov.id in CLOSE_ACTION)) return;
+      e.preventDefault();
+      dismiss(ov);
+    });
     // 바깥(어두운 배경) 탭
     document.addEventListener("click", function (e) {
       var ov = e.target;
