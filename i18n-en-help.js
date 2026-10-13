@@ -164,6 +164,13 @@
       ["As text", "You can copy it as text, or paste text in to import. Text is handy for pasting into a chat with Claude."],
       ["Before importing", "It's safest to back up your current state before importing."]
     ], see: ["settings", "offline"] },
+    keys: { t: "Using a keyboard", sub: "Shortcuts for a MacBook or external keyboard", s: [
+      ["Jump to the menu", "Press <b>1–5</b> to go straight to Home · Stats · Records · Friends · Settings in the bottom menu. Press <b>M</b> to move focus to the bottom menu."],
+      ["Back · Close", "Press <b>Esc</b> or <b>Delete (Backspace)</b> to go back. If a window is open, Esc closes it; in yes/no windows it picks “Cancel”. Pressing Esc in a text field leaves the field."],
+      ["Moving in lists", "Use <b>↑ ↓</b> to move between rows of the same kind (item checks, settings rows, etc.) and <b>← →</b> between menu buttons and chips. <b>Home · End</b> jump to the first and last. Press <b>Enter</b> or <b>Space</b> to select."],
+      ["When a window opens", "Focus moves into the window, and Tab stays inside it. When you close it, focus returns to where you were."],
+      ["See this again", "Press <b>?</b> anytime to open this guide. Shortcuts don't work while you're typing."]
+    ], see: ["home", "settings"] },
     offline: { t: "When you're offline", sub: "Offline records · merged saving", s: [
       ["You can still check items", "Even without internet, checks and records are saved on this device first. They stay even if you close the app. A small <b>Offline</b> label appears at the top."],
       ["Opening without internet", "If you've opened the app on this device while connected at least once, it opens to your last records even without internet. On a brand-new device, it opens once you're connected."],
@@ -173,7 +180,7 @@
   };
 
   var G = [
-    ["Screen guides", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
+    ["Screen guides", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["Routine & stats rules", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
     ["Friends & data", ["share", "cheers", "backup", "offline"]]

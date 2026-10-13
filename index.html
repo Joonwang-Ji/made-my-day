@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-13-3";
+  var BUILD_VERSION = "2026-10-13-4";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -90,7 +90,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 </defs></svg>
 <!-- <<END MEDAL DEFS>> -->
 
-<div class="top-nav hidden" id="globalBottomNav">
+<div class="top-nav hidden" id="globalBottomNav" role="navigation" aria-label="메뉴">
   <div class="top-nav-inner">
     <button class="nav-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>홈</span></button>
     <button class="nav-btn" data-action="open-stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg><span>통계</span></button>
@@ -7800,6 +7800,13 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["알림·리뷰", "알람 소리, 모든 알람 끄기, 주간·월간 리뷰를 설정해요."],
       ["데이터 · 계정", "백업·복원은 ‘데이터 백업·복원’에서, 비밀번호 변경과 로그아웃은 ‘계정’에서 해요."]
     ], see: ["streak", "alarm", "review", "backup"] },
+    keys: { t: "키보드로 쓰기", sub: "맥북 · 외장 키보드 단축키", s: [
+      ["메뉴로 바로 가기", "숫자 <b>1~5</b>를 누르면 아래 메뉴의 홈 · 통계 · 기록 · 지인 · 설정으로 바로 가요. <b>M</b>을 누르면 아래 메뉴로 초점이 옮겨가요."],
+      ["뒤로 · 닫기", "<b>Esc</b>나 <b>Delete(Backspace)</b>를 누르면 뒤로 가요. 창이 열려 있으면 Esc로 창을 닫고, 예/아니오를 묻는 창에서는 ‘취소’ 쪽이 골라져요. 입력칸에서 Esc를 누르면 입력칸에서 빠져나와요."],
+      ["목록 안에서 이동", "<b>↑ ↓</b>로 같은 줄끼리(항목 체크, 설정 줄 등) 옮겨 다니고, <b>← →</b>로 메뉴·칩 사이를 옮겨요. <b>Home · End</b>는 처음과 끝이에요. <b>Enter</b>나 <b>Space</b>로 눌러요."],
+      ["창이 열리면", "창이 열리면 초점이 창 안으로 들어가고, Tab을 눌러도 창 밖으로 나가지 않아요. 창을 닫으면 원래 있던 자리로 돌아와요."],
+      ["이 안내 다시 보기", "<b>?</b> 키를 누르면 언제든 이 안내가 열려요. 글을 입력하는 중에는 단축키가 동작하지 않아요."]
+    ], see: ["home", "settings"] },
     backup: { t: "데이터 백업 · 복원", sub: "파일 · 텍스트", s: [
       ["파일로 저장", "기록 전체를 파일 하나로 내려받아 두세요. 기기를 바꾸거나 데이터가 지워졌을 때 이 파일로 복원할 수 있어요."],
       ["텍스트로", "텍스트로 복사해 두거나, 붙여넣어 가져올 수도 있어요. 텍스트는 Claude 대화에 붙여넣어 보여줄 때 편해요."],
@@ -7813,7 +7820,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     ], see: ["backup", "streak"] }
   };
   var HELP_GROUPS = [
-    ["화면별 안내", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings"]],
+    ["화면별 안내", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["루틴 · 통계 규칙", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
     ["지인 · 데이터", ["share", "cheers", "backup", "offline"]]
@@ -8058,6 +8065,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var ovs = document.querySelectorAll(".tp-overlay:not([role])");
       for (var j = 0; j < ovs.length; j++) { ovs[j].setAttribute("role", "dialog"); ovs[j].setAttribute("aria-modal", "true"); }
     } catch (e) { console.warn("a11y", e); }
+    try { kbdSync(); } catch (e2) { console.warn("kbd", e2); }
   }
   function a11yQueue() {
     if (a11yQueued) return;
@@ -8077,6 +8085,207 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!el.hasAttribute("data-action") || el.getAttribute("aria-disabled") === "true") return;
     e.preventDefault();
     el.click();
+  });
+
+  // ---------------- 키보드 이동 (24차) ----------------
+  // 맥북·외장 키보드로 쓸 때 Tab만으로는 아래 메뉴까지 한참 걸리고 뒤로 갈 방법이 없었다.
+  //  · 1~5: 아래 메뉴(홈·통계·기록·지인·설정)로 바로 이동,  M: 아래 메뉴로 초점 이동
+  //  · Esc / Backspace(Delete): 뒤로(창이 열려 있으면 창 닫기는 기존 처리 · 확인창은 '취소' 쪽)
+  //  · ↑↓: 같은 종류의 줄(항목 체크·설정 줄 등)끼리 이동, ←→: 메뉴·칩끼리 이동, Home/End: 처음·끝
+  //  · ?: 단축키 안내(도움말)
+  //  · 키보드로 화면을 바꾸면 초점을 새 화면 맨 위로, 창이 열리면 창 안으로 옮기고(Tab이 창 밖으로 안 나감), 닫히면 원래 자리로 돌린다
+  // 터치·마우스로 쓰는 중에는(kbd.on=false) 초점을 옮기지 않아 기존 동작과 화면은 그대로다.
+  // 입력칸에서 글을 쓰는 중에는 단축키가 동작하지 않는다(Esc는 입력칸에서 빠져나오기).
+  var KBD = { on: false, view: null, ov: null, opener: null };
+  var KBD_ESC_SAFE = { confirmOverlay: "confirm-cancel", runExitOverlay: "run-exit-continue", deleteItemOverlay: "delete-item-cancel" };
+  var KBD_FOCUSABLE = 'button, a[href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])';
+  function kbdTyping(el) {
+    if (!el || !el.tagName) return false;
+    if (el.isContentEditable || el.tagName === "TEXTAREA" || el.tagName === "SELECT") return true;
+    if (el.tagName !== "INPUT") return false;
+    return !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(el.type || "");
+  }
+  function kbdVisible(el) { return !!(el && el.getClientRects && el.getClientRects().length); }
+  function kbdTopOverlay() {
+    var list = document.querySelectorAll(".tp-overlay:not(.hidden)"), top = null, z = -1;
+    for (var i = 0; i < list.length; i++) {
+      if (!kbdVisible(list[i])) continue;
+      var zi = parseInt(getComputedStyle(list[i]).zIndex, 10) || 0;
+      if (zi >= z) { z = zi; top = list[i]; }
+    }
+    return top;
+  }
+  function kbdCeleb() { return !!document.querySelector(".celeb-stage:not(.hidden)"); }
+  function kbdCurrentView() {
+    var chat = document.getElementById("view-friend-chat");
+    if (chat && !chat.classList.contains("hidden")) return chat;
+    for (var i = 0; i < ALL_VIEWS.length; i++) {
+      var v = document.getElementById(ALL_VIEWS[i]);
+      if (v && !v.classList.contains("hidden") && !v.classList.contains("slide-exit")) return v;
+    }
+    return null;
+  }
+  function kbdFocusables(root) {
+    var out = [], list = root.querySelectorAll(KBD_FOCUSABLE);
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i];
+      if (el.disabled || el.getAttribute("aria-hidden") === "true" || !kbdVisible(el)) continue;
+      out.push(el);
+    }
+    return out;
+  }
+  function kbdFocusBox(el) {   // 화면·창 자체에 초점(맨 위에서부터 Tab이 이어지게). 테두리는 그리지 않는다
+    if (!el) return;
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+    el.setAttribute("data-kbd-box", "");
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  }
+  function kbdNavVisible() {
+    var nav = document.getElementById("globalBottomNav");
+    return nav && !nav.classList.contains("hidden") && kbdVisible(nav);
+  }
+  // 지금 화면이 아래 메뉴의 몇 번째에 속하는지(설정 하위 화면은 설정, 항목 편집은 홈)
+  function kbdNavIndex(id) {
+    if (!id) return -1;
+    if (id === "view-home" || id === "view-editItems") return 0;
+    if (id === "view-stats") return 1;
+    if (id === "view-backfill") return 2;
+    if (id === "view-friends") return 3;
+    if (id === "view-settings" || /^view-set/.test(id) || id === "view-help" || id === "view-export" || id === "view-restDays") return 4;
+    return -1;
+  }
+  // 화면이 바뀌거나 창이 열리고 닫힐 때(a11yApplyAll에서 매번 부름) 초점 정리
+  function kbdSync() {
+    if (!KBD || typeof ALL_VIEWS === "undefined") return;
+    var ov = kbdTopOverlay(), vw = kbdCurrentView();
+    if (ov !== KBD.ov) {
+      var prev = KBD.ov;
+      KBD.ov = ov;
+      if (ov) {
+        if (!prev) KBD.opener = document.activeElement;
+        if (KBD.on && !ov.contains(document.activeElement)) kbdFocusBox(ov.querySelector(".tp-card, .help-sheet") || ov);
+      } else if (KBD.on) {
+        var back = KBD.opener;
+        if (back && document.body.contains(back) && kbdVisible(back)) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+        else if (vw) kbdFocusBox(vw);
+      }
+      if (!ov) KBD.opener = null;
+    }
+    if (vw !== KBD.view) {
+      KBD.view = vw;
+      // 화면낭독기용: 지금 있는 메뉴에 aria-current 표시(보이는 모양은 그대로)
+      var navs = document.querySelectorAll("#globalBottomNav .nav-btn"), ci = kbdNavIndex(vw && vw.id);
+      for (var k = 0; k < navs.length; k++) {
+        if (k === ci) navs[k].setAttribute("aria-current", "page"); else navs[k].removeAttribute("aria-current");
+      }
+      if (KBD.on && vw && !ov && !vw.contains(document.activeElement)) kbdFocusBox(vw);
+    }
+  }
+  function kbdBack(view) {
+    if (!view) return false;
+    var btns = view.querySelectorAll('.back-btn, [data-action="close-run"], [data-action="chat-close"]');
+    for (var i = 0; i < btns.length; i++) {
+      if (kbdVisible(btns[i])) { btns[i].click(); return true; }
+    }
+    return false;
+  }
+  // ↑↓ ←→ Home/End: 지금 초점이 있는 것과 같은 종류(data-action이 같은 것, 메뉴는 메뉴끼리)로 이동
+  function kbdArrow(e) {
+    var el = e.target;
+    if (!el || !el.getAttribute || !el.closest) return false;
+    if (el.closest(".tp-scroll")) return false;   // 시간 휠은 자기 조작이 있다
+    var root = KBD.ov || kbdCurrentView();
+    var inNav = el.closest("#globalBottomNav");
+    if (inNav) root = inNav;
+    if (!root || !root.contains(el)) return false;
+    var act = el.getAttribute("data-action");
+    if (!act) return false;
+    var horiz = e.key === "ArrowLeft" || e.key === "ArrowRight";
+    var chip = el.classList.contains("tp-chip") || el.classList.contains("ig-tab") || !!inNav;
+    if (horiz && !chip) return false;   // 좌우 화살표는 가로로 늘어선 것(메뉴·칩)에서만
+    var sel = inNav ? ".nav-btn" : el.classList.contains("set-row") ? ".set-row" : el.classList.contains("theme-option") ? ".theme-option"
+      : '[data-action="' + act.replace(/"/g, '\\"') + '"]';   // 설정 줄·고르기 줄은 종류가 달라도 줄끼리 이동
+    var list = Array.prototype.filter.call(root.querySelectorAll(sel), function (x) {
+      return kbdVisible(x) && x.getAttribute("aria-hidden") !== "true";
+    });
+    var i = list.indexOf(el);
+    if (i === -1 || list.length < 2) return false;
+    var n = i;
+    if (e.key === "Home") n = 0;
+    else if (e.key === "End") n = list.length - 1;
+    else if (e.key === "ArrowDown" || e.key === "ArrowRight") n = Math.min(list.length - 1, i + 1);
+    else n = Math.max(0, i - 1);
+    if (n === i) return true;
+    list[n].focus();
+    if (list[n].scrollIntoView) list[n].scrollIntoView({ block: "nearest" });
+    return true;
+  }
+  document.addEventListener("pointerdown", function () { KBD.on = false; }, true);
+  document.addEventListener("touchstart", function () { KBD.on = false; }, { capture: true, passive: true });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Shift" || e.key === "Control" || e.key === "Alt" || e.key === "Meta") return;
+    KBD.on = true;
+    if (e.isComposing || e.keyCode === 229) return;   // 한글 입력 조합 중
+    if (kbdCeleb()) return;
+    var t = e.target, ov = kbdTopOverlay();
+    // Tab: 열린 창 안에서만 돌게
+    if (e.key === "Tab") {
+      if (!ov) return;
+      var f = kbdFocusables(ov);
+      if (!f.length) { e.preventDefault(); return; }
+      var first = f[0], last = f[f.length - 1];
+      if (!ov.contains(t) || (e.shiftKey && (t === first || f.indexOf(t) === -1)) || (!e.shiftKey && t === last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;   // 브라우저·시스템 단축키는 그대로
+    var typing = kbdTyping(t);
+    if (e.key === "Escape" || e.key === "Esc") {
+      if (e.defaultPrevented) return;   // 창 닫기(기존 처리)가 이미 처리함
+      if (typing) {   // 입력칸에서 빠져나오기(창 안의 입력칸은 기존처럼 창 닫기 처리에 맡긴다)
+        if (!ov) { t.blur(); kbdFocusBox(kbdCurrentView()); e.preventDefault(); }
+        return;
+      }
+      if (ov) {
+        var safe = KBD_ESC_SAFE[ov.id], b = safe && ov.querySelector('[data-action="' + safe + '"]');
+        if (b) { e.preventDefault(); b.click(); }
+        return;
+      }
+      if (kbdBack(kbdCurrentView())) e.preventDefault();
+      return;
+    }
+    if (typing) return;
+    if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Home" || e.key === "End") {
+      if (kbdArrow(e)) e.preventDefault();
+      return;
+    }
+    if (ov) return;   // 아래 단축키는 창이 열려 있지 않을 때만
+    if (e.key === "Backspace") {
+      if (kbdBack(kbdCurrentView())) e.preventDefault();
+      return;
+    }
+    if (e.key === "?" || (e.code === "Slash" && e.shiftKey)) {
+      e.preventDefault();
+      openHelp("keys");
+      return;
+    }
+    if (e.shiftKey) return;
+    var chat = document.getElementById("view-friend-chat");
+    if (chat && !chat.classList.contains("hidden")) return;   // 대화 화면은 메뉴를 덮고 있다
+    var m = /^Digit([1-5])$/.exec(e.code || "") || /^([1-5])$/.exec(e.key || "");
+    if (m && kbdNavVisible()) {
+      var nb = document.querySelectorAll("#globalBottomNav .nav-btn")[parseInt(m[1], 10) - 1];
+      if (nb) { e.preventDefault(); nb.click(); }
+      return;
+    }
+    if (e.code === "KeyM" && kbdNavVisible()) {
+      var navs = document.querySelectorAll("#globalBottomNav .nav-btn"), vw = kbdCurrentView();
+      var cur = navs[kbdNavIndex(vw && vw.id)] || navs[0];
+      e.preventDefault();
+      if (cur) cur.focus();
+    }
   });
 
   // =====================================================================================

@@ -372,7 +372,7 @@
     "저장 안 된 기록이 있어요 · 로그아웃할까요?": "Some records aren't saved yet · Log out anyway?",
     "뒤로": "Back", "홈으로": "Home", "도움말": "Help", "메모 검색": "Search notes",
     "이전 달": "Previous month", "다음 달": "Next month", "이전 주": "Previous week", "다음 주": "Next week",
-    "위로 옮기기": "Move up", "아래로 옮기기": "Move down", "항목 복제": "Duplicate item", "카운트다운 시작": "Start countdown"
+    "메뉴": "Menu", "위로 옮기기": "Move up", "아래로 옮기기": "Move down", "항목 복제": "Duplicate item", "카운트다운 시작": "Start countdown"
   }, [
     [/^(.+) 도움말$/, function (t) { return "Help: " + I.sub(t); }],
     [/^(.+) 카운트다운 시작$/, function (c) { return "Start countdown: " + I.sub(c); }]

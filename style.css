@@ -1034,3 +1034,6 @@
 /* ---------------- 접근성 (23차): 키보드로 옮겨 다닐 때만 보이는 테두리 ---------------- */
 [data-action]:focus { outline: none; }
 [data-action]:focus-visible, .ig-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 10px; }
+/* 24차 키보드 이동: 화면·창 자체로 옮긴 초점(Tab 출발점)은 테두리를 그리지 않는다 */
+[data-kbd-box]:focus, [data-kbd-box]:focus-visible { outline: none; }
+.nav-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -3px; border-radius: 10px; }
