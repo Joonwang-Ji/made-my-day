@@ -52,7 +52,7 @@
       ["Earning Stepping Stones", "1 for every 7 successful days in a row (days bridged with a Stepping Stone don't count toward the 7). You can hold up to 3."],
       ["Pause", "Use it on today or yesterday when you fell short. The day is skipped like a rest day, so your streak neither breaks nor grows. In exchange you can't check items that day and it earns 0 points. You can pick a reason (Sick · Too busy · Other) and leave a one-line note."],
       ["Earning Pauses", "You get 1 on the 1st of each month and can hold up to 2 (one unused Pause carries over to the next month)."],
-      ["Where to use them", "Open them from the 🪨 Stepping Stone · ⏸️ Pause badges on Home (a reminder card also appears if you fell short yesterday), or from Settings › Routine rules."],
+      ["Where to use them", "Tap the date on Home to see how many you have and open them (Home doesn't show the counts, so you're not tempted to use them too often). If you fell short yesterday, a reminder card appears on Home, and you can also open them from Settings › Routine rules."],
       ["Getting one back", "If you later fill a Stepping Stone day past the requirement, it counts as not used and comes back. You can also cancel either one for today or yesterday to get it back (a Stepping Stone can't be canceled once that day's gift is opened)."],
       ["Notice when you earn one", "When you earn a new one, you're told once. Tick “Don't show this notice again” in that window to stop notices for that kind."],
       ["Weekly reward · stats", "A Stepping Stone day counts as a success day. A Pause day is left out of the weekly reward and this month's success rate. They're marked 🪨 · ⏸️ on the Stats calendar."]
@@ -109,7 +109,7 @@
       ["On screen", "After 0:00, +MM:SS runs in calm gray, then turns red when the grace ends. The alarm still rings at 0:00."]
     ], see: ["home", "days"] },
     alarm: { t: "Timer alarm", sub: "When it rings · silent switch · turn all off", s: [
-      ["When it rings", "It rings once at the moment the time reaches 0:00 in the ▶ countdown. It doesn't ring when you check an item by tapping on Home, or when you press Done early during the countdown."],
+      ["When it rings", "It rings when the time reaches 0:00 in the ▶ countdown, and if you leave it without pressing Done, it rings again every minute until you do. It doesn't ring while paused. It doesn't ring when you check an item by tapping on Home, or when you press Done early during the countdown."],
       ["Turn off all alarms", "When “Turn off all alarms” is on, there's no sound or vibration at all. Turn it on when you need to be quiet for a while, like in a meeting or a service, and turn it off afterward. While it's on, the silent-switch setting and sound preview are locked. It applies to this device only."],
       ["Silent switch", "If “Ring even when the silent switch is on” is on (it is by default), you'll hear sound even with the iPhone's silent switch on."],
       ["Per-item mute · preview", "In an item's repeat-days window you can mute just that item. Use “Preview alarm sound” in Settings to check the sound."]

@@ -990,3 +990,14 @@
 .undo-bar.hidden { display: none; }
 .undo-bar .undo-btn { background: transparent; border: 1px solid currentColor; color: inherit; border-radius: 999px; padding: 5px 12px; font-size: 0.75rem; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .set-v.warn-age { color: var(--gold); }
+
+/* ---- 22차: 날짜 창의 징검다리·쉼표, 쉼표 쓴 날 홈 ---- */
+.today-pass-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.today-pass-row .tp-chip { flex: 1; min-width: 0; text-align: center; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--bg-soft); font-size: 0.8125rem; font-weight: 700; line-height: 1.3; color: var(--ink); cursor: pointer; -webkit-user-select: none; user-select: none; }
+.today-pass-row .tp-chip.can { background: var(--gold-soft); border-color: transparent; color: var(--gold); }
+.today-pass-row .tp-chip.on { background: var(--sage-soft); border-color: transparent; color: var(--sage); }
+.cat-card.comma-off .cat-items-preview, .cat-card.comma-off .cat-progress-track, .cat-card.comma-off .cat-meta { opacity: 0.45; }
+.cat-card.comma-off .cat-name { opacity: 0.6; }
+.cat-card.comma-off .cat-itemline { color: var(--rest, var(--ink-dim)); font-weight: 700; }
+.mini-item.comma-off { cursor: default; }

@@ -267,6 +267,7 @@
     "징검다리 +1": "Stepping Stone +1", "쉼표 +1": "Pause +1",
     "다음부터 이 알림 보지 않기": "Don't show this notice again",
     "⏸️ 오늘은 쉼표": "⏸️ Pausing today", "🪨 오늘 징검다리 중": "🪨 Stepping Stone today",
+    "징검다리 · 쉼표": "Stepping Stones · Pauses", "⏸️ 오늘은 쉼표 · 푹 쉬어요": "⏸️ Pausing today · get some good rest",
     "징검다리 중 · 오늘은 성공으로 인정돼요": "Stepping Stone · today counts as a success",
     "오늘은 쉼표": "Pausing today", "푹 쉬어요 · 스트릭은 그대로예요": "Get some rest · your streak is safe",
     "⏸️ 어제는 기준에 많이 못 미쳤어요. 아팠거나 손 쓸 수 없었다면 쉼표로 연속일을 지킬 수 있어요":
