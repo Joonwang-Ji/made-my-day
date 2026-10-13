@@ -224,6 +224,104 @@
       return "☕ Yesterday fell short of the " + th + "% requirement (" + plural(n, "item", "items") + " missed). A streak pass keeps your " + k + "-day streak."; }]
   ];
   I.register(PASS_D, PASS_P);
+
+  // ---- 21차: 징검다리(Stepping Stone) · 쉼표(Pause) · 당일 쉬는 날 횟수 · 백업 · 되돌리기 ----
+  var REST2_D = {
+    "징검다리 · 쉼표": "Stepping Stone · Pause",
+    "🪨 징검다리": "🪨 Stepping Stone", "⏸️ 쉼표": "⏸️ Pause", "징검다리": "Stepping Stone", "쉼표": "Pause",
+    "징검다리는 한두 개 모자란 날을 성공으로 이어 주고, 쉼표는 손 쓸 수 없는 날 하루를 통째로 쉬게 해 줘요. 둘 다 모으는 방식이라 아껴 쓰는 게 좋아요.":
+      "A Stepping Stone carries a day an item or two short as a success, and a Pause lets you rest a whole day you just can't manage. You collect both over time, so use them sparingly.",
+    "대부분 했는데 한두 개 모자란 날, 그날을 성공으로 이어 줘요.": "For a day you did most things but fell an item or two short — it counts that day as a success.",
+    "아프거나 손 쓸 수 없는 날, 하루를 통째로 쉬어요.": "For a day you're sick or simply can't — rest the whole day.",
+    "징검다리 사용됨": "Stepping Stone used", "이 날은 성공으로 인정돼요": "This day counts as a success",
+    "징검다리 쓰기": "Use a Stepping Stone", "쉼표를 쓴 날이에요": "You used a Pause on this day",
+    "보유한 징검다리가 없어요": "You have no Stepping Stones",
+    "쉼표 사용됨": "Pause used", "스트릭은 그대로, 이 날은 포인트 0이에요": "Your streak is kept; this day earns 0 points",
+    "하루를 통째로 쉬어요 · 연속일은 끊기지 않아요": "Rest the whole day · your streak won't break",
+    "아파요": "Sick", "너무 바빠요": "Too busy", "기타": "Other",
+    "하루 한 줄 (선택)": "One line for the day (optional)",
+    "쓴 날은 항목을 체크할 수 없어요": "You can't check items on a Pause day",
+    "쉼표 쓰기": "Use a Pause",
+    "징검다리를 쓴 날이에요": "You used a Stepping Stone on this day", "이미 쉬는 날이에요": "It's already a rest day",
+    "예정된 항목이 없는 날이에요": "Nothing was due that day", "보유한 쉼표가 없어요": "You have no Pauses",
+    "기준까지 모자란 항목이 2개 이하일 때만 써요": "Only when you're 2 items or fewer short of the requirement",
+    "쓴 날은 성공으로 인정돼 연속일이 +1 돼요": "That day counts as a success, so your streak grows by 1",
+    "매월 1일에 1개 (최대 2개까지 모여요)": "1 on the 1st of each month (you can hold up to 2)",
+    "쓴 날은 연속일이 끊기지도 늘지도 않아요": "Your streak neither breaks nor grows that day",
+    "쓴 날은 체크할 수 없고 포인트는 0이에요": "You can't check items that day, and it earns 0 points",
+    "미리 아는 휴일·여행은 쉬는 날로 정하세요": "For holidays or trips you know in advance, set a rest day",
+    "징검다리 사용 −1": "Stepping Stone used −1", "쉼표 사용 −1": "Pause used −1",
+    "징검다리를 쓸까요?": "Use a Stepping Stone?", "징검다리를 취소할까요?": "Cancel the Stepping Stone?",
+    "징검다리를 썼어요": "Stepping Stone used", "징검다리를 취소했어요 · 1개를 돌려받았어요": "Stepping Stone canceled · you got 1 back",
+    "쉼표를 썼어요 · 푹 쉬어요": "Pause used · get some good rest",
+    "쉼표를 취소할까요?": "Cancel the Pause?", "1개를 돌려받고, 그날은 다시 체크할 수 있어요": "You get 1 back, and you can check items that day again.",
+    "쉼표를 취소했어요 · 1개를 돌려받았어요": "Pause canceled · you got 1 back",
+    "쉼표를 쓴 날은 체크할 수 없어요 (취소는 홈의 ⏸️ 쉼표에서)": "You can't check items on a Pause day (cancel it from ⏸️ Pause on Home)",
+    "기준을 넘겨서 징검다리를 쓰지 않은 것으로 돌려놨어요": "You passed the requirement, so the Stepping Stone is back as unused",
+    "새 기능 선물로 1개를 드려요": "Here's 1 as a gift for this new feature", "새 달 선물로 1개를 얻었어요": "You got 1 as a new-month gift",
+    "연속 7일 성공으로 1개를 얻었어요": "You got 1 for a 7-day streak",
+    "대부분 했는데 기준까지 1~2개 모자란 날, 오늘·어제에 쓰면 그날을 성공으로 이어 줘요. 연속 7일 성공할 때마다 1개씩, 최대 3개까지 모여요.":
+      "On a day you did most things but were 1–2 items short, use it on today or yesterday and that day counts as a success. You earn 1 for every 7-day streak and can hold up to 3.",
+    "아프거나 너무 바빠 손 쓸 수 없는 날, 하루를 통째로 쉬어요. 연속일은 끊기지 않고, 그날은 체크할 수 없고 포인트는 0이에요. 매월 1일에 1개씩, 최대 2개까지 모여요.":
+      "On a day you're sick or too busy to manage anything, rest the whole day. Your streak won't break, but you can't check items that day and it earns 0 points. You get 1 on the 1st of each month and can hold up to 2.",
+    "징검다리 +1": "Stepping Stone +1", "쉼표 +1": "Pause +1",
+    "다음부터 이 알림 보지 않기": "Don't show this notice again",
+    "⏸️ 오늘은 쉼표": "⏸️ Pausing today", "🪨 오늘 징검다리 중": "🪨 Stepping Stone today",
+    "징검다리 중 · 오늘은 성공으로 인정돼요": "Stepping Stone · today counts as a success",
+    "오늘은 쉼표": "Pausing today", "푹 쉬어요 · 스트릭은 그대로예요": "Get some rest · your streak is safe",
+    "⏸️ 어제는 기준에 많이 못 미쳤어요. 아팠거나 손 쓸 수 없었다면 쉼표로 연속일을 지킬 수 있어요":
+      "⏸️ Yesterday fell well short. If you were sick or couldn't manage, a Pause keeps your streak.",
+    "이번 달 당일·지난 날짜 쉬는 날은 3번을 다 썼어요. 내일 이후 날짜는 그대로 정할 수 있고, 손 쓸 수 없는 날은 쉼표를 써 보세요":
+      "You've used all 3 same-day or past-date rest days this month. You can still set future dates, and for a day you can't manage, try a Pause.",
+    "오늘은 이미 쉼표를 썼어요": "You already used a Pause today",
+    "🪨 징검다리를 쓴 날 (성공일로 인정돼요)": "🪨 Stepping Stone day (counts as a success day)",
+    "⏸️ 쉼표를 쓴 날 (연속일은 그대로, 달성률에서 빠져요)": "⏸️ Pause day (streak kept; left out of the rate)",
+    "이번 달 달성률은 쉬는 날·쉼표를 뺀, 평가한 날 중 성공한 날의 비율이에요": "This month's rate is your success days out of the days evaluated, leaving out rest days and Pauses",
+    "🪨 이 날은 징검다리를 썼어요 (성공으로 인정돼요)": "🪨 You used a Stepping Stone on this day (counts as a success)",
+    "⏸️ 이 날은 쉼표를 썼어요 (체크할 수 없고 포인트는 0이에요)": "⏸️ You used a Pause on this day (no checking; 0 points)",
+    "쉼과 안전망": "Rest and safety nets", "쓰지 않았어요": "None used",
+    "시작 전·불시 항목, 쉬는 날·쉼표를 쓴 날은 달성률에서 빠져요. 오늘이 기간에 들어 있으면 오늘 아직 못 한 항목은 세지 않아요.":
+      "Not-started and anytime items, rest days and Pause days are left out of the rate. If today is in the period, items you haven't done yet today aren't counted.",
+    "아직 백업한 적이 없어요": "No backup yet", "마지막 백업 오늘": "Last backup today", "마지막 백업: 오늘": "Last backup: today",
+    "되돌리기": "Undo", "되돌렸어요": "Restored"
+  };
+  var REST2_P = [
+    [/^기준까지 (\d+)개 모자라요 · 쓰면 연속 (\d+)일이 돼요$/, function (n, k) { return plural(n, "item", "items") + " short · using one makes a " + k + "-day streak"; }],
+    [/^기준까지 (\d+)개 모자라요 \((\d+)개 이하일 때만 쓸 수 있어요\)$/, function (n, m) { return plural(n, "item", "items") + " short (only usable when " + m + " or fewer short)"; }],
+    [/^기준까지 (\d+)개 모자라요 · 연속 (\d+)일이 돼요 · 보유 (\d+)개 → (\d+)개$/, function (n, k, a, b) { return plural(n, "item", "items") + " short · makes a " + k + "-day streak · you have " + a + " → " + b; }],
+    [/^(아파요|너무 바빠요|기타) · 스트릭은 그대로, 이 날은 포인트 0이에요$/, function (w) { return I.sub(w) + " · your streak is kept; this day earns 0 points"; }],
+    [/^체크해 둔 (\d+)개의 포인트 (\d+)P가 빠져요$/, function (n, p) { return "The " + p + "P from " + plural(n, "checked item", "checked items") + " will be removed"; }],
+    [/^다음 적립까지 (\d+)일 더 성공하면 돼요$/, function (n) { return "Next one after " + plural(n, "more successful day", "more successful days"); }],
+    [/^다음 적립: (\d+월 \d+일)$/, function (d) { return "Next one: " + I.sub(d); }],
+    [/^🪨 징검다리 (\d+)$/, function (n) { return "🪨 " + plural(n, "Stepping Stone", "Stepping Stones"); }],
+    [/^⏸️ 쉼표 (\d+)$/, function (n) { return "⏸️ " + plural(n, "Pause", "Pauses"); }],
+    [/^🪨 어제는 기준까지 (\d+)개 모자랐어요\. 징검다리로 연속 (\d+)일을 이어 갈 수 있어요$/, function (n, k) {
+      return "🪨 Yesterday was " + plural(n, "item", "items") + " short. A Stepping Stone keeps it going as a " + k + "-day streak."; }],
+    [/^당일 쉬는 날 지정은 이번 달 (\d+)번 남았어요 \(한 달 (\d+)번 · 공휴일 제외\)$/, function (n, m) {
+      return "Same-day rest days left this month: " + n + " (" + m + " a month · public holidays don't count)"; }],
+    [/^오늘·지난 날짜를 새로 쉬는 날로 정하는 건 한 달에 (\d+)번까지예요 \(이번 달 (\d+)번 남음 · 공휴일은 횟수에서 빠져요\)$/, function (m, n) {
+      return "Newly marking today or a past date as a rest day: up to " + m + " a month (" + n + " left this month · public holidays don't count)"; }],
+    [/^(\d+)개 추가했어요((?: \(\d+개는 형식이 안 맞아 건너뜀\))?)((?: \(당일·지난 날짜 \d+개는 이번 달 횟수를 넘어서 뺐어요\))?)$/, function (a, inv, bl) {
+      var out = a + " added";
+      var mi = inv.match(/(\d+)/); if (mi) out += " (" + mi[1] + " skipped: wrong format)";
+      var mb = bl.match(/(\d+)/); if (mb) out += " (" + plural(mb[1], "same-day/past date", "same-day/past dates") + " left out: over this month's limit)";
+      return out; }],
+    [/^⏸️ 이 날은 쉼표를 썼어요 · (.+) \(체크할 수 없고 포인트는 0이에요\)$/, function (w) { return "⏸️ You used a Pause on this day · " + I.sub(w) + " (no checking; 0 points)"; }],
+    [/^((?:🪨 징검다리 \d+번|⏸️ 쉼표 \d+번|쉬는 날 \d+일)(?: · (?:🪨 징검다리 \d+번|⏸️ 쉼표 \d+번|쉬는 날 \d+일))*)$/, function (all) {
+      return all.split(" · ").map(function (p) {
+        var m;
+        if ((m = p.match(/^🪨 징검다리 (\d+)번$/))) return "🪨 " + plural(m[1], "Stepping Stone", "Stepping Stones");
+        if ((m = p.match(/^⏸️ 쉼표 (\d+)번$/))) return "⏸️ " + plural(m[1], "Pause", "Pauses");
+        if ((m = p.match(/^쉬는 날 (\d+)일$/))) return plural(m[1], "rest day", "rest days");
+        return p;
+      }).join(" · "); }],
+    [/^쉬는 날 (\d+)일, 쉼표를 쓴 날, 시작 전·불시 항목은 달성률에서 빠져요\. 지난달·작년 비교는 그 달에 기록한 날이 충분할 때만 보여요\.$/, function (n) {
+      return plural(n, "rest day", "rest days") + ", Pause days, and not-started or anytime items are left out of the rate. Comparisons with last month or last year only appear when that month has enough recorded days."; }],
+    [/^마지막 백업 (\d+)일 전$/, function (n) { return "Last backup " + plural(n, "day", "days") + " ago"; }],
+    [/^마지막 백업: (\d+)일 전 \((\d{4}-\d{2}-\d{2})\)$/, function (n, d) { return "Last backup: " + plural(n, "day", "days") + " ago (" + d + ")"; }],
+    [/^‘(.*)’ 항목을 삭제했어요$/, function (nm) { return "Deleted “" + I.sub(nm) + "”"; }]
+  ];
+  I.register(REST2_D, REST2_P);
   // 위 패턴보다 포괄적인 분할 규칙: "📖 창세기 · 첫째 날, 빛이 있으라" 같은 "A · B" 조합(지인 카드 등)
   I.register(null, [[/^(📖 )?([^·]+?) · (.+)$/, function (ic, b, t) {
     var a = I.sub(b), c = I.sub(t);
