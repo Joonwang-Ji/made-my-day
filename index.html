@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-14-1";
+  var BUILD_VERSION = "2026-10-14-2";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -3139,7 +3139,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var el = document.getElementById("pendingSubText");
     if (el) el.textContent = (state.email || "") + " 계정으로 가입 요청이 접수됐어요. 관리자가 승인하면 자동으로 이용할 수 있게 돼요.";
   }
-  function onUserLoaded(uid, email) {
+  function onUserLoaded(uid, email, deviceNow) {
     currentUid = uid;
     currentEmail = email || "";
     synced = false; syncedRaw = null; syncedBase = null;
@@ -3182,7 +3182,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     }
     var localStartTimer = null;
     function onWentOffline() { startFromDevice(); }
-    if (navigator.onLine === false) setTimeout(startFromDevice, 0);
+    if (navigator.onLine === false || deviceNow) setTimeout(startFromDevice, 0);
     else localStartTimer = setTimeout(startFromDevice, 5000);   // 연결은 됐다는데 서버 응답이 없을 때(지하·엘리베이터 등)
     window.addEventListener("offline", onWentOffline);
 
@@ -3283,10 +3283,45 @@ window.addEventListener("beforeinstallprompt", function (e) {
     });
   }
 
+  // ---- 2026-10-14: 로그인 확인을 기다리지 않고 기기 기록으로 먼저 열기 ----
+  // Firebase 로그인은 앱을 열 때 서버에 계정을 한 번 확인하는데, 아이폰 비행기 모드에서는 이 요청이
+  // 실패로 끝나지 않고 최대 30초쯤 붙잡혀 그동안 "동기화 중" 화면에 머물렀다. 그래서 이 기기에서
+  // 마지막으로 로그인해 있던 계정(SIGNED_IN_KEY)과 합치기 기준·캐시가 모두 있으면, 로그인 확인이 4초
+  // 안에 안 끝날 때(오프라인이면 1초) 그 계정으로 먼저 열어 둔다(오프라인 모드, 서버에는 쓰지 않음).
+  // 로그인 확인이 뒤늦게 같은 계정으로 끝나면 그대로 이어 가고, 로그아웃 상태로 확인되면 로그인 화면으로 간다.
+  // 로그아웃하면 SIGNED_IN_KEY를 지우므로 로그아웃한 기기에서는 이 방법으로 열리지 않는다.
+  var SIGNED_IN_KEY = "mmd_signed_in_v1";
+  var provisionalUid = null;
+  function rememberSignedIn(user) {
+    try {
+      if (user) localStorage.setItem(SIGNED_IN_KEY, JSON.stringify({ uid: user.uid, email: user.email || "" }));
+      else localStorage.removeItem(SIGNED_IN_KEY);
+    } catch (e) {}
+  }
+  function tryOpenFromDeviceBeforeAuth() {
+    if (currentUid) return;
+    var o = null;
+    try { o = JSON.parse(localStorage.getItem(SIGNED_IN_KEY) || "null"); } catch (e) {}
+    if (!o || !o.uid || !loadSyncBase(o.uid) || !loadCachedStateFor(o.uid)) return;
+    provisionalUid = o.uid;
+    isAdminUser = o.uid === ADMIN_UID;
+    onUserLoaded(o.uid, o.email || "", true);
+  }
+
   function initAuth() {
     if (!window.__fb) { window.addEventListener("fb-ready", initAuth, { once: true }); return; }
+    var authSeen = false;
+    var earlyTimer = setTimeout(function () { if (!authSeen) tryOpenFromDeviceBeforeAuth(); }, navigator.onLine === false ? 1000 : 4000);
     window.__fb.onAuthStateChanged(function (user) {
+      authSeen = true; clearTimeout(earlyTimer);
       logoutArmed = false;
+      rememberSignedIn(user);
+      if (user && provisionalUid === user.uid && currentUid === user.uid) {
+        provisionalUid = null;                       // 기기 기록으로 먼저 연 계정과 같다: 그대로 이어 간다
+        if (user.email) currentEmail = user.email;
+        return;
+      }
+      provisionalUid = null;
       if (user) {
         isAdminUser = user.uid === ADMIN_UID;
         onUserLoaded(user.uid, user.email || "");
