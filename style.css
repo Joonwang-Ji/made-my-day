@@ -1037,3 +1037,31 @@
 /* 24차 키보드 이동: 화면·창 자체로 옮긴 초점(Tab 출발점)은 테두리를 그리지 않는다 */
 [data-kbd-box]:focus, [data-kbd-box]:focus-visible { outline: none; }
 .nav-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -3px; border-radius: 10px; }
+
+  /* ---- 25차: 처음 안내(코치마크) ----
+     화면 전체를 덮어 아래를 못 누르게 하고, 비출 곳(.tour-hole)만 큰 그림자로 주변을 어둡게 만든다.
+     말풍선은 글씨 배율(rem)을 따르고, 위치는 index.html의 tourPlace()가 화면 안에 맞춰 계산한다. */
+  .tour-root { position: fixed; inset: 0; z-index: 96; }
+  .tour-hole { position: fixed; border-radius: 14px; pointer-events: none;
+    box-shadow: 0 0 0 2px var(--gold), 0 0 0 200vmax var(--overlay);
+    transition: left .25s ease, top .25s ease, width .25s ease, height .25s ease, border-radius .25s ease; }
+  .tour-root.tour-center { background: var(--overlay); }
+  .tour-root.tour-center .tour-hole { display: none; }
+  .tour-bubble { position: fixed; background: var(--card); color: var(--ink); border-radius: 16px;
+    padding: 14px 16px 12px; box-shadow: 0 8px 28px rgba(0,0,0,.28); border: 1px solid var(--line);
+    transition: top .25s ease, left .25s ease; }
+  .tour-arrow { position: absolute; width: 14px; height: 14px; background: var(--card); transform: translateX(-50%) rotate(45deg); }
+  .tour-arrow.up { top: -7px; border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+  .tour-arrow.down { bottom: -7px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .tour-step { font-size: 0.6875rem; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+  .tour-step:empty { display: none; }
+  .tour-title { font-size: 0.9375rem; font-weight: 800; margin-bottom: 6px; }
+  .tour-body { font-size: 0.8125rem; line-height: 1.55; color: var(--ink-dim); word-break: keep-all; overflow-wrap: anywhere; }
+  .tour-btns { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .tour-skip, .tour-next { border: none; border-radius: 999px; font-weight: 700; cursor: pointer; padding: 8px 16px; font-size: 0.8125rem; min-height: 36px; }
+  .tour-skip { background: none; color: var(--ink-dim); margin-right: auto; padding-left: 4px; }
+  .tour-next { background: var(--sage); color: #fff; }
+  html[data-theme="dark"] .tour-next { color: #14201A; }
+  @media (prefers-color-scheme: dark) { html:not([data-theme="light"]) .tour-next { color: #14201A; } }
+  .tour-skip:focus-visible, .tour-next:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .tour-hole, .tour-bubble { transition: none; } }

@@ -378,6 +378,37 @@
     [/^(.+) 도움말$/, function (t) { return "Help: " + I.sub(t); }],
     [/^(.+) 카운트다운 시작$/, function (c) { return "Start countdown: " + I.sub(c); }]
   ]);
+  // ---- 25차: 처음 안내(코치마크) 말풍선 · 도움말 '처음 안내 다시 보기' ----
+  I.register({
+    "건너뛰기": "Skip", "다음": "Next", "알겠어요": "Got it",
+    "날짜를 눌러 보세요": "Tap the date",
+    "쉬는 날·징검다리·쉼표를 고르고, 하루 한 줄 메모도 쓸 수 있어요.": "Choose a Rest day, a Stepping Stone or a Pause, and write your “One line a day” note.",
+    "나만의 타이틀": "Your own title",
+    "타이틀을 누르면 원하는 문구와 이모지로 바꿀 수 있어요.": "Tap the title to change it to any words and emoji you like.",
+    "아바타": "Avatar",
+    "아바타를 누르면 꾸미기와 성경 진행(메달)을 볼 수 있어요.": "Tap your avatar to dress it up and see your Bible progress (medals).",
+    "항목 체크": "Checking items",
+    "항목을 누르면 완료로 체크돼요. 체크를 풀 때는 실수하지 않게 한 번 더 물어봐요.": "Tap an item to check it off. To uncheck, you'll be asked once more so you don't do it by mistake.",
+    "▶ 순서대로 실행": "▶ Run in order",
+    "▶를 누르면 이 카테고리의 오늘 항목을 타이머와 함께 순서대로 진행해요.": "Tap ▶ to go through today's items in this category one by one with a timer.",
+    "언제든 다시 볼 수 있어요": "You can see this again anytime",
+    "설정 > 사용법·도움말 > 처음 안내 다시 보기에서 이 안내를 다시 볼 수 있어요.": "You can replay this guide from Settings > Help & how to use > Replay the welcome guide.",
+    "지난 리뷰": "Past reviews",
+    "주간·월간·연간 리뷰는 통계의 ‘리뷰’ 탭에서 다시 볼 수 있어요.": "You can reread your weekly, monthly and yearly reviews in the “Reviews” tab of Stats.",
+    "태그로 골라 보기": "Filter by tag",
+    "태그를 누르면 그 태그 항목만 모아 봐요. ‘미분류’는 태그를 안 단 항목이에요.": "Tap a tag to see only items with that tag. “Untagged” shows items without any tag.",
+    "항목별 보기": "View by item",
+    "‘항목별’을 누르면 한 항목의 지난 기록을 달력으로 모아 보고 고칠 수 있어요.": "Tap “By item” to see one item's past records on a calendar and fix them.",
+    "지난 날짜 고치기": "Fixing past days",
+    "날짜를 골라 그날 못 누른 체크를 나중에 바로잡을 수 있어요.": "Pick a date to fix checks you missed that day.",
+    "응원 주고받기": "Sending cheers",
+    "지인 카드를 누르면 응원을 주고받는 대화가 열려요.": "Tap a friend's card to open a chat where you send and receive cheers.",
+    "초대 코드로 연결": "Connect with an invite code",
+    "공개 설정을 켜고 초대 코드를 주고받으면 서로 지인이 돼요.": "Turn on sharing and exchange invite codes to become friends.",
+    "처음 안내": "Welcome guide",
+    "처음 안내 다시 보기": "Replay the welcome guide",
+    "홈 · 통계 · 기록 · 지인": "Home · Stats · Records · Friends"
+  });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();

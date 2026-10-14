@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-14-2";
+  var BUILD_VERSION = "2026-10-14-3";
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -2831,6 +2831,16 @@ window.addEventListener("beforeinstallprompt", function (e) {
       }
       if (k === "commaDays") {   // 쉼표 쓴 날짜: 징검다리와 같은 방식으로 날짜 단위로 합친다
         out.commaDays = normalizePassDays(mergeIdList(base.commaDays, local.commaDays, server.commaDays));
+        return;
+      }
+      if (k === "tourSeen") {    // 25차 처음 안내 본 기록: 화면(home·stats…)마다 따로 3방향 합치기(두 기기에서 다른 탭 안내를 봐도 둘 다 남고, '다시 보기'로 지운 것도 남는다)
+        var tb = base.tourSeen || {}, tl = local.tourSeen || {}, ts = server.tourSeen || {}, tk = {}, to = {};
+        [tb, tl, ts].forEach(function (o) { if (o && typeof o === "object") Object.keys(o).forEach(function (x) { tk[x] = true; }); });
+        Object.keys(tk).forEach(function (x) {
+          var v = (!!tl[x] !== !!tb[x]) ? !!tl[x] : !!ts[x];
+          if (v) to[x] = true;
+        });
+        out.tourSeen = to;
         return;
       }
       if (k === "lateRestLog") { // 당일·지난 날짜 쉬는 날 지정 기록
@@ -7893,6 +7903,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
         h += '<div class="help-row" data-action="help" data-id="' + id + '"><span>' + tp.t + '<span class="help-row-sub">' + tp.sub + '</span></span><span class="chev">›</span></div>';
       });
     });
+    // 25차: 처음 안내(코치마크) 다시 보기 — 본 기록을 지우고 홈에서 바로 시작
+    h += '<div class="section-label" style="margin-top:18px;">처음 안내</div>' +
+      '<div class="help-row" data-action="tour-replay"><span>처음 안내 다시 보기<span class="help-row-sub">홈 · 통계 · 기록 · 지인</span></span><span class="chev">›</span></div>';
     // 23차: 홈 화면에 앱으로 추가하는 방법(도움말 주제가 아니라 전용 안내 창을 연다)
     h += '<div class="section-label" style="margin-top:18px;">앱 설치</div>' +
       '<div class="help-row" data-action="open-install-guide"><span>홈 화면에 앱으로 추가<span class="help-row-sub">아이폰 · 안드로이드</span></span><span class="chev">›</span></div>';
@@ -8105,6 +8118,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       for (var j = 0; j < ovs.length; j++) { ovs[j].setAttribute("role", "dialog"); ovs[j].setAttribute("aria-modal", "true"); }
     } catch (e) { console.warn("a11y", e); }
     try { kbdSync(); } catch (e2) { console.warn("kbd", e2); }
+    try { if (typeof TOUR !== "undefined") tourSchedule(); } catch (e3) { console.warn("tour", e3); }
   }
   function a11yQueue() {
     if (a11yQueued) return;
@@ -8326,6 +8340,264 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (cur) cur.focus();
     }
   });
+
+  // ---------------- 처음 안내 · 코치마크 (25차) ----------------
+  // 처음 쓰는 사람이 숨은 기능(날짜·타이틀 누르기 등)을 모르는 문제: 화면을 어둡게 하고 그 버튼만 밝게 비춘 뒤 말풍선으로 설명한다.
+  //  · 홈은 처음 그려졌을 때 5~6단계, 통계·기록·지인은 처음 들어갔을 때 1~2단계.
+  //  · 본 여부는 계정에 저장(state.tourSeen = { home: true, stats: true, ... }) → 다른 기기에서 다시 안 뜬다. mergeStates에서 키별 3방향 합치기.
+  //  · 다른 창(글씨 크기·공휴일 안내·징검다리/쉼표 획득·축하 등)이 열려 있으면 다 닫히고 화면이 잠잠해질 때까지 기다린다.
+  //  · 대상 요소가 없으면(항목 0개, ▶ 비활성 등) 그 단계는 건너뛴다. 설정 > 사용법 > '처음 안내 다시 보기'로 언제든 다시 본다.
+  //  · 말풍선 문구는 문장마다 텍스트 노드 하나(영어 사전 i18n-en-extra.js에서 통째로 바꿔 끼움).
+  var TOUR_DEFS = {
+    home: { view: "view-home", steps: [
+      { sel: "#dayLabel", t: "날짜를 눌러 보세요", b: "쉬는 날·징검다리·쉼표를 고르고, 하루 한 줄 메모도 쓸 수 있어요." },
+      { sel: "#titleRow", t: "나만의 타이틀", b: "타이틀을 누르면 원하는 문구와 이모지로 바꿀 수 있어요." },
+      { sel: "#homeAvatar", t: "아바타", b: "아바타를 누르면 꾸미기와 성경 진행(메달)을 볼 수 있어요.", round: true },
+      { sel: '#catList .mini-item[data-action="toggle-item"]:not(.comma-off)', t: "항목 체크", b: "항목을 누르면 완료로 체크돼요. 체크를 풀 때는 실수하지 않게 한 번 더 물어봐요." },
+      { sel: "#catList .play-btn:not([disabled])", t: "▶ 순서대로 실행", b: "▶를 누르면 이 카테고리의 오늘 항목을 타이머와 함께 순서대로 진행해요.", round: true },
+      { sel: null, t: "언제든 다시 볼 수 있어요", b: "설정 > 사용법·도움말 > 처음 안내 다시 보기에서 이 안내를 다시 볼 수 있어요." }
+    ] },
+    stats: { view: "view-stats", steps: [
+      { sel: '#statsViewTabs .tab[data-id="review"]', t: "지난 리뷰", b: "주간·월간·연간 리뷰는 통계의 ‘리뷰’ 탭에서 다시 볼 수 있어요." },
+      { sel: "#statsTagTabs:not(.hidden)", t: "태그로 골라 보기", b: "태그를 누르면 그 태그 항목만 모아 봐요. ‘미분류’는 태그를 안 단 항목이에요." }
+    ] },
+    backfill: { view: "view-backfill", steps: [
+      { sel: '#backfillModeTabs .tab[data-id="item"]', t: "항목별 보기", b: "‘항목별’을 누르면 한 항목의 지난 기록을 달력으로 모아 보고 고칠 수 있어요." },
+      { sel: "#backfillDateMode .month-nav", t: "지난 날짜 고치기", b: "날짜를 골라 그날 못 누른 체크를 나중에 바로잡을 수 있어요." }
+    ] },
+    friends: { view: "view-friends", steps: [
+      { sel: "#friendsBody .fr-card", t: "응원 주고받기", b: "지인 카드를 누르면 응원을 주고받는 대화가 열려요." },
+      { sel: '#friendsBody [data-action="friends-mgmt-toggle"], #friendsBody #friendNickInput', t: "초대 코드로 연결", b: "공개 설정을 켜고 초대 코드를 주고받으면 서로 지인이 돼요." }
+    ] }
+  };
+  var TOUR = { open: false, key: null, steps: [], i: 0, root: null, hole: null, bub: null, timer: null, poll: null, idleHits: 0, homeShownAt: 0, prevFocus: null };
+  function tourSeen(key) { return !!(state && state.tourSeen && state.tourSeen[key]); }
+  function tourMarkSeen(key) {
+    if (!state.tourSeen || typeof state.tourSeen !== "object") state.tourSeen = {};
+    if (state.tourSeen[key]) return;
+    state.tourSeen[key] = true;
+    saveState();
+  }
+  function tourVisibleEl(sel) {
+    if (!sel) return null;
+    var list = document.querySelectorAll(sel);
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i].getBoundingClientRect();
+      if (r.width > 2 && r.height > 2) return list[i];
+    }
+    return null;
+  }
+  function tourKeyForView(id) {
+    for (var k in TOUR_DEFS) if (TOUR_DEFS[k].view === id) return k;
+    return null;
+  }
+  // 지금 안내를 띄워도 되는지(다른 창·축하·화면 전환·첫 로딩 안내가 모두 끝났는지)
+  function tourIdle() {
+    if (!currentUid || !synced || document.hidden) return false;
+    if (needFontPrompt() || !window.__holidayPromptChecked) return false;
+    if (kbdTopOverlay() || kbdCeleb()) return false;
+    if (celebQueue && celebQueue.length) return false;
+    if (document.querySelector(".slide-exit")) return false;
+    var chat = document.getElementById("view-friend-chat");
+    if (chat && !chat.classList.contains("hidden")) return false;
+    var run = document.getElementById("view-run");
+    if (run && !run.classList.contains("hidden")) return false;
+    return true;
+  }
+  // 화면이 바뀔 때마다(a11yApplyAll에서) 불린다. 0.8초 간격으로 두 번 연속 잠잠하면 시작.
+  function tourSchedule() {
+    if (TOUR.open || TOUR.timer) return;
+    TOUR.timer = setTimeout(function () {
+      TOUR.timer = null;
+      try { tourCheck(); } catch (e) { console.warn("tour", e); }
+    }, 800);
+  }
+  function tourCheck() {
+    if (TOUR.open) return;
+    var vw = kbdCurrentView(), key = vw && tourKeyForView(vw.id);
+    if (key === "home" && !TOUR.homeShownAt) TOUR.homeShownAt = Date.now();
+    if (!key || tourSeen(key) || !tourIdle()) { TOUR.idleHits = 0; return; }
+    if (key === "home" && Date.now() - TOUR.homeShownAt < 1500) { tourSchedule(); return; }   // 첫 로딩 안내가 뜰 틈을 준다
+    TOUR.idleHits++;
+    if (TOUR.idleHits < 2) { tourSchedule(); return; }
+    TOUR.idleHits = 0;
+    tourStart(key);
+  }
+  function tourStart(key) {
+    var def = TOUR_DEFS[key];
+    if (!def || TOUR.open) return false;
+    var steps = def.steps.filter(function (s) { return !s.sel || tourVisibleEl(s.sel); });
+    var real = steps.filter(function (s) { return !!s.sel; });
+    if (!real.length) {   // 비출 것이 하나도 없음(지인 목록이 아직 안 그려짐 등) → 다음 기회에
+      if (key !== "home") { tourSchedule(); return false; }
+    }
+    TOUR.open = true; TOUR.key = key; TOUR.steps = steps; TOUR.i = 0;
+    TOUR.prevFocus = document.activeElement;
+    tourBuild();
+    tourShow();
+    TOUR.poll = setInterval(tourPlace, 500);   // 다른 기기 동기화로 홈이 다시 그려지거나 글씨 크기가 바뀌어도 따라간다
+    return true;
+  }
+  function tourBuild() {
+    var root = document.createElement("div");
+    root.className = "tour-root";
+    root.setAttribute("role", "dialog");
+    root.setAttribute("aria-modal", "true");
+    root.setAttribute("aria-labelledby", "tourTitle");
+    root.setAttribute("aria-describedby", "tourBody");
+    root.innerHTML =
+      '<div class="tour-hole" aria-hidden="true"></div>' +
+      '<div class="tour-bubble">' +
+        '<div class="tour-arrow" aria-hidden="true"></div>' +
+        '<div class="tour-step" id="tourStep"></div>' +
+        '<div class="tour-title" id="tourTitle"></div>' +
+        '<div class="tour-body" id="tourBody" aria-live="polite"></div>' +
+        '<div class="tour-btns">' +
+          '<button type="button" class="tour-skip" id="tourSkipBtn">건너뛰기</button>' +
+          '<button type="button" class="tour-next" id="tourNextBtn">다음</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(root);
+    TOUR.root = root;
+    TOUR.hole = root.querySelector(".tour-hole");
+    TOUR.bub = root.querySelector(".tour-bubble");
+    root.querySelector("#tourSkipBtn").addEventListener("click", function (e) { e.stopPropagation(); tourEnd(); });
+    root.querySelector("#tourNextBtn").addEventListener("click", function (e) { e.stopPropagation(); tourNext(); });
+    // 어두운 바깥이나 비춘 버튼을 눌러도 아래 화면이 반응하지 않게 막는다(실수로 넘어가지도 않게)
+    root.addEventListener("click", function (e) { e.stopPropagation(); e.preventDefault(); });
+    window.addEventListener("resize", tourPlace);
+    window.addEventListener("orientationchange", tourPlace);
+    window.addEventListener("scroll", tourPlace, true);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", tourPlace);
+    document.documentElement.classList.add("tour-on");
+  }
+  function tourShow() {
+    var s = TOUR.steps[TOUR.i];
+    if (!s) { tourEnd(); return; }
+    var el = tourVisibleEl(s.sel);
+    if (s.sel && !el) { TOUR.steps.splice(TOUR.i, 1); tourShow(); return; }   // 그새 사라졌으면 건너뛰기
+    var last = TOUR.i === TOUR.steps.length - 1;
+    document.getElementById("tourStep").textContent = TOUR.steps.length > 1 ? (TOUR.i + 1) + " / " + TOUR.steps.length : "";
+    document.getElementById("tourTitle").textContent = s.t;
+    document.getElementById("tourBody").textContent = s.b;
+    document.getElementById("tourNextBtn").textContent = last ? "알겠어요" : "다음";
+    document.getElementById("tourSkipBtn").classList.toggle("hidden", last);
+    if (el) {   // 대상이 화면 밖이면 가운데쯤으로 스크롤
+      var r = el.getBoundingClientRect(), vh = window.innerHeight;
+      if (r.top < 70 || r.bottom > vh - 150) { try { el.scrollIntoView({ block: "center" }); } catch (e) { el.scrollIntoView(); } }
+    }
+    tourPlace();
+    var nb = document.getElementById("tourNextBtn");
+    try { nb.focus({ preventScroll: true }); } catch (e) { nb.focus(); }
+  }
+  function tourPlace() {
+    if (!TOUR.open || !TOUR.root) return;
+    var def = TOUR_DEFS[TOUR.key], v = def && document.getElementById(def.view);
+    if (!v || v.classList.contains("hidden")) { tourEnd(true); return; }   // 화면이 바뀌면 조용히 닫고 다음에 다시
+    var s = TOUR.steps[TOUR.i];
+    if (!s) return;
+    var vw = document.documentElement.clientWidth || window.innerWidth, vh = window.innerHeight;
+    var hole = TOUR.hole, bub = TOUR.bub, arrow = bub.querySelector(".tour-arrow");
+    var el = tourVisibleEl(s.sel), r = null;
+    if (el) {
+      var b = el.getBoundingClientRect(), pad = 6;
+      var L = Math.max(4, b.left - pad), T = Math.max(4, b.top - pad);
+      var R = Math.min(vw - 4, b.right + pad), B = Math.min(vh - 4, b.bottom + pad);
+      if (R - L < 8 || B - T < 8) el = null;   // 거의 화면 밖
+      else r = { left: L, top: T, width: R - L, height: B - T, cx: (b.left + b.right) / 2 };
+    }
+    TOUR.root.classList.toggle("tour-center", !r);
+    if (r) {
+      hole.style.left = r.left + "px"; hole.style.top = r.top + "px";
+      hole.style.width = r.width + "px"; hole.style.height = r.height + "px";
+      hole.style.borderRadius = s.round ? "999px" : "14px";
+    }
+    var w = Math.min(340, vw - 24);
+    bub.style.width = w + "px";
+    var h = bub.offsetHeight, gap = 12, top, left, below = true;
+    if (r) {
+      if (r.top + r.height + gap + h <= vh - 12) top = r.top + r.height + gap;
+      else if (r.top - gap - h >= 12) { top = r.top - gap - h; below = false; }
+      else { top = Math.max(12, vh - h - 12); below = top >= r.top; }
+      left = Math.min(Math.max(12, r.cx - w / 2), vw - w - 12);
+      arrow.classList.toggle("up", below);
+      arrow.classList.toggle("down", !below);
+      arrow.style.left = Math.min(Math.max(18, r.cx - left), w - 18) + "px";
+      arrow.style.display = (below ? top - (r.top + r.height) : r.top - (top + h)) > 20 ? "none" : "";
+    } else {
+      top = Math.max(12, Math.round((vh - h) / 2));
+      left = Math.round((vw - w) / 2);
+      arrow.style.display = "none";
+    }
+    bub.style.top = Math.round(top) + "px";
+    bub.style.left = Math.round(left) + "px";
+  }
+  function tourNext() {
+    if (!TOUR.open) return;
+    if (TOUR.i >= TOUR.steps.length - 1) { tourEnd(); return; }
+    TOUR.i++;
+    tourShow();
+  }
+  function tourPrev() {
+    if (!TOUR.open || TOUR.i === 0) return;
+    TOUR.i--;
+    tourShow();
+  }
+  // quiet=true: 화면이 바뀌어 중간에 닫힘(본 것으로 치지 않음 → 다음에 다시)
+  function tourEnd(quiet) {
+    if (!TOUR.open) return;
+    var key = TOUR.key;
+    TOUR.open = false; TOUR.key = null; TOUR.steps = [];
+    clearInterval(TOUR.poll); TOUR.poll = null;
+    window.removeEventListener("resize", tourPlace);
+    window.removeEventListener("orientationchange", tourPlace);
+    window.removeEventListener("scroll", tourPlace, true);
+    if (window.visualViewport) window.visualViewport.removeEventListener("resize", tourPlace);
+    if (TOUR.root && TOUR.root.parentNode) TOUR.root.parentNode.removeChild(TOUR.root);
+    TOUR.root = TOUR.hole = TOUR.bub = null;
+    document.documentElement.classList.remove("tour-on");
+    if (!quiet) tourMarkSeen(key);
+    var back = TOUR.prevFocus; TOUR.prevFocus = null;
+    if (KBD.on && back && document.body.contains(back) && kbdVisible(back)) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+    tourSchedule();   // 같은 화면에 이어서 볼 다른 안내는 없지만, 탭을 옮기면 그 탭 안내가 뜨도록
+  }
+  // 설정 > 사용법 > '처음 안내 다시 보기': 본 기록을 모두 지우고 홈에서 바로 시작
+  function tourReplay() {
+    if (TOUR.open) tourEnd(true);
+    state.tourSeen = {};
+    saveState();
+    showView("view-home");
+    renderHome();
+    try { window.scrollTo(0, 0); } catch (e) {}
+    TOUR.homeShownAt = 1;   // 기다리지 않고
+    setTimeout(function () { if (!tourStart("home")) tourSchedule(); }, 350);
+  }
+  // 키보드: Enter·→ 다음, ← 이전, Esc 건너뛰기, Tab은 말풍선 버튼 안에서만. 다른 단축키(1~5, M, ? 등)는 막는다.
+  window.addEventListener("keydown", function (e) {
+    if (!TOUR.open || !TOUR.root) return;
+    if (e.isComposing || e.keyCode === 229) return;
+    var t = e.target, inBtn = t && t.tagName === "BUTTON" && TOUR.root.contains(t);
+    e.stopImmediatePropagation();
+    if (e.key === "Tab") {
+      var btns = Array.prototype.filter.call(TOUR.root.querySelectorAll("button"), function (b) { return kbdVisible(b); });
+      if (btns.length) {
+        var i = btns.indexOf(t);
+        var n = e.shiftKey ? (i <= 0 ? btns.length - 1 : i - 1) : (i === -1 || i === btns.length - 1 ? 0 : i + 1);
+        btns[n].focus();
+      }
+      e.preventDefault();
+      return;
+    }
+    if (e.key === "Escape" || e.key === "Esc") { e.preventDefault(); tourEnd(); return; }
+    if (e.key === "ArrowRight") { e.preventDefault(); tourNext(); return; }
+    if (e.key === "ArrowLeft") { e.preventDefault(); tourPrev(); return; }
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      if (inBtn) return;   // 초점이 있는 버튼이 스스로 눌린다
+      e.preventDefault(); tourNext(); return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;   // 브라우저 단축키는 그대로
+    e.preventDefault();
+  }, true);
 
   // =====================================================================================
   // 리뷰 (19차) — 주간·월간·연간 리뷰
@@ -9514,6 +9786,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "help-close") { closeHelp(); }
     else if (action === "help-backdrop") { if (e.target === el) closeHelp(); }
     else if (action === "open-help-view") { showView("view-help"); renderHelpList(); }
+    else if (action === "tour-replay") { tourReplay(); }
     else if (action === "open-install-guide") { openInstallGuide(); }
     else if (action === "install-close") { closeInstallGuide(); }
     else if (action === "install-tab") { igTab = id === "android" ? "android" : "ios"; renderInstallGuide(); }
