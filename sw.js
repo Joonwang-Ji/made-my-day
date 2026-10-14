@@ -17,7 +17,7 @@
 //
 // 보관 목록을 바꾸거나 이 파일의 동작을 바꿀 때는 SW_VERSION을 올린다(옛 보관함은 자동으로 지워짐).
 
-var SW_VERSION = "2026-10-13-a";
+var SW_VERSION = "2026-10-14-a";
 var SHELL = "mmd-shell-" + SW_VERSION;
 var SDK = "mmd-sdk-v1";
 var SHELL_FILES = [
@@ -33,7 +33,6 @@ var SDK_FILES = [
   "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"
 ];
 var SCOPE = self.registration.scope;   // 예: https://아이디.github.io/made-my-day/
-var NAV_TIMEOUT_MS = 6000;             // 연결이 아주 느릴 때, 보관본이 있으면 이 시간 뒤 보관본으로 연다
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(SHELL).then(function (c) {
@@ -82,37 +81,42 @@ self.addEventListener("fetch", function (e) {
   e.respondWith(networkFirst(req, req.mode === "navigate"));
 });
 
+// 2026-10-14 수정: 아이폰은 비행기 모드에서 인터넷 요청을 바로 "실패"로 끝내지 않고 붙잡고 있을 때가 있다.
+// 예전에는 화면(페이지) 요청만 6초 뒤 보관본으로 넘어가고, style.css·js 같은 나머지 파일은 실패할 때까지
+// 하염없이 기다려서 화면이 하얗거나 깨진 채 멈췄다. 이제는
+//  · 기기가 오프라인이라고 알려 주면(navigator.onLine === false) 기다리지 않고 바로 보관본을 쓴다.
+//  · 온라인이라는데 응답이 늦으면 일정 시간 뒤 보관본으로 연다(화면 4초, 나머지 파일 6초).
+//  · 어느 쪽이든 인터넷 응답이 뒤늦게 오면 보관본을 새것으로 갈아 끼운다(다음에 열 때 반영).
+var NAV_WAIT_MS = 4000, FILE_WAIT_MS = 6000;
+var OFFLINE_PAGE = "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>" +
+  "<body style='font-family:sans-serif;text-align:center;padding:60px 20px;color:#23302A;background:#EFE8D6'>" +
+  "<h3>Made My Day</h3><p>인터넷에 연결된 뒤 다시 열어 주세요.</p><p style='color:#5C6A5F'>Please reconnect to the internet and open again.</p>";
+
 function networkFirst(req, isNav) {
   var key = keyOf(req.url);
   var net = fetch(req).then(function (r) {
-    if (r && r.ok && r.type === "basic") {
+    if (r && r.ok && r.type === "basic" && !r.redirected) {
       var copy = r.clone();
       caches.open(SHELL).then(function (c) { return c.put(key, copy); }).catch(function () {});
     }
     return r;
   });
-  if (!isNav) {
-    return net.catch(function () {
-      return caches.match(key).then(function (hit) { return hit || Response.error(); });
-    });
-  }
-  // 화면(페이지) 요청: 연결이 끊겼거나 너무 느리면 보관본으로 연다
+  net.catch(function () {});   // 보관본으로 먼저 답한 뒤 뒤늦게 실패해도 오류로 남지 않게
+  var offline = self.navigator && self.navigator.onLine === false;
   return new Promise(function (resolve) {
-    var settled = false;
-    function done(r) { if (!settled && r) { settled = true; resolve(r); } }
-    var timer = setTimeout(function () {
-      caches.match(key).then(function (hit) { done(hit); });
-    }, NAV_TIMEOUT_MS);
-    net.then(function (r) { clearTimeout(timer); done(r); }).catch(function () {
-      clearTimeout(timer);
+    var settled = false, timer = null;
+    function done(r) { if (!settled && r) { settled = true; clearTimeout(timer); resolve(r); } }
+    function lastResort() {
+      done(isNav ? new Response(OFFLINE_PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } }) : Response.error());
+    }
+    function tryCache(orElse) {
       caches.match(key).then(function (hit) {
-        done(hit || new Response(
-          "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>" +
-          "<body style='font-family:sans-serif;text-align:center;padding:60px 20px;color:#23302A;background:#EFE8D6'>" +
-          "<h3>Made My Day</h3><p>인터넷에 연결된 뒤 다시 열어 주세요.</p><p style='color:#5C6A5F'>Please reconnect to the internet and open again.</p>",
-          { headers: { "Content-Type": "text/html; charset=utf-8" } }));
-      });
-    });
+        if (hit) done(hit); else if (orElse) orElse();
+      }).catch(function () { if (orElse) orElse(); });
+    }
+    if (offline) tryCache(null);                                        // 오프라인: 바로 보관본
+    else timer = setTimeout(function () { tryCache(null); }, isNav ? NAV_WAIT_MS : FILE_WAIT_MS);
+    net.then(function (r) { done(r); }, function () { tryCache(lastResort); });
   });
 }
 
