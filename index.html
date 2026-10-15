@@ -22,7 +22,8 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-14-3";
+  var BUILD_VERSION = "2026-10-15-1";
+  window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
       .then(function (r) { return r.text(); })
@@ -284,6 +285,13 @@ window.addEventListener("beforeinstallprompt", function (e) {
   <div class="bottom-row">
     <div class="btn" data-action="do-import">가져오기</div>
   </div>
+
+  <div class="section-label">오프라인 준비 상태</div>
+  <div class="export-note">인터넷이 안 될 때도 앱을 열 수 있는지 이 기기의 준비 상태를 보여 줘요. 문제가 생겼을 때 원인을 찾는 데 써요.</div>
+  <div class="off-ready" id="offReady" aria-live="polite"></div>
+  <div class="bottom-row">
+    <div class="btn" data-action="off-ready-check">다시 확인</div>
+  </div>
 </div>
 
 <div class="tp-overlay hidden" id="tpOverlay">
@@ -398,7 +406,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   <div class="theme-option-row" style="margin-top:8px;">
     <div class="theme-option" id="vividToggle" data-action="vivid-toggle"><span>선명하게 보기 (진한 글씨)</span><span class="dot"></span></div>
   </div>
-  <div class="sub" style="margin-top:6px;">이 기기에만 적용돼요. 밝은 테마에서 옅은 글씨가 더 진하게 보여요.</div>
+  <div class="export-note" style="margin-top:6px;">이 기기에만 적용돼요. 밝은 테마에서 옅은 글씨가 더 진하게 보여요.</div>
   <div class="section-label">테마</div>
   <div class="theme-option-row" id="themeOptionRow">
     <div class="theme-option" data-action="theme-select" data-id="auto"><span>기기 설정을 따름</span><span class="dot"></span></div>
@@ -416,7 +424,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     <div class="theme-option" data-action="lang-select" data-id="ko"><span data-lang-name="ko">한국어</span><span class="dot"></span></div>
     <div class="theme-option" data-action="lang-select" data-id="en"><span data-lang-name="en">English</span><span class="dot"></span></div>
   </div>
-  <div class="sub" style="margin-top:6px;">이 기기에만 적용돼요. 바꾸면 화면이 새로 불러와져요.</div>
+  <div class="export-note" style="margin-top:6px;">이 기기에만 적용돼요. 바꾸면 화면이 새로 불러와져요.</div>
 </div>
 
 <div class="wrap hidden set-sub" id="view-setRules">
@@ -445,7 +453,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     <div class="btn" data-action="open-pass" data-id="stone">🪨 징검다리</div>
     <div class="btn" data-action="open-pass" data-id="comma">⏸️ 쉼표</div>
   </div>
-  <div class="sub" style="margin-top:6px;">징검다리는 한두 개 모자란 날을 성공으로 이어 주고, 쉼표는 손 쓸 수 없는 날 하루를 통째로 쉬게 해 줘요. 둘 다 모으는 방식이라 아껴 쓰는 게 좋아요.</div>
+  <div class="export-note" style="margin-top:6px;">징검다리는 한두 개 모자란 날을 성공으로 이어 주고, 쉼표는 손 쓸 수 없는 날 하루를 통째로 쉬게 해 줘요. 둘 다 모으는 방식이라 아껴 쓰는 게 좋아요.</div>
 </div>
 
 <div class="wrap hidden set-sub" id="view-setNotify">
@@ -898,6 +906,29 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <script>
 (function () {
   "use strict";
+
+  // ---- 26차: 동작 줄이기 ----
+  // 기기 설정에서 '동작 줄이기'를 켠 사람에게는 움직임을 거의 없앤다. CSS 애니메이션은 style.css 맨 끝에서,
+  // 자바스크립트로 움직이는 것(element.animate: 메달 뒤집기·선물 상자·축하 화면 등)은 여기서 길이만 1ms로 줄인다.
+  // 시작 지연(delay)은 그대로 둬서 화면이 넘어가는 박자(보여 주고 → 잠시 뒤 닫힘)는 그대로 유지된다.
+  function reduceMotion() {
+    try { return !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; }
+  }
+  (function () {
+    var EP = window.Element && Element.prototype;
+    if (!EP || typeof EP.animate !== "function" || EP.__mmdReduce) return;
+    var orig = EP.animate;
+    EP.__mmdReduce = true;
+    EP.animate = function (frames, opt) {
+      if (!reduceMotion()) return orig.apply(this, arguments);
+      var o = {};
+      if (typeof opt === "number") o.duration = opt;
+      else if (opt) for (var k in opt) o[k] = opt[k];
+      o.duration = 1;
+      if (o.iterations === Infinity || o.iterations > 1) o.iterations = 1;
+      return orig.call(this, frames, o);
+    };
+  })();
 
   var STORE_KEY = "morning_routine_v4";
   var THEME_KEY = "morning_routine_theme_v1";
@@ -5366,10 +5397,30 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (homeIsVisible()) renderHome();
     else renderPendingIndicator();
   }
+  // 26차: 첫 로딩 안내(글씨 크기 창·공휴일 불러오기 창)가 아직 남아 있으면 축하·획득 안내는 줄을 서서 기다린다.
+  // (예전엔 징검다리·쉼표 획득 안내가 글씨 크기 창 위에 겹쳐 떴다) 창이 닫히면 0.4초 안에 이어서 띄운다.
+  var celebWaitTimer = null;
+  function celebBootBusy() {
+    if (!window.__holidayPromptChecked) {
+      var pend = document.getElementById("view-pending");
+      if (!(pend && !pend.classList.contains("hidden"))) return true;   // 승인 대기 화면이면 기다릴 이유가 없다
+    }
+    var ids = ["fsPromptOverlay", "holidayFirstPromptOverlay"];
+    for (var i = 0; i < ids.length; i++) {
+      var o = document.getElementById(ids[i]);
+      if (o && !o.classList.contains("hidden")) return true;
+    }
+    return false;
+  }
   function showCeleb() {
     var ev = celebQueue[0];
     var st = celebEl();
     if (!ev) { st.classList.add("hidden"); return; }
+    if (celebBootBusy()) {
+      st.classList.add("hidden");
+      if (!celebWaitTimer) celebWaitTimer = setTimeout(function () { celebWaitTimer = null; if (celebQueue.length) showCeleb(); }, 400);
+      return;
+    }
     celebClearTimers();
     st.classList.remove("hidden");
     var okBtn = '<div class="celeb-btn" data-action="celeb-next">확인</div>';
@@ -6580,7 +6631,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 
     function rowTop(rowIdx) { return rowIdx * ITEM_H; } // the top spacer's own height already provides the centering offset
     function setRow(rowIdx, smooth) {
-      if (smooth) container.scrollTo({ top: rowTop(rowIdx), behavior: "smooth" });
+      if (smooth) container.scrollTo({ top: rowTop(rowIdx), behavior: reduceMotion() ? "auto" : "smooth" });
       else container.scrollTop = rowTop(rowIdx);
       markSelected(container, rowIdx);
     }
@@ -7266,6 +7317,85 @@ window.addEventListener("beforeinstallprompt", function (e) {
     el.textContent = bd === null ? "아직 백업한 적이 없어요" : bd === 0 ? "마지막 백업: 오늘" : "마지막 백업: " + bd + "일 전 (" + state.lastBackupAt + ")";
     el.classList.toggle("old", bd === null || bd >= 7);
   }
+  // ---- 26차: 오프라인 준비 상태(설정 > 데이터, 진단용) ----
+  // 서비스워커에게 보관 목록을 물어보고(sw.js 2026-10-15-a부터 답함), 기기 보관함에 실제로 들어 있는지 하나씩 확인한다.
+  // 옛 서비스워커라 답이 없으면 보관함에 든 파일 수만 보여 준다.
+  function swAskInfo() {
+    return new Promise(function (resolve) {
+      try {
+        var ctl = navigator.serviceWorker && navigator.serviceWorker.controller;
+        if (!ctl || typeof MessageChannel === "undefined") { resolve(null); return; }
+        var ch = new MessageChannel(), done = false;
+        ch.port1.onmessage = function (e) { if (!done) { done = true; resolve(e.data || null); } };
+        setTimeout(function () { if (!done) { done = true; resolve(null); } }, 1500);
+        ctl.postMessage({ type: "mmd-sw-info" }, [ch.port2]);
+      } catch (e) { resolve(null); }
+    });
+  }
+  function offCountCached(cacheName, keys) {
+    return caches.open(cacheName).then(function (c) {
+      return Promise.all(keys.map(function (k) { return c.match(k).then(function (h) { return h ? 1 : 0; }, function () { return 0; }); }));
+    }).then(function (arr) { return arr.reduce(function (a, b) { return a + b; }, 0); }, function () { return 0; });
+  }
+  function offCacheKeyCount(prefix) {
+    return caches.keys().then(function (names) {
+      var n = names.filter(function (x) { return x.indexOf(prefix) === 0; })[0];
+      if (!n) return 0;
+      return caches.open(n).then(function (c) { return c.keys(); }).then(function (k) { return k.length; });
+    }).catch(function () { return 0; });
+  }
+  var offReadyBusy = false;
+  function renderOfflineReady(manual) {
+    var box = document.getElementById("offReady");
+    if (!box || offReadyBusy) return;
+    offReadyBusy = true;
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); }
+    // 줄 하나 = 이름 · 값(· 작은 설명). 영어 사전이 바꿔 끼울 수 있게 글자 덩어리를 따로 둔다.
+    function row(ok, name, val, note) {
+      return '<div class="off-row ' + (ok === true ? "ok" : ok === false ? "bad" : "info") + '">' +
+        '<span class="off-mark" aria-hidden="true">' + (ok === true ? "✓" : ok === false ? "!" : "·") + '</span>' +
+        '<span class="off-name">' + esc(name) + '</span><span class="off-val">' + esc(val) + '</span>' +
+        (note ? '<span class="off-note">' + esc(note) + '</span>' : '') + '</div>';
+    }
+    var hasSW = "serviceWorker" in navigator && location.protocol === "https:";
+    var ctl = hasSW && navigator.serviceWorker.controller;
+    var uidNow = currentUid;
+    var signed = null;
+    try { signed = JSON.parse(localStorage.getItem(SIGNED_IN_KEY) || "null"); } catch (e) {}
+    var local = { base: !!(uidNow && loadSyncBase(uidNow)), cache: !!(uidNow && loadCachedStateFor(uidNow)),
+      signed: !!(signed && uidNow && signed.uid === uidNow), unsynced: hasUnsynced(uidNow) };
+    var p = (!ctl || typeof caches === "undefined") ? Promise.resolve(null) : swAskInfo().then(function (info) {
+      if (info && info.shell && info.shellCache) {
+        return Promise.all([offCountCached(info.shellCache, info.shell), offCountCached(info.sdkCache, info.sdk || [])]).then(function (r) {
+          return { version: info.version, shellHave: r[0], shellAll: info.shell.length, sdkHave: r[1], sdkAll: (info.sdk || []).length };
+        });
+      }
+      return Promise.all([offCacheKeyCount("mmd-shell-"), offCacheKeyCount("mmd-sdk-")]).then(function (r) {
+        return { version: null, shellHave: r[0], shellAll: null, sdkHave: r[1], sdkAll: null };
+      });
+    });
+    p.then(function (sw) {
+      var filesOk = !!sw && (sw.shellAll ? sw.shellHave >= sw.shellAll : sw.shellHave > 0) && (sw.sdkAll ? sw.sdkHave >= sw.sdkAll : sw.sdkHave > 0);
+      var dataOk = local.base && local.cache && local.signed;
+      var ready = !!ctl && filesOk && dataOk;
+      var h = '<div class="off-sum ' + (ready ? "ok" : "bad") + '"><span class="off-mark" aria-hidden="true">' + (ready ? "✓" : "!") + '</span>' +
+        '<span>' + (ready ? "오프라인으로 열 준비가 됐어요" : "아직 오프라인 준비가 덜 됐어요") + '</span></div>';
+      if (!ready) h += '<div class="off-hint">' + (!hasSW ? "이 브라우저에서는 오프라인으로 열 수 없어요." :
+        "인터넷이 될 때 앱을 완전히 닫았다가 다시 열고 10초쯤 기다린 뒤 여기서 다시 확인해 주세요.") + '</div>';
+      h += row(!!ctl, "오프라인 도우미", !hasSW ? "지원 안 함" : ctl ? "작동 중" : "아직 준비 안 됨", sw && sw.version ? "v " + sw.version : "");
+      if (sw) {
+        h += row(sw.shellAll ? sw.shellHave >= sw.shellAll : sw.shellHave > 0, "보관된 앱 파일", sw.shellHave + (sw.shellAll ? " / " + sw.shellAll : ""));
+        h += row(sw.sdkAll ? sw.sdkHave >= sw.sdkAll : sw.sdkHave > 0, "보관된 로그인·저장 도구", sw.sdkHave + (sw.sdkAll ? " / " + sw.sdkAll : ""));
+      }
+      h += row(local.base && local.cache, "이 기기에 저장된 기록", local.base && local.cache ? "있음" : "없음");
+      h += row(local.signed, "로그인 기억", local.signed ? "있음" : "없음");
+      h += row(local.unsynced ? null : true, "아직 못 올린 변경", local.unsynced ? "있음" : "없음", local.unsynced ? "연결되면 합쳐서 올라가요" : "");
+      h += row(null, "앱 버전", window.__mmdBuild || "-");
+      box.innerHTML = h;
+      offReadyBusy = false;
+      if (manual) toast("다시 확인했어요");
+    }, function () { offReadyBusy = false; });
+  }
   // ---- 되돌리기 막대(삭제 직후 6초) ----
   var undoFn = null, undoTimer = null;
   function showUndo(msg, fn) {
@@ -7715,6 +7845,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     colors: { t: "통계 색 의미", sub: "초록 · 금색 · 파랑 · 점선", s: [
       ["초록", "정상적으로 완료한 칸이에요."],
       ["금색(완료)", "카운트다운에서 정해진 시간을 넘겨 끝낸 완료예요. 홈이나 기록에서 다시 체크하면 초록으로 돌아가요."],
+      ["초과는 어떻게 보이나요", "유예를 넘겨 마친 날은 금색으로 보이고, 색을 구분하기 어려워도 알 수 있게 모양도 달라요. 홈·기록의 점은 마름모로, 통계의 달력 칸은 오른쪽 위 모서리에 표시가 생겨요."],
       ["점선 · 옅은 칸", "시작일 이전이거나 그날 해당이 없는 칸이에요."],
       ["날짜 숫자 색", "토·일은 금색, 쉬는 날은 파란 계열로 보여요."],
       ["쉬는 날 보너스", "쉬는 날에 자발적으로 한 항목은 성공 달력에 금색 ‘보너스’ 칸으로 보여요. 스트릭에는 포함되지 않아요."]
@@ -7863,7 +7994,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["끊겨도 체크할 수 있어요", "인터넷이 끊겨도 체크와 기록은 이 기기에 먼저 저장돼요. 앱을 껐다 켜도 남아 있어요. 위쪽에 작은 <b>오프라인</b> 표시가 떠요."],
       ["인터넷 없이 열기", "이 기기에서 한 번이라도 연결된 상태로 열었던 적이 있으면, 인터넷 없이 열어도 마지막 기록으로 홈이 열려요. 처음 쓰는 기기는 연결된 뒤에 열려요."],
       ["연결되면 합쳐요", "다시 연결되면 다른 기기의 기록과 <b>날짜·항목 단위로 합쳐서</b> 저장해요. 다른 기기에서 체크한 것도 사라지지 않아요. 같은 항목을 양쪽에서 다르게 바꿨다면 나중에 저장하는 이 기기 쪽이 남아요."],
-      ["오프라인일 때 안 되는 것", "지인 · 응원처럼 서버가 필요한 기능은 연결된 뒤에 써 주세요. 로그아웃하면 아직 저장 안 된 기록은 같은 계정으로 다시 로그인했을 때 합쳐져요."]
+      ["오프라인일 때 안 되는 것", "지인 · 응원처럼 서버가 필요한 기능은 연결된 뒤에 써 주세요. 로그아웃하면 아직 저장 안 된 기록은 같은 계정으로 다시 로그인했을 때 합쳐져요."],
+      ["준비됐는지 확인하기", "설정 > 데이터 맨 아래 ‘오프라인 준비 상태’에서 이 기기가 인터넷 없이 열 준비가 됐는지 볼 수 있어요. 덜 됐다면 인터넷이 될 때 앱을 완전히 닫았다가 다시 열어 주세요."]
     ], see: ["backup", "streak"] }
   };
   var HELP_GROUPS = [
@@ -10223,7 +10355,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "stats-prev-week") { statsWeekStart.setDate(statsWeekStart.getDate()-7); renderStats(); }
     else if (action === "stats-next-week") { statsWeekStart.setDate(statsWeekStart.getDate()+7); renderStats(); }
     else if (action === "undo-do") { runUndo(); }
-    else if (action === "open-export") { showView("view-export"); renderExport(); renderBackupAge(); }
+    else if (action === "open-export") { showView("view-export"); renderExport(); renderBackupAge(); renderOfflineReady(); }
+    else if (action === "off-ready-check") { renderOfflineReady(true); }
     else if (action === "copy-json") { copyExport(); }
     else if (action === "do-import") { doImport(); }
     else if (action === "download-json") { downloadJson(); }

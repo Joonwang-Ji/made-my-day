@@ -409,6 +409,31 @@
     "처음 안내 다시 보기": "Replay the welcome guide",
     "홈 · 통계 · 기록 · 지인": "Home · Stats · Records · Friends"
   });
+  // ---- 26차: 설정 > 데이터 '오프라인 준비 상태' · 초과 완료 모양 도움말 ----
+  I.register({
+    "오프라인 준비 상태": "Offline readiness",
+    "인터넷이 안 될 때도 앱을 열 수 있는지 이 기기의 준비 상태를 보여 줘요. 문제가 생겼을 때 원인을 찾는 데 써요.": "Shows whether this device is ready to open the app without the internet. Useful for finding the cause when something goes wrong.",
+    "다시 확인": "Check again",
+    "다시 확인했어요": "Checked again",
+    "오프라인으로 열 준비가 됐어요": "Ready to open offline",
+    "아직 오프라인 준비가 덜 됐어요": "Not fully ready for offline yet",
+    "이 브라우저에서는 오프라인으로 열 수 없어요.": "This browser can't open the app offline.",
+    "인터넷이 될 때 앱을 완전히 닫았다가 다시 열고 10초쯤 기다린 뒤 여기서 다시 확인해 주세요.": "While online, fully close the app, open it again, wait about 10 seconds, then check here again.",
+    "오프라인 도우미": "Offline helper",
+    "지원 안 함": "Not supported", "작동 중": "Running", "아직 준비 안 됨": "Not ready yet",
+    "보관된 앱 파일": "Saved app files",
+    "보관된 로그인·저장 도구": "Saved sign-in & sync tools",
+    "이 기기에 저장된 기록": "Records saved on this device",
+    "로그인 기억": "Remembered sign-in",
+    "아직 못 올린 변경": "Changes not yet uploaded",
+    "있음": "Yes", "없음": "No",
+    "연결되면 합쳐서 올라가요": "Will be merged and uploaded when you reconnect",
+    "앱 버전": "App version",
+    "준비됐는지 확인하기": "Checking that it's ready",
+    "설정 > 데이터 맨 아래 ‘오프라인 준비 상태’에서 이 기기가 인터넷 없이 열 준비가 됐는지 볼 수 있어요. 덜 됐다면 인터넷이 될 때 앱을 완전히 닫았다가 다시 열어 주세요.": "At the bottom of Settings > Data, “Offline readiness” shows whether this device is ready to open without the internet. If it isn't, fully close the app and open it again while you're online.",
+    "초과는 어떻게 보이나요": "How overtime looks",
+    "유예를 넘겨 마친 날은 금색으로 보이고, 색을 구분하기 어려워도 알 수 있게 모양도 달라요. 홈·기록의 점은 마름모로, 통계의 달력 칸은 오른쪽 위 모서리에 표시가 생겨요.": "Days finished past the grace time show in gold, and their shape differs too so you can tell even without color: dots on Home and Records become diamonds, and calendar cells in Stats get a mark in the top-right corner."
+  });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();

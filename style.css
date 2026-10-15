@@ -1065,3 +1065,42 @@
   @media (prefers-color-scheme: dark) { html:not([data-theme="light"]) .tour-next { color: #14201A; } }
   .tour-skip:focus-visible, .tour-next:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .tour-hole, .tour-bubble { transition: none; } }
+
+/* ===== 26차: 오프라인 준비 상태 · 초과 완료 모양 · 동작 줄이기 ===== */
+/* 설정 > 데이터 > 오프라인 준비 상태 */
+.off-ready { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px 14px; margin-bottom: 10px; min-height: 44px; }
+.off-sum { display: flex; align-items: center; gap: 8px; padding: 11px 0 9px; font-size: 0.8438rem; font-weight: 800; border-bottom: 1px solid var(--line); }
+.off-sum.ok { color: var(--sage); }
+.off-sum.bad { color: var(--danger); }
+.off-hint { font-size: 0.7188rem; color: var(--ink-dim); line-height: 1.5; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.off-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 0.7812rem; }
+.off-row:last-child { border-bottom: none; }
+.off-name { flex: 1 1 auto; min-width: 0; color: var(--ink); }
+.off-val { flex: none; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.off-row.bad .off-val { color: var(--danger); }
+.off-note { flex-basis: 100%; padding-left: 1.5rem; font-size: 0.6875rem; color: var(--ink-dim); }
+.off-mark { flex: none; width: 1rem; height: 1rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.625rem; font-weight: 900; line-height: 1; }
+.off-row.ok .off-mark, .off-sum.ok .off-mark { background: var(--sage); color: var(--card); }
+.off-row.bad .off-mark, .off-sum.bad .off-mark { background: var(--danger); color: var(--card); }
+.off-row.info .off-mark { color: var(--ink-dim); }
+
+/* 초과 완료(시간을 넘겨 마친 날)는 금색 + 모양으로도 구분한다(색을 구분하기 어려운 사람·흑백 화면용)
+   홈·기록의 점: 동그라미 → 마름모 / 통계의 달력 칸·주간 칸: 오른쪽 위 모서리에 작은 삼각 표시 */
+.mini-dot.done.overtime { border-radius: 1px; transform: rotate(45deg) scale(.88); }
+.mini-cal-cell.done.overtime, .week-cell.done.overtime { position: relative; overflow: hidden; }
+.mini-cal-cell.done.overtime::after, .week-cell.done.overtime::after { content: ""; position: absolute; top: 0; right: 0; width: 0; height: 0;
+  border-style: solid; border-width: 0 0.75em 0.75em 0; border-color: transparent var(--ink) transparent transparent; opacity: .75; }
+/* 표시 크기는 칸 글씨 크기(em)를 따른다: 통계의 작은 달력 칸은 작게, 주간 칸은 조금 크게 */
+.week-cell.done.overtime { font-size: 0.625rem; }
+
+/* 기기 설정의 '동작 줄이기'를 켠 경우: 움직임을 거의 없앤다(자바스크립트 움직임은 index.html에서 함께 줄임) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important;
+  }
+  .celeb-confetti, .celeb-rays, .celeb-flash { display: none !important; }
+}
+/* 26차: 큰 글씨에서는 도움말(?) 동그라미도 글씨를 따라 커진다(예전엔 10px 고정이라 가장 크게에서 너무 작았음) */
+html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }

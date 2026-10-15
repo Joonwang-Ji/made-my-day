@@ -17,7 +17,7 @@
 //
 // 보관 목록을 바꾸거나 이 파일의 동작을 바꿀 때는 SW_VERSION을 올린다(옛 보관함은 자동으로 지워짐).
 
-var SW_VERSION = "2026-10-14-a";
+var SW_VERSION = "2026-10-15-a";
 var SHELL = "mmd-shell-" + SW_VERSION;
 var SDK = "mmd-sdk-v1";
 var SHELL_FILES = [
@@ -68,6 +68,18 @@ function keyOf(url) {
   if (p.charAt(p.length - 1) === "/") p += "index.html";
   return u.origin + p;
 }
+// 26차: 설정 > 데이터 > "오프라인 준비 상태"가 보관 목록을 물어보면 답한다(진단용, 동작은 바꾸지 않음)
+self.addEventListener("message", function (e) {
+  var d = e.data;
+  if (!d || d.type !== "mmd-sw-info" || !e.ports || !e.ports[0]) return;
+  e.ports[0].postMessage({
+    version: SW_VERSION, shellCache: SHELL, sdkCache: SDK,
+    shell: SHELL_FILES.map(function (f) { return keyOf(new URL(f, SCOPE).href); })
+      .filter(function (k, i, a) { return a.indexOf(k) === i; }),   // "./"와 "index.html"은 같은 열쇠
+    sdk: SDK_FILES.slice()
+  });
+});
+
 function isSdk(u) { return u.hostname === "www.gstatic.com" && u.pathname.indexOf("/firebasejs/") === 0; }
 
 self.addEventListener("fetch", function (e) {
