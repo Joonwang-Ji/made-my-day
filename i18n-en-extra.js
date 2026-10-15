@@ -434,6 +434,61 @@
     "초과는 어떻게 보이나요": "How overtime looks",
     "유예를 넘겨 마친 날은 금색으로 보이고, 색을 구분하기 어려워도 알 수 있게 모양도 달라요. 홈·기록의 점은 마름모로, 통계의 달력 칸은 오른쪽 위 모서리에 표시가 생겨요.": "Days finished past the grace time show in gold, and their shape differs too so you can tell even without color: dots on Home and Records become diamonds, and calendar cells in Stats get a mark in the top-right corner."
   });
+  // ---- 27차: 습관 만들기 ----
+  I.register({
+    "습관 만들기": "Build a Habit",
+    "새 습관 만들기": "New habit",
+    "습관 편집": "Edit habit",
+    "이름 없는 습관": "Untitled habit",
+    "홈에 고정": "Pin to Home",
+    "오늘은 쉬는 날": "Rest day today",
+    "오늘은 해당 없음": "Not scheduled today",
+    "✓ 오늘 완료": "✓ Done today",
+    "새 습관을 위해 항목 몇 개를 묶어, 그 묶음만의 연속일을 따로 셀 수 있어요.": "Group a few items for a new habit and keep a separate streak just for that group.",
+    "최고 기록": "Best",
+    "시작한 지(일)": "Days since start",
+    "🎉 목표를 달성했어요": "🎉 Goal reached",
+    "묶인 항목이 모두 삭제됐어요. 편집에서 항목을 다시 골라 주세요.": "All grouped items were deleted. Pick items again in Edit.",
+    "삭제됨": "Deleted",
+    "최근 기록": "Recent days",
+    "놓침": "Missed",
+    "해당 없음·쉬는 날": "Not scheduled · rest",
+    "편집": "Edit",
+    "처음부터 다시": "Start over",
+    "이름": "Name",
+    "묶을 항목": "Items to group",
+    "묶인 항목 · 오늘": "Grouped items · today",
+    "고른 항목이 그날 모두 끝나면 성공이에요. 요일이 아닌 날·쉬는 날은 건너뛰어요.": "A day counts when all picked items are done. Days they aren't scheduled and rest days are skipped.",
+    "불시 · 고를 수 없음": "Anytime · can't pick",
+    "아직 항목이 없어요. 먼저 홈에서 루틴 항목을 추가해 주세요.": "No items yet. Add routine items on Home first.",
+    "목표 일수": "Goal (days)",
+    "안 정함": "None",
+    "항목을 바꾸면 지난 날짜도 바뀐 항목으로 다시 계산돼요.": "If you change the items, past days are recalculated with the new items.",
+    "연속일은 오늘부터 세요.": "The streak starts counting today.",
+    "예: 예배 1시간": "e.g. Worship 1 hour",
+    "이름을 적어 주세요": "Please enter a name",
+    "항목을 하나 이상 골라 주세요": "Pick at least one item",
+    "습관을 만들었어요": "Habit created",
+    "홈에 고정했어요": "Pinned to Home",
+    "홈에서 내렸어요": "Unpinned from Home",
+    "처음부터 다시 셀까요?": "Start counting over?",
+    "오늘부터 연속일을 새로 세요. 지난 연속일과 최고 기록은 사라지고 되돌릴 수 없어요": "The streak starts fresh from today. The old streak and best record will be gone and can't be restored",
+    "다시 시작": "Start over",
+    "오늘부터 다시 세요": "Counting again from today",
+    "이 습관을 삭제할까요?": "Delete this habit?",
+    "묶음만 지워지고 항목과 기록은 그대로 남아요": "Only the group is removed; your items and records stay",
+    "습관을 삭제했어요": "Habit deleted",
+    "새 습관이 자리 잡아 가고 있어요. 이대로 이어 가 봐요.": "Your new habit is taking root. Keep it going!"
+  }, [
+    [/^오늘 (\d+)\/(\d+)$/, function (a, b) { return "Today " + a + "/" + b; }],
+    [/^연속 (\d+)일$/, function (n) { return n + "-day streak"; }],
+    [/^목표 (\d+)일$/, function (n) { return "Goal: " + n + " days"; }],
+    [/^(21|30|66|100)일$/, function (n) { return n + " days"; }],
+    [/^(\d+)개 선택$/, function (n) { return n + " selected"; }],
+    [/^([\d.]+) 시작$/, function (d) { return "Started " + d; }],
+    [/^홈에는 (\d+)개까지 고정할 수 있어요$/, function (n) { return "You can pin up to " + n + " on Home"; }],
+    [/^습관은 (\d+)개까지 만들 수 있어요$/, function (n) { return "You can make up to " + n + " habits"; }]
+  ]);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();

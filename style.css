@@ -1104,3 +1104,75 @@
 }
 /* 26차: 큰 글씨에서는 도움말(?) 동그라미도 글씨를 따라 커진다(예전엔 10px 고정이라 가장 크게에서 너무 작았음) */
 html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }
+/* ===== 27차: 습관 만들기 ===== */
+#habitCards { margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+.habit-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; cursor: pointer; }
+.habit-card.done { border-color: var(--sage); }
+.habit-sec .habit-card + .habit-card { margin-top: 8px; }
+.hb-top { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.hb-ico { flex: none; font-size: 0.9375rem; line-height: 1; }
+.hb-name { flex: 1; min-width: 0; font-weight: 800; font-size: 0.875rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb-pin { flex: none; font-size: 0.75rem; }
+.hb-today { flex: none; font-size: 0.6875rem; font-weight: 700; color: var(--gold); background: var(--gold-soft); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.hb-today.ok { color: var(--sage); background: var(--sage-soft); }
+.hb-today.na { color: var(--rest); background: var(--rest-soft); }
+.hb-mid { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.hb-streak { font-family: 'Fraunces', serif; font-weight: 650; font-size: 1.0625rem; color: var(--ink); }
+.hb-goal { font-size: 0.6875rem; color: var(--ink-dim); }
+.hb-bar { height: 6px; border-radius: 999px; background: var(--ring-track); overflow: hidden; margin-top: 7px; }
+.hb-bar.big { height: 8px; margin-top: 4px; }
+.hb-bar > span { display: block; height: 100%; background: var(--sage); border-radius: 999px; }
+.habit-sec { margin-top: 22px; }
+.hb-sec-label { display: flex; align-items: center; gap: 6px; }
+.hb-empty { font-size: 0.75rem; color: var(--ink-dim); line-height: 1.6; margin-bottom: 8px; }
+.hb-add { margin-top: 10px; }
+.hb-d-name { font-weight: 800; font-size: 1rem; color: var(--ink); margin-bottom: 10px; word-break: break-word; }
+.hb-d-stats { margin-bottom: 10px; gap: 8px; }
+.hb-d-stats .stat-box { padding: 10px 6px; }
+.hb-d-goal { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: var(--ink-dim); }
+.hb-d-note { font-size: 0.75rem; color: var(--ink-dim); margin-top: 6px; line-height: 1.5; }
+.hb-d-items { display: flex; flex-direction: column; gap: 4px; }
+.hb-d-item { display: flex; align-items: baseline; gap: 8px; font-size: 0.8125rem; color: var(--ink); }
+.hb-d-item.done .hb-d-dot { color: var(--sage); }
+.hb-d-dot { flex: none; width: 1rem; text-align: center; color: var(--ink-dim); font-weight: 800; }
+.hb-d-iname { flex: 1; min-width: 0; word-break: break-word; }
+.hb-d-days { flex: none; font-size: 0.6875rem; color: var(--ink-dim); white-space: nowrap; }
+.hb-cal-head, .hb-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.hb-cal-head div { text-align: center; font-size: 0.625rem; color: var(--ink-dim); font-weight: 700; }
+.hb-cal { margin-top: 4px; }
+.hb-cell { aspect-ratio: 1; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; color: var(--ink-dim); border: 1px solid transparent; }
+.hb-cell.ok { background: var(--sage); color: var(--card); font-weight: 800; }
+.hb-cell.miss { border: 1.5px solid var(--danger); color: var(--danger); }
+.hb-cell.skip { background: var(--rest-soft); color: var(--rest); }
+.hb-cell.todo { border: 1px dashed var(--ink-dim); }
+.hb-cell.before, .hb-cell.future { opacity: 0.3; }
+.hb-cell.today { box-shadow: inset 0 0 0 2px var(--gold); }
+.hb-cal-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.6875rem; color: var(--ink-dim); margin-top: 8px; }
+.hb-cal-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.hb-lg { display: inline-block; width: 0.625rem; height: 0.625rem; border-radius: 3px; }
+.hb-lg.ok { background: var(--sage); }
+.hb-lg.miss { border: 1.5px solid var(--danger); }
+.hb-lg.skip { background: var(--rest-soft); border: 1px solid var(--rest); }
+.hb-d-meta { font-size: 0.6875rem; color: var(--ink-dim); margin: 8px 0 12px; }
+.hb-d-actions { display: flex; gap: 6px; margin-top: 10px; }
+.hb-d-actions .btn { flex: 1; min-width: 0; padding-left: 4px; padding-right: 4px; }
+.hb-d-actions .danger-text { color: var(--danger); }
+.hb-count { font-weight: 600; color: var(--sage); margin-left: 4px; }
+.hb-pick-note { font-size: 0.6875rem; color: var(--ink-dim); line-height: 1.5; margin: 4px 0 8px; }
+.hb-pick-list { display: flex; flex-direction: column; gap: 4px; max-height: 15rem; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line); border-radius: 12px; padding: 6px; }
+.hb-pick-cat { font-size: 0.6875rem; font-weight: 800; color: var(--ink-dim); margin: 6px 4px 2px; }
+.hb-pick-cat:first-child { margin-top: 2px; }
+.hb-pick { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 9px; cursor: pointer; }
+.hb-pick.on { background: var(--sage-soft); }
+.hb-pick.off { opacity: 0.45; cursor: default; }
+.hb-pick-box { flex: none; width: 1.125rem; height: 1.125rem; border-radius: 5px; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center;
+  font-size: 0.6875rem; font-weight: 900; color: var(--card); }
+.hb-pick.on .hb-pick-box { background: var(--sage); border-color: var(--sage); }
+.hb-pick-name { flex: 1; min-width: 0; font-size: 0.8125rem; color: var(--ink); word-break: break-word; }
+.hb-pick-days { flex: none; font-size: 0.6875rem; color: var(--ink-dim); white-space: nowrap; }
+.hb-goals { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.hb-goals .tp-chip { flex: 1; min-width: 3rem; text-align: center; padding: 8px 6px; border-radius: 12px; border: 1px solid var(--line); background: var(--card);
+  font-size: 0.75rem; font-weight: 700; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.hb-goals .tp-chip.on { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
+.hb-celeb-name { font-weight: 800; }

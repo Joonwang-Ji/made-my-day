@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-15-1";
+  var BUILD_VERSION = "2026-10-15-2";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -194,6 +194,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
       <div class="ring-info-bible" id="ringInfoBible"></div>
     </div>
   </div>
+
+  <!-- 27차: 습관 만들기(홈에 고정한 것만, 최대 2개) -->
+  <div id="habitCards" class="hidden"></div>
 
   <div id="catList"></div>
   <div class="add-cat" data-action="add-category">
@@ -811,6 +814,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
       <span class="tp-close-x" data-action="pass-close">✕</span>
     </div>
     <div class="tp-card-body" id="passOverlayBody"></div>
+  </div>
+</div>
+
+<!-- 27차: 습관 만들기 상세·만들기·편집 -->
+<div class="tp-overlay hidden" id="habitOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title" id="habitOvTitle">습관 만들기</div>
+      <span class="tp-close-x" data-action="habit-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="habitOvBody"></div>
   </div>
 </div>
 
@@ -2530,6 +2544,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       recurringHolidays: [],
       passDays: [],
       commaDays: [],
+      habits: [],
       commaWhy: {},
       lateRestLog: [],
       streakThreshold: 100,
@@ -2652,6 +2667,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!p.recurringHolidays || !Array.isArray(p.recurringHolidays)) p.recurringHolidays = [];
     p.passDays = normalizePassDays(p.passDays);
     p.commaDays = normalizePassDays(p.commaDays);
+    p.habits = normalizeHabits(p.habits);
     if (!p.commaWhy || typeof p.commaWhy !== "object" || Array.isArray(p.commaWhy)) p.commaWhy = {};
     p.lateRestLog = normalizeLateLog(p.lateRestLog);
     if (!p.memos || typeof p.memos !== "object") p.memos = {};
@@ -4615,6 +4631,343 @@ window.addEventListener("beforeinstallprompt", function (e) {
     }
     return Math.max(longest, current);
   }
+  // ---- 27차: 습관 만들기 ----
+  // 새 습관을 위해 항목 몇 개를 묶어, 그 묶음만의 연속일을 전체 스트릭과 따로 센다.
+  //  · state.habits = [{ id, name, itemIds:[...], goal: 0|21|30|66|100, pinned: bool, createdAt: "YYYY-MM-DD", goalDone?: N }]
+  //  · 성공: 그날 "예정"인 묶음 항목을 모두 완료(isDueForDate 기준 — 요일 이력·시작 전·삭제 보관·쉬는 날 유지가 그대로 적용).
+  //  · 그날 예정인 묶음 항목이 없으면(쉬는 날·쉼표·요일 아님) 건너뜀(끊기지도 늘지도 않음). 징검다리는 적용하지 않는다.
+  //  · 만든 날(createdAt)부터만 센다. 그 전 날짜는 "끊긴 것"으로 보아 거기서 멈춘다.
+  //  · 홈 고정은 HABIT_PIN_MAX개까지. 목표에 닿으면 한 번 축하(goalDone에 그 목표를 적어 다시 안 뜸).
+  var HABIT_PIN_MAX = 2, HABIT_MAX = 10, HABIT_GOALS = [0, 21, 30, 66, 100];
+  function normalizeHabits(list) {
+    if (!Array.isArray(list)) return [];
+    var re = /^\d{4}-\d{2}-\d{2}$/, out = [], seen = {}, pins = 0;
+    list.forEach(function (h) {
+      if (!h || typeof h.id !== "string" || !h.id || seen[h.id]) return;
+      seen[h.id] = true;
+      var ids = [];
+      (Array.isArray(h.itemIds) ? h.itemIds : []).forEach(function (x) { if (typeof x === "string" && x && ids.indexOf(x) === -1) ids.push(x); });
+      var r = {
+        id: h.id,
+        name: typeof h.name === "string" ? h.name.slice(0, 20) : "",
+        itemIds: ids,
+        goal: HABIT_GOALS.indexOf(h.goal) !== -1 ? h.goal : 0,
+        pinned: h.pinned === true && pins < HABIT_PIN_MAX,
+        createdAt: (typeof h.createdAt === "string" && re.test(h.createdAt)) ? h.createdAt : todayKey()
+      };
+      if (r.pinned) pins++;
+      if (typeof h.goalDone === "number" && h.goalDone > 0) r.goalDone = h.goalDone;
+      out.push(r);
+    });
+    return out.slice(0, HABIT_MAX);
+  }
+  function habitList() { return Array.isArray(state.habits) ? state.habits : []; }
+  function habitById(id) { return habitList().filter(function (h) { return h.id === id; })[0] || null; }
+  // 묶음의 항목(지금 있는 항목 + 삭제해 보관된 항목). 기록까지 지워 완전히 없어진 항목은 빠진다.
+  function habitItemRef(id) {
+    var it = findItem(id);
+    if (it) return it;
+    return archivedItems().filter(function (a) { return a.id === id; })[0] || null;
+  }
+  function habitItems(h) { return h.itemIds.map(habitItemRef).filter(Boolean); }
+  // true = 성공, false = 실패(또는 만들기 전), null = 그날 해당 없음(건너뜀)
+  function habitStatus(h, k, items) {
+    if (k < h.createdAt) return false;
+    var due = (items || habitItems(h)).filter(function (it) { return isDueForDate(it, k); });
+    if (!due.length) return null;
+    return due.every(function (it) { return isDone(k, it.id); });
+  }
+  function habitStreak(h) {
+    var items = habitItems(h);
+    return computeStreakGeneric(function (k) { return habitStatus(h, k, items); });
+  }
+  function habitBest(h) {
+    var items = habitItems(h), cur = parseKeyToDate(h.createdAt), end = todayKey(), best = 0, run = 0, guard = 0;
+    while (++guard < 4000) {
+      var k = keyFor(cur);
+      if (k > end) break;
+      var s = habitStatus(h, k, items);
+      if (s === true) { run++; if (run > best) best = run; }
+      else if (s === false && k !== end) run = 0;   // 오늘은 아직 진행 중이라 끊긴 것으로 보지 않는다
+      cur.setDate(cur.getDate() + 1);
+    }
+    return best;
+  }
+  function habitToday(h) {
+    var k = todayKey(), items = habitItems(h);
+    var due = items.filter(function (it) { return isDueForDate(it, k); });
+    var done = due.filter(function (it) { return isDone(k, it.id); }).length;
+    return { due: due.length, done: done, rest: isRestDay(k) || commaOn(k) };
+  }
+  function habitTodayText(t) {
+    if (!t.due) return t.rest ? "오늘은 쉬는 날" : "오늘은 해당 없음";
+    if (t.done >= t.due) return "✓ 오늘 완료";
+    return "오늘 " + t.done + "/" + t.due;
+  }
+  function habitCardHtml(h, inStats) {
+    var st = habitStreak(h), t = habitToday(h), allDone = t.due > 0 && t.done >= t.due;
+    var html = '<div class="habit-card' + (allDone ? ' done' : '') + '" data-action="open-habit" data-id="' + h.id + '">' +
+      '<div class="hb-top"><span class="hb-ico" aria-hidden="true">🌱</span>' +
+      '<span class="hb-name">' + escapeHtml(h.name || "이름 없는 습관") + '</span>' +
+      (inStats && h.pinned ? '<span class="hb-pin" title="홈에 고정">📌</span>' : '') +
+      '<span class="hb-today' + (allDone ? ' ok' : (t.due ? '' : ' na')) + '">' + habitTodayText(t) + '</span></div>' +
+      '<div class="hb-mid"><span class="hb-streak">연속 ' + st + '일</span>' +
+      (h.goal ? '<span class="hb-goal">목표 ' + h.goal + '일</span>' : '') + '</div>';
+    if (h.goal) {
+      var pct = Math.min(100, Math.round(st / h.goal * 100));
+      html += '<div class="hb-bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + h.goal + '" aria-valuenow="' + Math.min(st, h.goal) + '"><span style="width:' + pct + '%"></span></div>';
+    }
+    return html + '</div>';
+  }
+  function renderHabitCards() {
+    var el = document.getElementById("habitCards");
+    if (!el) return;
+    var pins = habitList().filter(function (h) { return h.pinned; });
+    el.innerHTML = pins.map(function (h) { return habitCardHtml(h, false); }).join("");
+    el.classList.toggle("hidden", pins.length === 0);
+  }
+  function habitStatsHtml() {
+    var list = habitList();
+    var html = '<div class="habit-sec"><div class="section-label hb-sec-label">습관 만들기<span class="help-q" data-action="help" data-id="habit">?</span></div>';
+    if (!list.length) html += '<div class="hb-empty">새 습관을 위해 항목 몇 개를 묶어, 그 묶음만의 연속일을 따로 셀 수 있어요.</div>';
+    html += list.map(function (h) { return habitCardHtml(h, true); }).join("");
+    if (list.length < HABIT_MAX) html += '<div class="add-row hb-add" data-action="habit-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>새 습관 만들기</div>';
+    return html + '</div>';
+  }
+  // 날짜 표시(영어 모드에서도 숫자만이라 번역이 필요 없다)
+  function habitDateLabel(k) { var p = k.split("-"); return p[0] + "." + parseInt(p[1], 10) + "." + parseInt(p[2], 10); }
+
+  // ---- 습관 창(상세 · 만들기 · 편집) ----
+  var habitView = null;   // { mode: "detail"|"edit", id, form? }
+  function openHabitOverlay(mode, id) {
+    if (mode === "edit") {
+      var h = id ? habitById(id) : null;
+      if (!h && habitList().length >= HABIT_MAX) { toast("습관은 " + HABIT_MAX + "개까지 만들 수 있어요"); return; }
+      habitView = { mode: "edit", id: h ? h.id : null, form: {
+        name: h ? h.name : "", itemIds: h ? h.itemIds.slice() : [], goal: h ? h.goal : 66,
+        pinned: h ? h.pinned : habitList().filter(function (x) { return x.pinned; }).length < HABIT_PIN_MAX
+      } };
+    } else {
+      if (!habitById(id)) return;
+      habitView = { mode: "detail", id: id };
+    }
+    renderHabitOverlay();
+    document.getElementById("habitOverlay").classList.remove("hidden");
+    if (habitView.mode === "edit" && !habitView.id) {
+      setTimeout(function () { var i = document.getElementById("habitNameInput"); if (i) try { i.focus(); } catch (e) {} }, 60);
+    }
+  }
+  function closeHabitOverlay() { habitView = null; document.getElementById("habitOverlay").classList.add("hidden"); }
+  function habitFormSyncName() {
+    var i = document.getElementById("habitNameInput");
+    if (i && habitView && habitView.form) habitView.form.name = i.value;
+  }
+  function renderHabitOverlay() {
+    if (!habitView) return;
+    var title = document.getElementById("habitOvTitle"), body = document.getElementById("habitOvBody");
+    if (habitView.mode === "edit") {
+      title.textContent = habitView.id ? "습관 편집" : "새 습관 만들기";
+      body.innerHTML = habitEditHtml();
+    } else {
+      var h = habitById(habitView.id);
+      if (!h) { closeHabitOverlay(); return; }
+      title.textContent = "습관 만들기";
+      body.innerHTML = habitDetailHtml(h);
+    }
+  }
+  function habitDetailHtml(h) {
+    var items = habitItems(h), st = habitStreak(h), best = Math.max(habitBest(h), st), t = habitToday(h);
+    var daysSince = Math.round((parseKeyToDate(todayKey()) - parseKeyToDate(h.createdAt)) / 86400000) + 1;
+    var html = '<div class="hb-d-name">' + escapeHtml(h.name || "이름 없는 습관") + '</div>';
+    html += '<div class="stat-row hb-d-stats">' +
+      '<div class="stat-box"><div class="num">' + st + '</div><div class="lbl">연속일</div></div>' +
+      '<div class="stat-box"><div class="num">' + best + '</div><div class="lbl">최고 기록</div></div>' +
+      '<div class="stat-box"><div class="num">' + daysSince + '</div><div class="lbl">시작한 지(일)</div></div></div>';
+    if (h.goal) {
+      var pct = Math.min(100, Math.round(st / h.goal * 100));
+      html += '<div class="hb-d-goal"><span>목표 ' + h.goal + '일</span><span>' + Math.min(st, h.goal) + ' / ' + h.goal + '</span></div>' +
+        '<div class="hb-bar big" role="progressbar" aria-valuemin="0" aria-valuemax="' + h.goal + '" aria-valuenow="' + Math.min(st, h.goal) + '"><span style="width:' + pct + '%"></span></div>';
+      if (h.goalDone && h.goalDone >= h.goal) html += '<div class="hb-d-note">🎉 목표를 달성했어요</div>';
+    }
+    // 오늘 상태 + 묶인 항목
+    html += '<div class="day-ov-label">묶인 항목 · 오늘</div><div class="hb-d-items">';
+    var k = todayKey();
+    if (!items.length) html += '<div class="hb-d-note">묶인 항목이 모두 삭제됐어요. 편집에서 항목을 다시 골라 주세요.</div>';
+    items.forEach(function (it) {
+      var gone = !findItem(it.id), due = isDueForDate(it, k), done = isDone(k, it.id);
+      html += '<div class="hb-d-item' + (done ? ' done' : '') + '"><span class="hb-d-dot" aria-hidden="true">' + (done ? '✓' : (due ? '○' : '–')) + '</span>' +
+        '<span class="hb-d-iname">' + escapeHtml(it.name || "") + '</span>' +
+        '<span class="hb-d-days">' + (gone ? "삭제됨" : dayLabel(it)) + '</span></div>';
+    });
+    html += '</div>';
+    // 최근 5주 달력(일요일 시작)
+    // 만든 지 얼마 안 됐으면 만든 주부터만 보여 준다(최대 5주)
+    var today = parseKeyToDate(k), start = new Date(today);
+    start.setDate(start.getDate() - today.getDay() - 28);
+    var cw = parseKeyToDate(h.createdAt); cw.setDate(cw.getDate() - cw.getDay());
+    if (cw > start) start = cw;
+    var cells = Math.round((today - start) / 86400000) - today.getDay() + 7;
+    html += '<div class="day-ov-label">최근 기록</div><div class="hb-cal-head">' + ["S","M","T","W","T","F","S"].map(function (d) { return '<div>' + d + '</div>'; }).join("") + '</div><div class="hb-cal">';
+    for (var i = 0; i < cells; i++) {
+      var d = new Date(start); d.setDate(start.getDate() + i);
+      var dk = keyFor(d), cls = "hb-cell";
+      if (dk > k) cls += " future";
+      else if (dk < h.createdAt) cls += " before";
+      else {
+        var s = habitStatus(h, dk, items);
+        if (s === true) cls += " ok";
+        else if (s === null) cls += " skip";
+        else if (dk === k) cls += " todo";
+        else cls += " miss";
+      }
+      if (dk === k) cls += " today";
+      html += '<div class="' + cls + '">' + d.getDate() + '</div>';
+    }
+    html += '</div><div class="hb-cal-legend"><span><i class="hb-lg ok"></i>성공</span><span><i class="hb-lg miss"></i>놓침</span><span><i class="hb-lg skip"></i>해당 없음·쉬는 날</span></div>';
+    html += '<div class="hb-d-meta">' + habitDateLabel(h.createdAt) + ' 시작</div>';
+    // 동작
+    html += '<div class="theme-option' + (h.pinned ? ' active' : '') + '" data-action="habit-pin" data-id="' + h.id + '"><span>홈에 고정</span><span class="dot"></span></div>';
+    html += '<div class="hb-d-actions">' +
+      '<div class="btn" data-action="habit-edit" data-id="' + h.id + '">편집</div>' +
+      '<div class="btn" data-action="habit-restart" data-id="' + h.id + '">처음부터 다시</div>' +
+      '<div class="btn danger-text" data-action="habit-delete" data-id="' + h.id + '">삭제</div></div>';
+    return html;
+  }
+  function habitEditHtml() {
+    var f = habitView.form;
+    var html = '<div class="day-ov-label">이름</div>' +
+      '<input type="text" id="habitNameInput" class="cat-name-input" maxlength="20" placeholder="예: 예배 1시간" value="' + escapeHtml(f.name) + '">';
+    html += '<div class="day-ov-label">묶을 항목 <span class="hb-count">' + f.itemIds.length + '개 선택</span></div>' +
+      '<div class="hb-pick-note">고른 항목이 그날 모두 끝나면 성공이에요. 요일이 아닌 날·쉬는 날은 건너뛰어요.</div><div class="hb-pick-list">';
+    var any = false;
+    state.categories.forEach(function (c) {
+      if (!c.items.length) return;
+      any = true;
+      html += '<div class="hb-pick-cat">' + escapeHtml(c.name || "") + '</div>';
+      c.items.forEach(function (it) {
+        var on = f.itemIds.indexOf(it.id) !== -1;
+        if (it.flex) {
+          html += '<div class="hb-pick off" aria-disabled="true"><span class="hb-pick-box" aria-hidden="true"></span><span class="hb-pick-name">' + escapeHtml(it.name || "") + '</span><span class="hb-pick-days">불시 · 고를 수 없음</span></div>';
+          return;
+        }
+        html += '<div class="hb-pick' + (on ? ' on' : '') + '" data-action="habit-pick" data-id="' + it.id + '" aria-pressed="' + on + '"><span class="hb-pick-box" aria-hidden="true">' + (on ? '✓' : '') + '</span>' +
+          '<span class="hb-pick-name">' + escapeHtml(it.name || "") + '</span><span class="hb-pick-days">' + dayLabel(it) + '</span></div>';
+      });
+    });
+    // 편집 중인 습관에 삭제된 항목이 묶여 있으면 그대로 보여 주고 뺄 수 있게 한다
+    f.itemIds.forEach(function (id) {
+      if (findItem(id)) return;
+      var a = habitItemRef(id);
+      html += '<div class="hb-pick on" data-action="habit-pick" data-id="' + id + '" aria-pressed="true"><span class="hb-pick-box" aria-hidden="true">✓</span><span class="hb-pick-name">' + escapeHtml(a ? a.name : "") + '</span><span class="hb-pick-days">삭제됨</span></div>';
+    });
+    if (!any) html += '<div class="hb-pick-note">아직 항목이 없어요. 먼저 홈에서 루틴 항목을 추가해 주세요.</div>';
+    html += '</div>';
+    html += '<div class="day-ov-label">목표 일수</div><div class="hb-goals">' + HABIT_GOALS.map(function (g) {
+      return '<span class="tp-chip' + (f.goal === g ? ' on' : '') + '" data-action="habit-goal" data-id="' + g + '">' + (g ? g + "일" : "안 정함") + '</span>';
+    }).join("") + '</div>';
+    html += '<div class="theme-option' + (f.pinned ? ' active' : '') + '" data-action="habit-form-pin"><span>홈에 고정</span><span class="dot"></span></div>';
+    if (habitView.id) html += '<div class="hb-pick-note">항목을 바꾸면 지난 날짜도 바뀐 항목으로 다시 계산돼요.</div>';
+    else html += '<div class="hb-pick-note">연속일은 오늘부터 세요.</div>';
+    html += '<div class="tp-actions"><div class="btn" data-action="habit-edit-cancel">취소</div><div class="btn primary" data-action="habit-save">저장</div></div>';
+    return html;
+  }
+  function habitPinnedCount(exceptId) { return habitList().filter(function (h) { return h.pinned && h.id !== exceptId; }).length; }
+  function afterHabitChange() {
+    saveState();
+    try { checkHabitGoals(); } catch (e) {}
+    renderHabitCards();
+    var sv = document.getElementById("view-stats");
+    if (sv && !sv.classList.contains("hidden")) renderStats();
+  }
+  function saveHabitForm() {
+    habitFormSyncName();
+    var f = habitView.form, name = (f.name || "").trim();
+    if (!name) { toast("이름을 적어 주세요"); var i = document.getElementById("habitNameInput"); if (i) i.focus(); return; }
+    if (!f.itemIds.length) { toast("항목을 하나 이상 골라 주세요"); return; }
+    if (f.pinned && habitPinnedCount(habitView.id) >= HABIT_PIN_MAX) { toast("홈에는 " + HABIT_PIN_MAX + "개까지 고정할 수 있어요"); return; }
+    if (!Array.isArray(state.habits)) state.habits = [];
+    var h = habitView.id ? habitById(habitView.id) : null, isNew = !h;
+    if (!h) { h = { id: uid(), createdAt: todayKey() }; state.habits.push(h); }
+    h.name = name.slice(0, 20); h.itemIds = f.itemIds.slice(); h.pinned = !!f.pinned;
+    if (h.goal !== f.goal) delete h.goalDone;   // 목표를 바꾸면 새 목표에 닿을 때 다시 축하
+    h.goal = f.goal;
+    state.habits = normalizeHabits(state.habits);
+    habitView = { mode: "detail", id: h.id };
+    afterHabitChange();
+    renderHabitOverlay();
+    toast(isNew ? "습관을 만들었어요" : "저장했어요");
+  }
+  function toggleHabitPin(id) {
+    var h = habitById(id);
+    if (!h) return;
+    if (!h.pinned && habitPinnedCount(id) >= HABIT_PIN_MAX) { toast("홈에는 " + HABIT_PIN_MAX + "개까지 고정할 수 있어요"); return; }
+    h.pinned = !h.pinned;
+    afterHabitChange();
+    renderHabitOverlay();
+    toast(h.pinned ? "홈에 고정했어요" : "홈에서 내렸어요");
+  }
+  function askRestartHabit(id) {
+    var h = habitById(id);
+    if (!h) return;
+    askConfirm("처음부터 다시 셀까요?", "오늘부터 연속일을 새로 세요. 지난 연속일과 최고 기록은 사라지고 되돌릴 수 없어요", "다시 시작", function () {
+      h.createdAt = todayKey(); delete h.goalDone;
+      afterHabitChange(); renderHabitOverlay();
+      toast("오늘부터 다시 세요");
+    });
+  }
+  function askDeleteHabit(id) {
+    var h = habitById(id);
+    if (!h) return;
+    askConfirm("이 습관을 삭제할까요?", "묶음만 지워지고 항목과 기록은 그대로 남아요", "삭제", function () {
+      state.habits = habitList().filter(function (x) { return x.id !== id; });
+      closeHabitOverlay(); afterHabitChange();
+      toast("습관을 삭제했어요");
+    });
+  }
+  // 목표에 닿으면 한 번 축하(checkRewardEvents에서도 부른다)
+  function checkHabitGoals() {
+    var changed = false;
+    habitList().forEach(function (h) {
+      if (!h.goal || (h.goalDone && h.goalDone >= h.goal)) return;
+      if (habitStreak(h) >= h.goal) {
+        h.goalDone = h.goal; changed = true;
+        queueCeleb({ type: "habitGoal", name: h.name, days: h.goal });
+      }
+    });
+    if (changed) saveState();
+  }
+  function habitAction(action, id) {
+    if (action === "open-habit") { openHabitOverlay("detail", id); return true; }
+    if (action === "habit-new") { openHabitOverlay("edit", null); return true; }
+    if (action === "habit-close") { closeHabitOverlay(); return true; }
+    if (!habitView) return action.indexOf("habit-") === 0;
+    if (action === "habit-edit") { openHabitOverlay("edit", id); return true; }
+    if (action === "habit-edit-cancel") {
+      if (habitView.id && habitById(habitView.id)) { habitView = { mode: "detail", id: habitView.id }; renderHabitOverlay(); }
+      else closeHabitOverlay();
+      return true;
+    }
+    if (action === "habit-pick") {
+      habitFormSyncName();
+      var a = habitView.form.itemIds, i = a.indexOf(id);
+      if (i === -1) a.push(id); else a.splice(i, 1);
+      renderHabitOverlay();
+      var el = document.querySelector('#habitOvBody [data-action="habit-pick"][data-id="' + id + '"]');
+      if (el) try { el.focus({ preventScroll: true }); } catch (e) {}
+      return true;
+    }
+    if (action === "habit-goal") { habitFormSyncName(); habitView.form.goal = parseInt(id, 10) || 0; renderHabitOverlay(); return true; }
+    if (action === "habit-form-pin") {
+      habitFormSyncName();
+      if (!habitView.form.pinned && habitPinnedCount(habitView.id) >= HABIT_PIN_MAX) { toast("홈에는 " + HABIT_PIN_MAX + "개까지 고정할 수 있어요"); return true; }
+      habitView.form.pinned = !habitView.form.pinned; renderHabitOverlay(); return true;
+    }
+    if (action === "habit-save") { saveHabitForm(); return true; }
+    if (action === "habit-pin") { toggleHabitPin(id); return true; }
+    if (action === "habit-restart") { askRestartHabit(id); return true; }
+    if (action === "habit-delete") { askDeleteHabit(id); return true; }
+    return false;
+  }
   var BADGE_THRESHOLDS = [
     { days: 3, label: "3일", emoji: "🔥" },
     { days: 7, label: "7일", emoji: "⭐" },
@@ -5167,6 +5520,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     checkWeeklyReward();
     checkQuarterReward();
     try { checkRestEarnNotice(); } catch (e) {}
+    try { checkHabitGoals(); } catch (e) {}
     saveState();
     renderPendingIndicator();
     maybeInviteDailyBox();
@@ -5498,6 +5852,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
         '<input type="text" class="celeb-input" id="celebNote" maxlength="60" placeholder="원하는 보상 혹은 이미 준 보상을 적어보세요">',
         '<div class="celeb-btn" data-action="celeb-badge-ok">확인</div>');
       celebLater(function () { celebFlash(); celebConfetti(36); }, 400);
+      celebLater(celebReady, 1500);
+      return;
+    }
+
+    if (ev.type === "habitGoal") {
+      st.innerHTML = celebFrame(
+        '<div class="celeb-icon">🌱</div>' +
+        '<div class="celeb-title">' + ev.days + '일 연속 달성!</div>' +
+        '<div class="celeb-sub"><span class="hb-celeb-name">' + escapeHtml(ev.name || "") + '</span></div>' +
+        '<div class="celeb-sub">새 습관이 자리 잡아 가고 있어요. 이대로 이어 가 봐요.</div>', okBtn);
+      celebLater(function () { celebFlash(); celebConfetti(32); }, 400);
       celebLater(celebReady, 1500);
       return;
     }
@@ -6040,6 +6405,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (cheerUnread > 0) badges.push('<span class="cheer-badge" data-action="open-cheers">💌 새 응원 ' + cheerUnread + '</span>');
     document.getElementById("subRow").innerHTML = badges.join("");
     try { renderReviewCards(); } catch (e) {}
+    try { renderHabitCards(); } catch (e) {}
 
     var yKey = keyFor(new Date(Date.now() - 86400000));
     var nudgeEl = document.getElementById("nudgeBanner");
@@ -6964,7 +7330,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var body = document.getElementById("statsBody");
     if (statsView === "success") {
       document.getElementById("statsTagTabs").classList.add("hidden");
-      body.innerHTML = successStatsHtml();
+      body.innerHTML = successStatsHtml() + habitStatsHtml();
       return;
     }
     if (statsView === "review") {
@@ -7280,6 +7646,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       passDays: state.passDays,
       commaDays: state.commaDays,
       commaWhy: state.commaWhy,
+      habits: state.habits,
       lateRestLog: state.lateRestLog,
       lastBackupAt: state.lastBackupAt,
       streakThreshold: state.streakThreshold,
@@ -7459,6 +7826,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (Array.isArray(parsed.commaDays)) state.commaDays = normalizePassDays(parsed.commaDays);
     if (parsed.commaWhy && typeof parsed.commaWhy === "object" && !Array.isArray(parsed.commaWhy)) state.commaWhy = parsed.commaWhy;
     if (Array.isArray(parsed.lateRestLog)) state.lateRestLog = normalizeLateLog(parsed.lateRestLog);
+    if (Array.isArray(parsed.habits)) state.habits = normalizeHabits(parsed.habits);
     if (typeof parsed.streakThreshold === "number") state.streakThreshold = parsed.streakThreshold;
     state.thresholdHistory = normalizeThresholdHistory(parsed.thresholdHistory);
     state.archivedItems = normalizeArchivedItems(parsed.archivedItems);
@@ -7777,6 +8145,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       passDays: state.passDays,
       commaDays: state.commaDays,
       commaWhy: state.commaWhy,
+      habits: state.habits,
       lateRestLog: state.lateRestLog,
       lastBackupAt: state.lastBackupAt,
       streakThreshold: state.streakThreshold,
@@ -7990,6 +8359,14 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["텍스트로", "텍스트로 복사해 두거나, 붙여넣어 가져올 수도 있어요. 텍스트는 Claude 대화에 붙여넣어 보여줄 때 편해요."],
       ["가져오기 전에", "가져오기 전에 현재 상태를 먼저 백업해 두면 안전해요."]
     ], see: ["settings", "offline"] },
+    habit: { t: "습관 만들기", sub: "항목을 묶어 따로 세는 연속일", s: [
+      ["무엇인가요", "새 습관을 위해 항목 몇 개를 묶어, 그 묶음만의 연속일을 전체 스트릭과 따로 세요. 예: 아침예배 40분 + 저녁예배 20분 → ‘예배 1시간’."],
+      ["성공한 날", "그날 해당되는 묶음 항목을 <b>모두</b> 완료하면 성공이에요. 요일이 아닌 항목은 그날 빼고 봐요. 전체 스트릭의 기준(%)과는 상관없어요."],
+      ["쉬는 날 · 쉼표 · 징검다리", "쉬는 날과 쉼표를 쓴 날은 끊기지도 늘지도 않아요. 징검다리는 습관 연속일에는 쓰이지 않아요."],
+      ["만든 날부터 세요", "연속일은 만든 날부터 세요. ‘처음부터 다시’를 누르면 오늘부터 새로 셀 수 있어요."],
+      ["홈에 고정", "홈에는 2개까지 고정할 수 있어요. 습관이 자리 잡으면 고정을 풀어 홈을 가볍게 하세요. 모든 습관은 통계 > 성공 맨 아래에서 보고 새로 만들 수 있어요."],
+      ["목표 일수", "21 · 30 · 66 · 100일 중에서 고를 수 있어요. 연속일이 목표에 닿으면 축하해 드려요."]
+    ], see: ["streak", "pass"] },
     offline: { t: "인터넷이 끊겼을 때", sub: "오프라인 기록 · 합쳐서 저장", s: [
       ["끊겨도 체크할 수 있어요", "인터넷이 끊겨도 체크와 기록은 이 기기에 먼저 저장돼요. 앱을 껐다 켜도 남아 있어요. 위쪽에 작은 <b>오프라인</b> 표시가 떠요."],
       ["인터넷 없이 열기", "이 기기에서 한 번이라도 연결된 상태로 열었던 적이 있으면, 인터넷 없이 열어도 마지막 기록으로 홈이 열려요. 처음 쓰는 기기는 연결된 뒤에 열려요."],
@@ -8000,7 +8377,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   };
   var HELP_GROUPS = [
     ["화면별 안내", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
-    ["루틴 · 통계 규칙", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
+    ["루틴 · 통계 규칙", ["colors", "streak", "habit", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
     ["지인 · 데이터", ["share", "cheers", "backup", "offline"]]
   ];
@@ -10134,6 +10511,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (SETTINGS_FAMILY.indexOf(id) > 0) { resetLogoutBtn(); showView(id); updateSettingsModalUI(); }
     }
     else if (action === "open-missed-overlay") { openMissedOverlay(); }
+    else if (/^(open-habit$|habit-)/.test(action) && habitAction(action, id)) { }
     else if (action === "open-pass") { openPassSheet(id); }
     else if (action === "today-open-pass") { closeTodayMemoOverlay(); openPassSheet(id); }
     else if (action === "pass-tab") { passTab = id === "comma" ? "comma" : "stone"; commaForm = null; renderPassSheet(); }
@@ -10550,7 +10928,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       changePwOverlay: "changepw-cancel", achieveOverlay: "achieve-close", bibleShelfOverlay: "bible-shelf-close",
       chatMenuOverlay: "chat-menu-close", cheerPickOverlay: "cheer-pick-close", todayMemoOverlay: "today-memo-cancel",
       titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
-      missedOverlay: "missed-close", passOverlay: "pass-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
+      missedOverlay: "missed-close", passOverlay: "pass-close", habitOverlay: "habit-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
       rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", installOverlay: "install-close", catOverlay: null
     };
     function forceDismiss(ov) {
@@ -10559,7 +10937,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (btn) btn.click(); else ov.classList.add("hidden");
     }
     // 입력창이 있는 창은 글을 쓰기 시작했으면(입력 이벤트 발생) 닫기 전에 저장하지 않고 닫을지 물어본다
-    var TEXT_OVERLAYS = { changePwOverlay: 1, todayMemoOverlay: 1, titleEditOverlay: 1, catOverlay: 1, rewardClaimOverlay: 1, tagOverlay: 1 };
+    var TEXT_OVERLAYS = { changePwOverlay: 1, todayMemoOverlay: 1, titleEditOverlay: 1, catOverlay: 1, rewardClaimOverlay: 1, tagOverlay: 1, habitOverlay: 1 };
     var dirty = {};
     document.addEventListener("input", function (e) {
       var ov = e.target && e.target.closest ? e.target.closest(".tp-overlay") : null;

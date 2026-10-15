@@ -171,6 +171,14 @@
       ["When a window opens", "Focus moves into the window, and Tab stays inside it. When you close it, focus returns to where you were."],
       ["See this again", "Press <b>?</b> anytime to open this guide. Shortcuts don't work while you're typing."]
     ], see: ["home", "settings"] },
+    habit: { t: "Build a Habit", sub: "A separate streak for a group of items", s: [
+      ["What is it?", "For a new habit, group a few items and count a streak just for that group, separate from your overall streak. e.g. Morning worship 40 min + Evening worship 20 min → “Worship 1 hour”."],
+      ["A successful day", "A day counts when <b>all</b> of the group's items scheduled that day are done. Items not scheduled that day are left out. Your overall streak threshold (%) doesn't apply."],
+      ["Rest days · Pause · Stepping Stone", "Rest days and Pause days neither break nor add to the streak. Stepping Stones don't apply to habit streaks."],
+      ["Counted from the day you make it", "The streak counts from the day you create the habit. Tap “Start over” to count fresh from today."],
+      ["Pin to Home", "You can pin up to 2 habits on Home. Once a habit has settled in, unpin it to keep Home light. All habits are at the bottom of Stats > Success, where you can also make new ones."],
+      ["Goal days", "Choose 21 · 30 · 66 · 100 days. You'll get a celebration when your streak reaches the goal."]
+    ], see: ["streak", "pass"] },
     offline: { t: "When you're offline", sub: "Offline records · merged saving", s: [
       ["You can still check items", "Even without internet, checks and records are saved on this device first. They stay even if you close the app. A small <b>Offline</b> label appears at the top."],
       ["Opening without internet", "If you've opened the app on this device while connected at least once, it opens to your last records even without internet. On a brand-new device, it opens once you're connected."],
@@ -181,7 +189,7 @@
 
   var G = [
     ["Screen guides", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
-    ["Routine & stats rules", ["colors", "streak", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
+    ["Routine & stats rules", ["colors", "streak", "habit", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
     ["Friends & data", ["share", "cheers", "backup", "offline"]]
   ];
