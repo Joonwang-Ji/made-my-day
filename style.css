@@ -538,6 +538,7 @@
     white-space: pre-wrap; word-break: break-word; border: 1px solid var(--line); background: var(--card); }
   .chat-line.me .chat-bub { background: var(--sage-soft); border-color: transparent; border-bottom-right-radius: 5px; }
   .chat-line.you .chat-bub { border-bottom-left-radius: 5px; cursor: pointer; }
+  .chat-bub .chat-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; word-break: break-all; cursor: pointer; }
   .chat-bub.new { background: var(--gold-soft); border-color: transparent; }
   .chat-meta { font-size: 0.625rem; color: var(--ink-dim); margin-top: 3px; display: flex; gap: 6px; align-items: center; }
   .chat-react { font-size: 0.8125rem; }
