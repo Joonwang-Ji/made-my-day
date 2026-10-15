@@ -150,7 +150,8 @@
     cheers: { t: "Sending cheers", sub: "Preset phrases · your own words", s: [
       ["Sending", "To a connected friend you can send a preset cheer or praise phrase, or a sentence of your own (up to 100 characters)."],
       ["2 a day", "You can send up to 2 per day to one friend. Preset phrases and your own sentences are counted together."],
-      ["Cheers you receive", "You can leave a simple reaction on a cheer you received. What you sent and received are gathered in one conversation, like a chat."]
+      ["Cheers you receive", "You can leave a simple reaction on a cheer you received. What you sent and received are gathered in one conversation, like a chat."],
+      ["Links", "If your own sentence includes a link starting with https:// or www., it's underlined and opens in a new window when tapped."]
     ], see: ["friends", "share"] },
     settings: { t: "Settings screen", sub: "Display · routine rules · alerts & reviews · account", s: [
       ["Open by group", "Choose a group on the first Settings screen to open its detailed settings. Each row shows its current value below, so you can check without opening it."],
