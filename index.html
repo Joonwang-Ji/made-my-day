@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-15-4";
+  var BUILD_VERSION = "2026-10-15-6";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-15-4">
+<link rel="stylesheet" href="style.css?v=2026-10-15-6">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -906,17 +906,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-15-4"></script>
-<script src="i18n.js?v=2026-10-15-4"></script>
-<script src="i18n-en.js?v=2026-10-15-4"></script>
-<script src="bible-medals-data.js?v=2026-10-15-4"></script>
-<script src="avatar-data.js?v=2026-10-15-4"></script>
-<script src="review-data.js?v=2026-10-15-4"></script>
-<script src="i18n-en-help.js?v=2026-10-15-4"></script>
-<script src="i18n-en-review.js?v=2026-10-15-4"></script>
-<script src="i18n-en-bible.js?v=2026-10-15-4"></script>
-<script src="i18n-en-avatar.js?v=2026-10-15-4"></script>
-<script src="i18n-en-extra.js?v=2026-10-15-4"></script>
+<script type="module" src="firebase-service.js?v=2026-10-15-6"></script>
+<script src="i18n.js?v=2026-10-15-6"></script>
+<script src="i18n-en.js?v=2026-10-15-6"></script>
+<script src="bible-medals-data.js?v=2026-10-15-6"></script>
+<script src="avatar-data.js?v=2026-10-15-6"></script>
+<script src="review-data.js?v=2026-10-15-6"></script>
+<script src="i18n-en-help.js?v=2026-10-15-6"></script>
+<script src="i18n-en-review.js?v=2026-10-15-6"></script>
+<script src="i18n-en-bible.js?v=2026-10-15-6"></script>
+<script src="i18n-en-avatar.js?v=2026-10-15-6"></script>
+<script src="i18n-en-extra.js?v=2026-10-15-6"></script>
 <script>
 (function () {
   "use strict";
@@ -1539,7 +1539,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   var CHEER_DAILY_MAX = 2, CHEER_TEXT_MAX = 100;
   var CHEER_REACTIONS = { r1: "👍", r2: "🙏", r3: "❤️" };
   var cheerUnreadList = [], cheerUnread = 0, cheerUnwatch = null, cheerFirstSnap = true;
-  var chatWith = null, chatDocs = null, chatNew = {}, chatReactFor = null, chatSending = false, chatCelebs = [];
+  var chatWith = null, chatDocs = null, chatNew = {}, chatReactFor = null, chatSending = false, chatCelebs = [], chatEditId = null, chatHidden = [];
   var cheerPick = null, cheerKind = "cheer";
 
   function cheerMsg(id) { return CHEER_MSGS.filter(function (m) { return m.id === id; })[0] || null; }
@@ -1601,6 +1601,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     try {
       cheerUnwatch = window.__fb.cheerUnreadWatch(uid, function (list) {
         if (uid !== currentUid) return;
+        list = list.filter(function (c) { return !c.data.deleted; }); // 보낸 사람이 지운 응원은 흔적 없이 빠진다
         var prev = {};
         cheerUnreadList.forEach(function (c) { prev[c.id] = true; });
         var arrived = list.filter(function (c) { return !prev[c.id]; });
@@ -1635,7 +1636,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var l = accLink(uid);
     if (!l) { toast("연결된 지인이 아니에요"); return; }
     chatWith = { uid: uid, linkId: l.id, nick: friendNick(uid) };
-    chatDocs = null; chatNew = {}; chatReactFor = null;
+    chatDocs = null; chatNew = {}; chatReactFor = null; chatEditId = null; chatHidden = [];
     var pr = friendsData.profiles[uid];
     chatCelebs = friendCelebrations(uid, pr);
     document.getElementById("chatInput").value = "";
@@ -1651,7 +1652,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   function closeChat() {
     var v = document.getElementById("view-friend-chat");
     v.classList.add("hidden"); v.style.height = ""; v.style.top = "";
-    chatWith = null; chatDocs = null; chatNew = {}; chatReactFor = null; chatCelebs = [];
+    chatWith = null; chatDocs = null; chatNew = {}; chatReactFor = null; chatCelebs = []; chatEditId = null; chatHidden = [];
     closeChatMenu();
     var inp = document.getElementById("chatInput");
     if (inp) inp.blur();
@@ -1674,6 +1675,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!w) return;
     window.__fb.cheerThread(currentUid, w.uid).then(function (docs) {
       if (!chatWith || chatWith.uid !== w.uid) return;
+      chatHidden = docs.filter(function (c) { return c.data.deleted; }); // 지운 응원: 화면엔 안 보이고 하루 개수에만 남음
+      docs = docs.filter(function (c) { return !c.data.deleted; });
       docs.sort(function (a, b) {
         var x = a.data.createdAt || "", y = b.data.createdAt || "";
         return x < y ? -1 : x > y ? 1 : (a.id < b.id ? -1 : 1);
@@ -1752,13 +1755,22 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var day = d.date || (d.createdAt || "").slice(0, 10);
       if (day !== lastDay) { h += '<div class="chat-day">' + escapeHtml(cheerDayLabel(day)) + '</div>'; lastDay = day; }
       h += '<div class="chat-line ' + (mine ? 'me' : 'you') + '">';
-      h += '<div class="chat-bub' + (chatNew[c.id] ? ' new' : '') + '"' + (mine ? '' : ' data-action="chat-bub" data-id="' + c.id + '"') + '>' + (d.msg === "free" ? cheerLinkify(cheerBody(d)) : escapeHtml(cheerBody(d))) + '</div>';
+      h += '<div class="chat-bub' + (chatNew[c.id] ? ' new' : '') + (chatEditId === c.id ? ' editing' : '') + '"' +
+        ' data-action="chat-bub" data-id="' + c.id + '">' +
+        (d.msg === "free" ? cheerLinkify(cheerBody(d)) : escapeHtml(cheerBody(d))) + '</div>';
       h += '<div class="chat-meta">' + escapeHtml(cheerTimeLabel(d.createdAt)) +
         (d.reaction && CHEER_REACTIONS[d.reaction] ? '<span class="chat-react">' + CHEER_REACTIONS[d.reaction] + '</span>' : '') + '</div>';
-      if (!mine && chatReactFor === c.id) {
-        h += '<div class="chat-rmenu">' + Object.keys(CHEER_REACTIONS).map(function (k) {
-          return '<span class="fr-opt' + (d.reaction === k ? ' on' : '') + '" data-action="chat-react" data-id="' + c.id + '" data-r="' + k + '">' + CHEER_REACTIONS[k] + '</span>';
-        }).join("") + '<span class="fr-end" data-action="chat-del" data-id="' + c.id + '">지우기</span></div>';
+      if (chatReactFor === c.id) {
+        if (mine) {
+          // 내가 보낸 응원: 직접 쓴 문장만 고칠 수 있고, 지우기는 두 번 눌러야 실행
+          h += '<div class="chat-rmenu">' +
+            (d.msg === "free" ? '<span class="fr-opt" data-action="chat-edit" data-id="' + c.id + '">수정</span>' : '') +
+            '<span class="fr-end" data-action="chat-retract" data-id="' + c.id + '">지우기</span></div>';
+        } else {
+          h += '<div class="chat-rmenu">' + Object.keys(CHEER_REACTIONS).map(function (k) {
+            return '<span class="fr-opt' + (d.reaction === k ? ' on' : '') + '" data-action="chat-react" data-id="' + c.id + '" data-r="' + k + '">' + CHEER_REACTIONS[k] + '</span>';
+          }).join("") + '<span class="fr-end" data-action="chat-del" data-id="' + c.id + '">지우기</span></div>';
+        }
       }
       h += '</div>';
     });
@@ -1769,13 +1781,24 @@ window.addEventListener("beforeinstallprompt", function (e) {
   // ---- 입력창 ----
   function chatUsedToday() {
     var tk = todayKey(), n = 0;
-    (chatDocs || []).forEach(function (c) { if (c.data.from === currentUid && c.data.date === tk) n++; });
+    (chatDocs || []).concat(chatHidden).forEach(function (c) { if (c.data.from === currentUid && c.data.date === tk) n++; });
     return n;
   }
   function updateChatCompose() {
     var inp = document.getElementById("chatInput"), btn = document.getElementById("chatSendBtn"), pre = document.getElementById("chatPresetBtn");
     var used = chatUsedToday(), full = chatDocs !== null && used >= CHEER_DAILY_MAX;
     var len = inp.value.length, hasText = inp.value.trim().length > 0;
+    if (chatEditId) {
+      inp.disabled = false;
+      inp.placeholder = "고칠 문장을 적어 보세요";
+      btn.textContent = "수정";
+      btn.classList.toggle("chat-off", !hasText);
+      pre.classList.add("chat-off");
+      document.getElementById("chatCountA").innerHTML = '<span>보낸 응원 고치는 중</span> · <span class="chat-edit-x" data-action="chat-edit-cancel">취소</span>';
+      document.getElementById("chatCountB").textContent = len ? len + "/" + CHEER_TEXT_MAX : "";
+      return;
+    }
+    btn.textContent = "보내기";
     inp.disabled = full;
     inp.placeholder = full ? "오늘은 다 보냈어요 🌙" : "응원의 한마디를 적어 보세요";
     btn.classList.toggle("chat-off", full || !hasText || chatDocs === null);
@@ -1810,7 +1833,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (chatSending || !chatWith || chatDocs === null) return Promise.resolve(false);
     if (!state.social || !state.social.nickname) { toast("닉네임을 먼저 정해주세요 · 지인 탭 → 공개 설정"); return Promise.resolve(false); }
     var uid = currentUid, t = chatWith, tk = todayKey(), i, slot = null;
-    var usedSlots = chatDocs.filter(function (c) { return c.data.from === uid && c.data.date === tk; }).map(function (c) { return String(c.data.slot); });
+    var usedSlots = chatDocs.concat(chatHidden).filter(function (c) { return c.data.from === uid && c.data.date === tk; }).map(function (c) { return String(c.data.slot); });
     if (usedSlots.length >= CHEER_DAILY_MAX) { toast("오늘은 이 지인에게 다 보냈어요"); return Promise.resolve(false); }
     for (i = 1; i <= CHEER_DAILY_MAX; i++) { if (usedSlots.indexOf(String(i)) < 0) { slot = String(i); break; } }
     if (!slot) { toast("오늘은 이 지인에게 다 보냈어요"); return Promise.resolve(false); }
@@ -1838,6 +1861,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var inp = document.getElementById("chatInput"), text = (inp.value || "").trim();
     if (!text) return;
     if (text.length > CHEER_TEXT_MAX) { toast(CHEER_TEXT_MAX + "자까지 보낼 수 있어요"); return; }
+    if (chatEditId) { saveCheerEdit(text); return; }
     submitCheer("free", "free", text).then(function (ok) {
       if (!ok) return;
       inp.value = ""; autoGrowChatInput(); updateChatCompose(); renderChat(true);
@@ -1849,6 +1873,50 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var next = c.data.reaction === r ? "" : r;
     window.__fb.cheerReact(id, next).then(function () {
       c.data.reaction = next; chatReactFor = null; renderChat(false);
+    }).catch(friendError);
+  }
+  // ---- 28차: 내가 보낸 응원 고치기·지우기 ----
+  function myCheer(id) {
+    var c = (chatDocs || []).filter(function (x) { return x.id === id; })[0];
+    return c && c.data.from === currentUid && !c.data.deleted ? c : null;
+  }
+  function startCheerEdit(id) {
+    var c = myCheer(id);
+    if (!c || c.data.msg !== "free") return;
+    chatEditId = id; chatReactFor = null;
+    var inp = document.getElementById("chatInput");
+    inp.value = c.data.text || "";
+    renderChat(false); autoGrowChatInput(); updateChatCompose();
+    try { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {}
+  }
+  function cancelCheerEdit() {
+    if (!chatEditId) return;
+    chatEditId = null;
+    var inp = document.getElementById("chatInput");
+    inp.value = ""; autoGrowChatInput(); renderChat(false); updateChatCompose();
+  }
+  function saveCheerEdit(text) {
+    var id = chatEditId, c = myCheer(id);
+    if (!c) { cancelCheerEdit(); return; }
+    if (text === c.data.text) { cancelCheerEdit(); return; }
+    if (chatSending) return;
+    chatSending = true;
+    window.__fb.cheerEdit(id, text).then(function () {
+      chatSending = false;
+      c.data.text = text;
+      if (chatEditId === id) cancelCheerEdit(); else renderChat(false);
+      toast("응원을 고쳤어요");
+    }).catch(function (err) { chatSending = false; friendError(err); });
+  }
+  function retractCheer(id) {
+    var c = myCheer(id);
+    if (!c) return;
+    window.__fb.cheerRetract(id).then(function () {
+      c.data.deleted = true; delete c.data.text;
+      chatDocs = chatDocs.filter(function (x) { return x.id !== id; });
+      chatHidden.push(c);
+      chatReactFor = null;
+      if (chatEditId === id) cancelCheerEdit(); else { renderChat(false); updateChatCompose(); }
     }).catch(friendError);
   }
   function deleteCheer(id) {
@@ -8355,6 +8423,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["보내기", "연결된 지인에게 정해진 응원·칭찬 문구를 고르거나, 직접 쓴 문장(100자 이내)을 보낼 수 있어요."],
       ["하루 2개", "한 지인에게 하루 최대 2개까지 보낼 수 있어요. 정해진 문구와 직접 쓴 문장을 합쳐서 세요."],
       ["받은 응원", "받은 응원에는 간단한 반응을 남길 수 있어요. 보낸 것과 받은 것은 채팅처럼 한 대화에 모여요."],
+      ["고치기·지우기", "내가 보낸 응원을 누르면 메뉴가 나와요. 직접 쓴 문장은 고칠 수 있고, 보낸 응원은 지울 수 있어요. 고치거나 지워도 표시가 남지 않고, 지운 응원은 상대 화면에서도 사라져요. 다만 오늘 보낸 개수는 그대로예요."],
       ["링크", "직접 쓴 문장에 https:// 나 www. 로 시작하는 링크를 넣으면 밑줄이 생기고, 누르면 새 창에서 열려요."]
     ], see: ["friends", "share"] },
     settings: { t: "설정 화면", sub: "화면 · 루틴 규칙 · 알림·리뷰 · 계정", s: [
@@ -10575,6 +10644,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "chat-link") { /* 링크는 브라우저가 새 창으로 연다(반응 메뉴는 열지 않음) */ }
     else if (action === "chat-bub") { chatReactFor = (chatReactFor === id ? null : id); renderChat(false); }
     else if (action === "chat-react") { reactToCheer(id, el.getAttribute("data-r")); }
+    else if (action === "chat-edit") { startCheerEdit(id); }
+    else if (action === "chat-edit-cancel") { cancelCheerEdit(); }
+    else if (action === "chat-retract") { if (friendTwoTap(el, "cr" + id, "한 번 더")) retractCheer(id); }
     else if (action === "chat-del") { if (friendTwoTap(el, "cd" + id, "한 번 더")) deleteCheer(id); }
     else if (action === "cheer-pick-close") { closeCheerPicker(); }
     else if (action === "cheer-kind") { cheerKind = id; cheerPick = null; renderCheerPicker(); }

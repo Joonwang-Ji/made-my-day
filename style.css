@@ -539,6 +539,9 @@
   .chat-line.me .chat-bub { background: var(--sage-soft); border-color: transparent; border-bottom-right-radius: 5px; }
   .chat-line.you .chat-bub { border-bottom-left-radius: 5px; cursor: pointer; }
   .chat-bub .chat-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; word-break: break-all; cursor: pointer; }
+  .chat-line.me .chat-bub[data-action] { cursor: pointer; }
+  .chat-bub.editing { outline: 2px solid var(--gold, #C2A25E); outline-offset: 2px; }
+  .chat-edit-x { text-decoration: underline; cursor: pointer; font-weight: 600; }
   .chat-bub.new { background: var(--gold-soft); border-color: transparent; }
   .chat-meta { font-size: 0.625rem; color: var(--ink-dim); margin-top: 3px; display: flex; gap: 6px; align-items: center; }
   .chat-react { font-size: 0.8125rem; }

@@ -6,7 +6,7 @@
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction,
-    enableIndexedDbPersistence, collection, query, where, getDocs, updateDoc, deleteDoc
+    enableIndexedDbPersistence, collection, query, where, getDocs, updateDoc, deleteDoc, deleteField
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   var firebaseConfig = {
@@ -152,6 +152,10 @@
     },
     cheerSeen: function (id) { return updateDoc(doc(db, "cheers", id), { seen: true }); },
     cheerReact: function (id, r) { return updateDoc(doc(db, "cheers", id), { reaction: r }); },
-    cheerDelete: function (id) { return deleteDoc(doc(db, "cheers", id)); }
+    cheerDelete: function (id) { return deleteDoc(doc(db, "cheers", id)); },
+    // 28차: 보낸 사람이 직접 쓴 응원을 고치기(흔적 없이 문장만 바꿈) / 보낸 응원 지우기
+    // (내용을 지우고 deleted 표시만 남겨 양쪽 화면에서 아예 안 보이게 함 → 하루 보낼 수 있는 개수는 그대로)
+    cheerEdit: function (id, text) { return updateDoc(doc(db, "cheers", id), { text: text }); },
+    cheerRetract: function (id) { return updateDoc(doc(db, "cheers", id), { deleted: true, text: deleteField() }); }
   };
   window.dispatchEvent(new Event("fb-ready"));

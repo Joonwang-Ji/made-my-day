@@ -489,6 +489,15 @@
     [/^홈에는 (\d+)개까지 고정할 수 있어요$/, function (n) { return "You can pin up to " + n + " on Home"; }],
     [/^습관은 (\d+)개까지 만들 수 있어요$/, function (n) { return "You can make up to " + n + " habits"; }]
   ]);
+  // ---- 28차: 응원 고치기·지우기 ----
+  I.register({
+    "수정": "Edit",
+    "고칠 문장을 적어 보세요": "Edit your message",
+    "보낸 응원 고치는 중": "Editing a sent cheer",
+    "취소": "Cancel",
+    "응원을 고쳤어요": "Cheer edited",
+    "한 번 더": "Tap again"
+  }, []);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();
