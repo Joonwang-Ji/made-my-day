@@ -533,6 +533,32 @@
     [/^([\d.]+)부터 세요\. 그 전에 체크한 기록은 이 습관에 들어가지 않아요\.$/, function (d) { return "Counting starts " + d + ". Check-ins before then don't count for this habit."; }],
     [/^다음 목표 (\d+)일$/, function (n) { return "Next goal: " + n + " days"; }]
   ]);
+  // ---- 30차: 다시 시작(연속일이 끊긴 뒤) ----
+  I.register({
+    "다시 시작": "Start again",
+    "🌅 오늘 다시 1일을 시작해요": "🌅 Day 1 starts again today",
+    "🌱 다시 일어서는 중": "🌱 Getting back on track",
+    "다시 일어섰어요!": "Back on track!",
+    "넘어진 자리에서 다시 일어서는 것이 진짜 습관이에요.": "Getting up where you fell is what makes a real habit.",
+    "주님의 자비는 아침마다 새로워요.": "The Lord's mercies are new every morning.",
+    "의인은 일곱 번 넘어져도 다시 일어나요.": "The righteous fall seven times and rise again.",
+    "주님을 바라는 사람은 새 힘을 얻어 다시 걸어가요.": "Those who hope in the Lord gain new strength and walk on.",
+    "뒤에 있는 것은 잊고, 앞에 있는 것을 향해 달려가요.": "Forget what lies behind and run toward what lies ahead.",
+    "넘어져도 아주 엎드러지지 않아요. 주님이 손을 붙들어 주세요.": "Though we stumble, we won't fall flat — the Lord holds our hand.",
+    "넘어져도 다시 일어나요. 어둠 속에서도 주님이 빛이 되어 주세요.": "When I fall, I will rise. Even in darkness, the Lord is my light.",
+    "애가 3:22-23": "Lamentations 3:22-23",
+    "잠언 24:16": "Proverbs 24:16",
+    "이사야 40:31": "Isaiah 40:31",
+    "빌립보서 3:13-14": "Philippians 3:13-14",
+    "시편 37:24": "Psalm 37:24",
+    "미가 7:8": "Micah 7:8"
+  }, [
+    [/^지난 연속 (\d+)일은 사라지지 않았어요\.$/, function (n) { return "Your " + n + "-day streak still counts."; }],
+    [/^최고 기록 (\d+)일도 그대로예요\.$/, function (n) { return "Your best, " + n + " days, stays too."; }],
+    [/^최근 30일 중 (\d+)일 성공$/, function (n) { return n + " of the last 30 days successful"; }],
+    [/^다시 (\d+)일 이으면 보너스 \+(\d+)P$/, function (n, p) { return "Keep it up " + n + " days for +" + p + "P"; }],
+    [/^끊긴 뒤 다시 (\d+)일을 이었어요\.$/, function (n) { return "You kept it going " + n + " days after the break."; }]
+  ]);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();

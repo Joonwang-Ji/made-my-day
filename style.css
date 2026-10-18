@@ -1198,3 +1198,20 @@ html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }
   font-size: 0.75rem; font-weight: 700; color: var(--ink); cursor: pointer; white-space: nowrap; }
 .hb-start-today.on { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
 .hb-wait { margin: 10px 0 4px; }
+/* ===== 30차: 다시 시작 카드 ===== */
+#comebackCard { margin-bottom: 12px; }
+.cb-card { position: relative; background: var(--card); border: 1px solid var(--gold); border-radius: 16px; padding: 14px 14px 12px; }
+.cb-x { position: absolute; top: 6px; right: 8px; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;
+  font-size: 1.125rem; color: var(--ink-dim); cursor: pointer; border-radius: 50%; }
+.cb-title { font-weight: 800; font-size: 0.9375rem; color: var(--ink); padding-right: 1.75rem; }
+.cb-sub { font-size: 0.8125rem; color: var(--ink); margin-top: 4px; line-height: 1.5; }
+.cb-word { margin-top: 10px; padding: 9px 11px; background: var(--gold-soft); border-radius: 10px; font-size: 0.8125rem; line-height: 1.55; color: var(--ink); }
+.cb-word-t { display: block; }
+.cb-word-r { display: block; font-size: 0.6875rem; color: var(--gold); font-weight: 700; margin-top: 2px; }
+.cb-r30 { font-size: 0.75rem; color: var(--ink-dim); margin-top: 8px; }
+.cb-prog { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--ink); }
+.cb-dots { display: inline-flex; gap: 4px; flex: none; }
+.cb-dot { width: 0.625rem; height: 0.625rem; border-radius: 50%; border: 1.5px solid var(--sage); display: inline-block; }
+.cb-dot.on { background: var(--sage); }
+.cb-prog-t { flex: 1; min-width: 0; font-weight: 700; }
+.cb-prog-n { flex: none; color: var(--sage); font-weight: 800; }
