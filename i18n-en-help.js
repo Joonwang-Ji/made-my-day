@@ -183,6 +183,13 @@
       ["When you reach the goal", "Choose <b>Keep going</b> to move the goal to the next step (21 → 30 → 66 → 100 days); after 100 it keeps counting with no goal. Choose <b>Finish</b> to freeze that day's streak and best record and keep the habit under “Finished habits” in Stats (it's also unpinned from Home). If a past start date means you've already passed the goal, you're asked right in the habit window, without a celebration."],
       ["Finished habits", "Bring a finished habit back with “Resume”. Habits without a goal can also be finished with “Finish and keep” in the habit window."]
     ], see: ["streak", "pass"] },
+    homelayout: { t: "Home layout", sub: "What to show · Order · Folding", s: [
+      ["Where to change it", "In Settings > Home layout, reorder Notices · Today's progress · Build a Habit · Routine categories with ↑↓ and tap the circle to turn them on or off. Notices and routine categories can't be turned off."],
+      ["One notice at a time", "When several notices pile up, only the most urgent one shows; tap “n more notices” below it to expand. Urgency order: success bonus → Stepping Stone · Pause → rewards to claim → start again → reviews → missed yesterday → this week's progress → holidays. You can also turn notices off one by one (success-bonus, reward and review notices can't be turned off)."],
+      ["Habit cards", "Habits pinned to Home show small, side by side in one row, with the streak and today's status (✓ done · 1/2 · – not due). Tap one to open the habit window."],
+      ["Collapsing categories", "On Home, tap a category name to collapse or expand its items. With “Collapse categories finished today” on, categories you've finished fold up by themselves. Categories you collapse yourself stay collapsed until you expand them."],
+      ["Same on every device", "Your layout is saved to your account, so it looks the same on iPhone, iPad and Mac. “Reset to default layout” brings back the original look."]
+    ], see: ["home", "habit"] },
     comeback: { t: "Start again", sub: "After your streak breaks", s: [
       ["Start-again card", "When your streak breaks, a “Start again” card appears on Home. It shows your last streak and best record, a Bible line, and how many of the last 30 days were successful. It goes away when your streak reaches 3 days or you close it with ×, and it won't come back for that break."],
       ["Stepping Stone · Pause first", "If yesterday broke your streak but a Stepping Stone or Pause can still save it, that notice comes first. The start-again card appears only when it can't be saved."],
@@ -197,7 +204,7 @@
   };
 
   var G = [
-    ["Screen guides", ["home", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
+    ["Screen guides", ["home", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["Routine & stats rules", ["colors", "streak", "habit", "comeback", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
     ["Friends & data", ["share", "cheers", "backup", "offline"]]

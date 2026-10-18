@@ -48,7 +48,7 @@
     background: none; border: none; color: var(--ink-dim); cursor: pointer; }
   .nav-btn svg { width: 1.0625rem; height: 1.0625rem; }
   .nav-btn span { font-size: 0.6562rem; font-weight: 700; }
-  #view-home, #view-editItems, #view-stats, #view-backfill, #view-export, #view-settings, #view-setDisplay, #view-setRules, #view-setNotify, #view-setAccount, #view-restDays, #view-friends, #view-help { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.25rem); }
+  #view-home, #view-editItems, #view-stats, #view-backfill, #view-export, #view-settings, #view-setDisplay, #view-setHome, #view-setRules, #view-setNotify, #view-setAccount, #view-restDays, #view-friends, #view-help { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.25rem); }
 
   header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; min-height: 82px; }
   .date-block { min-width: 0; }
@@ -1109,7 +1109,7 @@
 /* 26차: 큰 글씨에서는 도움말(?) 동그라미도 글씨를 따라 커진다(예전엔 10px 고정이라 가장 크게에서 너무 작았음) */
 html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }
 /* ===== 27차: 습관 만들기 ===== */
-#habitCards { margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+#habitCards { margin-bottom: 14px; }
 .habit-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; cursor: pointer; }
 .habit-card.done { border-color: var(--sage); }
 .habit-sec .habit-card + .habit-card { margin-top: 8px; }
@@ -1215,3 +1215,51 @@ html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }
 .cb-dot.on { background: var(--sage); }
 .cb-prog-t { flex: 1; min-width: 0; font-weight: 700; }
 .cb-prog-n { flex: none; color: var(--sage); font-weight: 800; }
+
+/* ---------------- 31차: 홈 화면 구성 ---------------- */
+/* 숨김은 화면 요소를 지우지 않고 클래스로만(각 안내의 hidden 처리와 따로 움직인다) */
+.hl-off, .hl-fold { display: none !important; }
+.hl-more { display: flex; align-items: center; justify-content: center; gap: 4px; margin: -6px 0 14px; padding: 6px 10px;
+  font-size: 0.7188rem; font-weight: 700; color: var(--ink-dim); cursor: pointer; border-radius: 10px; -webkit-tap-highlight-color: transparent; }
+.hl-more:active { background: var(--line); }
+.hl-more.hidden { display: none; }
+.hl-chev { width: 0.875rem; height: 0.875rem; flex: none; transition: transform .2s ease; }
+.hl-chev.up { transform: rotate(180deg); }
+
+/* 습관: 가로 한 줄 띠 */
+#habitCards.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 8px; }
+.hs-item { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px 10px; cursor: pointer; min-width: 0; }
+.hs-item.done { border-color: var(--sage); }
+.hs-item.ask { border-color: var(--gold); }
+.hs-name { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 0.8125rem; color: var(--ink); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hs-ico { flex: none; font-size: 0.8125rem; line-height: 1; }
+.hs-mid { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; }
+.hs-streak { font-family: 'Fraunces', serif; font-weight: 650; font-size: 0.9375rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hs-st { flex: none; font-size: 0.6875rem; font-weight: 800; color: var(--gold); background: var(--gold-soft); border-radius: 999px; padding: 2px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hs-st.ok { color: var(--sage); background: var(--sage-soft); }
+.hs-st.na { color: var(--rest); background: var(--rest-soft); }
+.hs-st.ask { background: none; padding: 0; }
+.hs-bar { display: block; height: 4px; border-radius: 999px; background: var(--ring-track); overflow: hidden; margin-top: 7px; }
+.hs-bar > span { display: block; height: 100%; background: var(--sage); border-radius: 999px; }
+
+/* 카테고리 접기 */
+.cat-head { min-width: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cat-head .cat-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.cat-name-t { min-width: 0; overflow-wrap: anywhere; }
+.cat-chev { width: 1rem; height: 1rem; flex: none; color: var(--ink-dim); transition: transform .2s ease; }
+.cat-card.folded .cat-chev { transform: rotate(-90deg); }
+.cat-card.folded .cat-items-preview { display: none; }
+.cat-card.folded .cat-itemline { margin-bottom: -2px; }
+
+/* 설정 > 홈 화면 구성 */
+.hl-row { gap: 8px; }
+.hl-row .hl-name { flex: 1; min-width: 0; cursor: pointer; }
+.hl-row.locked .hl-name { cursor: default; }
+.hl-ctl { display: flex; align-items: center; gap: 2px; flex: none; }
+.hl-ctl .icon-btn[disabled] { opacity: .25; pointer-events: none; }
+.hl-ctl .dot { margin-left: 6px; cursor: pointer; position: relative; }
+.hl-ctl .dot::after { content: ""; position: absolute; inset: -12px; }
+.hl-lock { margin-left: 6px; font-size: 0.75rem; width: 1rem; text-align: center; opacity: .6; }
+.hl-row.locked { border-color: var(--line); background: var(--card); }
+.hl-unfold { margin-top: 0; }

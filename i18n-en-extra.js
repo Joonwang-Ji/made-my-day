@@ -559,6 +559,40 @@
     [/^다시 (\d+)일 이으면 보너스 \+(\d+)P$/, function (n, p) { return "Keep it up " + n + " days for +" + p + "P"; }],
     [/^끊긴 뒤 다시 (\d+)일을 이었어요\.$/, function (n) { return "You kept it going " + n + " days after the break."; }]
   ]);
+  // ---- 31차: 홈 화면 구성 ----
+  I.register({
+    "홈 화면 구성": "Home layout",
+    "보일 것 · 순서": "What to show · Order",
+    "↑↓로 순서를 바꾸고, 동그라미를 눌러 켜고 꺼요. 안내와 루틴 카테고리는 끌 수 없어요.": "Use ↑↓ to reorder and tap the circle to turn things on or off. Notices and routine categories can't be turned off.",
+    "안내": "Notices",
+    "오늘 진행": "Today's progress",
+    "루틴 카테고리": "Routine categories",
+    "성공 보너스·받을 보상·리뷰 도착 안내는 끌 수 없어요.": "Success-bonus, reward and review notices can't be turned off.",
+    "홈에서 카테고리 이름을 누르면 항목 목록을 접고 펼 수 있어요.": "On Home, tap a category name to collapse or expand its items.",
+    "기본 구성으로 되돌리기": "Reset to default layout",
+    "기본 구성으로 되돌렸어요": "Layout reset to default",
+    "구성은 계정에 저장돼 모든 기기에서 같게 보여요.": "Your layout is saved to your account and looks the same on every device.",
+    "안내는 하나만 보이고 나머지는 접기": "Show one notice and fold the rest",
+    "징검다리·쉼표 안내": "Stepping Stone · Pause notice",
+    "다시 시작 카드": "Start-again card",
+    "어제 놓친 부분": "Missed yesterday",
+    "이번 주 진행": "This week's progress",
+    "공휴일 추가 안내": "Holiday reminder",
+    "오늘 다 끝낸 카테고리는 접어 두기": "Collapse categories finished today",
+    "안내 접기": "Fold notices",
+    "모두 보임": "Everything shown",
+    "모두 보임 · 안내 하나만": "Everything shown · one notice",
+    "보일 것 · 순서 · 접기": "What to show · Order · Folding",
+    "어디서 바꾸나요": "Where to change it",
+    "안내는 하나만": "One notice at a time",
+    "습관 카드": "Habit cards",
+    "카테고리 접기": "Collapsing categories",
+    "모든 기기에서 같게": "Same on every device"
+  }, [
+    [/^안내 (\d+)개 더 보기$/, function (n) { return n === "1" ? "1 more notice" : n + " more notices"; }],
+    [/^숨긴 것 (\d+)개( · 안내 하나만)?$/, function (n, one) { return n + " hidden" + (one ? " · one notice" : ""); }],
+    [/^접어 둔 카테고리 모두 펴기 · (\d+)$/, function (n) { return "Expand all collapsed categories · " + n; }]
+  ]);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();
