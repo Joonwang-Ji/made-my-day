@@ -10,7 +10,7 @@
     home: { t: "Home screen", sub: "Check-offs · ▶ countdown · top area", s: [
       ["Checking items", "Tap an item's name to mark it done, and tap again to undo it. When you uncheck something you already checked, the app asks once more to prevent mistakes."],
       ["▶ Countdown", "Press ▶ on a category to go through today's items one by one with a timer. Items you've already finished are skipped. When time runs out it doesn't move on by itself — the overtime (+min:sec) is shown, and you press Done to go to the next one."],
-      ["Top area", "Tap the date to jot a “One line a day” note right away. The flame on the right is your current streak of successful days; tap it to open the achievements screen. The round card below shows today's progress."],
+      ["Top area", "Tap the date to jot a “One line a day” note right away. The flame on the right is your current streak of successful days; tap it to open the achievements screen. Tap the gear (⚙) next to your avatar to open Settings. The round card below shows today's progress."],
       ["Notice strips", "Tap “Missed yesterday” to see the items you missed. If there's a gift, a gift strip appears, and if there's a time-adjustment suggestion, a small badge appears at the top."]
     ], see: ["colors", "streak", "alarm"] },
     edit: { t: "Edit items", sub: "Name · time · days · tags · start date", s: [
@@ -167,7 +167,7 @@
       ["Before importing", "It's safest to back up your current state before importing."]
     ], see: ["settings", "offline"] },
     keys: { t: "Using a keyboard", sub: "Shortcuts for a MacBook or external keyboard", s: [
-      ["Jump to the menu", "Press <b>1–5</b> to go straight to Home · Stats · Records · Friends · Settings in the bottom menu. Press <b>M</b> to move focus to the bottom menu."],
+      ["Jump to the menu", "Press <b>1–5</b> to go straight to Home · To-dos · Stats · Records · Friends in the bottom menu. Settings is the gear (⚙) at the top right of Home. Press <b>M</b> to move focus to the bottom menu."],
       ["Back · Close", "Press <b>Esc</b> or <b>Delete (Backspace)</b> to go back. If a window is open, Esc closes it; in yes/no windows it picks “Cancel”. Pressing Esc in a text field leaves the field."],
       ["Moving in lists", "Use <b>↑ ↓</b> to move between rows of the same kind (item checks, settings rows, etc.) and <b>← →</b> between menu buttons and chips. <b>Home · End</b> jump to the first and last. Press <b>Enter</b> or <b>Space</b> to select."],
       ["When a window opens", "Focus moves into the window, and Tab stays inside it. When you close it, focus returns to where you were."],
@@ -183,8 +183,26 @@
       ["When you reach the goal", "Choose <b>Keep going</b> to move the goal to the next step (21 → 30 → 66 → 100 days); after 100 it keeps counting with no goal. Choose <b>Finish</b> to freeze that day's streak and best record and keep the habit under “Finished habits” in Stats (it's also unpinned from Home). If a past start date means you've already passed the goal, you're asked right in the habit window, without a celebration."],
       ["Finished habits", "Bring a finished habit back with “Resume”. Habits without a goal can also be finished with “Finish and keep” in the habit window."]
     ], see: ["streak", "pass"] },
+    todo: { t: "To-dos", sub: "Quick capture · sort in one go · lists", s: [
+      ["Quick capture", "On any tab, tap <b>+</b> at the bottom right to open a text box. Type whatever comes to mind and press Enter (Add) — it piles up under “To sort”. Nothing is asked while you capture. If you close the box with text still in it, that text is added too."],
+      ["Date words", "Words like “tomorrow”, “Friday”, “next Tue”, “10/25”, “3pm”, “2:30 PM” or “evening” are highlighted as you type and filled in as the date and time when you sort. Without AM/PM, 1–6 o'clock is read as afternoon. Recognized words are taken out of the title; tap “Use original” while sorting to bring back exactly what you typed."],
+      ["Sort in one go", "Tap “Sort them all” to go card by card and choose To-do · Event · Note · Discard. The suggested type is already selected. For a to-do, pick a date (Today · Tomorrow · This weekend · Next week · Pick a date · Someday) and a time (Morning · Noon · Evening · exact time); for an event, a date and start/end times. Items waiting more than 3 days are highlighted in gold."],
+      ["Lists", "“Today” has today's to-dos and events, “Upcoming” starts tomorrow, “Someday” has to-dos without a date, and “Notes” groups notes by #tag. Tap the circle to check a to-do off; tap a row to edit it."],
+      ["Overdue", "To-dos not done by their date move to the next day under “Overdue”. The third time one is postponed, the app asks “Will you really do it?” — choose I'll do it · Pick a date · Move to Someday · Discard."],
+      ["Done · Archive", "Finished to-dos, discarded items and past events stay under “Done”. After 180 days they move to your account's archive to keep the app light; open it with “View archive”."],
+      ["Separate from routines", "To-dos don't mix with your routine streak or points. Home shows just one line — today's to-dos · overdue · to sort (turn it off or reorder it in Settings > Home layout). Open Settings from the gear (⚙) at the top right of Home."]
+    ], see: ["todoshortcut", "homelayout"] },
+    todoshortcut: { t: "Send to Reminders · Calendar", sub: "Make the “MMD 보내기” shortcut", s: [
+      ["How sending works", "Items with “Send to Reminders / Send to Calendar” turned on are gathered; tap [Send n] and the “MMD 보내기” shortcut puts to-dos into Reminders and events into Calendar in one go. Come back to this app and tap “Yes, they're in”. Sent items keep a “→ Reminders” or “→ Calendar” mark."],
+      ["One way only", "After sending, the app and Reminders/Calendar are separate — finishing or editing on one side doesn't change the other. To-dos without a time are sent with a 9 AM alert that day; Morning · Noon · Evening are sent as 7:00 · 12:00 · 19:00. Events without an end time are sent as 1 hour."],
+      ["First time ① Make the shortcut", "Open the <b>Shortcuts</b> app on iPhone (or Mac) → <b>+</b> at the top right → rename it exactly <b>MMD 보내기</b> (with the space)."],
+      ["② Read the input", "Add <b>Get Dictionary from Input</b> with the input set to “Shortcut Input”. Then add <b>Get Dictionary Value</b> with the key <b>items</b>, and then <b>Repeat with Each</b>."],
+      ["③ To-dos into Reminders", "Inside the repeat, add <b>Get Dictionary Value</b> (key <b>type</b>, from “Repeat Item”) and <b>If</b>: when it is “reminder” → <b>Add New Reminder</b> with the Repeat Item's <b>title</b> as the title and its <b>start</b> as the alert."],
+      ["④ Events into Calendar", "In <b>Otherwise</b>, add <b>Add New Event</b> with title <b>title</b>, start <b>start</b> and end <b>end</b>. For all-day events, add another <b>If</b> inside it: when <b>allDay</b> is yes, use an Add New Event with “All Day” on. Save and you're done."],
+      ["If it doesn't work", "Check that the shortcut is named exactly “MMD 보내기” and that you tapped “Allow” for Reminders and Calendar the first time it ran. The app sends JSON with an items list, each holding type (reminder · event) · title · start · end · allDay. If you answer that it didn't go through, the items stay ready to send again."]
+    ], see: ["todo"] },
     homelayout: { t: "Home layout", sub: "What to show · Order · Folding", s: [
-      ["Where to change it", "In Settings > Home layout, reorder Notices · Today's progress · Build a Habit · Routine categories with ↑↓ and tap the circle to turn them on or off. Notices and routine categories can't be turned off."],
+      ["Where to change it", "In Settings > Home layout, reorder Notices · To-dos · Today's progress · Build a Habit · Routine categories with ↑↓ and tap the circle to turn them on or off. Notices and routine categories can't be turned off."],
       ["One notice at a time", "When several notices pile up, only the most urgent one shows; tap “n more notices” below it to expand. Urgency order: success bonus → Stepping Stone · Pause → rewards to claim → start again → reviews → missed yesterday → this week's progress → holidays. You can also turn notices off one by one (success-bonus, reward and review notices can't be turned off)."],
       ["Habit cards", "Habits pinned to Home show small, side by side in one row, with the streak and today's status (✓ done · 1/2 · – not due). Tap one to open the habit window."],
       ["Collapsing categories", "On Home, tap a category name to collapse or expand its items. With “Collapse categories finished today” on, categories you've finished fold up by themselves. Categories you collapse yourself stay collapsed until you expand them."],
@@ -204,7 +222,7 @@
   };
 
   var G = [
-    ["Screen guides", ["home", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
+    ["Screen guides", ["home", "todo", "todoshortcut", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["Routine & stats rules", ["colors", "streak", "habit", "comeback", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
     ["Friends & data", ["share", "cheers", "backup", "offline"]]

@@ -92,6 +92,27 @@
         return out;
       });
     },
+    // ---- 32차: 할 일 보관함 users/{uid}/todo_archive/{year} = { items: [...], updatedAt } ----
+    // 끝낸 지 180일 지난 할 일을 옮겨 둔다. 이미 있는 것(같은 id)은 그대로 두고 새것만 더한다(두 기기가 같이 옮겨도 안전).
+    todoArchiveAdd: function (uid, year, items) {
+      var ref = doc(db, "users", uid, "todo_archive", year);
+      return runTransaction(db, function (tx) {
+        return tx.get(ref).then(function (snap) {
+          var cur = snap.exists() && Array.isArray(snap.data().items) ? snap.data().items.slice() : [];
+          var seen = {};
+          cur.forEach(function (x) { if (x && x.id) seen[x.id] = 1; });
+          items.forEach(function (x) { if (x && x.id && !seen[x.id]) { cur.push(x); seen[x.id] = 1; } });
+          tx.set(ref, { items: cur, updatedAt: new Date().toISOString() });
+        });
+      });
+    },
+    listTodoArchive: function (uid) {
+      return getDocs(collection(db, "users", uid, "todo_archive")).then(function (snap) {
+        var out = {};
+        snap.forEach(function (d) { out[d.id] = d.data(); });
+        return out;
+      });
+    },
     listPendingUsers: function () {
       var q = query(collection(db, "users"), where("approved", "==", false));
       return getDocs(q).then(function (snap) {
