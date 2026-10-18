@@ -1180,3 +1180,21 @@ html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }
   font-size: 0.75rem; font-weight: 700; color: var(--ink); cursor: pointer; white-space: nowrap; }
 .hb-goals .tp-chip.on { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
 .hb-celeb-name { font-weight: 800; }
+/* ===== 29차: 습관 시작 날짜 · 달성 후 끝내기/이어가기 ===== */
+.habit-card.ended { opacity: 0.85; }
+.habit-card.ended .hb-streak { font-size: 0.9375rem; color: var(--ink-dim); }
+.hb-goal.ask { color: var(--gold); font-weight: 700; }
+.hb-ended-label { font-size: 0.75rem; font-weight: 800; color: var(--ink-dim); margin: 18px 2px 8px; }
+.hb-ask { background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+.hb-ask-t { font-weight: 800; font-size: 0.9375rem; color: var(--ink); }
+.hb-ask-s { font-size: 0.8125rem; color: var(--ink); margin-top: 4px; }
+.hb-ask-btns { display: flex; gap: 6px; margin-top: 10px; }
+.hb-ask-btns .btn { flex: 1; min-width: 0; padding-left: 4px; padding-right: 4px; }
+.hb-ask .hb-pick-note { margin: 8px 0 0; }
+.hb-ended-badge { font-size: 0.75rem; font-weight: 700; color: var(--sage); background: var(--sage-soft); border-radius: 10px; padding: 7px 10px; margin-bottom: 10px; }
+.hb-start-row { display: flex; gap: 6px; align-items: stretch; }
+.hb-start-row .cat-name-input { flex: 1; min-width: 0; margin-bottom: 0; }
+.hb-start-today { flex: none; display: flex; align-items: center; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
+  font-size: 0.75rem; font-weight: 700; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.hb-start-today.on { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
+.hb-wait { margin: 10px 0 4px; }

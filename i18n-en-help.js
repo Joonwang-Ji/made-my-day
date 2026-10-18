@@ -177,9 +177,11 @@
       ["What is it?", "For a new habit, group a few items and count a streak just for that group, separate from your overall streak. e.g. Morning worship 40 min + Evening worship 20 min → “Worship 1 hour”."],
       ["A successful day", "A day counts when <b>all</b> of the group's items scheduled that day are done. Items not scheduled that day are left out. Your overall streak threshold (%) doesn't apply."],
       ["Rest days · Pause · Stepping Stone", "Rest days and Pause days neither break nor add to the streak. Stepping Stones don't apply to habit streaks."],
-      ["Counted from the day you make it", "The streak counts from the day you create the habit. Tap “Start over” to count fresh from today."],
+      ["Start date", "The streak counts from the start date, which you can pick when you make or edit a habit. Pick a past date to recount from your check-ins in the app since that day; pick a future date to see the days left, like “D-3”. Tap “Start over” to count fresh from today."],
       ["Pin to Home", "You can pin up to 2 habits on Home. Once a habit has settled in, unpin it to keep Home light. All habits are at the bottom of Stats > Success, where you can also make new ones."],
-      ["Goal days", "Choose 21 · 30 · 66 · 100 days. You'll get a celebration when your streak reaches the goal."]
+      ["Goal days", "Choose 21 · 30 · 66 · 100 days. You'll get a celebration when your streak reaches the goal."],
+      ["When you reach the goal", "Choose <b>Keep going</b> to move the goal to the next step (21 → 30 → 66 → 100 days); after 100 it keeps counting with no goal. Choose <b>Finish</b> to freeze that day's streak and best record and keep the habit under “Finished habits” in Stats (it's also unpinned from Home). If a past start date means you've already passed the goal, you're asked right in the habit window, without a celebration."],
+      ["Finished habits", "Bring a finished habit back with “Resume”. Habits without a goal can also be finished with “Finish and keep” in the habit window."]
     ], see: ["streak", "pass"] },
     offline: { t: "When you're offline", sub: "Offline records · merged saving", s: [
       ["You can still check items", "Even without internet, checks and records are saved on this device first. They stay even if you close the app. A small <b>Offline</b> label appears at the top."],

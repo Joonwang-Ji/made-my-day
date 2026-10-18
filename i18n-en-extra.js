@@ -498,6 +498,41 @@
     "응원을 고쳤어요": "Cheer edited",
     "한 번 더": "Tap again"
   }, []);
+  // ---- 29차: 습관 시작 날짜 · 달성 후 끝내기/이어가기 ----
+  I.register({
+    "완료": "Done",
+    "완료한 습관": "Finished habits",
+    "목표 달성 · 다음을 골라 주세요": "Goal reached · choose what's next",
+    "이 습관을 끝낼까요, 더 이어갈까요?": "Finish this habit, or keep going?",
+    "끝내기": "Finish",
+    "이어가기": "Keep going",
+    "이어가면 목표 없이 연속일만 계속 세요. 끝내면 완료한 습관으로 보관돼요.": "Keep going to count the streak with no goal. Finish to keep it under Finished habits.",
+    "시작까지(일)": "Days to start",
+    "해 온 날(일)": "Days kept",
+    "묶인 항목": "Grouped items",
+    "묶인 항목이 모두 삭제됐어요.": "All grouped items were deleted.",
+    "묶인 항목이 모두 삭제됐어요. 편집에서 항목을 다시 골라 주세요.": "All grouped items were deleted. Pick items again in Edit.",
+    "마지막 기록": "Last days",
+    "다시 이어가기": "Resume",
+    "끝내고 보관하기": "Finish and keep",
+    "시작 날짜": "Start date",
+    "지난 날짜를 고르면 그날부터 앱 기록으로 다시 세요. 앞날을 고르면 그날부터 세요.": "Pick a past date to recount from your app records since then. Pick a future date to start counting that day.",
+    "시작 날짜를 골라 주세요": "Please pick a start date",
+    "이미 목표를 달성했어요": "You've already reached the goal",
+    "목표 없이 계속 세요": "Counting on with no goal",
+    "완료한 습관으로 보관했어요": "Kept as a finished habit",
+    "이 습관을 끝낼까요?": "Finish this habit?",
+    "지금 연속일과 최고 기록을 멈추고 완료한 습관으로 보관해요. 나중에 다시 이어갈 수 있어요": "This freezes the current streak and best record and keeps it as a finished habit. You can resume it later",
+    "다시 이어서 세요": "Counting again",
+    "새 습관이 자리 잡아 가고 있어요. 이 습관을 끝낼까요, 더 이어갈까요?": "Your new habit is taking root. Finish it, or keep going?"
+  }, [
+    [/^(\d+)일까지 이어가기$/, function (n) { return "Keep going to " + n + " days"; }],
+    [/^🎉 목표 (\d+)일을 달성했어요$/, function (n) { return "🎉 You reached your " + n + "-day goal"; }],
+    [/^이어가면 목표가 (\d+)일로 바뀌어요\. 끝내면 완료한 습관으로 보관돼요\.$/, function (n) { return "Keep going to change the goal to " + n + " days. Finish to keep it under Finished habits."; }],
+    [/^🌳 완료한 습관 · (.+)$/, function (d) { return "🌳 Finished habit · " + d; }],
+    [/^([\d.]+)부터 세요\. 그 전에 체크한 기록은 이 습관에 들어가지 않아요\.$/, function (d) { return "Counting starts " + d + ". Check-ins before then don't count for this habit."; }],
+    [/^다음 목표 (\d+)일$/, function (n) { return "Next goal: " + n + " days"; }]
+  ]);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();
