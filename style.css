@@ -1460,3 +1460,17 @@ html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }
 .td-list.td-in-l { animation: tdInL .22s ease; }
 .td-tbtn { display: inline-flex; align-items: center; min-width: 5.5rem; cursor: pointer; }
 .td-tbtn > span { color: var(--ink-dim); font-weight: 700; }
+
+/* ---------------- 35차: 할 일 입력줄을 아래로 · 타이머 중 적기 ---------------- */
+/* 입력줄은 아래 메뉴 바로 위에 붙는다(높이는 JS가 --td-bar-b 로 맞춤 — 키보드가 올라오면 키보드 위) */
+.td-addbar { position: fixed; left: 0; right: 0; bottom: var(--td-bar-b, 3.75rem); z-index: 39; margin: 0; background: var(--bg);
+  border-top: 1px solid var(--line); padding: 8px 20px; }
+.td-addbar-in { max-width: 480px; margin: 0 auto; }
+.td-addbar .td-hint { margin: 0 0 6px; }
+#view-todo { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12rem); }
+body.td-bar-on .undo-bar { bottom: calc(150px + env(safe-area-inset-bottom)); }
+/* 타이머 화면 오른쪽 위 적기 버튼 */
+.run-note { width: 2.125rem; height: 2.125rem; border-radius: 50%; border: none; background: var(--card); color: var(--ink-dim);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.run-note svg { width: 1.0625rem; height: 1.0625rem; }
+.run-note:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
