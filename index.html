@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-19-6";
+  var BUILD_VERSION = "2026-10-19-7";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-19-6">
+<link rel="stylesheet" href="style.css?v=2026-10-19-7">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -392,6 +392,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
     <h2>할 일</h2><span class="help-q" data-action="help" data-id="todo">?</span>
   </div>
   <!-- 35차: 엄지가 닿는 아래쪽(아래 메뉴 바로 위, 키보드가 올라오면 그 위)에 붙는 막 적기 줄 -->
+  <!-- 36차: 폰에서 입력하는 동안(키보드가 올라온 동안) 보이는 영역 맨 위에 붙는 탭 줄 -->
+  <div class="td-pin" id="tdPin"><div class="td-pin-in" id="tdPinIn"></div></div>
   <div class="td-addbar" id="tdAddbar">
     <div class="td-addbar-in">
       <div class="td-hint hidden" id="tdInlineHint" aria-live="polite"></div>
@@ -992,17 +994,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-19-6"></script>
-<script src="i18n.js?v=2026-10-19-6"></script>
-<script src="i18n-en.js?v=2026-10-19-6"></script>
-<script src="bible-medals-data.js?v=2026-10-19-6"></script>
-<script src="avatar-data.js?v=2026-10-19-6"></script>
-<script src="review-data.js?v=2026-10-19-6"></script>
-<script src="i18n-en-help.js?v=2026-10-19-6"></script>
-<script src="i18n-en-review.js?v=2026-10-19-6"></script>
-<script src="i18n-en-bible.js?v=2026-10-19-6"></script>
-<script src="i18n-en-avatar.js?v=2026-10-19-6"></script>
-<script src="i18n-en-extra.js?v=2026-10-19-6"></script>
+<script type="module" src="firebase-service.js?v=2026-10-19-7"></script>
+<script src="i18n.js?v=2026-10-19-7"></script>
+<script src="i18n-en.js?v=2026-10-19-7"></script>
+<script src="bible-medals-data.js?v=2026-10-19-7"></script>
+<script src="avatar-data.js?v=2026-10-19-7"></script>
+<script src="review-data.js?v=2026-10-19-7"></script>
+<script src="i18n-en-help.js?v=2026-10-19-7"></script>
+<script src="i18n-en-review.js?v=2026-10-19-7"></script>
+<script src="i18n-en-bible.js?v=2026-10-19-7"></script>
+<script src="i18n-en-avatar.js?v=2026-10-19-7"></script>
+<script src="i18n-en-extra.js?v=2026-10-19-7"></script>
 <script>
 (function () {
   "use strict";
@@ -5382,9 +5384,19 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!state.approved) return "";
     var info = comebackInfo();
     if (!info || info.cur >= COMEBACK_DAYS) return "";
-    if (state.comebackHide === info.breakKey) return "";
     if (state.comebackDone && state.comebackDone[info.breakKey]) return "";
     if (comebackRescuePending(info)) return "";
+    // 36차: ×로 닫아도 보너스 대상이면 진행(n/3)만 작은 한 줄로 남긴다. 누르면 카드를 다시 펼친다.
+    if (state.comebackHide === info.breakKey) {
+      if (!comebackEligible(info)) return "";
+      var md = "";
+      for (var j = 0; j < COMEBACK_DAYS; j++) md += '<i class="cb-dot' + (j < info.cur ? ' on' : '') + '"></i>';
+      return '<div class="cb-mini" data-action="comeback-show" data-id="' + info.breakKey + '" role="button" aria-label="다시 시작">' +
+        '<span class="cb-dots" aria-hidden="true">' + md + '</span>' +
+        '<span class="cb-prog-t">다시 ' + COMEBACK_DAYS + '일 이으면 보너스 +' + COMEBACK_BONUS + 'P</span>' +
+        '<span class="cb-prog-n">' + info.cur + '/' + COMEBACK_DAYS + '</span>' +
+        '<svg class="cb-mini-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div>';
+    }
     var best = 0;
     try { best = computeLongestStreak(); } catch (e) {}
     var w = COMEBACK_WORDS[parseInt(info.breakKey.replace(/-/g, ""), 10) % COMEBACK_WORDS.length];
@@ -5412,7 +5424,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     try { html = comebackCardHtml(); } catch (e) { html = ""; }
     el.innerHTML = html;
     el.classList.toggle("hidden", !html);
-    return !!html;
+    return !!html && html.indexOf("cb-mini") === -1;   // 36차: 작은 한 줄일 땐 '어제 놓친 부분' 안내를 가리지 않는다
   }
   function hideComebackCard(k) {
     if (!k) return;
@@ -6932,7 +6944,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (c.id === "reviewCards") { Array.prototype.forEach.call(c.children, function (rc) { items.push(rc); }); return; }
       var off = !!offById[c.id];
       hlSetCls(c, "hl-off", off);
-      if (!off && !c.classList.contains("hidden")) items.push(c); else hlSetCls(c, "hl-fold", false);
+      // 36차: 닫은 다시 시작 카드의 작은 한 줄은 접지 않고 늘 보인다(안내 개수에도 넣지 않음)
+      var mini = c.id === "comebackCard" && !!c.querySelector(".cb-mini");
+      if (!off && !mini && !c.classList.contains("hidden")) items.push(c); else hlSetCls(c, "hl-fold", false);
     });
     var extra = items.length - 1;
     if (extra <= 0) hlNoticeOpen = false;
@@ -7668,23 +7682,63 @@ window.addEventListener("beforeinstallprompt", function (e) {
   function tdQuickSync() { tdInputSync("tdQuickIn", "tdMirror", "tdQuickHint", "tdQuickAddBtn"); }
   function tdInlineSync() { tdInputSync("tdInlineIn", "tdInlineMirror", "tdInlineHint", "tdInlineAddBtn"); }
   // 35차: 입력줄을 아래 메뉴 바로 위에 붙인다. 키보드가 올라오면(visualViewport가 줄어들면) 키보드 바로 위로 옮긴다.
+  // 36차: 폰에서 입력하는 동안(입력칸에 초점 + 키보드)은 '입력 중' 모드(body.td-typing):
+  //   아래 메뉴는 숨기고, 보이는 영역 맨 위에 탭 줄(#tdPin)을 고정, 입력줄은 보이는 영역 맨 아래(키보드 바로 위)에 붙인다.
+  //   아이폰은 키보드가 올라와도 고정 요소의 기준(레이아웃 화면)이 줄지 않고, 화면을 내리면 보이는 영역만 움직이므로
+  //   bottom 대신 visualViewport의 offsetTop·height로 위(top) 기준 위치를 매번 다시 잡는다(스크롤·크기 바뀔 때마다).
+  var tdFullH = 0;
   function tdBarFit() {
     var bar = document.getElementById("tdAddbar");
     if (!bar) return;
-    var on = tdVisible();
-    document.body.classList.toggle("td-bar-on", !!on);
+    var on = tdVisible(), b = document.body;
+    b.classList.toggle("td-bar-on", !!on);
+    var vv = window.visualViewport;
+    var focused = !!(document.activeElement && document.activeElement.id === "tdInlineIn");
+    if (vv && !focused) tdFullH = Math.round(vv.height);         // 키보드 없을 때 보이는 높이(기준)
+    else if (vv && vv.height > tdFullH) tdFullH = Math.round(vv.height);
+    var kbH = vv ? Math.max(0, tdFullH - Math.round(vv.height)) : 0;
+    var typing = !!(on && focused && vv && kbH > 80);
+    if (b.classList.contains("td-typing") !== typing) b.classList.toggle("td-typing", typing);
+    if (!typing && b.classList.contains("td-pin-off")) b.classList.remove("td-pin-off");
     if (!on) return;
+    if (typing) {
+      tdPinRender();
+      var top = Math.max(0, Math.round(vv.offsetTop));
+      // 원래 탭 줄이 보이는 영역 안에 다 보이면 고정 탭 줄은 숨긴다(두 줄로 겹쳐 보이지 않게)
+      var ot = document.querySelector("#todoBody .td-tabs"), pinOff = false;
+      if (ot) { var r = ot.getBoundingClientRect(); pinOff = r.height > 0 && r.top >= top - 1 && r.bottom <= top + vv.height - bar.offsetHeight; }
+      if (b.classList.contains("td-pin-off") !== pinOff) b.classList.toggle("td-pin-off", pinOff);
+      b.style.setProperty("--td-pin-t", top + "px");
+      b.style.setProperty("--td-vb", Math.round(top + vv.height) + "px");
+      b.style.setProperty("--td-kb", kbH + "px");
+      b.style.setProperty("--td-bar-h", bar.offsetHeight + "px");
+      return;
+    }
     var nav = document.getElementById("globalBottomNav"), navH = nav && !nav.classList.contains("hidden") ? nav.offsetHeight : 0;
-    var vv = window.visualViewport, kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+    var kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
     bar.style.setProperty("--td-bar-b", (kb > 80 ? kb : navH) + "px");
+  }
+  // 고정 탭 줄: 지금 할 일 화면의 탭 줄을 그대로 옮겨 그린다(누르면 같은 td-tab 동작, 키보드는 그대로)
+  function tdPinRender() {
+    var pin = document.getElementById("tdPinIn"), tabs = document.querySelector("#todoBody .td-tabs");
+    if (!pin) return;
+    var h = tabs ? tabs.outerHTML : "";
+    if (pin.getAttribute("data-h") !== h) { pin.setAttribute("data-h", h); pin.innerHTML = h; }
   }
   (function () {
     var v = document.getElementById("view-todo");
     if (v && window.MutationObserver) new MutationObserver(function () { tdBarFit(); }).observe(v, { attributes: true, attributeFilter: ["class"] });
+    var tb = document.getElementById("todoBody");
+    if (tb && window.MutationObserver) new MutationObserver(function () { if (document.body.classList.contains("td-typing")) tdPinRender(); }).observe(tb, { childList: true });
     if (window.visualViewport) { window.visualViewport.addEventListener("resize", tdBarFit); window.visualViewport.addEventListener("scroll", tdBarFit); }
     window.addEventListener("resize", tdBarFit);
-    document.addEventListener("focusin", function (e) { if (e.target && e.target.id === "tdInlineIn") { tdBarFit(); setTimeout(tdBarFit, 350); } });
-    document.addEventListener("focusout", function (e) { if (e.target && e.target.id === "tdInlineIn") setTimeout(tdBarFit, 250); });
+    window.addEventListener("scroll", function () { if (document.body.classList.contains("td-typing")) tdBarFit(); }, { passive: true });
+    document.addEventListener("focusin", function (e) { if (e.target && e.target.id === "tdInlineIn") { tdBarFit(); setTimeout(tdBarFit, 150); setTimeout(tdBarFit, 400); setTimeout(tdBarFit, 800); } });
+    document.addEventListener("focusout", function (e) { if (e.target && e.target.id === "tdInlineIn") { setTimeout(tdBarFit, 60); setTimeout(tdBarFit, 300); } });
+    document.addEventListener("input", function (e) { if (e.target && e.target.id === "tdInlineIn" && document.body.classList.contains("td-typing")) requestAnimationFrame(tdBarFit); });
+    // 고정 탭 줄을 눌러도 입력칸 초점(키보드)이 빠지지 않게
+    var pin = document.getElementById("tdPin");
+    if (pin) pin.addEventListener("mousedown", function (e) { e.preventDefault(); });
     setTimeout(tdBarFit, 0);
   })();
   function tdInputSync(inId, mirId, hintId, btnId) {
@@ -10623,7 +10677,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["모든 기기에서 같게", "구성은 계정에 저장돼 아이폰·아이패드·맥에서 똑같이 보여요. ‘기본 구성으로 되돌리기’로 처음 모습으로 돌아갈 수 있어요."]
     ], see: ["home", "habit"] },
     comeback: { t: "다시 시작", sub: "연속일이 끊긴 뒤", s: [
-      ["다시 시작 카드", "연속일이 끊기면 홈에 ‘다시 시작’ 카드가 떠요. 지난 연속일과 최고 기록, 성경 한 문장, 최근 30일 중 성공한 날 수를 보여 줘요. 연속일이 3일이 되거나 ×로 닫으면 사라지고, 그 끊김에는 다시 뜨지 않아요."],
+      ["다시 시작 카드", "연속일이 끊기면 홈에 ‘다시 시작’ 카드가 떠요. 지난 연속일과 최고 기록, 성경 한 문장, 최근 30일 중 성공한 날 수를 보여 줘요. 연속일이 3일이 되면 사라져요. ×로 닫으면 보너스 진행(○○○ n/3)만 작은 한 줄로 남고, 그 줄을 누르면 카드가 다시 펼쳐져요."],
       ["징검다리·쉼표가 먼저", "어제 끊겼어도 징검다리나 쉼표로 이을 수 있으면 그 안내가 먼저 떠요. 이을 수 없을 때만 다시 시작 카드가 떠요."],
       ["다시 일어서기 보너스", "연속 3일 이상 이어 오다 끊긴 뒤, 다시 3일을 이으면 축하와 함께 보너스 10P를 드려요. 끊길 때마다 한 번씩이에요."]
     ], see: ["streak", "pass"] },
@@ -12860,6 +12914,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "locked-milestone-tap") { lockedMilestoneTap(id, el); }
     else if (action === "celeb-next") { celebConfirm(); }
     else if (action === "comeback-hide") { hideComebackCard(id); }
+    else if (action === "comeback-show") { if (state.comebackHide === id) { state.comebackHide = null; saveState(); } renderComebackCard(); if (homeIsVisible()) renderHome(); }
     else if (action === "celeb-habit-continue") { celebHabitChoice(id, "continue"); }
     else if (action === "celeb-habit-end") { celebHabitChoice(id, "end"); }
     else if (action === "celeb-open-daily") { celebOpenDaily(); }
