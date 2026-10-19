@@ -1474,3 +1474,20 @@ body.td-bar-on .undo-bar { bottom: calc(150px + env(safe-area-inset-bottom)); }
   display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .run-note svg { width: 1.0625rem; height: 1.0625rem; }
 .run-note:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------------- 36차: 닫은 다시 시작 카드는 한 줄로 · 할 일 입력 중 화면(키보드) ---------------- */
+.cb-mini { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 12px; font-size: 0.75rem; color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cb-mini-chev { width: 0.875rem; height: 0.875rem; flex: none; color: var(--ink-dim); }
+/* 입력 중(폰 키보드가 올라온 동안): 아래 메뉴는 숨기고, 위에는 탭 줄을 고정, 입력줄은 키보드 바로 위.
+   위치는 JS가 보이는 영역(visualViewport) 기준으로 --td-pin-t(보이는 영역 맨 위)·--td-vb(보이는 영역 맨 아래)에 넣는다. */
+.td-pin { display: none; }
+body.td-typing #globalBottomNav { display: none !important; }
+body.td-typing .td-pin { display: block; position: fixed; left: 0; right: 0; top: var(--td-pin-t, 0px); z-index: 40;
+  background: var(--bg); border-bottom: 1px solid var(--line); padding: 6px 20px 2px; }
+body.td-typing .td-pin-in { max-width: 480px; margin: 0 auto; }
+body.td-typing .td-pin .td-tabs { margin: 0; }
+body.td-typing .td-addbar { top: var(--td-vb, 100%); bottom: auto; transform: translateY(-100%); }
+body.td-typing #view-todo { padding-bottom: calc(var(--td-kb, 0px) + 12rem); }
+body.td-typing .undo-bar { bottom: auto; top: calc(var(--td-vb, 100%) - var(--td-bar-h, 60px) - 3.5rem); }
+body.td-typing.td-pin-off .td-pin { display: none; }
