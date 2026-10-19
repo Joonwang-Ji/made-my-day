@@ -617,7 +617,7 @@
     "언젠가로": "Move to Someday",
     "버리기": "Discard",
     "오늘 할 일이 없어요.": "Nothing to do today.",
-    "떠오르는 게 있으면 위 줄에 막 적어 두세요.": "When something comes to mind, jot it down in the line above.",
+    "떠오르는 게 있으면 아래 줄에 막 적어 두세요.": "When something comes to mind, jot it down in the line below.",
     "오늘 끝낸 것": "Done today",
     "예정된 할 일이 없어요.": "Nothing upcoming.",
     "‘언젠가’ 할 일이 없어요.": "No “Someday” to-dos.",
