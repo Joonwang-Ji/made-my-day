@@ -750,7 +750,12 @@
     "보내는 중이에요": "Sending…",
     "단축어가 끝나면 이 앱으로 돌아와요. 돌아오면 자동으로 보냈다고 표시해요.": "When the shortcut finishes you'll come back here, and the items are marked as sent automatically.",
     "다 됐어요": "All done",
-    "안 됐어요": "It didn't work"
+    "안 됐어요": "It didn't work",
+    // 37차: 합치기 기록 · 시각 휠 오전/오후
+    "합치기 기록": "Merge log",
+    "다른 기기와 기록을 합칠 때마다 무엇이 달라졌는지 이 기기에 남겨요(최근 30번). 체크가 풀리거나 보냈다 표시가 사라졌을 때 원인을 찾는 데 써요.": "Each time records are merged with another device, what changed is saved on this device (last 30). Use it to find out why a check came undone or a sent mark disappeared.",
+    "아직 합친 기록이 없어요": "No merges yet",
+    "오전/오후": "AM/PM"
   });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);

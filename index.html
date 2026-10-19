@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-19-9";
+  var BUILD_VERSION = "2026-10-20-1";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-19-9">
+<link rel="stylesheet" href="style.css?v=2026-10-20-1">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -301,6 +301,10 @@ window.addEventListener("beforeinstallprompt", function (e) {
   <div class="bottom-row">
     <div class="btn" data-action="do-import">가져오기</div>
   </div>
+
+  <div class="section-label">합치기 기록</div>
+  <div class="export-note">다른 기기와 기록을 합칠 때마다 무엇이 달라졌는지 이 기기에 남겨요(최근 30번). 체크가 풀리거나 보냈다 표시가 사라졌을 때 원인을 찾는 데 써요.</div>
+  <div class="off-ready" id="mergeLog" aria-live="polite"></div>
 
   <div class="section-label">오프라인 준비 상태</div>
   <div class="export-note">인터넷이 안 될 때도 앱을 열 수 있는지 이 기기의 준비 상태를 보여 줘요. 문제가 생겼을 때 원인을 찾는 데 써요.</div>
@@ -895,6 +899,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   <div class="tp-card">
     <div class="tp-title" id="tdTpTitle">시각</div>
     <div class="tp-wheels">
+      <div class="tp-col"><div class="tp-scroll" id="tdTpA"></div><div class="tp-unit">오전/오후</div></div>
       <div class="tp-col"><div class="tp-scroll" id="tdTpH"></div><div class="tp-unit">시</div></div>
       <div class="tp-col"><div class="tp-scroll" id="tdTpM"></div><div class="tp-unit">분</div></div>
       <div class="tp-highlight"></div>
@@ -994,17 +999,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-19-9"></script>
-<script src="i18n.js?v=2026-10-19-9"></script>
-<script src="i18n-en.js?v=2026-10-19-9"></script>
-<script src="bible-medals-data.js?v=2026-10-19-9"></script>
-<script src="avatar-data.js?v=2026-10-19-9"></script>
-<script src="review-data.js?v=2026-10-19-9"></script>
-<script src="i18n-en-help.js?v=2026-10-19-9"></script>
-<script src="i18n-en-review.js?v=2026-10-19-9"></script>
-<script src="i18n-en-bible.js?v=2026-10-19-9"></script>
-<script src="i18n-en-avatar.js?v=2026-10-19-9"></script>
-<script src="i18n-en-extra.js?v=2026-10-19-9"></script>
+<script type="module" src="firebase-service.js?v=2026-10-20-1"></script>
+<script src="i18n.js?v=2026-10-20-1"></script>
+<script src="i18n-en.js?v=2026-10-20-1"></script>
+<script src="bible-medals-data.js?v=2026-10-20-1"></script>
+<script src="avatar-data.js?v=2026-10-20-1"></script>
+<script src="review-data.js?v=2026-10-20-1"></script>
+<script src="i18n-en-help.js?v=2026-10-20-1"></script>
+<script src="i18n-en-review.js?v=2026-10-20-1"></script>
+<script src="i18n-en-bible.js?v=2026-10-20-1"></script>
+<script src="i18n-en-avatar.js?v=2026-10-20-1"></script>
+<script src="i18n-en-extra.js?v=2026-10-20-1"></script>
 <script>
 (function () {
   "use strict";
@@ -3237,6 +3242,58 @@ window.addEventListener("beforeinstallprompt", function (e) {
     }).catch(function (err) { console.warn("archive reconcile after import failed", err && err.code); });
   }
 
+  // ---- 37차: 합치기 기록(이 기기에만, 최근 30번) ----
+  // 서버가 바뀐 채로 저장돼 합쳤을 때, 무엇이 달라졌는지 남긴다. 루틴 체크가 풀리거나 보냈다 표시가 사라지는 원인을 찾기 위한 진단용.
+  var MERGE_LOG_KEY = "mmd_merge_log_v1";
+  function mergeLogRead() { try { var a = JSON.parse(localStorage.getItem(MERGE_LOG_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function mergeLogAdd(local, server, out) {
+    var e = { t: new Date().toISOString(), lost: [], gain: [], gone: [], td: [] };
+    function names(ids) { return ids.map(function (id) { var it = findItem(id); return it ? it.name : String(id).slice(0, 6); }); }
+    function ids(h, d) { return ((h && h[d] && h[d].completed) || []); }
+    var lh = local.history || {}, sh = server.history || {}, oh = out.history || {}, days = {};
+    [lh, sh, oh].forEach(function (h) { Object.keys(h).forEach(function (d) { days[d] = 1; }); });
+    Object.keys(days).sort().forEach(function (d) {
+      var l = ids(lh, d), s2 = ids(sh, d), o = ids(oh, d);
+      var lostLocal = l.filter(function (x) { return o.indexOf(x) === -1; });    // 이 기기에서 체크했는데 합친 결과엔 없음
+      var lostServer = s2.filter(function (x) { return o.indexOf(x) === -1; }); // 다른 기기가 체크했는데 합친 결과엔 없음
+      var gain = o.filter(function (x) { return l.indexOf(x) === -1; });         // 다른 기기 체크가 이 기기에 들어옴
+      if (lostLocal.length) e.lost.push(d.slice(5) + " " + names(lostLocal).join(","));
+      if (lostServer.length) e.gone.push(d.slice(5) + " " + names(lostServer).join(","));
+      if (gain.length) e.gain.push(d.slice(5) + " " + names(gain).join(","));
+    });
+    function tmap(a) { var m = {}; (Array.isArray(a) ? a : []).forEach(function (x) { if (x && x.id) m[x.id] = x; }); return m; }
+    var tl = tmap(local.todos), ts = tmap(server.todos), to = tmap(out.todos), F = ["sent", "ip", "done", "drop", "k", "d", "tm"];
+    Object.keys(to).forEach(function (id) {
+      var a = tl[id], b = ts[id], c = to[id], diff = [];
+      if (!a || !b) return;
+      F.forEach(function (f) {
+        if (canon(a[f]) !== canon(b[f])) diff.push(f + ":" + (canon(c[f]) === canon(a[f]) ? "내것" : canon(c[f]) === canon(b[f]) ? "서버것" : "섞임"));
+      });
+      if (diff.length) e.td.push(String(c.t || id).slice(0, 12) + " " + diff.join(" "));
+    });
+    Object.keys(ts).forEach(function (id) { if (!to[id]) e.td.push(String(ts[id].t || id).slice(0, 12) + " 사라짐"); });
+    ["lost", "gain", "gone", "td"].forEach(function (k) { if (e[k].length > 6) e[k] = e[k].slice(0, 6).concat(["…외 " + (e[k].length - 6)]); });
+    var log = mergeLogRead(); log.push(e);
+    try { localStorage.setItem(MERGE_LOG_KEY, JSON.stringify(log.slice(-30))); } catch (x) {}
+  }
+  function renderMergeLog() {
+    var box = document.getElementById("mergeLog");
+    if (!box) return;
+    var log = mergeLogRead().slice().reverse();
+    function esc(v) { return String(v).replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); }
+    if (!log.length) { box.innerHTML = '<div class="off-hint">아직 합친 기록이 없어요</div>'; return; }
+    box.innerHTML = log.map(function (e) {
+      var d = new Date(e.t), when = (d.getMonth() + 1) + "/" + d.getDate() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+      var rows = [];
+      if (e.lost && e.lost.length) rows.push("이 기기 체크가 빠짐: " + e.lost.join(" / "));
+      if (e.gone && e.gone.length) rows.push("다른 기기 체크가 빠짐: " + e.gone.join(" / "));
+      if (e.gain && e.gain.length) rows.push("다른 기기 체크가 들어옴: " + e.gain.join(" / "));
+      if (e.td && e.td.length) rows.push("할 일: " + e.td.join(" / "));
+      if (!rows.length) rows.push("달라진 체크·할 일 없음");
+      return '<div class="off-row info"><span class="off-mark" aria-hidden="true">·</span><span class="off-name">' + esc(when) + '</span><span class="off-note">' + esc(rows.join(" ※ ")) + '</span></div>';
+    }).join("");
+  }
+
   function doServerSave() {
     if (!currentUid || !synced) return Promise.resolve();
     // 23차: 오프라인으로 연 상태이거나 인터넷이 끊겨 있으면 서버 저장을 미룬다(변경은 기기에 남고 '저장 안 됨' 표시가 있다).
@@ -3257,6 +3314,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (uidAtStart !== currentUid) return;
       var merged = !!res.server && canon(res.server) !== rawAtStart;
       if (merged) {
+        try { mergeLogAdd(snapshot, res.server, res.out); } catch (e) {}   // 37차: 무엇이 달라졌는지 이 기기에 기록
         // 병합 직전의 서버 상태를 백업해 둔다(문제가 생겼을 때 되돌릴 수 있게).
         var d = new Date();
         window.__fb.saveSnapshot(uidAtStart, todayKey() + "-merge-" + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()), res.server).catch(function () {});
@@ -7072,6 +7130,16 @@ window.addEventListener("beforeinstallprompt", function (e) {
     });
     return out.slice(-200);
   }
+  function mergeTodoFields(b, l, s) {
+    b = b || {};
+    var keys = {}, o = {};
+    [b, l, s].forEach(function (x) { Object.keys(x).forEach(function (k) { keys[k] = 1; }); });
+    Object.keys(keys).forEach(function (k) {
+      var pick = canon(l[k]) !== canon(b[k]) ? l[k] : s[k];
+      if (pick !== undefined) o[k] = pick;
+    });
+    return o;
+  }
   // 두 기기에서 따로 적거나 고친 할 일이 서로 지워지지 않게, 할 일 하나 단위로 3방향 합치기
   function mergeTodoList(b, l, s) {
     function map(a) { var m = {}; (Array.isArray(a) ? a : []).forEach(function (x) { if (x && x.id) m[x.id] = x; }); return m; }
@@ -7082,6 +7150,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var out = [];
     ids.forEach(function (id) {
       var v = canon(ml[id]) !== canon(mb[id]) ? ml[id] : ms[id];   // 내가 바꾼(지운) 것은 내 쪽, 아니면 서버 쪽
+      // 37차: 같은 할 일을 두 기기가 모두 바꿨으면(예: 한쪽은 '보냈다' 표시, 다른 쪽은 밀린 것 자동 넘기기) 통째로 한쪽이 이기지 않고
+      // 필드마다 따로 합친다 — 내가 바꾼 필드는 내 값, 안 바꾼 필드는 서버 값
+      if (ml[id] && ms[id] && canon(ml[id]) !== canon(mb[id]) && canon(ms[id]) !== canon(mb[id])) v = mergeTodoFields(mb[id], ml[id], ms[id]);
       if (v) out.push(v);
     });
     out.sort(function (a, c) { return (a.c || "") < (c.c || "") ? -1 : (a.c || "") > (c.c || "") ? 1 : 0; });
@@ -7090,7 +7161,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 
   var TD_EN = !!(window.MMD_I18N && window.MMD_I18N.lang === "en");
   var TD_WD = ["일", "월", "화", "수", "목", "금", "토"], TD_WD_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  var TD_SLOT = { am: ["아침", "Morning", "07:00"], noon: ["점심", "Noon", "12:00"], pm: ["저녁", "Evening", "19:00"] };
+  var TD_SLOT = { am: ["아침", "Morning", "09:00"], noon: ["점심", "Noon", "12:00"], pm: ["저녁", "Evening", "15:00"] };   // 37차: 아침 9시·저녁 15시
   var TD_SHORTCUT = "MMD 보내기";
   var TD_ARCHIVE_DAYS = 180, TD_ASK_AT = 3, TD_OLD_INBOX_DAYS = 3;
   var tdTab = "today", tdTagFilter = null, tdShowDoneToday = false, tdDoneLimit = 60, tdArchiveTried = "", tdArchiveView = null;
@@ -7892,14 +7963,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
     tdTp = { which: which };
     document.getElementById("tdTpTitle").textContent = which === "te" ? "끝 시각" : "시각";
     document.getElementById("tdTpOverlay").classList.remove("hidden");
-    buildWheel(document.getElementById("tdTpH"), 23, Math.min(23, +p[0] || 0), function () {}, true);
+    // 37차: 오전/오후 + 1~12시 휠(24시간 값은 확인 때 다시 계산)
+    var h24 = Math.min(23, +p[0] || 0), h12 = h24 % 12 || 12;
+    buildWheel(document.getElementById("tdTpA"), 1, h24 >= 12 ? 1 : 0, function () {}, false, TD_EN ? ["AM", "PM"] : ["오전", "오후"]);
+    buildWheel(document.getElementById("tdTpH"), 11, h12 - 1, function () {}, false, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     buildWheel(document.getElementById("tdTpM"), 59, Math.min(59, +p[1] || 0), function () {}, true);
   }
   function tdTimePickClose() { document.getElementById("tdTpOverlay").classList.add("hidden"); tdTp = null; }
   function tdTimePickOk() {
     if (!tdTp || !tdEd || !tdEd.dr) { tdTimePickClose(); return; }
     // 휠이 아직 굴러가는 중에 눌러도 지금 보이는 값을 그대로 읽는다
-    var hh = tdWheelValue(document.getElementById("tdTpH"), 23), mm = tdWheelValue(document.getElementById("tdTpM"), 59);
+    var pm = tdWheelValue(document.getElementById("tdTpA"), 1), hh = (tdWheelValue(document.getElementById("tdTpH"), 11) + 1) % 12 + (pm ? 12 : 0), mm = tdWheelValue(document.getElementById("tdTpM"), 59);
     var v = (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm, dr = tdEd.dr;
     if (tdTp.which === "te") {
       if (dr.tm && v <= dr.tm) { toast("끝 시각은 시작보다 뒤여야 해요"); return; }
@@ -9277,13 +9351,13 @@ window.addEventListener("beforeinstallprompt", function (e) {
 
   var tpItemId = null, tpMinVal = 0, tpSecVal = 0;
   var WHEEL_COPIES = 5; // repeated copies of the 0..max sequence, so scrolling past an end wraps around instead of stopping
-  function buildWheel(container, max, current, onSettle, pad2) {
+  function buildWheel(container, max, current, onSettle, pad2, labels) {
     var range = max + 1;
     var midCopy = Math.floor(WHEEL_COPIES / 2);
     container.innerHTML = "";
     var spacerTop = document.createElement("div"); spacerTop.style.height = ITEM_H + "px"; container.appendChild(spacerTop);
     for (var c = 0; c < WHEEL_COPIES; c++) {
-      for (var i = 0; i < range; i++) { var d = document.createElement("div"); d.textContent = pad2 && i < 10 ? "0" + i : i; container.appendChild(d); }   // 34차: pad2면 05처럼 두 자리
+      for (var i = 0; i < range; i++) { var d = document.createElement("div"); d.textContent = labels ? labels[i] : (pad2 && i < 10 ? "0" + i : i); container.appendChild(d); }   // 34차: pad2면 05처럼 두 자리
     }
     var spacerBot = document.createElement("div"); spacerBot.style.height = ITEM_H + "px"; container.appendChild(spacerBot);
 
@@ -10693,7 +10767,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     todoshortcut: { t: "미리 알림·캘린더로 보내기", sub: "단축어 ‘MMD 보내기’ 만들기 · 고친 것 반영", s: [
       ["어떻게 보내나요", "정리할 때 ‘미리 알림으로 보내기 · 캘린더로 보내기’를 켜 둔 것을 모아 [n개 보내기]를 누르면, 단축어 앱의 ‘MMD 보내기’가 할 일은 미리 알림에, 일정은 캘린더에 한 번에 넣어요. 보내기 띠의 [보내기]를 누르면 목록 없이 바로 보내요. 누르는 순간 바로 보냈다고 표시하고, 단축어가 끝난 뒤 안 들어갔다면 잠깐 뜨는 ‘되돌리기’를 눌러요(놓쳤다면 그 항목을 눌러 ‘다시 보내기’를 골라요). 같은 것을 다시 보내도 아이폰에는 하나만 남아요. 보낸 것에는 ‘→ 미리 알림’, ‘→ 캘린더’ 표시가 남아요."],
       ["보낸 것을 고치면", "보내기 화면의 ‘보낸 것을 고치면 그쪽에도 반영’을 켜 두면, 켠 뒤에 보낸 것은 앱에서 끝내면 미리 알림도 완료로, 제목·날짜·시각을 고치면 고친 내용으로 바꾸고, 버리거나 지우거나 언젠가·메모로 옮기면 그쪽에서 지워요. 바뀐 것은 ‘반영할 것’으로 모였다가 다음 [보내기] 때 같이 넘어가요. 반대로 미리 알림·캘린더에서 바꾼 것은 앱으로 오지 않아요. 밀린 것으로 넘어온 할 일은 그쪽 날짜를 그대로 둬요. 켜기 전에 아래 ⑤·⑥ 갈래와 ③·④의 ‘메모’ 칸을 먼저 단축어에 넣어 주세요."],
-      ["보내는 시각", "시각을 안 정한 할 일은 그날 아침 9시 알림으로, 아침·점심·저녁은 7시·12시·19시로 보내요. 끝 시각이 없는 일정은 1시간, 시각이 없는 일정은 하루 종일로 보내요."],
+      ["보내는 시각", "시각을 안 정한 할 일은 그날 아침 9시 알림으로, 아침·점심·저녁은 9시·12시·15시로 보내요. 끝 시각이 없는 일정은 1시간, 시각이 없는 일정은 하루 종일로 보내요."],
       ["① 단축어 만들기", "아이폰(또는 맥)의 <b>단축어</b> 앱 → <b>+</b> → 이름을 정확히 <b>MMD 보내기</b>로 바꿔요(띄어쓰기 포함). 동작 이름은 기기·버전에 따라 조금 다를 수 있어요(맥에서는 ‘만약’이 <b>조건문</b>이에요)."],
       ["② 받은 글 읽기", "<b>입력에서 사전 가져오기</b>(입력은 ‘단축어 입력’) → <b>사전 값 가져오기</b>(키 <b>items</b>) → <b>각 항목을 반복</b>을 넣어요. 사전 값으로 꺼낸 값을 조건에 쓸 때는 그 값을 눌러 유형을 <b>텍스트</b>로 바꿔야 해요. 같은 이름(사전 값)이 여러 개라 칸에 값을 넣을 땐 바로 위 블록 아래 말풍선을 눌러 골라요."],
       ["③ 할 일은 미리 알림으로", "반복 안에 <b>사전 값 가져오기</b>(키 <b>type</b>, 반복 항목)와 <b>조건문</b>(‘다음과 같음’ reminder)을 넣어요. 그 안에 <b>입력에서 날짜 가져오기</b>(반복 항목의 <b>start</b>) → <b>새로운 미리 알림</b>: 제목은 <b>title</b>, [알림]을 고른 뒤 ‘시간’ 칸에 방금 가져온 날짜, <b>메모</b> 칸에는 <b>key</b>를 넣어요(사전 값을 바로 넣으면 ‘알림 위치가 제공되지 않았습니다’가 떠요)."],
@@ -13095,7 +13169,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "stats-prev-week") { statsWeekStart.setDate(statsWeekStart.getDate()-7); renderStats(); }
     else if (action === "stats-next-week") { statsWeekStart.setDate(statsWeekStart.getDate()+7); renderStats(); }
     else if (action === "undo-do") { runUndo(); }
-    else if (action === "open-export") { showView("view-export"); renderExport(); renderBackupAge(); renderOfflineReady(); }
+    else if (action === "open-export") { showView("view-export"); renderExport(); renderBackupAge(); renderOfflineReady(); renderMergeLog(); }
     else if (action === "off-ready-check") { renderOfflineReady(true); }
     else if (action === "copy-json") { copyExport(); }
     else if (action === "do-import") { doImport(); }
