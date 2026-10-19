@@ -1445,3 +1445,18 @@ html.fs-big .help-q { width: 1rem; height: 1rem; font-size: 0.625rem; }
   font-size: 0.75rem; font-weight: 800; background: var(--bg-soft); border: 1px solid var(--line); color: var(--ink); }
 .td-chg-ico.del { color: var(--gold); border-color: var(--gold); }
 .td-chg-ico.done { color: var(--sage); border-color: var(--sage); }
+
+/* 34차: 할 일 줄 밀기(오른쪽=완료, 왼쪽=지우기) · 탭 옮기기 */
+.td-swipe { position: relative; margin-bottom: 6px; border-radius: 12px; overflow: hidden; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+.td-swipe .td-row { margin-bottom: 0; position: relative; z-index: 1; will-change: transform; }
+.td-sw-bg { position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: none; align-items: center; color: #fff; font-size: 0.8125rem; font-weight: 800; }
+.td-sw-bg.ok { background: var(--sage); justify-content: flex-start; padding-left: 18px; }
+.td-sw-bg.del { background: var(--danger); justify-content: flex-end; padding-right: 18px; cursor: pointer; }
+.td-swipe.swr .td-sw-bg.ok, .td-swipe.swl .td-sw-bg.del, .td-swipe.open .td-sw-bg.del { display: flex; }
+.td-list { min-height: 46vh; }
+@keyframes tdInR { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+@keyframes tdInL { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
+.td-list.td-in-r { animation: tdInR .22s ease; }
+.td-list.td-in-l { animation: tdInL .22s ease; }
+.td-tbtn { display: inline-flex; align-items: center; min-width: 5.5rem; cursor: pointer; }
+.td-tbtn > span { color: var(--ink-dim); font-weight: 700; }
