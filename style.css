@@ -1484,10 +1484,9 @@ body.td-bar-on .undo-bar { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .td-pin { display: none; }
 body.td-typing #globalBottomNav { display: none !important; }
 body.td-typing .td-pin { display: block; position: fixed; left: 0; right: 0; top: var(--td-pin-t, 0px); z-index: 40;
-  background: var(--bg); border-bottom: 1px solid var(--line); padding: calc(env(safe-area-inset-top, 0px) + 12px) 20px 4px; }
+  background: var(--bg); border-bottom: 1px solid var(--line); padding: calc(env(safe-area-inset-top, 0px) + 12px) 20px 2px; }
 body.td-typing .td-pin-in { max-width: 480px; margin: 0 auto; }
-body.td-typing .td-pin .top-bar { margin-bottom: 10px; }
-body.td-typing .td-pin .td-tabs { margin: 0; }
+body.td-typing .td-pin .top-bar { margin-bottom: 8px; }
 body.td-typing .td-addbar { top: var(--td-vb, 100%); bottom: auto; transform: translateY(-100%); }
 body.td-typing #view-todo { padding-bottom: calc(var(--td-kb, 0px) + 12rem); }
 body.td-typing .undo-bar { bottom: auto; top: calc(var(--td-vb, 100%) - var(--td-bar-h, 60px) - 3.5rem); }
