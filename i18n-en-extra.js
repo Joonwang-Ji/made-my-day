@@ -617,7 +617,7 @@
     "언젠가로": "Move to Someday",
     "버리기": "Discard",
     "오늘 할 일이 없어요.": "Nothing to do today.",
-    "떠오르는 게 있으면 오른쪽 아래 + 버튼으로 막 적어 두세요.": "When something comes to mind, jot it down with the + button at the bottom right.",
+    "떠오르는 게 있으면 위 줄에 막 적어 두세요.": "When something comes to mind, jot it down in the line above.",
     "오늘 끝낸 것": "Done today",
     "예정된 할 일이 없어요.": "Nothing upcoming.",
     "‘언젠가’ 할 일이 없어요.": "No “Someday” to-dos.",
@@ -706,7 +706,7 @@
     "다시 적기": "Add again",
     "보관함이 비어 있어요.": "The archive is empty.",
     "어제": "Yesterday",
-    "↑↓로 순서를 바꾸고, 동그라미를 눌러 켜고 꺼요. 안내와 루틴 카테고리는 끌 수 없어요. 할 일은 오늘 할 일·정리할 것이 있을 때만 보여요.": "Use ↑↓ to reorder and tap the circle to turn things on or off. Notices and routine categories can't be turned off. To-dos show only when there's something for today or to sort."
+    "↑↓로 순서를 바꾸고, 동그라미를 눌러 켜고 꺼요. 안내와 루틴 카테고리는 끌 수 없어요.": "Use ↑↓ to reorder and tap the circle to turn things on or off. Notices and routine categories can't be turned off."
   }, [
     [/^(\d+)개가 3일 넘게 기다려요$/, function (n) { return n + " waiting over 3 days"; }],
     [/^(\d+)개 더$/, function (n) { return n + " more"; }],
@@ -718,6 +718,30 @@
     [/^(\d+)개를 보냈다고 표시했어요$/, function (n) { return "Marked " + n + " as sent"; }],
     [/^(\d{4})년 · (\d+)$/, function (y, n) { return y + " · " + n; }]
   ]);
+  // ---- 33차: 할 일 다듬기 ----
+  I.register({
+    "떠오른 것을 적고 Enter": "Jot it down and press Enter",
+    "정리할 것에 담았어요": "Added to “To sort”",
+    "캘린더에 반영할 것": "To update in Calendar",
+    "미리 알림에 반영할 것": "To update in Reminders",
+    "미리 알림에 들어가 있어요.": "It's in Reminders.",
+    "캘린더에 들어가 있어요.": "It's in Calendar.",
+    "고친 내용은 다음 [보내기] 때 그쪽에도 반영돼요.": "Your changes go there with the next [Send].",
+    "언젠가로 옮기면 그쪽에서는 지워요.": "Moving it to Someday removes it there.",
+    "미리 알림에 들어간 것은 다음 [보내기] 때 그쪽에서 지워요.": "The copy in Reminders is removed with the next [Send].",
+    "캘린더에 들어간 것은 다음 [보내기] 때 그쪽에서 지워요.": "The copy in Calendar is removed with the next [Send].",
+    "그쪽에도 반영할 변경": "Updates for Reminders · Calendar",
+    "완료로": "Mark done",
+    "완료 취소": "Undo done",
+    "고친 내용으로": "Update",
+    "보낸 것을 고치면 그쪽에도 반영": "Update sent items there too",
+    "켜 둔 뒤에 보낸 것부터, 앱에서 끝내거나 고치거나 지우면 다음 보내기 때 미리 알림·캘린더도 맞춰요.": "For items sent after turning this on, finishing, editing or deleting them in the app updates Reminders and Calendar with the next send.",
+    "단축어에 ‘지우기·완료’ 갈래를 추가한 뒤 켜 주세요.": "Turn this on after adding the “remove · complete” branches to your shortcut.",
+    "추가하는 방법": "How to add them",
+    "이제부터 보낸 것은 고치면 그쪽에도 반영해요": "From now on, changes to sent items go there too",
+    "반영을 껐어요": "Updates turned off",
+    "지웠어요 · 다음 보내기 때 그쪽에서도 지워요": "Deleted · it will be removed there with the next send"
+  });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();

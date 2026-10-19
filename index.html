@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-19-1";
+  var BUILD_VERSION = "2026-10-19-2";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-19-1">
+<link rel="stylesheet" href="style.css?v=2026-10-19-2">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -96,13 +96,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="top-nav hidden" id="globalBottomNav" role="navigation" aria-label="메뉴">
   <div class="top-nav-inner">
     <button class="nav-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>홈</span></button>
-    <button class="nav-btn" data-action="open-todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.2 1.2L7 5M3.5 12l1.2 1.2L7 11"/><circle cx="5" cy="18" r="1.2"/></svg><span>할 일</span><span class="nav-badge hidden" id="navTodoBadge">0</span></button>
+    <button class="nav-btn" id="navTodoBtn" data-action="open-todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.2 1.2L7 5M3.5 12l1.2 1.2L7 11"/><circle cx="5" cy="18" r="1.2"/></svg><span>할 일</span><span class="nav-badge hidden" id="navTodoBadge">0</span></button>
     <button class="nav-btn" data-action="open-stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg><span>통계</span></button>
     <button class="nav-btn" data-action="open-backfill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 15l2 2 4-4"/></svg><span>기록</span></button>
     <button class="nav-btn" data-action="open-friends-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/><circle cx="17" cy="9" r="2.4"/><path d="M17.5 14a4 4 0 0 1 3.5 4v1"/></svg><span>지인</span><span class="nav-badge hidden" id="navCheerBadge">0</span></button>
   </div>
-  <!-- 32차: 어느 탭에서든 할 일 막 적기 -->
-  <button class="td-fab hidden" id="todoFab" data-action="td-quick" aria-label="할 일 적기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 </div>
 
 <div class="wrap" id="view-checking">
@@ -393,6 +391,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
     <button class="back-btn" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h2>할 일</h2><span class="help-q" data-action="help" data-id="todo">?</span>
   </div>
+  <!-- 33차: 맨 위 항상 보이는 막 적기 줄 -->
+  <div class="td-addbar">
+    <div class="td-in-wrap"><div class="td-mirror" id="tdInlineMirror" aria-hidden="true"></div><textarea id="tdInlineIn" class="td-q-in" rows="1" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="할 일 적기" placeholder="떠오른 것을 적고 Enter"></textarea>
+      <button class="td-add-go hidden" id="tdInlineAddBtn" data-action="td-inline-add" aria-label="담기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    <div class="td-hint hidden" id="tdInlineHint" aria-live="polite"></div>
+  </div>
   <div id="todoBody"></div>
 </div>
 
@@ -451,7 +455,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   </div>
   <div class="section-label" style="margin-top:0;">보일 것 · 순서</div>
   <div class="theme-option-row" id="hlBlockRows"></div>
-  <div class="export-note" style="margin-top:6px;">↑↓로 순서를 바꾸고, 동그라미를 눌러 켜고 꺼요. 안내와 루틴 카테고리는 끌 수 없어요. 할 일은 오늘 할 일·정리할 것이 있을 때만 보여요.</div>
+  <div class="export-note" style="margin-top:6px;">↑↓로 순서를 바꾸고, 동그라미를 눌러 켜고 꺼요. 안내와 루틴 카테고리는 끌 수 없어요.</div>
   <div class="section-label">안내</div>
   <div class="theme-option-row" id="hlNoticeRows"></div>
   <div class="export-note" style="margin-top:6px;">성공 보너스·받을 보상·리뷰 도착 안내는 끌 수 없어요.</div>
@@ -971,17 +975,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-19-1"></script>
-<script src="i18n.js?v=2026-10-19-1"></script>
-<script src="i18n-en.js?v=2026-10-19-1"></script>
-<script src="bible-medals-data.js?v=2026-10-19-1"></script>
-<script src="avatar-data.js?v=2026-10-19-1"></script>
-<script src="review-data.js?v=2026-10-19-1"></script>
-<script src="i18n-en-help.js?v=2026-10-19-1"></script>
-<script src="i18n-en-review.js?v=2026-10-19-1"></script>
-<script src="i18n-en-bible.js?v=2026-10-19-1"></script>
-<script src="i18n-en-avatar.js?v=2026-10-19-1"></script>
-<script src="i18n-en-extra.js?v=2026-10-19-1"></script>
+<script type="module" src="firebase-service.js?v=2026-10-19-2"></script>
+<script src="i18n.js?v=2026-10-19-2"></script>
+<script src="i18n-en.js?v=2026-10-19-2"></script>
+<script src="bible-medals-data.js?v=2026-10-19-2"></script>
+<script src="avatar-data.js?v=2026-10-19-2"></script>
+<script src="review-data.js?v=2026-10-19-2"></script>
+<script src="i18n-en-help.js?v=2026-10-19-2"></script>
+<script src="i18n-en-review.js?v=2026-10-19-2"></script>
+<script src="i18n-en-bible.js?v=2026-10-19-2"></script>
+<script src="i18n-en-avatar.js?v=2026-10-19-2"></script>
+<script src="i18n-en-extra.js?v=2026-10-19-2"></script>
 <script>
 (function () {
   "use strict";
@@ -2712,6 +2716,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
       comebackHide: null,
       homeLayout: defaultHomeLayout(),
       todos: [],
+      todoGone: [],
+      todoSync: false,
       openedBoxes: {},
       lastSeenBibleKey: 0,
       lastSeenGen: 1,
@@ -2856,6 +2862,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (typeof p.comebackHide !== "string") p.comebackHide = null;
     p.homeLayout = normalizeHomeLayout(p.homeLayout, p.categories);
     p.todos = normalizeTodos(p.todos);
+    p.todoGone = normalizeTodoGone(p.todoGone);
+    p.todoSync = !!p.todoSync;
     if (!p.openedBoxes || typeof p.openedBoxes !== "object") p.openedBoxes = {};
     if (typeof p.quarterGoalPoints !== "number") p.quarterGoalPoints = null;
     if (!Array.isArray(p.celebratedQuarterGoals)) p.celebratedQuarterGoals = [];
@@ -3051,6 +3059,10 @@ window.addEventListener("beforeinstallprompt", function (e) {
       }
       if (k === "todos") {      // 32차 할 일: 하나 단위 3방향 합치기(두 기기에서 따로 적어도 둘 다 남는다)
         out.todos = mergeTodoList(base.todos, local.todos, server.todos);
+        return;
+      }
+      if (k === "todoGone") {   // 33차: 지운 것(아이폰에서도 지울 것)도 하나 단위로 합치기
+        out.todoGone = normalizeTodoGone(mergeTodoList(base.todoGone, local.todoGone, server.todoGone));
         return;
       }
       if (k === "lateRestLog") { // 당일·지난 날짜 쉬는 날 지정 기록
@@ -7009,9 +7021,23 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (typeof x.q === "number" && x.q >= 0) o.q = Math.floor(x.q);
       if (x.snd) o.snd = 1;
       if (x.sent === "rem" || x.sent === "cal") { o.sent = x.sent; if (typeof x.sentAt === "string") o.sentAt = x.sentAt; }
+      // 33차: 아이폰(미리 알림·캘린더)에 지금 들어 있는 모양 { ty: "rem"|"cal", s: 보낸 내용, dn: 1 완료 }
+      if (x.ip && (x.ip.ty === "rem" || x.ip.ty === "cal") && typeof x.ip.s === "string") o.ip = { ty: x.ip.ty, s: x.ip.s.slice(0, 800), dn: x.ip.dn ? 1 : 0 };
       out.push(o);
     });
     return out;
+  }
+  // 33차: 앱에서 완전히 지운 할 일 중 아이폰에도 들어간 것 — 다음 보내기 때 그쪽에서도 지운다
+  function normalizeTodoGone(arr) {
+    if (!Array.isArray(arr)) return [];
+    var out = [], seen = {};
+    arr.forEach(function (x) {
+      if (!x || typeof x.id !== "string" || !x.id || x.id.length > 40 || seen[x.id]) return;
+      if (x.ty !== "rem" && x.ty !== "cal") return;
+      seen[x.id] = 1;
+      out.push({ id: x.id, ty: x.ty, t: typeof x.t === "string" ? x.t.slice(0, 300) : "", c: typeof x.c === "string" ? x.c : new Date().toISOString() });
+    });
+    return out.slice(-200);
   }
   // 두 기기에서 따로 적거나 고친 할 일이 서로 지워지지 않게, 할 일 하나 단위로 3방향 합치기
   function mergeTodoList(b, l, s) {
@@ -7262,6 +7288,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (x.k === "event" && !x.drop && x.d === T) c.events++;
       if (tdSendable(x)) c.send++;
     });
+    c.send += tdChanges().length;
     return c;
   }
   // 날짜가 지난 못 끝낸 할 일은 오늘로 넘긴다(밀린 것). 앱을 여러 날 안 열어도 한 번만 미룬 것으로 센다.
@@ -7269,8 +7296,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var T = todayKey(), ch = false;
     tdList().forEach(function (x) {
       if (x.k === "todo" && tdOpen(x) && !x.sd && x.d && x.d < T) {
+        // 33차: 아이폰 미리 알림은 원래 날짜에 그대로 두고(그쪽에서도 '지난 것'으로 보임), 넘긴 것만으로는 바뀐 것으로 치지 않는다
+        var w0 = x.ip ? tdWant(x) : null, same = !!(w0 && w0.s === x.ip.s);
         if (!x.d0) x.d0 = x.d;
         x.d = T; x.mv = (x.mv || 0) + 1; x.late = 1; ch = true;
+        if (same) { var w1 = tdWant(x); if (w1) x.ip.s = w1.s; }
       }
     });
     return ch;
@@ -7296,36 +7326,45 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var el = document.getElementById("homeTodo");
     if (!el) return;
     var c = tdCounts(), n = c.today + c.events;
-    if (!n && !c.inbox) { el.classList.add("hidden"); el.innerHTML = ""; return; }
     el.classList.remove("hidden");
     var h = '<div class="td-home" data-action="open-todo" role="button"><span class="td-home-ico" aria-hidden="true">📝</span><span class="td-home-txt">';
     if (n) h += '<span class="td-home-seg"><span>오늘 할 일</span> <b>' + n + '</b></span>';
     if (c.late) h += '<span class="td-home-seg late"><span>밀린 것</span> <b>' + c.late + '</b></span>';
     if (c.inbox) h += '<span class="td-home-seg' + (c.oldInbox ? ' old' : '') + '"><span>정리할 것</span> <b>' + c.inbox + '</b></span>';
-    h += '</span><svg class="td-home-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>';
+    if (!n && !c.inbox) h += '<span class="td-home-seg dim">할 일</span>';
+    h += '</span><svg class="td-home-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>' +
+      '<span class="td-home-add" data-action="td-quick" role="button" aria-label="할 일 적기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></div>';
     if (el.getAttribute("data-sig") !== h) { el.setAttribute("data-sig", h); el.innerHTML = h; }
   }
-  var TD_FAB_VIEWS = ["view-home", "view-todo", "view-stats", "view-backfill", "view-friends"];
-  function tdFabSync() {
-    var fab = document.getElementById("todoFab");
-    if (!fab) return;
-    var nav = document.getElementById("globalBottomNav"), chat = document.getElementById("view-friend-chat"), show = false;
-    if (nav && !nav.classList.contains("hidden") && !(chat && !chat.classList.contains("hidden")) && currentUid) {
-      TD_FAB_VIEWS.forEach(function (v) { var e = document.getElementById(v); if (e && !e.classList.contains("hidden") && !e.classList.contains("slide-exit")) show = true; });
-    }
-    if (fab.classList.contains("hidden") === show) fab.classList.toggle("hidden", !show);
-  }
-  (function tdFabWatch() {
-    if (!window.MutationObserver) return;
-    var raf = 0;
-    new MutationObserver(function () {
-      if (raf) return;
-      raf = requestAnimationFrame(function () { raf = 0; try { tdFabSync(); } catch (e) {} });
-    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+  // 33차: 떠 있는 + 버튼은 없앴다 → 할 일 탭 맨 위 입력줄 · 홈 할 일 줄의 ＋ · 아래 메뉴 '할 일' 길게 누르기(키보드 N)
+  (function tdNavLongPress() {
+    var btn = document.getElementById("navTodoBtn");
+    if (!btn) return;
+    var timer = 0, sx = 0, sy = 0, fired = 0;
+    function clear() { if (timer) { clearTimeout(timer); timer = 0; } btn.classList.remove("pressing"); }
+    btn.addEventListener("pointerdown", function (e) {
+      if (e.button && e.button !== 0) return;
+      clear(); sx = e.clientX; sy = e.clientY; fired = 0;
+      btn.classList.add("pressing");
+      timer = setTimeout(function () {
+        timer = 0; btn.classList.remove("pressing");
+        if (!currentUid) return;
+        fired = Date.now();
+        try { if (navigator.vibrate) navigator.vibrate(12); } catch (er) {}
+        tdQuickOpen();
+      }, 480);
+    });
+    btn.addEventListener("pointermove", function (e) { if (timer && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) clear(); });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) { btn.addEventListener(ev, clear); });
+    btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    // 길게 눌러 창을 연 뒤 손을 떼며 생기는 click은 할 일 탭으로 가지 않게 막는다
+    document.addEventListener("click", function (e) {
+      if (fired && Date.now() - fired < 900 && e.target && e.target.closest && e.target.closest("#navTodoBtn")) { e.preventDefault(); e.stopPropagation(); fired = 0; }
+    }, true);
   })();
 
   // ---- 할 일 탭 ----
-  function tdOpenView() { tdTab = tdTab || "today"; showView("view-todo"); renderTodo(); try { window.scrollTo(0, 0); } catch (e) {} }
+  function tdOpenView() { tdTab = tdTab || "today"; showView("view-todo"); renderTodo(); tdInlineSync(); try { window.scrollTo(0, 0); } catch (e) {} }
   function tdVisible() { var v = document.getElementById("view-todo"); return v && !v.classList.contains("hidden"); }
   // 상태가 바뀔 때마다(renderHome 끝에서) 밀린 것 넘기기 · 보관함 옮기기 · 보이는 할 일 화면 갱신
   function tdAfterStateChange() {
@@ -7345,7 +7384,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (o.done && x.drop) meta.push('<span class="td-m dim">버림</span>');
     else if (o.done && x.k === "event" && !x.done) meta.push('<span class="td-m dim">지난 일정</span>');
     if (x.mv && tdOpen(x) && x.k === "todo") meta.push('<span class="td-m warn">' + x.mv + '번 미룸</span>');
-    if (x.sent) meta.push('<span class="td-m sent">' + (x.sent === "rem" ? "→ 미리 알림" : "→ 캘린더") + '</span>');
+    var chg = x.ip ? tdChangeOf(x.id) : null;
+    if (chg) meta.push('<span class="td-m snd">' + (chg.ty === "cal" ? "캘린더에 반영할 것" : "미리 알림에 반영할 것") + '</span>');
+    else if (x.sent) meta.push('<span class="td-m sent">' + (x.sent === "rem" ? "→ 미리 알림" : "→ 캘린더") + '</span>');
     else if (tdSendable(x)) meta.push('<span class="td-m snd">보낼 것</span>');
     return '<div class="td-row' + (x.done ? ' done' : '') + (x.drop ? ' dropped' : '') + '">' + lead +
       '<div class="td-main" data-action="td-edit" data-id="' + x.id + '" role="button">' +
@@ -7413,7 +7454,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         if (late.length || asks.length) h += '<div class="section-label td-sec">오늘</div>';
         main.forEach(function (x) { h += tdRowHtml(x, T, {}); });
       }
-      if (!late.length && !main.length && !asks.length) h += tdEmpty('<span>오늘 할 일이 없어요.</span><br><span>떠오르는 게 있으면 오른쪽 아래 + 버튼으로 막 적어 두세요.</span>');
+      if (!late.length && !main.length && !asks.length) h += tdEmpty('<span>오늘 할 일이 없어요.</span><br><span>떠오르는 게 있으면 위 줄에 막 적어 두세요.</span>');
       var doneToday = all.filter(function (x) { return x.k === "todo" && x.done && x.done.slice(0, 10) === T; });
       // 끝낸 시각은 UTC라 날짜가 어긋날 수 있어 기기 날짜로 다시 본다
       doneToday = all.filter(function (x) { return x.k === "todo" && x.done && keyFor(new Date(x.done)) === T; });
@@ -7502,9 +7543,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
     tdHomeChip();
     try { inp.focus(); } catch (e) {}
   }
-  function tdQuickSync() {
-    var inp = document.getElementById("tdQuickIn"), mir = document.getElementById("tdMirror"), hint = document.getElementById("tdQuickHint");
+  function tdQuickSync() { tdInputSync("tdQuickIn", "tdMirror", "tdQuickHint", "tdQuickAddBtn"); }
+  function tdInlineSync() { tdInputSync("tdInlineIn", "tdInlineMirror", "tdInlineHint", "tdInlineAddBtn"); }
+  function tdInputSync(inId, mirId, hintId, btnId) {
+    var inp = document.getElementById(inId), mir = document.getElementById(mirId), hint = document.getElementById(hintId);
     if (!inp || !mir) return;
+    var inline = inId === "tdInlineIn";
     var v = inp.value || "", p = tdParse(v), h = "", last = 0;
     p.spans.forEach(function (sp) {
       h += escapeHtml(v.slice(last, sp[0])) + '<mark class="td-mk ' + sp[2] + '">' + escapeHtml(v.slice(sp[0], sp[1])) + '</mark>';
@@ -7522,8 +7566,27 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var k = tdSuggestKind(v, p);
       bits.push('<span class="td-hb k">' + (k === "event" ? "○ 일정 같아요" : k === "note" ? "– 메모 같아요" : "• 할 일 같아요") + '</span>');
     }
+    if (inline) {
+      hint.innerHTML = bits.join("");
+      hint.classList.toggle("hidden", !bits.length);
+      document.getElementById(btnId).classList.toggle("hidden", !v.trim());
+      return;
+    }
     hint.innerHTML = bits.length ? bits.join("") : '<span class="td-hb-tip">적을 땐 아무것도 묻지 않아요. 날짜·시각은 정리할 때 고쳐요.</span>';
-    document.getElementById("tdQuickAddBtn").classList.toggle("off", !v.trim());
+    document.getElementById(btnId).classList.toggle("off", !v.trim());
+  }
+  // 할 일 탭 맨 위 줄에서 담기(줄은 그대로 두고 아래 목록만 다시 그린다)
+  function tdInlineAdd() {
+    var inp = document.getElementById("tdInlineIn"), v = inp.value;
+    var x = tdAddRaw(v);
+    if (!x) { try { inp.focus(); } catch (e) {} return; }
+    saveState();
+    inp.value = "";
+    requestAnimationFrame(function () { if (inp.value === v) inp.value = ""; tdInlineSync(); });
+    tdInlineSync();
+    renderTodo(); tdHomeChip(); tdNavBadge();
+    toast("정리할 것에 담았어요");
+    try { inp.focus(); } catch (e) {}
   }
   function tdQuickRecent() {
     var box = document.getElementById("tdQuickRecent");
@@ -7610,7 +7673,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
           '<input type="time" id="tdEdEnd" class="td-in' + (dr.te ? ' on' : '') + '" value="' + (dr.te || "") + '" aria-label="끝"></div>' +
           '<div class="td-note">시각을 비워 두면 하루 종일 일정이에요. 끝 시각을 비우면 1시간으로 보내요.</div>';
       }
-      if (!(dr.k === "todo" && dr.sd)) {
+      var linked = !!(state.todoSync && x && x.ip && ((x.ip.ty === "rem" && dr.k === "todo") || (x.ip.ty === "cal" && dr.k === "event")));
+      if (linked) {
+        h += '<div class="td-note">' + (x.ip.ty === "rem" ? "미리 알림에 들어가 있어요." : "캘린더에 들어가 있어요.") + ' <span>고친 내용은 다음 [보내기] 때 그쪽에도 반영돼요.</span>' +
+          (dr.k === "todo" && dr.sd ? ' <span>언젠가로 옮기면 그쪽에서는 지워요.</span>' : '') + '</div>';
+      } else if (!(dr.k === "todo" && dr.sd)) {
         var already = x && x.sent && ((x.sent === "rem" && dr.k === "todo") || (x.sent === "cal" && dr.k === "event"));
         h += '<div class="theme-option td-snd' + (dr.snd ? ' active' : '') + '" data-action="td-ed-snd" role="switch" aria-checked="' + !!dr.snd + '"><span>' +
           (already ? (dr.k === "event" ? "캘린더로 다시 보내기" : "미리 알림으로 다시 보내기") : (dr.k === "event" ? "캘린더로 보내기" : "미리 알림으로 보내기")) + '</span><span class="dot"></span></div>';
@@ -7624,6 +7691,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     } else {
       h += '<div class="td-note">버린 것은 ‘끝낸 것’에 남아요. 언제든 되살릴 수 있어요.</div>';
     }
+    if (state.todoSync && x && x.ip && (dr.k === "note" || dr.k === "drop")) h += '<div class="td-note">' + (x.ip.ty === "rem" ? "미리 알림에 들어간 것은 다음 [보내기] 때 그쪽에서 지워요." : "캘린더에 들어간 것은 다음 [보내기] 때 그쪽에서 지워요.") + '</div>';
     return h;
   }
   function tdEdRender() {
@@ -7658,7 +7726,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     } else if (tdEd.mode === "send") {
       h += tdSendListHtml(false);
     } else if (tdEd.mode === "sendask") {
-      h += '<div class="td-sum"><div class="td-sum-big">📤 <span>잘 들어갔나요?</span></div><div class="td-note center">미리 알림·캘린더 앱에서 ' + tdEd.ids.length + '개가 들어갔는지 확인해 주세요.</div></div>' +
+      h += '<div class="td-sum"><div class="td-sum-big">📤 <span>잘 들어갔나요?</span></div><div class="td-note center">미리 알림·캘린더 앱에서 ' + (tdEd.n || tdEd.ids.length) + '개가 들어갔는지 확인해 주세요.</div></div>' +
         '<div class="td-ed-btns col"><div class="btn primary" data-action="td-sent-yes">네, 들어갔어요</div><div class="btn" data-action="td-sent-no">아니요, 안 들어갔어요</div></div>';
     } else if (tdEd.mode === "sendfail") {
       h += '<div class="td-sum"><div class="td-sum-big">🔧 <span>단축어를 확인해 주세요</span></div></div>' +
@@ -7797,41 +7865,67 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var t = e.target;
     if (!t) return;
     if (t.id === "tdQuickIn") tdQuickSync();
+    else if (t.id === "tdInlineIn") tdInlineSync();
     else if (t.id === "tdEdT") { t.style.height = "auto"; t.style.height = Math.max(t.scrollHeight, 48) + "px"; if (tdEd && tdEd.dr) tdEd.dr.t = t.value; }
   });
-  var tdComposeEnter = false;
+  var tdComposeEnter = "";
+  function tdEnterAdd(id) { if (id === "tdInlineIn") tdInlineAdd(); else tdQuickAdd(); }
   document.addEventListener("keydown", function (e) {
     var t = e.target;
-    if (!t || t.id !== "tdQuickIn" || e.key !== "Enter" || e.shiftKey) return;
+    if (!t || (t.id !== "tdQuickIn" && t.id !== "tdInlineIn") || e.key !== "Enter" || e.shiftKey) return;
     e.preventDefault();
-    if (e.isComposing || e.keyCode === 229) { tdComposeEnter = true; return; }
-    tdQuickAdd();
+    if (e.isComposing || e.keyCode === 229) { tdComposeEnter = t.id; return; }
+    tdEnterAdd(t.id);
   });
   document.addEventListener("compositionend", function (e) {
-    if (e.target && e.target.id === "tdQuickIn" && tdComposeEnter) { tdComposeEnter = false; setTimeout(tdQuickAdd, 0); }
+    var id = e.target && e.target.id;
+    if (id && tdComposeEnter === id) { tdComposeEnter = ""; setTimeout(function () { tdEnterAdd(id); }, 0); }
   });
 
   // ---- 보내기(단축어 'MMD 보내기') ----
   function tdSendListHtml(afterTriage) {
     var T = todayKey(), cand = tdList().filter(function (x) { return tdOpen(x) && !x.sent && ((x.k === "todo" && !x.sd && x.d && x.d >= T) || (x.k === "event" && x.d && x.d >= T)) && (x.snd || (tdEd && tdEd.picked && tdEd.picked[x.id] === 0)); });
     if (!tdEd.picked) tdEd.picked = {};
-    var sel = cand.filter(function (x) { return x.snd; });
+    var sel = cand.filter(function (x) { return x.snd; }), chg = tdChanges();
     var h = "";
-    if (!cand.length) {
-      h += '<div class="td-note center">' + (afterTriage ? "미리 알림·캘린더로 보낼 것은 없어요." : "보낼 것이 없어요.") + '</div>' +
+    if (!cand.length && !chg.length) {
+      h += '<div class="td-note center">' + (afterTriage ? "미리 알림·캘린더로 보낼 것은 없어요." : "보낼 것이 없어요.") + '</div>' + tdSyncSwitchHtml() +
         '<div class="td-ed-btns"><div class="btn primary" data-action="td-ov-close">닫기</div></div>';
       return h;
     }
-    h += '<div class="td-fl">미리 알림·캘린더로 보낼 것</div><div class="td-send-list">';
-    cand.sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : tdByTime(a, b); }).forEach(function (x) {
-      h += '<div class="td-send-row' + (x.snd ? ' on' : '') + '" data-action="td-send-pick" data-id="' + x.id + '" role="checkbox" aria-checked="' + !!x.snd + '">' +
-        '<span class="td-sbox" aria-hidden="true"></span><span class="td-send-main"><span class="td-send-t">' + escapeHtml(x.t) + '</span>' +
-        '<span class="td-send-w"><span>' + (x.k === "event" ? "캘린더" : "미리 알림") + '</span> · <span>' + escapeHtml(tdWhen(x, T, true) || tdDateLabel(x.d, T)) + '</span></span></span></div>';
-    });
-    h += '</div><div class="td-note">단축어 앱이 열리고 ‘' + TD_SHORTCUT + '’가 한 번에 넣어요. 끝나면 이 앱으로 돌아와 주세요.</div>';
-    h += '<div class="td-ed-btns"><div class="btn" data-action="td-ov-close">나중에</div><div class="btn primary' + (sel.length ? '' : ' off') + '" data-action="td-send-go">' + sel.length + '개 보내기</div></div>';
+    if (cand.length) {
+      h += '<div class="td-fl">미리 알림·캘린더로 보낼 것</div><div class="td-send-list">';
+      cand.sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : tdByTime(a, b); }).forEach(function (x) {
+        h += '<div class="td-send-row' + (x.snd ? ' on' : '') + '" data-action="td-send-pick" data-id="' + x.id + '" role="checkbox" aria-checked="' + !!x.snd + '">' +
+          '<span class="td-sbox" aria-hidden="true"></span><span class="td-send-main"><span class="td-send-t">' + escapeHtml(x.t) + '</span>' +
+          '<span class="td-send-w"><span>' + (x.k === "event" ? "캘린더" : "미리 알림") + '</span> · <span>' + escapeHtml(tdWhen(x, T, true) || tdDateLabel(x.d, T)) + '</span></span></span></div>';
+      });
+      h += '</div>';
+    }
+    if (chg.length) {
+      h += '<div class="td-fl">그쪽에도 반영할 변경</div><div class="td-send-list">';
+      chg.forEach(function (c) {
+        var lab = c.kind === "del" ? "지우기" : c.kind === "done" ? "완료로" : c.kind === "undo" ? "완료 취소" : "고친 내용으로";
+        h += '<div class="td-send-row on chg"><span class="td-chg-ico ' + c.kind + '" aria-hidden="true">' + (c.kind === "del" ? "✕" : c.kind === "done" ? "✓" : "✎") + '</span>' +
+          '<span class="td-send-main"><span class="td-send-t">' + escapeHtml(c.t || "") + '</span>' +
+          '<span class="td-send-w"><span>' + (c.ty === "cal" ? "캘린더" : "미리 알림") + '</span> · <span>' + lab + '</span>' +
+          (c.w && c.kind !== "done" ? ' · <span>' + escapeHtml(tdWhen(c.x, T, true) || tdDateLabel(c.x.d, T)) + '</span>' : '') + '</span></span></div>';
+      });
+      h += '</div>';
+    }
+    h += '<div class="td-note">단축어 앱이 열리고 ‘' + TD_SHORTCUT + '’가 한 번에 넣어요. 끝나면 이 앱으로 돌아와 주세요.</div>';
+    h += tdSyncSwitchHtml();
+    var n = sel.length + chg.length;
+    h += '<div class="td-ed-btns"><div class="btn" data-action="td-ov-close">나중에</div><div class="btn primary' + (n ? '' : ' off') + '" data-action="td-send-go">' + n + '개 보내기</div></div>';
     h += '<div class="td-note center"><span class="td-link" data-action="help" data-id="todoshortcut">처음이라면: 단축어 만드는 방법</span></div>';
     return h;
+  }
+  // 33차: 아이폰 반영 켜기(단축어에 지우기·완료 갈래를 추가한 뒤 켠다)
+  function tdSyncSwitchHtml() {
+    var on = !!state.todoSync;
+    return '<div class="theme-option td-snd' + (on ? ' active' : '') + '" data-action="td-sync-toggle" role="switch" aria-checked="' + on + '"><span>보낸 것을 고치면 그쪽에도 반영</span><span class="dot"></span></div>' +
+      '<div class="td-note">' + (on ? '<span>켜 둔 뒤에 보낸 것부터, 앱에서 끝내거나 고치거나 지우면 다음 보내기 때 미리 알림·캘린더도 맞춰요.</span>'
+        : '<span>단축어에 ‘지우기·완료’ 갈래를 추가한 뒤 켜 주세요.</span> <span class="td-link" data-action="help" data-id="todoshortcut">추가하는 방법</span>') + '</div>';
   }
   function tdSendOpen() {
     tdEd = { mode: "send", picked: {} };
@@ -7844,17 +7938,61 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var te = x.te || (tm ? tdPlusMin(tm, 60) : "");
       o = { type: "event", title: x.t, allDay: tm ? "no" : "yes", start: x.d + (tm ? " " + tm : ""), end: x.d + (te ? " " + te : "") };
     } else o = { type: "reminder", title: x.t, allDay: "no", start: x.d + " " + tm, end: "" };
+    o.key = TD_KEY + x.id;   // 33차: 아이폰 쪽 메모 칸에 넣어 두면 나중에 찾아 지우고 바꿀 수 있다
     return o;
   }
+  // ---- 33차: 앱 → 아이폰 반영(보낸 것을 끝내거나 고치거나 지우면 다음 보내기 때 그쪽도 맞춘다) ----
+  // x.ip = 아이폰에 지금 들어 있는 모양. 보낼 때 그 모양과 지금 할 일을 비교해 바뀐 것만 넘긴다.
+  // 단축어 쪽: remove(찾아 지우기) → items(넣기) → complete(찾아 완료). 고친 것은 '지우고 다시 넣기'로 보낸다.
+  var TD_KEY = "mmd://";
+  function tdSigOf(p) { return JSON.stringify([p.title, p.allDay, p.start, p.end]); }
+  function tdWant(x) {
+    if (!x || x.drop || !x.k || x.k === "note") return null;
+    if (x.k === "todo" && (x.sd || !x.d)) return null;
+    if (x.k === "event" && !x.d) return null;
+    var p = tdPayloadItem(x);
+    return { ty: x.k === "event" ? "cal" : "rem", p: p, s: tdSigOf(p), dn: (x.k === "todo" && x.done) ? 1 : 0 };
+  }
+  function tdChanges() {
+    var out = [];
+    if (!state.todoSync) return out;
+    tdList().forEach(function (x) {
+      if (!x.ip) return;
+      var w = tdWant(x);
+      if (!w || w.ty !== x.ip.ty) out.push({ id: x.id, x: x, kind: "del", ty: x.ip.ty, t: x.t });
+      else if (w.s !== x.ip.s) out.push({ id: x.id, x: x, kind: "upd", ty: w.ty, w: w, t: x.t });
+      else if (w.dn !== (x.ip.dn ? 1 : 0)) out.push({ id: x.id, x: x, kind: w.dn ? "done" : "undo", ty: w.ty, w: w, t: x.t });
+    });
+    (Array.isArray(state.todoGone) ? state.todoGone : []).forEach(function (g) { out.push({ id: g.id, g: g, kind: "del", ty: g.ty, t: g.t }); });
+    return out;
+  }
+  function tdChangeOf(id) { var a = tdChanges(); for (var i = 0; i < a.length; i++) if (a[i].id === id && a[i].x) return a[i]; return null; }
+  function tdTypeName(ty) { return ty === "cal" ? "event" : "reminder"; }
   var TD_SENDING_KEY = "mmd_todo_sending_v1";
   function tdSendGo() {
-    var list = tdList().filter(function (x) { return tdSendable(x) && x.d >= todayKey(); });
-    if (!list.length) { toast("보낼 것을 골라 주세요"); return; }
-    var payload = JSON.stringify({ app: "Made My Day", items: list.map(tdPayloadItem) });
+    var T = todayKey(), list = tdList().filter(function (x) { return tdSendable(x) && x.d >= T; }), chg = tdChanges();
+    if (!list.length && !chg.length) { toast("보낼 것을 골라 주세요"); return; }
+    var remove = [], items = [], complete = [], post = {}, gone = [];
+    chg.forEach(function (c) {
+      if (c.kind === "del" || c.kind === "upd" || c.kind === "undo") remove.push({ type: tdTypeName(c.ty), key: TD_KEY + c.id });
+      if (c.kind === "upd" || c.kind === "undo") items.push(c.w.p);
+      if (c.w && c.w.dn && (c.kind === "upd" || c.kind === "done")) complete.push({ type: "reminder", key: TD_KEY + c.id });
+      if (c.g) gone.push(c.id);
+      else post[c.id] = c.kind === "del" ? 0 : { ty: c.w.ty, s: c.w.s, dn: c.w.dn };
+    });
+    list.forEach(function (x) {
+      var w = tdWant(x);
+      items.push(w ? w.p : tdPayloadItem(x));
+      if (state.todoSync && w) post[x.id] = { ty: w.ty, s: w.s, dn: 0 };
+    });
+    var pay = { app: "Made My Day", items: items };
+    if (remove.length) pay.remove = remove;
+    if (complete.length) pay.complete = complete;
+    var payload = JSON.stringify(pay);
     var url = "shortcuts://run-shortcut?name=" + encodeURIComponent(TD_SHORTCUT) + "&input=text&text=" + encodeURIComponent(payload);
-    var ids = list.map(function (x) { return x.id; });
-    try { localStorage.setItem(TD_SENDING_KEY, JSON.stringify({ ids: ids, at: Date.now(), uid: currentUid })); } catch (e) {}
-    tdEd = { mode: "sendask", ids: ids, left: false };
+    var ids = list.map(function (x) { return x.id; }), n = ids.length + chg.length;
+    try { localStorage.setItem(TD_SENDING_KEY, JSON.stringify({ ids: ids, post: post, gone: gone, n: n, at: Date.now(), uid: currentUid })); } catch (e) {}
+    tdEd = { mode: "sendask", ids: ids, post: post, gone: gone, n: n, left: false };
     tdEdRender();
     var leftAt = 0;
     function onHide() { if (document.hidden) { leftAt = Date.now(); if (tdEd && tdEd.mode === "sendask") tdEd.left = true; } }
@@ -7878,20 +8016,31 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!p || !Array.isArray(p.ids) || p.uid !== currentUid) return;
     if (Date.now() - (p.at || 0) > 30 * 60000) { try { localStorage.removeItem(TD_SENDING_KEY); } catch (e) {} return; }
     var ids = p.ids.filter(function (id) { var x = tdGet(id); return x && !x.sent; });
-    if (!ids.length) { try { localStorage.removeItem(TD_SENDING_KEY); } catch (e) {} return; }
+    var post = p.post && typeof p.post === "object" ? p.post : {}, gone = Array.isArray(p.gone) ? p.gone : [];
+    var gl = (Array.isArray(state.todoGone) ? state.todoGone : []).map(function (g) { return g.id; });
+    var postLeft = Object.keys(post).filter(function (id) { var x = tdGet(id); return x && JSON.stringify(x.ip || 0) !== JSON.stringify(post[id] || 0); });
+    var goneLeft = gone.filter(function (id) { return gl.indexOf(id) !== -1; });
+    if (!ids.length && !postLeft.length && !goneLeft.length) { try { localStorage.removeItem(TD_SENDING_KEY); } catch (e) {} return; }
     if (kbdTopOverlay && kbdTopOverlay()) return;
-    tdEd = { mode: "sendask", ids: ids, left: true };
+    tdEd = { mode: "sendask", ids: ids, post: post, gone: gone, n: p.n || ids.length, left: true };
     tdOverlayShow("보내기");
     tdEdRender();
   }
   function tdSentAnswer(yes) {
-    var ids = (tdEd && tdEd.ids) || [];
+    var ids = (tdEd && tdEd.ids) || [], post = (tdEd && tdEd.post) || {}, gone = (tdEd && tdEd.gone) || [], n = (tdEd && tdEd.n) || ids.length;
     try { localStorage.removeItem(TD_SENDING_KEY); } catch (e) {}
     if (yes) {
       var iso = tdIso();
       ids.forEach(function (id) { var x = tdGet(id); if (x) { x.sent = x.k === "event" ? "cal" : "rem"; x.sentAt = iso; delete x.snd; } });
+      Object.keys(post).forEach(function (id) {
+        var x = tdGet(id);
+        if (!x) return;
+        if (post[id]) { x.ip = { ty: post[id].ty, s: post[id].s, dn: post[id].dn ? 1 : 0 }; x.sent = post[id].ty; if (!x.sentAt) x.sentAt = iso; }
+        else { delete x.ip; if (x.sent && !tdWant(x)) { delete x.sent; delete x.sentAt; } }
+      });
+      if (gone.length) state.todoGone = (Array.isArray(state.todoGone) ? state.todoGone : []).filter(function (g) { return gone.indexOf(g.id) === -1; });
       saveState();
-      toast(ids.length + "개를 보냈다고 표시했어요");
+      toast(n + "개를 보냈다고 표시했어요");
       tdOverlayClose();
     } else {
       tdEd = { mode: "sendfail" };
@@ -7981,6 +8130,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (action === "td-quick") { tdQuickOpen(); return true; }
     if (action === "td-quick-close") { tdQuickClose(); return true; }
     if (action === "td-quick-add") { tdQuickAdd(); return true; }
+    if (action === "td-inline-add") { tdInlineAdd(); return true; }
     if (action === "td-quick-undo") {
       state.todos = tdList().filter(function (x) { return x.id !== id; });
       tdQuickAdded = tdQuickAdded.filter(function (x) { return x !== id; });
@@ -8037,10 +8187,16 @@ window.addEventListener("beforeinstallprompt", function (e) {
         setTimeout(function () { if (el && document.body.contains(el)) { el.removeAttribute("data-armed"); el.textContent = "완전히 지우기"; } }, 3000);
         return true;
       }
+      var dx = tdGet(id);
+      if (dx && dx.ip) {   // 33차: 아이폰에 들어간 것은 다음 보내기 때 그쪽에서도 지운다
+        if (!Array.isArray(state.todoGone)) state.todoGone = [];
+        state.todoGone.push({ id: dx.id, ty: dx.ip.ty, t: dx.t, c: tdIso() });
+        state.todoGone = normalizeTodoGone(state.todoGone);
+      }
       state.todos = tdList().filter(function (x) { return x.id !== id; });
       saveState();
       tdOverlayClose();
-      toast("지웠어요");
+      toast(dx && dx.ip && state.todoSync ? "지웠어요 · 다음 보내기 때 그쪽에서도 지워요" : "지웠어요");
       return true;
     }
     if (action === "td-ov-close" || action === "todo-close") { tdOverlayClose(); return true; }
@@ -8053,6 +8209,14 @@ window.addEventListener("beforeinstallprompt", function (e) {
       return true;
     }
     if (action === "td-send-go") { tdSendGo(); return true; }
+    if (action === "td-sync-toggle") {
+      state.todoSync = !state.todoSync;
+      saveState();
+      if (tdEd) tdEdRender();
+      toast(state.todoSync ? "이제부터 보낸 것은 고치면 그쪽에도 반영해요" : "반영을 껐어요");
+      renderHome(); if (tdVisible()) renderTodo();
+      return true;
+    }
     if (action === "td-sent-yes") { tdSentAnswer(true); return true; }
     if (action === "td-sent-no") { tdSentAnswer(false); return true; }
     if (action === "td-archive") { tdArchiveOpen(); return true; }
@@ -9434,6 +9598,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
       comebackHide: state.comebackHide,
       homeLayout: state.homeLayout,
       todos: state.todos,
+      todoGone: state.todoGone,
+      todoSync: state.todoSync,
       openedBoxes: state.openedBoxes,
       quarterGoalPoints: state.quarterGoalPoints,
       celebratedQuarterGoals: state.celebratedQuarterGoals,
@@ -9615,6 +9781,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (typeof parsed.comebackHide === "string") state.comebackHide = parsed.comebackHide;
     if (parsed.homeLayout && typeof parsed.homeLayout === "object") state.homeLayout = normalizeHomeLayout(parsed.homeLayout, state.categories);
     if (Array.isArray(parsed.todos)) state.todos = normalizeTodos(parsed.todos);
+    if (Array.isArray(parsed.todoGone)) state.todoGone = normalizeTodoGone(parsed.todoGone);
+    if (typeof parsed.todoSync === "boolean") state.todoSync = parsed.todoSync;
     if (parsed.openedBoxes && typeof parsed.openedBoxes === "object") state.openedBoxes = parsed.openedBoxes;
     if (typeof parsed.quarterGoalPoints === "number") state.quarterGoalPoints = parsed.quarterGoalPoints;
     if (Array.isArray(parsed.celebratedQuarterGoals)) state.celebratedQuarterGoals = parsed.celebratedQuarterGoals;
@@ -9941,6 +10109,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
       comebackHide: state.comebackHide,
       homeLayout: state.homeLayout,
       todos: state.todos,
+      todoGone: state.todoGone,
+      todoSync: state.todoSync,
       openedBoxes: state.openedBoxes,
       quarterGoalPoints: state.quarterGoalPoints,
       celebratedQuarterGoals: state.celebratedQuarterGoals,
@@ -10133,7 +10303,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["데이터 · 계정", "백업·복원은 ‘데이터 백업·복원’에서, 비밀번호 변경과 로그아웃은 ‘계정’에서 해요."]
     ], see: ["streak", "alarm", "review", "backup"] },
     keys: { t: "키보드로 쓰기", sub: "맥북 · 외장 키보드 단축키", s: [
-      ["메뉴로 바로 가기", "숫자 <b>1~5</b>를 누르면 아래 메뉴의 홈 · 할 일 · 통계 · 기록 · 지인으로 바로 가요. 설정은 홈 오른쪽 위 톱니(⚙)에 있어요. <b>M</b>을 누르면 아래 메뉴로 초점이 옮겨가요."],
+      ["메뉴로 바로 가기", "숫자 <b>1~5</b>를 누르면 아래 메뉴의 홈 · 할 일 · 통계 · 기록 · 지인으로 바로 가요. 설정은 홈 오른쪽 위 톱니(⚙)에 있어요. <b>M</b>을 누르면 아래 메뉴로 초점이 옮겨가요. <b>N</b>을 누르면 어디서든 할 일 막 적기 창이 열려요."],
       ["뒤로 · 닫기", "<b>Esc</b>나 <b>Delete(Backspace)</b>를 누르면 뒤로 가요. 창이 열려 있으면 Esc로 창을 닫고, 예/아니오를 묻는 창에서는 ‘취소’ 쪽이 골라져요. 입력칸에서 Esc를 누르면 입력칸에서 빠져나와요."],
       ["목록 안에서 이동", "<b>↑ ↓</b>로 같은 줄끼리(항목 체크, 설정 줄 등) 옮겨 다니고, <b>← →</b>로 메뉴·칩 사이를 옮겨요. <b>Home · End</b>는 처음과 끝이에요. <b>Enter</b>나 <b>Space</b>로 눌러요."],
       ["창이 열리면", "창이 열리면 초점이 창 안으로 들어가고, Tab을 눌러도 창 밖으로 나가지 않아요. 창을 닫으면 원래 있던 자리로 돌아와요."],
@@ -10155,7 +10325,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["완료한 습관", "끝낸 습관은 ‘다시 이어가기’로 되살릴 수 있어요. 목표를 정하지 않은 습관도 습관 창의 ‘끝내고 보관하기’로 끝낼 수 있어요."]
     ], see: ["streak", "pass"] },
     todo: { t: "할 일", sub: "막 적기 · 몰아서 정리 · 목록", s: [
-      ["막 적기", "어느 탭에서든 오른쪽 아래 <b>+</b>를 누르면 입력창이 떠요. 떠오른 그대로 적고 Enter(담기)를 누르면 ‘정리할 것’에 쌓여요. 적을 땐 아무것도 묻지 않아요. 적던 글이 남은 채로 창을 닫아도 그 글까지 담아요."],
+      ["막 적기", "할 일 탭 맨 위 줄에 떠오른 그대로 적고 Enter(또는 오른쪽 <b>+</b>)를 누르면 ‘정리할 것’에 쌓여요. 다른 탭에서는 홈 할 일 줄 오른쪽의 <b>+</b>를 누르거나, 아래 메뉴 ‘할 일’을 <b>길게 누르면</b> 입력창이 떠요(키보드는 <b>N</b>). 적을 땐 아무것도 묻지 않아요. 입력창에 적던 글이 남은 채로 닫아도 그 글까지 담아요."],
       ["날짜 말 알아보기", "‘내일’, ‘금요일’, ‘다음 주 화요일’, ‘10/25’, ‘3시’, ‘오후 2시 반’, ‘3시~4시’, ‘저녁’ 같은 말은 적는 동안 색이 칠해지고, 정리할 때 날짜·시각에 미리 채워져요. 오전·오후를 안 쓰면 1~6시는 오후로 봐요. 알아본 말은 제목에서 빼는데, 정리할 때 ‘원문으로’를 누르면 적은 그대로 돌아와요."],
       ["몰아서 정리", "‘몰아서 정리하기’를 누르면 한 장씩 넘기며 할 일 · 일정 · 메모 · 버리기를 골라요. 추천한 종류가 미리 눌려 있어요. 할 일은 날짜(오늘·내일·이번 주말·다음 주·날짜 고르기·언젠가)와 시간(아침·점심·저녁·시각)을, 일정은 날짜와 시작·끝 시각을 정해요. 3일 넘게 정리하지 않은 것은 금색으로 눈에 띄어요."],
       ["목록", "‘오늘’은 오늘 할 일과 일정, ‘예정’은 내일부터, ‘언젠가’는 날짜 없는 할 일, ‘메모’는 #태그별로 모아 보는 메모예요. 동그라미를 누르면 끝낸 것으로 체크되고, 줄을 누르면 고칠 수 있어요."],
@@ -10163,14 +10333,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["끝낸 것 · 보관", "끝낸 할 일, 버린 것, 지난 일정은 ‘끝낸 것’에 계속 남아요. 180일이 지나면 계정의 보관함으로 옮겨 앱을 가볍게 하고, ‘보관함 보기’에서 볼 수 있어요."],
       ["루틴과는 따로", "할 일은 루틴 연속일·포인트와 섞지 않아요. 홈에는 ‘오늘 할 일 · 밀린 것 · 정리할 것’ 한 줄만 보여요(설정 > 홈 화면 구성에서 끄거나 순서를 바꿀 수 있어요). 설정은 홈 오른쪽 위 톱니(⚙)에서 열어요."]
     ], see: ["todoshortcut", "homelayout"] },
-    todoshortcut: { t: "미리 알림·캘린더로 보내기", sub: "단축어 ‘MMD 보내기’ 만들기", s: [
+    todoshortcut: { t: "미리 알림·캘린더로 보내기", sub: "단축어 ‘MMD 보내기’ 만들기 · 고친 것 반영", s: [
       ["어떻게 보내나요", "정리할 때 ‘미리 알림으로 보내기 · 캘린더로 보내기’를 켜 둔 것을 모아 [n개 보내기]를 누르면, 단축어 앱의 ‘MMD 보내기’가 할 일은 미리 알림에, 일정은 캘린더에 한 번에 넣어요. 끝나면 이 앱으로 돌아와 ‘네, 들어갔어요’를 눌러 주세요. 보낸 것에는 ‘→ 미리 알림’, ‘→ 캘린더’ 표시가 남아요."],
-      ["한 방향이에요", "보낸 뒤에는 앱과 미리 알림·캘린더가 따로예요. 한쪽에서 끝내거나 고쳐도 다른 쪽은 그대로예요. 시각을 안 정한 할 일은 그날 아침 9시 알림으로, 아침·점심·저녁은 7시·12시·19시로 보내요. 끝 시각이 없는 일정은 1시간으로 보내요."],
-      ["처음 한 번 ① 단축어 만들기", "아이폰(또는 맥)의 <b>단축어</b> 앱 → 오른쪽 위 <b>+</b> → 이름을 정확히 <b>MMD 보내기</b>로 바꿔요(띄어쓰기 포함)."],
-      ["② 받은 글 읽기", "동작 검색에서 <b>입력에서 사전 가져오기</b>(Get Dictionary from Input)를 넣고 입력을 ‘단축어 입력’으로 둬요. 이어서 <b>사전 값 가져오기</b>(Get Dictionary Value)를 넣어 키를 <b>items</b>로 하고, <b>각 항목을 반복</b>(Repeat with Each)을 넣어요."],
-      ["③ 할 일은 미리 알림으로", "반복 안에 <b>사전 값 가져오기</b>(키 <b>type</b>, 대상은 ‘반복 항목’)와 <b>만약</b>(If)을 넣고, ‘reminder’와 같으면 → <b>미리 알림 추가</b>(Add New Reminder): 제목은 반복 항목의 <b>title</b>, 알림은 반복 항목의 <b>start</b>로 해요."],
-      ["④ 일정은 캘린더로", "‘그렇지 않으면’(Otherwise) 쪽에 <b>새로운 이벤트 추가</b>(Add New Event): 제목 <b>title</b>, 시작 <b>start</b>, 종료 <b>end</b>를 넣어요. 하루 종일 일정까지 맞추려면 그 안에서 다시 <b>만약</b>으로 <b>allDay</b>가 yes일 때 ‘하루 종일’을 켠 이벤트 추가를 따로 둬요. 저장하면 끝이에요."],
-      ["잘 안 될 때", "단축어 이름이 정확히 ‘MMD 보내기’인지, 처음 실행 때 미리 알림·캘린더 접근을 ‘허용’했는지 확인해 주세요. 앱이 보내는 글은 items 목록에 type(reminder·event) · title · start · end · allDay가 든 JSON이에요. 보내기가 안 됐다고 고르면 보낼 것은 그대로 남아 다시 보낼 수 있어요."]
+      ["보낸 것을 고치면", "보내기 화면의 ‘보낸 것을 고치면 그쪽에도 반영’을 켜 두면, 켠 뒤에 보낸 것은 앱에서 끝내면 미리 알림도 완료로, 제목·날짜·시각을 고치면 고친 내용으로 바꾸고, 버리거나 지우거나 언젠가·메모로 옮기면 그쪽에서 지워요. 바뀐 것은 ‘반영할 것’으로 모였다가 다음 [보내기] 때 같이 넘어가요. 반대로 미리 알림·캘린더에서 바꾼 것은 앱으로 오지 않아요. 밀린 것으로 넘어온 할 일은 그쪽 날짜를 그대로 둬요. 켜기 전에 아래 ⑤·⑥ 갈래와 ③·④의 ‘메모’ 칸을 먼저 단축어에 넣어 주세요."],
+      ["보내는 시각", "시각을 안 정한 할 일은 그날 아침 9시 알림으로, 아침·점심·저녁은 7시·12시·19시로 보내요. 끝 시각이 없는 일정은 1시간, 시각이 없는 일정은 하루 종일로 보내요."],
+      ["① 단축어 만들기", "아이폰(또는 맥)의 <b>단축어</b> 앱 → <b>+</b> → 이름을 정확히 <b>MMD 보내기</b>로 바꿔요(띄어쓰기 포함). 동작 이름은 기기·버전에 따라 조금 다를 수 있어요(맥에서는 ‘만약’이 <b>조건문</b>이에요)."],
+      ["② 받은 글 읽기", "<b>입력에서 사전 가져오기</b>(입력은 ‘단축어 입력’) → <b>사전 값 가져오기</b>(키 <b>items</b>) → <b>각 항목을 반복</b>을 넣어요. 사전 값으로 꺼낸 값을 조건에 쓸 때는 그 값을 눌러 유형을 <b>텍스트</b>로 바꿔야 해요. 같은 이름(사전 값)이 여러 개라 칸에 값을 넣을 땐 바로 위 블록 아래 말풍선을 눌러 골라요."],
+      ["③ 할 일은 미리 알림으로", "반복 안에 <b>사전 값 가져오기</b>(키 <b>type</b>, 반복 항목)와 <b>조건문</b>(‘다음과 같음’ reminder)을 넣어요. 그 안에 <b>입력에서 날짜 가져오기</b>(반복 항목의 <b>start</b>) → <b>새로운 미리 알림</b>: 제목은 <b>title</b>, [알림]을 고른 뒤 ‘시간’ 칸에 방금 가져온 날짜, <b>메모</b> 칸에는 <b>key</b>를 넣어요(사전 값을 바로 넣으면 ‘알림 위치가 제공되지 않았습니다’가 떠요)."],
+      ["④ 일정은 캘린더로", "‘그렇지 않으면’ 쪽에 <b>입력에서 날짜 가져오기</b>를 start·end로 두 번 → <b>새로운 이벤트</b>: 제목 <b>title</b>, 시작·종료에 그 날짜, <b>메모</b> 칸에 <b>key</b>. ‘구성 시트 보기’는 꺼요. 하루 종일까지 맞추려면 그 안에서 다시 조건문으로 <b>allDay</b>가 yes일 때 ‘하루 종일’을 켠 이벤트를 따로 둬요(메모 칸도 같이)."],
+      ["⑤ 지우기 갈래(반영할 때)", "② 반복보다 <b>위</b>에: <b>사전 값 가져오기</b>(키 <b>remove</b>) → <b>각 항목을 반복</b> → 반복 항목의 <b>type</b>(텍스트)으로 조건문. reminder이면 <b>미리 알림 찾기</b>(필터 추가: <b>메모</b> ‘다음을 포함’ 반복 항목의 <b>key</b>) → <b>미리 알림 제거</b>. 그렇지 않으면 <b>캘린더 이벤트 찾기</b>(처음 붙어 있는 날짜 조건은 지우고, <b>메모</b> ‘다음을 포함’ <b>key</b>) → <b>이벤트 제거</b>. 제거 동작의 ‘삭제하기 전에 확인’은 꺼요. 고친 것은 이 갈래가 지운 뒤 ③·④가 고친 내용으로 다시 넣어요."],
+      ["⑥ 완료 갈래(반영할 때)", "② 반복보다 <b>아래</b>(맨 끝)에: <b>사전 값 가져오기</b>(키 <b>complete</b>) → <b>각 항목을 반복</b> → <b>미리 알림 찾기</b>(<b>메모</b> ‘다음을 포함’ <b>key</b>) → <b>미리 알림 편집</b>으로 <b>완료됨</b>을 켜요. 다 넣었으면 보내기 화면에서 ‘그쪽에도 반영’을 켜요."],
+      ["잘 안 될 때", "단축어 이름이 정확히 ‘MMD 보내기’인지, 처음 실행 때 미리 알림·캘린더 접근을 ‘허용’했는지 확인해 주세요. 앱이 보내는 글은 JSON이에요: items(type · title · start · end · allDay · key), remove(type · key), complete(type · key). key는 ‘mmd://’로 시작해요. 보내기가 안 됐다고 고르면 보낼 것과 반영할 것은 그대로 남아 다시 보낼 수 있어요."]
     ], see: ["todo"] },
     homelayout: { t: "홈 화면 구성", sub: "보일 것 · 순서 · 접기", s: [
       ["어디서 바꾸나요", "설정 > 홈 화면 구성에서 안내 · 할 일 · 오늘 진행 · 습관 만들기 · 루틴 카테고리의 순서를 ↑↓로 바꾸고, 동그라미를 눌러 켜고 꺼요. 안내와 루틴 카테고리는 끌 수 없어요."],
@@ -10657,6 +10830,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (m && kbdNavVisible()) {
       var nb = document.querySelectorAll("#globalBottomNav .nav-btn")[parseInt(m[1], 10) - 1];
       if (nb) { e.preventDefault(); nb.click(); }
+      return;
+    }
+    if (e.code === "KeyN" && kbdNavVisible() && currentUid) {   // 33차: 어디서든 할 일 막 적기
+      e.preventDefault();
+      tdQuickOpen();
       return;
     }
     if (e.code === "KeyM" && kbdNavVisible()) {
