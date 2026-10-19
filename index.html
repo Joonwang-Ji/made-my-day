@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-19-8";
+  var BUILD_VERSION = "2026-10-19-9";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-19-8">
+<link rel="stylesheet" href="style.css?v=2026-10-19-9">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -994,17 +994,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-19-8"></script>
-<script src="i18n.js?v=2026-10-19-8"></script>
-<script src="i18n-en.js?v=2026-10-19-8"></script>
-<script src="bible-medals-data.js?v=2026-10-19-8"></script>
-<script src="avatar-data.js?v=2026-10-19-8"></script>
-<script src="review-data.js?v=2026-10-19-8"></script>
-<script src="i18n-en-help.js?v=2026-10-19-8"></script>
-<script src="i18n-en-review.js?v=2026-10-19-8"></script>
-<script src="i18n-en-bible.js?v=2026-10-19-8"></script>
-<script src="i18n-en-avatar.js?v=2026-10-19-8"></script>
-<script src="i18n-en-extra.js?v=2026-10-19-8"></script>
+<script type="module" src="firebase-service.js?v=2026-10-19-9"></script>
+<script src="i18n.js?v=2026-10-19-9"></script>
+<script src="i18n-en.js?v=2026-10-19-9"></script>
+<script src="bible-medals-data.js?v=2026-10-19-9"></script>
+<script src="avatar-data.js?v=2026-10-19-9"></script>
+<script src="review-data.js?v=2026-10-19-9"></script>
+<script src="i18n-en-help.js?v=2026-10-19-9"></script>
+<script src="i18n-en-review.js?v=2026-10-19-9"></script>
+<script src="i18n-en-bible.js?v=2026-10-19-9"></script>
+<script src="i18n-en-avatar.js?v=2026-10-19-9"></script>
+<script src="i18n-en-extra.js?v=2026-10-19-9"></script>
 <script>
 (function () {
   "use strict";
@@ -7704,12 +7704,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (typing) {
       tdPinRender();
       var top = Math.max(0, Math.round(vv.offsetTop));
-      // 원래 맨 윗줄·탭 줄이 보이는 영역 안에 다 보이면 고정 줄은 숨긴다(두 줄로 겹쳐 보이지 않게)
-      var ot = document.querySelector("#todoBody .td-tabs"), oh = document.querySelector("#view-todo > .top-bar"), pinOff = false;
-      if (ot && oh) {
-        var r = ot.getBoundingClientRect(), r2 = oh.getBoundingClientRect();
-        pinOff = r.height > 0 && r2.top >= top - 1 && r.bottom <= top + vv.height - bar.offsetHeight;
-      }
+      // 원래 맨 윗줄이 보이는 영역 안에 보이면 고정 줄은 숨긴다(두 줄로 겹쳐 보이지 않게)
+      var oh = document.querySelector("#view-todo > .top-bar"), pinOff = false;
+      if (oh) { var r2 = oh.getBoundingClientRect(); pinOff = r2.height > 0 && r2.top >= top - 1; }
       if (b.classList.contains("td-pin-off") !== pinOff) b.classList.toggle("td-pin-off", pinOff);
       b.style.setProperty("--td-pin-t", top + "px");
       b.style.setProperty("--td-vb", Math.round(top + vv.height) + "px");
@@ -7723,10 +7720,10 @@ window.addEventListener("beforeinstallprompt", function (e) {
   }
   // 고정 탭 줄: 지금 할 일 화면의 탭 줄을 그대로 옮겨 그린다(누르면 같은 td-tab 동작, 키보드는 그대로)
   function tdPinRender() {
-    var pin = document.getElementById("tdPinIn"), tabs = document.querySelector("#todoBody .td-tabs"), head = document.querySelector("#view-todo > .top-bar");
+    var pin = document.getElementById("tdPinIn"), head = document.querySelector("#view-todo > .top-bar");
     if (!pin) return;
-    // 37차: 맨 윗줄(‹ 할 일 ?)과 탭 줄을 함께 고정한다
-    var h = (head ? head.outerHTML : "") + (tabs ? tabs.outerHTML : "");
+    // 38차: 고정하는 것은 맨 윗줄(‹ 할 일 ?)뿐. 탭 줄은 고정하지 않는다(탭을 옮기면 입력은 어차피 끝나므로).
+    var h = head ? head.outerHTML : "";
     if (pin.getAttribute("data-h") !== h) { pin.setAttribute("data-h", h); pin.innerHTML = h; }
   }
   (function () {
@@ -7737,7 +7734,39 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (window.visualViewport) { window.visualViewport.addEventListener("resize", tdBarFit); window.visualViewport.addEventListener("scroll", tdBarFit); }
     window.addEventListener("resize", tdBarFit);
     window.addEventListener("scroll", function () { if (document.body.classList.contains("td-typing")) tdBarFit(); }, { passive: true });
-    document.addEventListener("focusin", function (e) { if (e.target && e.target.id === "tdInlineIn") { tdBarFit(); setTimeout(tdBarFit, 150); setTimeout(tdBarFit, 400); setTimeout(tdBarFit, 800); } });
+    // 38차: 입력칸을 눌러도 보던 화면 위치를 그대로 둔다. 아이폰은 키보드가 올라올 때 입력칸이 보이도록 화면을 스스로 밀어 올리는데,
+    //  ① 누르는 순간 '스크롤 없이 초점'(preventScroll)만 주고 ② 그래도 밀리면 누르기 전 위치로 되돌린다(손으로 스크롤하면 바로 멈춤).
+    var keepY = null, keepUntil = 0, tdx = 0, tdy = 0, tdMoved = false;
+    function keepStart() { keepY = window.pageYOffset || 0; keepUntil = Date.now() + 1400; }
+    function keepFix() {
+      if (keepY === null || Date.now() > keepUntil) return;
+      if (Math.abs((window.pageYOffset || 0) - keepY) > 1) window.scrollTo(0, keepY);
+    }
+    var inl = document.getElementById("tdInlineIn");
+    if (inl) {
+      inl.addEventListener("touchstart", function (e) {
+        var t = e.touches && e.touches[0]; tdx = t ? t.clientX : 0; tdy = t ? t.clientY : 0; tdMoved = false;
+        if (document.activeElement !== inl) keepStart();
+      }, { passive: true });
+      inl.addEventListener("touchmove", function (e) {
+        var t = e.touches && e.touches[0];
+        if (t && (Math.abs(t.clientX - tdx) > 10 || Math.abs(t.clientY - tdy) > 10)) tdMoved = true;
+      }, { passive: true });
+      inl.addEventListener("touchend", function (e) {
+        if (tdMoved || document.activeElement === inl || !e.cancelable) return;
+        e.preventDefault();                       // 기본 초점(화면을 밀어 올림) 대신
+        try { inl.focus({ preventScroll: true }); } catch (err) { inl.focus(); }   // 스크롤 없이 초점
+      }, { passive: false });
+    }
+    document.addEventListener("touchmove", function (e) { if (e.target !== inl) keepUntil = 0; }, { passive: true, capture: true });
+    window.addEventListener("scroll", keepFix, { passive: true });
+    if (window.visualViewport) { window.visualViewport.addEventListener("resize", keepFix); window.visualViewport.addEventListener("scroll", keepFix); }
+    document.addEventListener("focusin", function (e) {
+      if (e.target && e.target.id === "tdInlineIn") {
+        if (Date.now() > keepUntil) keepStart();
+        tdBarFit(); [60, 150, 300, 500, 800].forEach(function (ms) { setTimeout(function () { keepFix(); tdBarFit(); }, ms); });
+      }
+    });
     document.addEventListener("focusout", function (e) { if (e.target && e.target.id === "tdInlineIn") { setTimeout(tdBarFit, 60); setTimeout(tdBarFit, 300); } });
     document.addEventListener("input", function (e) { if (e.target && e.target.id === "tdInlineIn" && document.body.classList.contains("td-typing")) requestAnimationFrame(tdBarFit); });
     // 고정 탭 줄을 눌러도 입력칸 초점(키보드)이 빠지지 않게
