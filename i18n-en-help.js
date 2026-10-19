@@ -212,7 +212,7 @@
       ["Same on every device", "Your layout is saved to your account, so it looks the same on iPhone, iPad and Mac. “Reset to default layout” brings back the original look."]
     ], see: ["home", "habit"] },
     comeback: { t: "Start again", sub: "After your streak breaks", s: [
-      ["Start-again card", "When your streak breaks, a “Start again” card appears on Home. It shows your last streak and best record, a Bible line, and how many of the last 30 days were successful. It goes away when your streak reaches 3 days or you close it with ×, and it won't come back for that break."],
+      ["Start-again card", "When your streak breaks, a “Start again” card appears on Home. It shows your last streak and best record, a Bible line, and how many of the last 30 days were successful. It goes away when your streak reaches 3 days. If you close it with ×, only the bonus progress (○○○ n/3) stays as a small line — tap it to open the card again."],
       ["Stepping Stone · Pause first", "If yesterday broke your streak but a Stepping Stone or Pause can still save it, that notice comes first. The start-again card appears only when it can't be saved."],
       ["Back-on-track bonus", "If your streak was 3 days or more before it broke, keep it going for 3 days again to get a celebration and 10P bonus. Once per break."]
     ], see: ["streak", "pass"] },
