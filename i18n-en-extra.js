@@ -742,6 +742,16 @@
     "반영을 껐어요": "Updates turned off",
     "지웠어요 · 다음 보내기 때 그쪽에서도 지워요": "Deleted · it will be removed there with the next send"
   });
+  // ---- 34차: 시각 고르기 · 줄 밀기 · 보내기 줄이기 ----
+  I.register({
+    "시각 고르기": "Pick a time",
+    "끝 시각": "End time",
+    "끝 시각은 시작보다 뒤여야 해요": "End time must be after the start",
+    "보내는 중이에요": "Sending…",
+    "단축어가 끝나면 이 앱으로 돌아와요. 돌아오면 자동으로 보냈다고 표시해요.": "When the shortcut finishes you'll come back here, and the items are marked as sent automatically.",
+    "다 됐어요": "All done",
+    "안 됐어요": "It didn't work"
+  });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();
