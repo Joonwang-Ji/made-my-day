@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-19-2";
+  var BUILD_VERSION = "2026-10-19-3";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-19-2">
+<link rel="stylesheet" href="style.css?v=2026-10-19-3">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -975,17 +975,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-19-2"></script>
-<script src="i18n.js?v=2026-10-19-2"></script>
-<script src="i18n-en.js?v=2026-10-19-2"></script>
-<script src="bible-medals-data.js?v=2026-10-19-2"></script>
-<script src="avatar-data.js?v=2026-10-19-2"></script>
-<script src="review-data.js?v=2026-10-19-2"></script>
-<script src="i18n-en-help.js?v=2026-10-19-2"></script>
-<script src="i18n-en-review.js?v=2026-10-19-2"></script>
-<script src="i18n-en-bible.js?v=2026-10-19-2"></script>
-<script src="i18n-en-avatar.js?v=2026-10-19-2"></script>
-<script src="i18n-en-extra.js?v=2026-10-19-2"></script>
+<script type="module" src="firebase-service.js?v=2026-10-19-3"></script>
+<script src="i18n.js?v=2026-10-19-3"></script>
+<script src="i18n-en.js?v=2026-10-19-3"></script>
+<script src="bible-medals-data.js?v=2026-10-19-3"></script>
+<script src="avatar-data.js?v=2026-10-19-3"></script>
+<script src="review-data.js?v=2026-10-19-3"></script>
+<script src="i18n-en-help.js?v=2026-10-19-3"></script>
+<script src="i18n-en-review.js?v=2026-10-19-3"></script>
+<script src="i18n-en-bible.js?v=2026-10-19-3"></script>
+<script src="i18n-en-avatar.js?v=2026-10-19-3"></script>
+<script src="i18n-en-extra.js?v=2026-10-19-3"></script>
 <script>
 (function () {
   "use strict";
@@ -7695,6 +7695,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     return h;
   }
   function tdEdRender() {
+    tdEdDirty = false;
     var body = document.getElementById("todoOvBody");
     if (!tdEd || !body) return;
     var h = "";
@@ -7857,9 +7858,25 @@ window.addEventListener("beforeinstallprompt", function (e) {
   document.addEventListener("change", function (e) {
     var t = e.target;
     if (!t || !tdEd || !tdEd.dr) return;
-    if (t.id === "tdEdDate") { if (t.value) { tdEdSyncText(); tdEd.dr.d = t.value; tdEd.dr.sd = false; tdEdRender(); } }
-    else if (t.id === "tdEdTime") { tdEdSyncText(); tdEd.dr.tm = t.value || null; if (t.value) tdEd.dr.sl = null; if (tdEd.dr.k === "todo" && t.value && !tdEd.dr.snd && !(tdEd.mode === "edit" && (tdGet(tdEd.id) || {}).k)) tdEd.dr.snd = true; tdEdRender(); }
-    else if (t.id === "tdEdEnd") { tdEdSyncText(); tdEd.dr.te = t.value || null; tdEdRender(); }
+    // 33차 보완: 값이 바뀔 때마다 창을 다시 그리면 열려 있던 날짜·시간 휠이 닫혀 버림(아이폰은 휠이 멈출 때마다 change).
+    // 그래서 값만 담아 두고, 칸에서 손을 뗀 뒤(focusout) 다른 입력칸이 열려 있지 않을 때 한 번만 다시 그림.
+    if (t.id === "tdEdDate") { if (t.value) { tdEdSyncText(); tdEd.dr.d = t.value; tdEd.dr.sd = false; tdEdMark(t); } }
+    else if (t.id === "tdEdTime") { tdEdSyncText(); tdEd.dr.tm = t.value || null; if (t.value) tdEd.dr.sl = null; if (tdEd.dr.k === "todo" && t.value && !tdEd.dr.snd && !(tdEd.mode === "edit" && (tdGet(tdEd.id) || {}).k)) tdEd.dr.snd = true; tdEdMark(t); }
+    else if (t.id === "tdEdEnd") { tdEdSyncText(); tdEd.dr.te = t.value || null; tdEdMark(t); }
+  });
+  var tdEdDirty = false, TD_ED_PICK = /^tdEd(Date|Time|End|T)$/;
+  function tdEdMark(t) { tdEdDirty = true; t.classList.toggle("on", !!t.value); if (t.id === "tdEdDate") { var c = document.querySelectorAll('#todoOvBody [data-action="td-ed-date"].on'); for (var i = 0; i < c.length; i++) c[i].classList.remove("on"); } }
+  function tdEdFlush() {
+    if (!tdEdDirty) return;
+    var a = document.activeElement;
+    if (a && TD_ED_PICK.test(a.id || "")) return; // 다른 칸(끝 시각 등)이 열려 있으면 기다림
+    tdEdDirty = false;
+    if (tdEd && tdEd.dr) tdEdRender();
+  }
+  document.addEventListener("focusout", function (e) {
+    var t = e.target;
+    if (!t || !/^tdEd(Date|Time|End)$/.test(t.id || "") || !tdEdDirty) return;
+    setTimeout(tdEdFlush, 250); // 버튼을 눌러 손을 뗀 경우 그 버튼 동작이 먼저 처리되게
   });
   document.addEventListener("input", function (e) {
     var t = e.target;
@@ -10341,9 +10358,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["② 받은 글 읽기", "<b>입력에서 사전 가져오기</b>(입력은 ‘단축어 입력’) → <b>사전 값 가져오기</b>(키 <b>items</b>) → <b>각 항목을 반복</b>을 넣어요. 사전 값으로 꺼낸 값을 조건에 쓸 때는 그 값을 눌러 유형을 <b>텍스트</b>로 바꿔야 해요. 같은 이름(사전 값)이 여러 개라 칸에 값을 넣을 땐 바로 위 블록 아래 말풍선을 눌러 골라요."],
       ["③ 할 일은 미리 알림으로", "반복 안에 <b>사전 값 가져오기</b>(키 <b>type</b>, 반복 항목)와 <b>조건문</b>(‘다음과 같음’ reminder)을 넣어요. 그 안에 <b>입력에서 날짜 가져오기</b>(반복 항목의 <b>start</b>) → <b>새로운 미리 알림</b>: 제목은 <b>title</b>, [알림]을 고른 뒤 ‘시간’ 칸에 방금 가져온 날짜, <b>메모</b> 칸에는 <b>key</b>를 넣어요(사전 값을 바로 넣으면 ‘알림 위치가 제공되지 않았습니다’가 떠요)."],
       ["④ 일정은 캘린더로", "‘그렇지 않으면’ 쪽에 <b>입력에서 날짜 가져오기</b>를 start·end로 두 번 → <b>새로운 이벤트</b>: 제목 <b>title</b>, 시작·종료에 그 날짜, <b>메모</b> 칸에 <b>key</b>. ‘구성 시트 보기’는 꺼요. 하루 종일까지 맞추려면 그 안에서 다시 조건문으로 <b>allDay</b>가 yes일 때 ‘하루 종일’을 켠 이벤트를 따로 둬요(메모 칸도 같이)."],
-      ["⑤ 지우기 갈래(반영할 때)", "② 반복보다 <b>위</b>에: <b>사전 값 가져오기</b>(키 <b>remove</b>) → <b>각 항목을 반복</b> → 반복 항목의 <b>type</b>(텍스트)으로 조건문. reminder이면 <b>미리 알림 찾기</b>(필터 추가: <b>메모</b> ‘다음을 포함’ 반복 항목의 <b>key</b>) → <b>미리 알림 제거</b>. 그렇지 않으면 <b>캘린더 이벤트 찾기</b>(처음 붙어 있는 날짜 조건은 지우고, <b>메모</b> ‘다음을 포함’ <b>key</b>) → <b>이벤트 제거</b>. 제거 동작의 ‘삭제하기 전에 확인’은 꺼요. 고친 것은 이 갈래가 지운 뒤 ③·④가 고친 내용으로 다시 넣어요."],
-      ["⑥ 완료 갈래(반영할 때)", "② 반복보다 <b>아래</b>(맨 끝)에: <b>사전 값 가져오기</b>(키 <b>complete</b>) → <b>각 항목을 반복</b> → <b>미리 알림 찾기</b>(<b>메모</b> ‘다음을 포함’ <b>key</b>) → <b>미리 알림 편집</b>으로 <b>완료됨</b>을 켜요. 다 넣었으면 보내기 화면에서 ‘그쪽에도 반영’을 켜요."],
-      ["잘 안 될 때", "단축어 이름이 정확히 ‘MMD 보내기’인지, 처음 실행 때 미리 알림·캘린더 접근을 ‘허용’했는지 확인해 주세요. 앱이 보내는 글은 JSON이에요: items(type · title · start · end · allDay · key), remove(type · key), complete(type · key). key는 ‘mmd://’로 시작해요. 보내기가 안 됐다고 고르면 보낼 것과 반영할 것은 그대로 남아 다시 보낼 수 있어요."]
+      ["⑤ 지우기 갈래(반영할 때)", "② 반복보다 <b>위</b>에: <b>사전 값 가져오기</b>(키 <b>remove</b>) → <b>각 항목을 반복</b> → 반복 항목의 <b>type</b>(텍스트)으로 조건문. reminder이면 <b>미리 알림 찾기</b>(필터 추가: <b>메모</b> ‘다음을 포함’ 반복 항목의 <b>key</b>) → <b>미리 알림 제거</b>. 그렇지 않으면 <b>캘린더 이벤트 찾기</b>(<b>메모</b> ‘다음을 포함’ <b>key</b>) → <b>이벤트 제거</b>. 캘린더 찾기에 처음부터 붙어 있는 <b>시작일</b> 범위는 지울 수 없고, <b>앞쪽 4년까지만</b> 찾아요(2019~2099로 두면 2023년까지만 찾아서 새 일정이 안 잡혀요). 그래서 시작을 <b>현재 날짜 → 날짜 조정(1년 빼기)</b>한 날로 두세요. 캘린더 이름 조건은 넣지 않아도 돼요. 제거 동작의 ‘삭제하기 전에 확인’은 꺼요. 고친 것은 이 갈래가 지운 뒤 ③·④가 고친 내용으로 다시 넣어요."],
+      ["⑥ 완료 갈래(반영할 때)", "② 반복보다 <b>아래</b>(맨 끝)에: <b>사전 값 가져오기</b>(키 <b>complete</b>) → <b>각 항목을 반복</b> → 반복 항목의 <b>key</b>(텍스트) → <b>미리 알림 찾기</b>(<b>메모</b> ‘다음을 포함’ <b>key</b>, 제한 끔) → ‘미리 알림’으로 검색해 나오는 편집 동작으로 <b>‘미리 알림의 완료함 설정: 예’</b>를 만들어요. key 값은 <b>변수 설정</b>으로 이름(예: 완료키)을 붙여 두면 고를 때 헷갈리지 않아요. 다 넣었으면 보내기 화면에서 ‘그쪽에도 반영’을 켜요."],
+      ["잘 안 될 때", "단축어 이름이 정확히 ‘MMD 보내기’인지, 처음 실행 때 미리 알림·캘린더 접근을 ‘허용’했는지 확인해 주세요. 앱이 보내는 글은 JSON이에요: items(type · title · start · end · allDay · key), remove(type · key), complete(type · key). key는 ‘mmd://’로 시작해요. 단축어를 고치며 값을 확인할 때는 <b>콘텐츠 보기</b> 대신 <b>알림 표시</b>나 <b>개수 세기</b>를 쓰세요(콘텐츠 보기는 글자 값을 빈 화면처럼 보여 줘요). 보내기가 안 됐다고 고르면 보낼 것과 반영할 것은 그대로 남아 다시 보낼 수 있어요."]
     ], see: ["todo"] },
     homelayout: { t: "홈 화면 구성", sub: "보일 것 · 순서 · 접기", s: [
       ["어디서 바꾸나요", "설정 > 홈 화면 구성에서 안내 · 할 일 · 오늘 진행 · 습관 만들기 · 루틴 카테고리의 순서를 ↑↓로 바꾸고, 동그라미를 눌러 켜고 꺼요. 안내와 루틴 카테고리는 끌 수 없어요."],
