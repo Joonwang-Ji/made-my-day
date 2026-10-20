@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-20-1";
+  var BUILD_VERSION = "2026-10-20-2";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-20-1">
+<link rel="stylesheet" href="style.css?v=2026-10-20-2">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -999,17 +999,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-20-1"></script>
-<script src="i18n.js?v=2026-10-20-1"></script>
-<script src="i18n-en.js?v=2026-10-20-1"></script>
-<script src="bible-medals-data.js?v=2026-10-20-1"></script>
-<script src="avatar-data.js?v=2026-10-20-1"></script>
-<script src="review-data.js?v=2026-10-20-1"></script>
-<script src="i18n-en-help.js?v=2026-10-20-1"></script>
-<script src="i18n-en-review.js?v=2026-10-20-1"></script>
-<script src="i18n-en-bible.js?v=2026-10-20-1"></script>
-<script src="i18n-en-avatar.js?v=2026-10-20-1"></script>
-<script src="i18n-en-extra.js?v=2026-10-20-1"></script>
+<script type="module" src="firebase-service.js?v=2026-10-20-2"></script>
+<script src="i18n.js?v=2026-10-20-2"></script>
+<script src="i18n-en.js?v=2026-10-20-2"></script>
+<script src="bible-medals-data.js?v=2026-10-20-2"></script>
+<script src="avatar-data.js?v=2026-10-20-2"></script>
+<script src="review-data.js?v=2026-10-20-2"></script>
+<script src="i18n-en-help.js?v=2026-10-20-2"></script>
+<script src="i18n-en-review.js?v=2026-10-20-2"></script>
+<script src="i18n-en-bible.js?v=2026-10-20-2"></script>
+<script src="i18n-en-avatar.js?v=2026-10-20-2"></script>
+<script src="i18n-en-extra.js?v=2026-10-20-2"></script>
 <script>
 (function () {
   "use strict";
@@ -7078,7 +7078,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 
   // ---- 32차: 할 일 (막 적기 → 몰아서 정리 → 미리 알림·캘린더로 보내기) ----
   // state.todos = [{ id, t: 글, r: 적은 그대로(날짜 말을 뺀 경우만), k: null(정리 전)|"todo"|"event"|"note", sk: 추천 종류,
-  //   d: 날짜 "YYYY-MM-DD", tm: 시각 "HH:MM", te: 끝 시각(일정), sl: 시간대 "am"|"noon"|"pm"(할 일), sd: 1 언젠가,
+  //   d: 날짜 "YYYY-MM-DD", tm: 시각 "HH:MM", te: 끝 시각(일정), sl: 시간대 "am"|"noon"|"aft"|"pm"(할 일), sd: 1 언젠가,
   //   c: 적은 시각, done: 끝낸 시각, drop: 버린 시각, mv: 미룬 횟수, d0: 처음 날짜, late: 1 밀려서 넘어옴,
   //   q: '정말 할 건가요?'에 '할 거예요'라고 답한 때의 mv, snd: 1 보낼 것, sent: "rem"|"cal" 보냄, sentAt }]
   //  · 계정 문서에 저장(모든 기기 같게). mergeStates는 할 일 하나 단위로 3방향 합치기(mergeTodoList).
@@ -7088,7 +7088,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   // normalizeTodos는 이 블록보다 먼저(첫 로딩 정규화) 불릴 수 있어 아래 var 값을 쓰지 않는다.
   function normalizeTodos(arr) {
     if (!Array.isArray(arr)) return [];
-    var out = [], seen = {}, K = { todo: 1, event: 1, note: 1 }, SL = { am: 1, noon: 1, pm: 1 };
+    var out = [], seen = {}, K = { todo: 1, event: 1, note: 1 }, SL = { am: 1, noon: 1, aft: 1, pm: 1 };
     var reD = /^\d{4}-\d{2}-\d{2}$/, reT = /^\d{2}:\d{2}$/;
     arr.forEach(function (x) {
       if (!x || typeof x !== "object" || typeof x.id !== "string" || !x.id || x.id.length > 40 || seen[x.id]) return;
@@ -7161,7 +7161,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 
   var TD_EN = !!(window.MMD_I18N && window.MMD_I18N.lang === "en");
   var TD_WD = ["일", "월", "화", "수", "목", "금", "토"], TD_WD_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  var TD_SLOT = { am: ["아침", "Morning", "09:00"], noon: ["점심", "Noon", "12:00"], pm: ["저녁", "Evening", "15:00"] };   // 37차: 아침 9시·저녁 15시
+  var TD_SLOT = { am: ["아침", "Morning", "09:00"], noon: ["점심", "Noon", "12:00"], aft: ["오후", "Afternoon", "15:00"], pm: ["저녁", "Evening", "19:00"] };   // 37차: 아침 9시·점심 12시·오후 15시·저녁 19시
   var TD_SHORTCUT = "MMD 보내기";
   var TD_ARCHIVE_DAYS = 180, TD_ASK_AT = 3, TD_OLD_INBOX_DAYS = 3;
   var tdTab = "today", tdTagFilter = null, tdShowDoneToday = false, tdDoneLimit = 60, tdArchiveTried = "", tdArchiveView = null;
@@ -7305,11 +7305,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!res.tm) {
       each(new RegExp("(^|[^가-힣])(아침|점심|저녁|밤|오전|오후)(?:에는|에|때|까지)?(?![가-힣])", "g"), "s", function (m) {
         if (res.sl) return false;
-        res.sl = { "아침": "am", "오전": "am", "점심": "noon", "저녁": "pm", "밤": "pm", "오후": "pm" }[m[2]];
+        res.sl = { "아침": "am", "오전": "am", "점심": "noon", "저녁": "pm", "밤": "pm", "오후": "aft" }[m[2]];
       });
       each(/(^|[^A-Za-z])(?:in the\s+)?(morning|afternoon|evening|at night|lunch)(?![A-Za-z])/gi, "s", function (m) {
         if (res.sl) return false;
-        res.sl = { morning: "am", afternoon: "pm", evening: "pm", "at night": "pm", lunch: "noon" }[m[2].toLowerCase()];
+        res.sl = { morning: "am", afternoon: "aft", evening: "pm", "at night": "pm", lunch: "noon" }[m[2].toLowerCase()];
       });
     }
     // 날짜 말을 뺀 제목
@@ -8005,7 +8005,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (dr.k === "todo" && !dr.sd) {
         h += '<div class="td-fl">시간</div><div class="td-chips">' +
           tdChip(!dr.tm && !dr.sl, "td-ed-slot", "none", "안 정함") + tdChip(!dr.tm && dr.sl === "am", "td-ed-slot", "am", tdSlotLabel("am")) +
-          tdChip(!dr.tm && dr.sl === "noon", "td-ed-slot", "noon", tdSlotLabel("noon")) + tdChip(!dr.tm && dr.sl === "pm", "td-ed-slot", "pm", tdSlotLabel("pm")) + '</div>' +
+          tdChip(!dr.tm && dr.sl === "noon", "td-ed-slot", "noon", tdSlotLabel("noon")) + tdChip(!dr.tm && dr.sl === "aft", "td-ed-slot", "aft", tdSlotLabel("aft")) + tdChip(!dr.tm && dr.sl === "pm", "td-ed-slot", "pm", tdSlotLabel("pm")) + '</div>' +
           '<div class="td-inrow"><span class="td-inl">시각</span>' + tdTimeBtn("tm", dr.tm, "시각 고르기") +
           (dr.tm ? '<span class="td-link" data-action="td-ed-slot" data-id="none">시각 지우기</span>' : '') + '</div>';
       }
@@ -10767,7 +10767,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     todoshortcut: { t: "미리 알림·캘린더로 보내기", sub: "단축어 ‘MMD 보내기’ 만들기 · 고친 것 반영", s: [
       ["어떻게 보내나요", "정리할 때 ‘미리 알림으로 보내기 · 캘린더로 보내기’를 켜 둔 것을 모아 [n개 보내기]를 누르면, 단축어 앱의 ‘MMD 보내기’가 할 일은 미리 알림에, 일정은 캘린더에 한 번에 넣어요. 보내기 띠의 [보내기]를 누르면 목록 없이 바로 보내요. 누르는 순간 바로 보냈다고 표시하고, 단축어가 끝난 뒤 안 들어갔다면 잠깐 뜨는 ‘되돌리기’를 눌러요(놓쳤다면 그 항목을 눌러 ‘다시 보내기’를 골라요). 같은 것을 다시 보내도 아이폰에는 하나만 남아요. 보낸 것에는 ‘→ 미리 알림’, ‘→ 캘린더’ 표시가 남아요."],
       ["보낸 것을 고치면", "보내기 화면의 ‘보낸 것을 고치면 그쪽에도 반영’을 켜 두면, 켠 뒤에 보낸 것은 앱에서 끝내면 미리 알림도 완료로, 제목·날짜·시각을 고치면 고친 내용으로 바꾸고, 버리거나 지우거나 언젠가·메모로 옮기면 그쪽에서 지워요. 바뀐 것은 ‘반영할 것’으로 모였다가 다음 [보내기] 때 같이 넘어가요. 반대로 미리 알림·캘린더에서 바꾼 것은 앱으로 오지 않아요. 밀린 것으로 넘어온 할 일은 그쪽 날짜를 그대로 둬요. 켜기 전에 아래 ⑤·⑥ 갈래와 ③·④의 ‘메모’ 칸을 먼저 단축어에 넣어 주세요."],
-      ["보내는 시각", "시각을 안 정한 할 일은 그날 아침 9시 알림으로, 아침·점심·저녁은 9시·12시·15시로 보내요. 끝 시각이 없는 일정은 1시간, 시각이 없는 일정은 하루 종일로 보내요."],
+      ["보내는 시각", "시각을 안 정한 할 일은 그날 아침 9시 알림으로, 아침·점심·오후·저녁은 9시·12시·15시·19시로 보내요. 끝 시각이 없는 일정은 1시간, 시각이 없는 일정은 하루 종일로 보내요."],
       ["① 단축어 만들기", "아이폰(또는 맥)의 <b>단축어</b> 앱 → <b>+</b> → 이름을 정확히 <b>MMD 보내기</b>로 바꿔요(띄어쓰기 포함). 동작 이름은 기기·버전에 따라 조금 다를 수 있어요(맥에서는 ‘만약’이 <b>조건문</b>이에요)."],
       ["② 받은 글 읽기", "<b>입력에서 사전 가져오기</b>(입력은 ‘단축어 입력’) → <b>사전 값 가져오기</b>(키 <b>items</b>) → <b>각 항목을 반복</b>을 넣어요. 사전 값으로 꺼낸 값을 조건에 쓸 때는 그 값을 눌러 유형을 <b>텍스트</b>로 바꿔야 해요. 같은 이름(사전 값)이 여러 개라 칸에 값을 넣을 땐 바로 위 블록 아래 말풍선을 눌러 골라요."],
       ["③ 할 일은 미리 알림으로", "반복 안에 <b>사전 값 가져오기</b>(키 <b>type</b>, 반복 항목)와 <b>조건문</b>(‘다음과 같음’ reminder)을 넣어요. 그 안에 <b>입력에서 날짜 가져오기</b>(반복 항목의 <b>start</b>) → <b>새로운 미리 알림</b>: 제목은 <b>title</b>, [알림]을 고른 뒤 ‘시간’ 칸에 방금 가져온 날짜, <b>메모</b> 칸에는 <b>key</b>를 넣어요(사전 값을 바로 넣으면 ‘알림 위치가 제공되지 않았습니다’가 떠요)."],
