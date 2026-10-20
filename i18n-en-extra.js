@@ -661,7 +661,7 @@
     "이미 미리 알림으로 보냈어요.": "Already sent to Reminders.",
     "이미 캘린더로 보냈어요.": "Already sent to Calendar.",
     "여기서 고쳐도 그쪽은 그대로예요.": "Changes here won't change it there.",
-    "시간을 안 정하면 아침 9시 알림으로 보내요.": "Without a time, it's sent with a 9 AM alert.",
+    "시간을 안 정하면 오전 9시 알림으로 보내요.": "Without a time, it's sent with a 9 AM alert.",
     "메모는 앱 안 ‘메모’에 모아 둬요. 글에 #태그를 붙이면 태그별로 볼 수 있어요.": "Notes are kept under “Notes” in the app. Add #tags to see them by tag.",
     "버린 것은 ‘끝낸 것’에 남아요. 언제든 되살릴 수 있어요.": "Discarded items stay under “Done”. You can bring them back anytime.",
     "고치기": "Edit",
@@ -757,6 +757,43 @@
     "아직 합친 기록이 없어요": "No merges yet",
     "오전/오후": "AM/PM"
   });
+  // ---- 39차: 고치기 창 새 디자인 · 마감일 · 오늘 덜어내기 · 저녁 정리 · 언젠가 점검 ----
+  I.register({
+    "다른 날짜 고르기": "Pick another date",
+    "정확한 시각": "Exact time",
+    "고르기": "Pick",
+    "지우기": "Clear",
+    "마감일": "Deadline",
+    "(선택)": "(optional)",
+    "마감일 지우기": "Clear deadline",
+    "오늘 할 일이 많아요": "Lots to do today",
+    "하루에 다 하기엔 벅찰 수 있어요. 내일로 옮길 것을 골라 볼까요?": "That may be a lot for one day. Want to pick some to move to tomorrow?",
+    "덜어내기": "Lighten",
+    "오늘 남은 것": "Left today",
+    "자기 전에 정리하면 머리가 가벼워져요. 내일로 보내거나 그대로 둘 수 있어요.": "Tidying up before bed clears your head. Send things to tomorrow or leave them.",
+    "오늘 정리하기": "Tidy today",
+    "한 달 넘게 그대로인 것": "Untouched for over a month",
+    "계속 둘지, 이제 할지, 버릴지 가볍게 정해 봐요.": "Decide lightly: keep, do now, or discard.",
+    "점검하기": "Review",
+    "오늘 덜어내기": "Lighten today",
+    "언젠가 점검": "Someday review",
+    "오늘 할 일이 많아요. 옮길 것을 골라 주세요.": "That's a lot for today. Pick what to move.",
+    "오늘 남은 것이에요. 어떻게 할까요?": "Here's what's left today. What would you like to do?",
+    "한 달 넘게 그대로인 것이에요. 하나씩 정해 주세요.": "These have sat for over a month. Decide on each.",
+    "남은 것 모두 내일로": "Move all to tomorrow",
+    "그대로": "Keep",
+    "내일로": "Tomorrow",
+    "계속 둠": "Keep",
+    "오늘 하기": "Do today",
+    "점검 끝": "Done reviewing",
+    "옮기기": "Move",
+    "오늘 남은 할 일이 없어요": "Nothing left for today",
+    "점검할 것이 없어요": "Nothing to review"
+  }, [
+    [/^옮기기 · (\d+)$/, function (n) { return "Move " + n; }],
+    [/^(\d+)개를 옮겼어요$/, function (n) { return "Moved " + n; }],
+    [/^점검했어요(?: · (\d+)개를 바꿨어요)?$/, function (n) { return n ? "Reviewed · changed " + n : "Reviewed"; }]
+  ]);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();
