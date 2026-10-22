@@ -716,6 +716,7 @@
     [/^(\d+)개 보내기$/, function (n) { return "Send " + n; }],
     [/^미리 알림·캘린더 앱에서 (\d+)개가 들어갔는지 확인해 주세요\.$/, function (n) { return "Check that " + n + " item" + (n === "1" ? "" : "s") + " went into Reminders or Calendar."; }],
     [/^(\d+)개를 보냈다고 표시했어요$/, function (n) { return "Marked " + n + " as sent"; }],
+    [/^보낸 것 중 끝내거나 버린 (\d+)개는 미리 알림·캘린더에 그대로 남아 있을 수 있어요\. 아래 스위치를 켜기 전에 보낸 것은 그쪽에서 직접 정리해 주세요\.$/, function (n) { return n + " sent item" + (n === "1" ? "" : "s") + " you finished or discarded may still be in Reminders · Calendar. Items sent before turning on the switch below need to be cleaned up there yourself."; }],
     [/^(\d{4})년 · (\d+)$/, function (y, n) { return y + " · " + n; }]
   ]);
   // ---- 33차: 할 일 다듬기 ----
