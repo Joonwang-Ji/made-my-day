@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-23-1";
+  var BUILD_VERSION = "2026-10-23-2";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-23-1">
+<link rel="stylesheet" href="style.css?v=2026-10-23-2">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -305,6 +305,10 @@ window.addEventListener("beforeinstallprompt", function (e) {
   <div class="section-label">합치기 기록</div>
   <div class="export-note">다른 기기와 기록을 합칠 때마다 무엇이 달라졌는지 이 기기에 남겨요(최근 30번). 체크가 풀리거나 보냈다 표시가 사라졌을 때 원인을 찾는 데 써요.</div>
   <div class="off-ready" id="mergeLog" aria-live="polite"></div>
+
+  <div class="section-label">기기 움직임 기록</div>
+  <div class="export-note">체크를 해제한 화면, 앱을 열 때의 상태, 오래 백그라운드에 있다가 돌아온 때를 이 기기에 남겨요(최근 40개). 합치기 기록에서 체크가 빠졌을 때 직접 푼 것인지 가려내는 데 써요.</div>
+  <div class="off-ready" id="traceLog" aria-live="polite"></div>
 
   <div class="section-label">오프라인 준비 상태</div>
   <div class="export-note">인터넷이 안 될 때도 앱을 열 수 있는지 이 기기의 준비 상태를 보여 줘요. 문제가 생겼을 때 원인을 찾는 데 써요.</div>
@@ -999,17 +1003,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-23-1"></script>
-<script src="i18n.js?v=2026-10-23-1"></script>
-<script src="i18n-en.js?v=2026-10-23-1"></script>
-<script src="bible-medals-data.js?v=2026-10-23-1"></script>
-<script src="avatar-data.js?v=2026-10-23-1"></script>
-<script src="review-data.js?v=2026-10-23-1"></script>
-<script src="i18n-en-help.js?v=2026-10-23-1"></script>
-<script src="i18n-en-review.js?v=2026-10-23-1"></script>
-<script src="i18n-en-bible.js?v=2026-10-23-1"></script>
-<script src="i18n-en-avatar.js?v=2026-10-23-1"></script>
-<script src="i18n-en-extra.js?v=2026-10-23-1"></script>
+<script type="module" src="firebase-service.js?v=2026-10-23-2"></script>
+<script src="i18n.js?v=2026-10-23-2"></script>
+<script src="i18n-en.js?v=2026-10-23-2"></script>
+<script src="bible-medals-data.js?v=2026-10-23-2"></script>
+<script src="avatar-data.js?v=2026-10-23-2"></script>
+<script src="review-data.js?v=2026-10-23-2"></script>
+<script src="i18n-en-help.js?v=2026-10-23-2"></script>
+<script src="i18n-en-review.js?v=2026-10-23-2"></script>
+<script src="i18n-en-bible.js?v=2026-10-23-2"></script>
+<script src="i18n-en-avatar.js?v=2026-10-23-2"></script>
+<script src="i18n-en-extra.js?v=2026-10-23-2"></script>
 <script>
 (function () {
   "use strict";
@@ -3242,12 +3246,74 @@ window.addEventListener("beforeinstallprompt", function (e) {
     }).catch(function (err) { console.warn("archive reconcile after import failed", err && err.code); });
   }
 
+  // ---- 40차: 기기 움직임 기록(이 기기에만, 최근 60개) ----
+  // 체크가 풀렸을 때 "내가 탭해서 푼 것인지, 앱이 오래된 상태로 저장한 것인지" 가려내기 위한 진단용.
+  //  · 체크 해제(어느 화면에서 눌렀는지) · 항목 삭제로 기록 지움 · JSON 가져오기 · 앱을 열 때 어떤 상태로 열었는지 · 오래 백그라운드에 있다가 돌아옴
+  //  · 합치기 줄에는 '서버 값을 마지막으로 받은 지 몇 분' 같은 상태를 함께 붙인다.
+  var TRACE_KEY = "mmd_trace_v1";
+  var traceStartMode = "", traceSrvAt = 0, traceCacheSnaps = 0, traceHiddenAt = 0, traceHiddenSum = 0, tracePageAt = Date.now();
+  var doneSrc = "";   // 체크를 바꾸는 화면이 applyDone 호출 직전에 적어 둔다
+  function traceRead() { try { var a = JSON.parse(localStorage.getItem(TRACE_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function traceAdd(o) {
+    try {
+      o.t = new Date().toISOString();
+      var a = traceRead(); a.push(o);
+      localStorage.setItem(TRACE_KEY, JSON.stringify(a.slice(-60)));
+    } catch (e) {}
+  }
+  function traceUncheck(itemId, dk) {
+    var it = findItem(itemId);
+    traceAdd({ k: "un", dk: dk, id: itemId, n: it ? String(it.name).slice(0, 20) : String(itemId).slice(0, 6), s: doneSrc || "알 수 없는 경로" });
+  }
+  function traceUnNote(dk, itemId) {   // 합치기에서 '이 기기가 푼 것'으로 처리된 체크에 붙이는 설명
+    var a = traceRead();
+    for (var i = a.length - 1; i >= 0; i--) {
+      var x = a[i];
+      if (x && x.k === "un" && x.dk === dk && x.id === itemId) {
+        var d = new Date(x.t);
+        return "(" + pad(d.getHours()) + ":" + pad(d.getMinutes()) + " " + x.s + "에서 해제)";
+      }
+    }
+    return "(이 기기에서 해제한 기록 없음)";
+  }
+  function traceCtx() {
+    var now = Date.now(), hid = traceHiddenSum + (traceHiddenAt ? now - traceHiddenAt : 0);
+    return { m: traceStartMode, s: traceSrvAt ? Math.round((now - traceSrvAt) / 60000) : -1, h: Math.round(hid / 60000), p: Math.round((now - tracePageAt) / 60000), c: traceCacheSnaps, v: document.hidden ? 1 : 0, b: window.__mmdBuild || "" };
+  }
+  document.addEventListener("visibilitychange", function () {
+    try {
+      if (document.hidden) { traceHiddenAt = Date.now(); return; }
+      if (!traceHiddenAt) return;
+      var dur = Date.now() - traceHiddenAt; traceHiddenAt = 0; traceHiddenSum += dur;
+      if (dur >= 60000) traceAdd({ k: "show", m: Math.round(dur / 60000) });
+    } catch (e) {}
+  });
+  function traceEsc(v) { return String(v).replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); }
+  function traceWhen(iso) { var d = new Date(iso); return (d.getMonth() + 1) + "/" + d.getDate() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function renderTraceLog() {
+    var box = document.getElementById("traceLog");
+    if (!box) return;
+    var log = traceRead().slice().reverse().slice(0, 40);
+    if (!log.length) { box.innerHTML = '<div class="off-hint">아직 기록이 없어요</div>'; return; }
+    box.innerHTML = log.map(function (x) {
+      var txt;
+      if (x.k === "un") txt = "체크 해제 · " + String(x.dk || "").slice(5) + " " + x.n + " · " + x.s;
+      else if (x.k === "show") txt = "백그라운드 " + x.m + "분 뒤 앱으로 돌아옴";
+      else if (x.k === "open") txt = "앱 열림 · " + x.m;
+      else if (x.k === "srv") txt = x.m;
+      else if (x.k === "purge") txt = "항목 삭제로 지난 기록을 지움 · " + x.n + " · " + x.d + "일";
+      else if (x.k === "imp") txt = "JSON 가져오기" + (x.s ? " · " + x.s : "");
+      else txt = String(x.k || "");
+      return '<div class="off-row info"><span class="off-mark" aria-hidden="true">·</span><span class="off-name">' + traceEsc(traceWhen(x.t)) + '</span><span class="off-note">' + traceEsc(txt) + '</span></div>';
+    }).join("");
+  }
+
   // ---- 37차: 합치기 기록(이 기기에만, 최근 30번) ----
   // 서버가 바뀐 채로 저장돼 합쳤을 때, 무엇이 달라졌는지 남긴다. 루틴 체크가 풀리거나 보냈다 표시가 사라지는 원인을 찾기 위한 진단용.
   var MERGE_LOG_KEY = "mmd_merge_log_v1";
   function mergeLogRead() { try { var a = JSON.parse(localStorage.getItem(MERGE_LOG_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
   function mergeLogAdd(local, server, out) {
-    var e = { t: new Date().toISOString(), lost: [], gain: [], gone: [], td: [] };
+    var e = { t: new Date().toISOString(), lost: [], gain: [], gone: [], td: [], cx: traceCtx() };
     function names(ids) { return ids.map(function (id) { var it = findItem(id); return it ? it.name : String(id).slice(0, 6); }); }
     function ids(h, d) { return ((h && h[d] && h[d].completed) || []); }
     var lh = local.history || {}, sh = server.history || {}, oh = out.history || {}, days = {};
@@ -3258,7 +3324,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var lostServer = s2.filter(function (x) { return o.indexOf(x) === -1; }); // 다른 기기가 체크했는데 합친 결과엔 없음
       var gain = o.filter(function (x) { return l.indexOf(x) === -1; });         // 다른 기기 체크가 이 기기에 들어옴
       if (lostLocal.length) e.lost.push(d.slice(5) + " " + names(lostLocal).join(","));
-      if (lostServer.length) e.gone.push(d.slice(5) + " " + names(lostServer).join(","));
+      if (lostServer.length) e.gone.push(d.slice(5) + " " + lostServer.map(function (x) { return names([x])[0] + traceUnNote(d, x); }).join(","));
       if (gain.length) e.gain.push(d.slice(5) + " " + names(gain).join(","));
     });
     function tmap(a) { var m = {}; (Array.isArray(a) ? a : []).forEach(function (x) { if (x && x.id) m[x.id] = x; }); return m; }
@@ -3290,6 +3356,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (e.gain && e.gain.length) rows.push("다른 기기 체크가 들어옴: " + e.gain.join(" / "));
       if (e.td && e.td.length) rows.push("할 일: " + e.td.join(" / "));
       if (!rows.length) rows.push("달라진 체크·할 일 없음");
+      var cx = e.cx;
+      if (cx && typeof cx === "object") {
+        var st = [];
+        if (cx.m) st.push("열린 상태: " + cx.m);
+        st.push(cx.s >= 0 ? "서버 값을 마지막으로 받은 지 " + cx.s + "분" : "이 화면은 서버 값을 아직 못 받음");
+        if (cx.h > 0) st.push("백그라운드 " + cx.h + "분");
+        st.push("열린 지 " + cx.p + "분");
+        if (cx.c > 0) st.push("기기 캐시 응답만 " + cx.c + "번");
+        if (cx.v) st.push("백그라운드에서 저장");
+        rows.push("상태: " + st.join(" · "));
+      }
       return '<div class="off-row info"><span class="off-mark" aria-hidden="true">·</span><span class="off-name">' + esc(when) + '</span><span class="off-note">' + esc(rows.join(" ※ ")) + '</span></div>';
     }).join("");
   }
@@ -3487,6 +3564,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (isAdminUser) state.approved = true;
       synced = true; stopSyncNotice();
       updateOfflinePill();
+      traceStartMode = navigator.onLine === false ? "기기 기록(오프라인)" : "기기 기록";
+      traceAdd({ k: "open", m: traceStartMode });
       finishRender();
     }
     var localStartTimer = null;
@@ -3496,9 +3575,10 @@ window.addEventListener("beforeinstallprompt", function (e) {
     window.addEventListener("offline", onWentOffline);
 
     stateUnsub = window.__fb.subscribeState(uid, function (data, hasPendingWrites, fromCache) {
-      if (fromCache) return;                 // 기기 안의 오래된 캐시 응답은 무시하고 서버에서 확정된 값만 쓴다
+      if (fromCache) { traceCacheSnaps++; return; }   // 기기 안의 오래된 캐시 응답은 무시하고 서버에서 확정된 값만 쓴다(40차: 몇 번 무시했는지 센다)
       if (hasPendingWrites) return; // this tab's own write echoing back; local state is already current
       if (uid !== currentUid) return;
+      traceSrvAt = Date.now(); traceCacheSnaps = 0; traceHiddenSum = 0;   // 40차: 서버에서 확정된 값을 받은 시각
       if (!serverSeen) {
         serverSeen = true;
         clearTimeout(localStartTimer);
@@ -3511,9 +3591,10 @@ window.addEventListener("beforeinstallprompt", function (e) {
         offlineMode = false; updateOfflinePill();
         if (!synced) {   // 기기 상태로 열지 않았던 경우(온라인으로 바로 열림): 여기서 기기 상태를 꺼낸다
           var pb = loadSyncBase(uid), pc = loadCachedStateFor(uid);
-          if (pb && pc) { syncedBase = pb; syncedRaw = canon(pb); state = pc; synced = true; stopSyncNotice(); }
+          if (pb && pc) { syncedBase = pb; syncedRaw = canon(pb); state = pc; synced = true; stopSyncNotice(); traceStartMode = "기기 기록(못 올린 변경 있음)"; traceAdd({ k: "open", m: traceStartMode }); }
         }
         if (synced) {
+          traceAdd({ k: "srv", m: "서버 첫 응답을 받아 기기 변경과 합쳐 저장" });
           if (isAdminUser) state.approved = true;
           var bk0 = "mmd_snapshot_" + uid + "_" + todayKey();
           var doneBk0 = false; try { doneBk0 = !!localStorage.getItem(bk0); } catch (e) {}
@@ -3555,6 +3636,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         if (state.approved) saveToLocalStorage(state);
         persistSyncBase();   // 23차: 합치기 기준을 기기에도 저장(오프라인으로 열 때 씀)
         if (!wasSynced) {
+          traceStartMode = "서버 값"; traceAdd({ k: "open", m: "서버 값" });
           var bk = "mmd_snapshot_" + uid + "_" + todayKey();
           var doneBk = false; try { doneBk = !!localStorage.getItem(bk); } catch (e) {}
           if (!doneBk) window.__fb.saveSnapshot(uid, todayKey(), JSON.parse(JSON.stringify(syncedBase))).then(function () { try { localStorage.setItem(bk, "1"); } catch (e) {} }).catch(function (err) { console.warn("daily snapshot skipped", err && err.code); });
@@ -3675,7 +3757,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var entry = dayEntry(dk);
     var idx = entry.completed.indexOf(itemId);
     if (done && idx === -1) entry.completed.push(itemId);
-    if (!done && idx !== -1) entry.completed.splice(idx, 1);
+    if (!done && idx !== -1) { entry.completed.splice(idx, 1); try { traceUncheck(itemId, dk); } catch (e) {} }   // 40차: 해제 경로 기록
     // overtime 플래그는 done===true && overtime===true일 때만 세팅된다. 체크 취소(done=false) 시
     // 항상 해제되고, overtime 없이(예: 홈 화면 탭, 기록 화면, 정상 시간 내 완료) 재완료하면 다시
     // 정상완료로 돌아온다 — "체크취소 후 재완료 시 정상완료로" 요구사항.
@@ -3738,6 +3820,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   // 기록까지 함께 삭제를 선택했을 때: 모든 날짜에서 이 항목의 완료/초과완료/실측시간 흔적을
   // 지운다. dayEntry()를 거쳐야 아카이브된 연도의 기록도 다음 저장 때 제대로 다시 반영된다.
   function purgeItemHistory(itemId) {
+    var pgDays = 0, pgItem = findItem(itemId);
     Object.keys(state.history || {}).forEach(function (dk) {
       var raw = state.history[dk];
       if (!raw) return;
@@ -3749,7 +3832,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (!hasCompleted && !hasOvertime && !hasTimed && !hasSecs && !hasAt) return;
       var entry = dayEntry(dk);
       var ci = entry.completed.indexOf(itemId);
-      if (ci !== -1) entry.completed.splice(ci, 1);
+      if (ci !== -1) { entry.completed.splice(ci, 1); pgDays++; }
       if (Array.isArray(entry.overtime)) {
         var oi = entry.overtime.indexOf(itemId);
         if (oi !== -1) entry.overtime.splice(oi, 1);
@@ -3768,6 +3851,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         if (Object.keys(entry.at).length === 0) delete entry.at;
       }
     });
+    if (pgDays > 0) { try { traceAdd({ k: "purge", n: pgItem ? String(pgItem.name).slice(0, 20) : String(itemId).slice(0, 6), d: pgDays }); } catch (e) {} }
   }
   var pendingDeleteItemId = null;
   function removeItemFromCategory(itemId, keepPast) {
@@ -10350,6 +10434,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.categories)) {
       toast("이 앱에서 내보낸 파일이 아닌 것 같아요"); return false;
     }
+    try { traceAdd({ k: "imp", s: String(sourceLabel || "").slice(0, 20) }); } catch (e) {}
     state.categories = normalizeImportedCategories(parsed.categories);
     state.history = migrateHistory((parsed.history && typeof parsed.history === "object") ? parsed.history : {});
     if (Array.isArray(parsed.restDays)) state.restDays = parsed.restDays;
@@ -10435,7 +10520,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     keys.forEach(function (dk) {
       var want = bfPending[dk];
       if (want === isDone(dk, id)) return;
-      applyDone(id, want, dk, false);   // 카운트다운 없이 처리 → 지정된 시간으로 기록
+      doneSrc = "기록 항목별 저장"; applyDone(id, want, dk, false); doneSrc = "";   // 카운트다운 없이 처리 → 지정된 시간으로 기록
       if (want) added++; else removed++;
     });
     bfPending = {};
@@ -12910,7 +12995,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         var wasDone = isDone(todayKey(), tItemId);
         var doHomeToggle = function () {
           var wasFull = catFullyDone(tCat);
-          markDone(tItemId, !wasDone);
+          doneSrc = "홈 화면 탭"; markDone(tItemId, !wasDone); doneSrc = "";
           // 즉시 반응: 눌린 줄의 점·이름 표시만 먼저 바꿔 화면에 바로 보이게 한다(나머지 계산은 아래에서 이어서).
           if (el.isConnected) {
             var dotEl = el.querySelector(".mini-dot");
@@ -13242,7 +13327,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var wasD = isDone(backfillDate, id);
       var bfDateNow = backfillDate;
       var doBfToggle = function () {
-        markDone(id, !wasD, bfDateNow);
+        doneSrc = "기록 날짜 화면"; markDone(id, !wasD, bfDateNow); doneSrc = "";
         if (!wasD) checkRewardEvents();
         renderBackfill();
       };
@@ -13333,7 +13418,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "stats-prev-week") { statsWeekStart.setDate(statsWeekStart.getDate()-7); renderStats(); }
     else if (action === "stats-next-week") { statsWeekStart.setDate(statsWeekStart.getDate()+7); renderStats(); }
     else if (action === "undo-do") { runUndo(); }
-    else if (action === "open-export") { showView("view-export"); renderExport(); renderBackupAge(); renderOfflineReady(); renderMergeLog(); }
+    else if (action === "open-export") { showView("view-export"); renderExport(); renderBackupAge(); renderOfflineReady(); renderMergeLog(); renderTraceLog(); }
     else if (action === "off-ready-check") { renderOfflineReady(true); }
     else if (action === "copy-json") { copyExport(); }
     else if (action === "do-import") { doImport(); }

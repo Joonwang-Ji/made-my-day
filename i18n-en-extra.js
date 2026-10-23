@@ -795,6 +795,12 @@
     [/^(\d+)개를 옮겼어요$/, function (n) { return "Moved " + n; }],
     [/^점검했어요(?: · (\d+)개를 바꿨어요)?$/, function (n) { return n ? "Reviewed · changed " + n : "Reviewed"; }]
   ]);
+  // ---- 40차: 기기 움직임 기록(체크 해제 경로·앱 열림·백그라운드 복귀) ----
+  I.register({
+    "기기 움직임 기록": "Device activity log",
+    "체크를 해제한 화면, 앱을 열 때의 상태, 오래 백그라운드에 있다가 돌아온 때를 이 기기에 남겨요(최근 40개). 합치기 기록에서 체크가 빠졌을 때 직접 푼 것인지 가려내는 데 써요.": "This device keeps a note of the screen where a check was removed, how the app was opened, and when it came back after a long time in the background (last 40). Use it to tell whether you unchecked something yourself when a merge dropped a check.",
+    "아직 기록이 없어요": "No entries yet"
+  });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();
