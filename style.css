@@ -1565,3 +1565,6 @@ body.td-typing.td-pin-off .td-pin { display: none; }
 .td-slots.en .td-slot b { font-size: 0.65rem; letter-spacing: -0.01em; }
 .td-slots.en .td-slot i { font-size: 0.625rem; }
 .td-slot { padding-left: 1px; padding-right: 1px; }
+
+/* ===== 습관 목표 일수 직접 입력 ===== */
+.hb-goal-input { text-align: center; font-weight: 800; margin-bottom: 4px; }

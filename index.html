@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-23-2";
+  var BUILD_VERSION = "2026-10-24-1";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-23-2">
+<link rel="stylesheet" href="style.css?v=2026-10-24-1">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -1009,11 +1009,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <script src="bible-medals-data.js?v=2026-10-23-2"></script>
 <script src="avatar-data.js?v=2026-10-23-2"></script>
 <script src="review-data.js?v=2026-10-23-2"></script>
-<script src="i18n-en-help.js?v=2026-10-23-2"></script>
+<script src="i18n-en-help.js?v=2026-10-24-1"></script>
 <script src="i18n-en-review.js?v=2026-10-23-2"></script>
 <script src="i18n-en-bible.js?v=2026-10-23-2"></script>
 <script src="i18n-en-avatar.js?v=2026-10-23-2"></script>
-<script src="i18n-en-extra.js?v=2026-10-23-2"></script>
+<script src="i18n-en-extra.js?v=2026-10-24-1"></script>
 <script>
 (function () {
   "use strict";
@@ -4978,7 +4978,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   //  · 홈 고정은 HABIT_PIN_MAX개까지. 목표에 닿으면 한 번 축하하며 [이어가기][끝내기]를 묻는다(goalAsk = 아직 안 고름).
   //    저장할 때 이미 목표를 넘었으면 축하 없이 goalAsk만 세워 상세 창에서 묻는다.
   //  · 29차: 끝내기 = endedAt에 그날을 적고 연속일·최고 기록을 멈춰 보관(endStreak·endBest), 홈 고정 해제. 이어가기 = 다음 단계 목표 자동.
-  var HABIT_PIN_MAX = 2, HABIT_MAX = 10, HABIT_TOTAL_MAX = 30, HABIT_GOALS = [0, 21, 30, 66, 100];
+  var HABIT_PIN_MAX = 2, HABIT_MAX = 10, HABIT_TOTAL_MAX = 30, HABIT_GOALS = [0, 21, 30, 66, 100], HABIT_GOAL_MAX = 365;   // 칩 목록 + 직접 입력(1~365일)
   function normalizeHabits(list) {
     if (!Array.isArray(list)) return [];
     var re = /^\d{4}-\d{2}-\d{2}$/, out = [], seen = {}, pins = 0;
@@ -4992,7 +4992,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         id: h.id,
         name: typeof h.name === "string" ? h.name.slice(0, 20) : "",
         itemIds: ids,
-        goal: HABIT_GOALS.indexOf(h.goal) !== -1 ? h.goal : 0,
+        goal: (HABIT_GOALS.indexOf(h.goal) !== -1 || (typeof h.goal === "number" && h.goal % 1 === 0 && h.goal >= 1 && h.goal <= HABIT_GOAL_MAX)) ? h.goal : 0,
         pinned: !ended && h.pinned === true && pins < HABIT_PIN_MAX,
         createdAt: (typeof h.createdAt === "string" && re.test(h.createdAt)) ? h.createdAt : todayKey()
       };
@@ -5134,6 +5134,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (!h && (habitActive().length >= HABIT_MAX || habitList().length >= HABIT_TOTAL_MAX)) { toast("습관은 " + HABIT_MAX + "개까지 만들 수 있어요"); return; }
       habitView = { mode: "edit", id: h ? h.id : null, form: {
         name: h ? h.name : "", itemIds: h ? h.itemIds.slice() : [], goal: h ? h.goal : 66,
+        goalCustom: !!(h && h.goal && HABIT_GOALS.indexOf(h.goal) === -1), goalRaw: (h && h.goal && HABIT_GOALS.indexOf(h.goal) === -1) ? String(h.goal) : "",
         start: h ? h.createdAt : todayKey(),
         pinned: h ? h.pinned : habitActive().filter(function (x) { return x.pinned; }).length < HABIT_PIN_MAX
       } };
@@ -5154,6 +5155,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (i) habitView.form.name = i.value;
     var s = document.getElementById("habitStartInput");
     if (s && /^\d{4}-\d{2}-\d{2}$/.test(s.value)) habitView.form.start = s.value;
+    var g = document.getElementById("habitGoalInput");
+    if (g && habitView.form.goalCustom) {
+      var raw = String(g.value || "").replace(/[^\d]/g, "").slice(0, 3), n = parseInt(raw, 10);
+      habitView.form.goalRaw = raw;
+      habitView.form.goal = (n >= 1 && n <= HABIT_GOAL_MAX) ? n : 0;
+    }
   }
   function renderHabitOverlay() {
     if (!habitView) return;
@@ -5284,8 +5291,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
       '<span class="tp-chip hb-start-today' + (f.start === todayKey() ? ' on' : '') + '" data-action="habit-start-today">오늘</span></div>' +
       '<div class="hb-pick-note">지난 날짜를 고르면 그날부터 앱 기록으로 다시 세요. 앞날을 고르면 그날부터 세요.</div>';
     html += '<div class="day-ov-label">목표 일수</div><div class="hb-goals">' + HABIT_GOALS.map(function (g) {
-      return '<span class="tp-chip' + (f.goal === g ? ' on' : '') + '" data-action="habit-goal" data-id="' + g + '">' + (g ? g + "일" : "안 정함") + '</span>';
-    }).join("") + '</div>';
+      return '<span class="tp-chip' + (!f.goalCustom && f.goal === g ? ' on' : '') + '" data-action="habit-goal" data-id="' + g + '">' + (g ? g + "일" : "안 정함") + '</span>';
+    }).join("") + '<span class="tp-chip' + (f.goalCustom ? ' on' : '') + '" data-action="habit-goal-custom" aria-pressed="' + !!f.goalCustom + '">직접 입력</span></div>';
+    if (f.goalCustom) {
+      html += '<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" id="habitGoalInput" class="cat-name-input hb-goal-input" placeholder="예: 60" value="' + escapeHtml(f.goalRaw || "") + '" aria-label="목표 일수 직접 입력">' +
+        '<div class="hb-pick-note">1~' + HABIT_GOAL_MAX + '일 사이의 숫자를 적어 주세요.</div>';
+    }
     html += '<div class="theme-option' + (f.pinned ? ' active' : '') + '" data-action="habit-form-pin"><span>홈에 고정</span><span class="dot"></span></div>';
     if (habitView.id) html += '<div class="hb-pick-note">항목을 바꾸면 지난 날짜도 바뀐 항목으로 다시 계산돼요.</div>';
     html += '<div class="tp-actions"><div class="btn" data-action="habit-edit-cancel">취소</div><div class="btn primary" data-action="habit-save">저장</div></div>';
@@ -5312,6 +5323,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (!name) { toast("이름을 적어 주세요"); var i = document.getElementById("habitNameInput"); if (i) i.focus(); return; }
     if (!f.itemIds.length) { toast("항목을 하나 이상 골라 주세요"); return; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.start || "")) { toast("시작 날짜를 골라 주세요"); return; }
+    if (f.goalCustom && !(f.goal >= 1 && f.goal <= HABIT_GOAL_MAX)) { toast("목표 일수는 1~" + HABIT_GOAL_MAX + "일 사이로 적어 주세요"); var gi = document.getElementById("habitGoalInput"); if (gi) gi.focus(); return; }
     if (f.pinned && habitPinnedCount(habitView.id) >= HABIT_PIN_MAX) { toast("홈에는 " + HABIT_PIN_MAX + "개까지 고정할 수 있어요"); return; }
     if (!Array.isArray(state.habits)) state.habits = [];
     var h = habitView.id ? habitById(habitView.id) : null, isNew = !h;
@@ -5431,7 +5443,15 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (el) try { el.focus({ preventScroll: true }); } catch (e) {}
       return true;
     }
-    if (action === "habit-goal") { habitFormSyncName(); habitView.form.goal = parseInt(id, 10) || 0; renderHabitOverlay(); return true; }
+    if (action === "habit-goal") { habitFormSyncName(); habitView.form.goalCustom = false; habitView.form.goal = parseInt(id, 10) || 0; renderHabitOverlay(); return true; }
+    if (action === "habit-goal-custom") {
+      habitFormSyncName();
+      var fm = habitView.form;
+      if (!fm.goalCustom) { fm.goalCustom = true; fm.goalRaw = fm.goal ? String(fm.goal) : ""; }
+      renderHabitOverlay();
+      setTimeout(function () { var gi = document.getElementById("habitGoalInput"); if (gi) try { gi.focus(); gi.select(); } catch (e) {} }, 60);
+      return true;
+    }
     if (action === "habit-start-today") { habitFormSyncName(); habitView.form.start = todayKey(); renderHabitOverlay(); return true; }
     if (action === "habit-form-pin") {
       habitFormSyncName();
@@ -10996,7 +11016,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["쉬는 날 · 쉼표 · 징검다리", "쉬는 날과 쉼표를 쓴 날은 끊기지도 늘지도 않아요. 징검다리는 습관 연속일에는 쓰이지 않아요."],
       ["시작 날짜", "연속일은 시작 날짜부터 세요. 만들거나 편집할 때 고를 수 있어요. 지난 날짜를 고르면 그날부터 앱에 체크한 기록으로 다시 세고, 앞날을 고르면 그날까지 ‘D-3’처럼 남은 날을 보여 줘요. ‘처음부터 다시’를 누르면 오늘부터 새로 세요."],
       ["홈에 고정", "홈에는 2개까지 고정할 수 있어요. 습관이 자리 잡으면 고정을 풀어 홈을 가볍게 하세요. 모든 습관은 통계 > 성공 맨 아래에서 보고 새로 만들 수 있어요."],
-      ["목표 일수", "21 · 30 · 66 · 100일 중에서 고를 수 있어요. 연속일이 목표에 닿으면 축하해 드려요."],
+      ["목표 일수", "21 · 30 · 66 · 100일 중에서 고르거나, ‘직접 입력’으로 1~365일 사이 원하는 일수(예: 60일)를 적을 수 있어요. 연속일이 목표에 닿으면 축하해 드려요."],
       ["목표를 달성하면", "<b>이어가기</b>를 고르면 목표가 다음 단계(21 → 30 → 66 → 100일)로 바뀌고, 100일 다음은 목표 없이 계속 세요. <b>끝내기</b>를 고르면 그날의 연속일과 최고 기록을 멈추고 통계의 ‘완료한 습관’에 보관해요(홈 고정도 풀려요). 시작 날짜를 지난 날로 잡아 이미 목표를 넘었으면 축하 없이 습관 창에서 바로 물어봐요."],
       ["완료한 습관", "끝낸 습관은 ‘다시 이어가기’로 되살릴 수 있어요. 목표를 정하지 않은 습관도 습관 창의 ‘끝내고 보관하기’로 끝낼 수 있어요."]
     ], see: ["streak", "pass"] },

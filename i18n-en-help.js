@@ -179,7 +179,7 @@
       ["Rest days · Pause · Stepping Stone", "Rest days and Pause days neither break nor add to the streak. Stepping Stones don't apply to habit streaks."],
       ["Start date", "The streak counts from the start date, which you can pick when you make or edit a habit. Pick a past date to recount from your check-ins in the app since that day; pick a future date to see the days left, like “D-3”. Tap “Start over” to count fresh from today."],
       ["Pin to Home", "You can pin up to 2 habits on Home. Once a habit has settled in, unpin it to keep Home light. All habits are at the bottom of Stats > Success, where you can also make new ones."],
-      ["Goal days", "Choose 21 · 30 · 66 · 100 days. You'll get a celebration when your streak reaches the goal."],
+      ["Goal days", "Choose 21 · 30 · 66 · 100 days, or tap “Custom” to type any number from 1 to 365 (e.g. 60). You'll get a celebration when your streak reaches the goal."],
       ["When you reach the goal", "Choose <b>Keep going</b> to move the goal to the next step (21 → 30 → 66 → 100 days); after 100 it keeps counting with no goal. Choose <b>Finish</b> to freeze that day's streak and best record and keep the habit under “Finished habits” in Stats (it's also unpinned from Home). If a past start date means you've already passed the goal, you're asked right in the habit window, without a celebration."],
       ["Finished habits", "Bring a finished habit back with “Resume”. Habits without a goal can also be finished with “Finish and keep” in the habit window."]
     ], see: ["streak", "pass"] },
