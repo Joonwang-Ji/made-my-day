@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-24-1";
+  var BUILD_VERSION = "2026-10-30-1";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -3265,6 +3265,18 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var it = findItem(itemId);
     traceAdd({ k: "un", dk: dk, id: itemId, n: it ? String(it.name).slice(0, 20) : String(itemId).slice(0, 6), s: doneSrc || "알 수 없는 경로" });
   }
+  // 2026-10-30: 같은 날 같은 항목을 푼 지 30분 안에 다시 체크하면 기록한다(전부 남기면 최근 60개가 금방 밀려서 다시 체크만 남긴다)
+  function traceRecheck(itemId, dk) {
+    var a = traceRead(), now = Date.now();
+    for (var i = a.length - 1; i >= 0; i--) {
+      var x = a[i];
+      if (x && x.k === "un" && x.dk === dk && x.id === itemId && now - new Date(x.t).getTime() < 30 * 60000) {
+        var it = findItem(itemId);
+        traceAdd({ k: "re", dk: dk, id: itemId, n: it ? String(it.name).slice(0, 20) : String(itemId).slice(0, 6), s: doneSrc || "알 수 없는 경로" });
+        return;
+      }
+    }
+  }
   function traceUnNote(dk, itemId) {   // 합치기에서 '이 기기가 푼 것'으로 처리된 체크에 붙이는 설명
     var a = traceRead();
     for (var i = a.length - 1; i >= 0; i--) {
@@ -3298,6 +3310,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     box.innerHTML = log.map(function (x) {
       var txt;
       if (x.k === "un") txt = "체크 해제 · " + String(x.dk || "").slice(5) + " " + x.n + " · " + x.s;
+      else if (x.k === "re") txt = "풀었다가 다시 체크 · " + String(x.dk || "").slice(5) + " " + x.n + " · " + x.s;
       else if (x.k === "show") txt = "백그라운드 " + x.m + "분 뒤 앱으로 돌아옴";
       else if (x.k === "open") txt = "앱 열림 · " + x.m;
       else if (x.k === "srv") txt = x.m;
@@ -3312,8 +3325,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
   // 서버가 바뀐 채로 저장돼 합쳤을 때, 무엇이 달라졌는지 남긴다. 루틴 체크가 풀리거나 보냈다 표시가 사라지는 원인을 찾기 위한 진단용.
   var MERGE_LOG_KEY = "mmd_merge_log_v1";
   function mergeLogRead() { try { var a = JSON.parse(localStorage.getItem(MERGE_LOG_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
-  function mergeLogAdd(local, server, out) {
-    var e = { t: new Date().toISOString(), lost: [], gain: [], gone: [], td: [], cx: traceCtx() };
+  function mergeLogAdd(local, server, out, ap) {
+    var e = { t: new Date().toISOString(), lost: [], gain: [], gone: [], td: [], tin: [], tmine: [], tdup: [], ok: [], ap: ap || "", cx: traceCtx() };
     function names(ids) { return ids.map(function (id) { var it = findItem(id); return it ? it.name : String(id).slice(0, 6); }); }
     function ids(h, d) { return ((h && h[d] && h[d].completed) || []); }
     var lh = local.history || {}, sh = server.history || {}, oh = out.history || {}, days = {};
@@ -3338,7 +3351,23 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (diff.length) e.td.push(String(c.t || id).slice(0, 12) + " " + diff.join(" "));
     });
     Object.keys(ts).forEach(function (id) { if (!to[id]) e.td.push(String(ts[id].t || id).slice(0, 12) + " 사라짐"); });
-    ["lost", "gain", "gone", "td"].forEach(function (k) { if (e[k].length > 6) e[k] = e[k].slice(0, 6).concat(["…외 " + (e[k].length - 6)]); });
+    // 2026-10-30: 같은 id끼리만 비교하면 안 보이는 것 — 서버에서 새로 들어온 할 일 · 이 기기에만 있던 할 일 · 같은 제목이 겹친 것
+    function ttl(x, id) { return String((x && x.t) || id).slice(0, 14); }
+    Object.keys(to).forEach(function (id) { if (ts[id] && !tl[id]) e.tin.push(ttl(to[id], id)); });
+    Object.keys(tl).forEach(function (id) { if (!ts[id]) e.tmine.push(ttl(tl[id], id) + (to[id] ? "" : "(결과엔 없음)")); });
+    var seenT = {}, dupT = {};
+    Object.keys(to).forEach(function (id) {
+      var x = to[id]; if (!x || x.done || x.drop) return;
+      var key = String(x.t || "").replace(/\s+/g, " ").trim();
+      if (!key) return;
+      if (seenT[key]) dupT[key] = 1; else seenT[key] = 1;
+    });
+    Object.keys(dupT).forEach(function (k) { e.tdup.push(k.slice(0, 14)); });
+    // 체크·할 일 말고 서버에서 달라져 있던 항목 이름(어느 항목 때문에 합쳐졌는지 보려는 것)
+    var skipK = { history: 1, todos: 1, todoGone: 1, historyArchivedYears: 1 }, kk = {};
+    [local, server].forEach(function (o) { Object.keys(o || {}).forEach(function (k) { kk[k] = 1; }); });
+    Object.keys(kk).forEach(function (k) { if (!skipK[k] && canon(local[k]) !== canon(server[k])) e.ok.push(k); });
+    ["lost", "gain", "gone", "td", "tin", "tmine", "tdup", "ok"].forEach(function (k) { if (e[k].length > 6) e[k] = e[k].slice(0, 6).concat(["…외 " + (e[k].length - 6)]); });
     var log = mergeLogRead(); log.push(e);
     try { localStorage.setItem(MERGE_LOG_KEY, JSON.stringify(log.slice(-30))); } catch (x) {}
   }
@@ -3355,7 +3384,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (e.gone && e.gone.length) rows.push("다른 기기 체크가 빠짐: " + e.gone.join(" / "));
       if (e.gain && e.gain.length) rows.push("다른 기기 체크가 들어옴: " + e.gain.join(" / "));
       if (e.td && e.td.length) rows.push("할 일: " + e.td.join(" / "));
+      if (e.tin && e.tin.length) rows.push("서버에서 들어온 할 일: " + e.tin.join(" / "));
+      if (e.tmine && e.tmine.length) rows.push("이 기기에만 있던 할 일: " + e.tmine.join(" / "));
+      if (e.tdup && e.tdup.length) rows.push("같은 제목이 겹침: " + e.tdup.join(" / "));
       if (!rows.length) rows.push("달라진 체크·할 일 없음");
+      if (e.ok && e.ok.length) rows.push("그 밖에 달라져 있던 항목: " + e.ok.join(", "));
+      if (e.ap) rows.push("화면 반영: " + e.ap);
       var cx = e.cx;
       if (cx && typeof cx === "object") {
         var st = [];
@@ -3389,14 +3423,25 @@ window.addEventListener("beforeinstallprompt", function (e) {
     }).then(function (res) {
       saveInFlight = false;
       if (uidAtStart !== currentUid) return;
+      if (flushLogPending) { flushLogPending = false; try { traceAdd({ k: "srv", m: "바로 시작한 저장이 끝남" }); } catch (e) {} }
       var merged = !!res.server && canon(res.server) !== rawAtStart;
       if (merged) {
-        try { mergeLogAdd(snapshot, res.server, res.out); } catch (e) {}   // 37차: 무엇이 달라졌는지 이 기기에 기록
+        // 2026-10-30: 합친 결과를 화면에 반영할 수 있는 상태인지 먼저 따져 기록에 남긴다(못 하면 어떤 항목이 그 사이 바뀌었는지도)
+        var applyOk = !saveDebounceTimer && canon(state) === canon(snapshot), apNote = "반영됨";
+        if (!applyOk) {
+          if (saveDebounceTimer) apNote = "안 됨 · 저장 대기 중인 변경이 있어서";
+          else {
+            var dk2 = [];
+            Object.keys(state).concat(Object.keys(snapshot)).forEach(function (k) { if (dk2.indexOf(k) === -1 && canon(state[k]) !== canon(snapshot[k])) dk2.push(k); });
+            apNote = "안 됨 · 저장하는 동안 바뀐 항목: " + (dk2.slice(0, 5).join(", ") || "알 수 없음");
+          }
+        }
+        try { mergeLogAdd(snapshot, res.server, res.out, apNote); } catch (e) {}   // 37차: 무엇이 달라졌는지 이 기기에 기록
         // 병합 직전의 서버 상태를 백업해 둔다(문제가 생겼을 때 되돌릴 수 있게).
         var d = new Date();
         window.__fb.saveSnapshot(uidAtStart, todayKey() + "-merge-" + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()), res.server).catch(function () {});
         // 그 사이 내가 더 만진 게 없으면 병합 결과를 화면에도 반영한다. 만졌다면 기준을 그대로 둬서 다음 저장에서 다시 병합한다.
-        if (!saveDebounceTimer && canon(state) === canon(snapshot)) {
+        if (applyOk) {
           syncedBase = JSON.parse(JSON.stringify(res.out)); syncedRaw = canon(res.out);
           state = normalizeLoaded(JSON.parse(JSON.stringify(res.out)));
           attachArchivedHistory();
@@ -3414,6 +3459,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
       return archiveFlush;
     }).catch(function (err) {
       saveInFlight = false;
+      if (flushLogPending) { flushLogPending = false; }
+      try { traceAdd({ k: "srv", m: "저장 실패 · 15초 뒤 다시 시도" }); } catch (e2) {}
       console.error("save failed", err);
       toast("저장 중 문제가 생겼어요 · 연결되면 다시 저장해요");
       clearTimeout(saveRetryTimer);
@@ -3423,6 +3470,24 @@ window.addEventListener("beforeinstallprompt", function (e) {
   window.addEventListener("online", function () {
     if (currentUid && synced) { clearTimeout(saveRetryTimer); saveChain = saveChain.then(doServerSave); }
   });
+
+  // 2026-10-30: 폰은 앱을 닫거나 다른 앱으로 넘어가면 iOS가 페이지를 얼리거나 종료해서, 0.4초 저장 대기 중이거나
+  // 서버 저장 중이던 변경이 서버에 못 올라간 채 기기에만 남는 일이 있었다(다음에 열 때까지 다른 기기에 안 보임).
+  // 그래서 ① 저장 대기를 짧게 하고 ② 앱이 백그라운드로 가는 순간 대기를 건너뛰고 바로 저장을 시작하며
+  // ③ 앱으로 돌아왔을 때 아직 못 올린 변경이 있으면 곧바로 다시 올린다. 시작·끝은 기기 움직임 기록에 남긴다.
+  var SAVE_DEBOUNCE_MS = 150, flushLogPending = false;
+  function flushPendingSave(why) {
+    if (!currentUid || !synced || offlineMode || navigator.onLine === false) return;
+    var pending = !!saveDebounceTimer;
+    if (!pending && (saveInFlight || !hasUnsynced(currentUid))) return;   // 올릴 게 없거나, 이미 올리는 중이면 그 저장이 끝까지 간다
+    clearTimeout(saveDebounceTimer); saveDebounceTimer = null;
+    clearTimeout(saveRetryTimer);
+    flushLogPending = true;
+    try { traceAdd({ k: "srv", m: why + " · 저장 바로 시작(" + (pending ? "대기 중이던 변경" : "못 올린 변경") + ")" }); } catch (e) {}
+    saveChain = saveChain.then(doServerSave);
+  }
+  document.addEventListener("visibilitychange", function () { flushPendingSave(document.hidden ? "백그라운드로 감" : "앱으로 돌아옴"); });
+  window.addEventListener("pagehide", function () { flushPendingSave("페이지 숨김"); });
 
   function saveState() {
     passInvalidate();
@@ -3435,7 +3500,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     saveDebounceTimer = setTimeout(function () {
       saveDebounceTimer = null;
       saveChain = saveChain.then(doServerSave);
-    }, 400);
+    }, SAVE_DEBOUNCE_MS);
   }
 
   function authError(msg) {
@@ -3756,7 +3821,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var dk = dateKey || todayKey();
     var entry = dayEntry(dk);
     var idx = entry.completed.indexOf(itemId);
-    if (done && idx === -1) entry.completed.push(itemId);
+    if (done && idx === -1) { entry.completed.push(itemId); try { traceRecheck(itemId, dk); } catch (e) {} }   // 2026-10-30: 풀었다가 곧 다시 체크한 것만 기록
     if (!done && idx !== -1) { entry.completed.splice(idx, 1); try { traceUncheck(itemId, dk); } catch (e) {} }   // 40차: 해제 경로 기록
     // overtime 플래그는 done===true && overtime===true일 때만 세팅된다. 체크 취소(done=false) 시
     // 항상 해제되고, overtime 없이(예: 홈 화면 탭, 기록 화면, 정상 시간 내 완료) 재완료하면 다시
