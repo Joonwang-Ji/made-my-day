@@ -806,6 +806,51 @@
     "체크를 해제한 화면, 앱을 열 때의 상태, 오래 백그라운드에 있다가 돌아온 때를 이 기기에 남겨요(최근 40개). 합치기 기록에서 체크가 빠졌을 때 직접 푼 것인지 가려내는 데 써요.": "This device keeps a note of the screen where a check was removed, how the app was opened, and when it came back after a long time in the background (last 40). Use it to tell whether you unchecked something yourself when a merge dropped a check.",
     "아직 기록이 없어요": "No entries yet"
   });
+  // ---- 41차: 부모 칭찬 · 감점 · 만회 ----
+  I.register({
+    "⭐ 받은 칭찬 · 감점": "⭐ Praise & deductions received",
+    "⭐ 칭찬 · 감점 주기": "⭐ Give praise / deduction",
+    "칭찬 · 감점": "Praise · Deductions",
+    "👪 이 지인을 부모로 인정하기": "👪 Recognize this friend as my parent",
+    "👪 부모 인정 해제하기": "👪 Remove parent recognition",
+    "한 번 더 눌러 확인": "Tap again to confirm",
+    "이 지인은 내게 칭찬·감점 포인트를 줄 수 있어요. 해제하면 더는 줄 수 없어요.": "This friend can give you praise or deduction points. Once removed, they can't any more.",
+    "내 부모님·보호자일 때만 인정하세요. 인정하면 이 지인이 칭찬·감점 포인트를 줄 수 있어요(감점은 하루·주간 한도가 있어요).": "Only recognize your own parent or guardian. They will be able to give you praise and deduction points (deductions have daily and weekly limits).",
+    "👪 내가 부모로 인정한 지인": "👪 Friend I recognize as a parent",
+    "👪 나를 부모로 인정한 지인 · 아바타를 눌러 칭찬·감점": "👪 Recognizes you as a parent · tap their avatar to give praise or deductions",
+    "부모 인정을 해제했어요": "Parent recognition removed",
+    "부모로 인정했어요 · 이제 칭찬·감점을 받을 수 있어요": "Recognized as a parent · you can now receive praise and deductions",
+    "이 지인이 아직 부모로 인정하지 않았어요": "This friend hasn't recognized you as a parent yet",
+    "아직 받은 기록이 없어요.": "No entries received yet.",
+    "최근 60개만 보여요.": "Showing the latest 60 only.",
+    "⭐ 칭찬": "⭐ Praise", "🌧️ 감점": "🌧️ Deduction", "💛 만회": "💛 Make-up",
+    "칭찬": "Praise", "감점": "Deduction", "만회": "Make-up", "취소됨": "Cancelled",
+    "이유 (꼭 적어주세요, 30자까지)": "Reason (required, up to 30 characters)",
+    "칭찬 보내기": "Send praise", "감점 보내기": "Send deduction", "만회 보내기": "Send make-up", "보내는 중…": "Sending…",
+    "보낸 기록": "Sent entries", "아직 보낸 기록이 없어요.": "No entries sent yet.",
+    "감점은 누적 포인트를 줄이고 다음 메달을 그만큼 늦춰요. 이미 받은 메달·아이템·연속일은 그대로예요. 자녀가 볼 수 있으니 이유를 다정하게 적어주세요.": "A deduction lowers the total and delays the next medal by that amount. Medals, items and streaks already earned stay. Your child can read the reason, so please write it kindly.",
+    "만회할 감점이 없어요.": "There is no deduction to make up.",
+    "이번 주 감점 한도(10P)를 모두 썼어요.": "You've used this week's deduction limit (10P).",
+    "이유를 적어주세요": "Please write a reason", "이유는 30자까지예요": "The reason can be up to 30 characters",
+    "오늘 칭찬 칸을 모두 썼어요": "You've used all of today's praise slots",
+    "오늘 감점 칸을 모두 썼어요": "You've used all of today's deduction slots",
+    "오늘 만회 칸을 모두 썼어요": "You've used all of today's make-up slots",
+    "만회할 감점이 없어요": "There is no deduction to make up", "이번 주 감점 한도를 모두 썼어요": "This week's deduction limit is used up",
+    "보낼 수 없어요 · 자녀가 부모 인정을 해제했거나 규칙이 아직 적용되지 않았을 수 있어요": "Can't send · the child may have removed recognition, or the server rules aren't applied yet",
+    "기록을 취소했어요 · 자녀 포인트에서 빠져요": "Entry cancelled · removed from the child's points",
+    "받은 기록이 포인트에 반영됐어요.": "The entry is reflected in your points.",
+    "다음엔 더 잘할 수 있어요. 만회할 기회도 있어요.": "You can do better next time. There's a chance to make up for it, too."
+  }, [
+    [/^⭐ (.+)님께$/, function (n) { return "⭐ To " + n; }],
+    [/^(.+)님이 남긴 기록$/, function (n) { return "A note from " + n; }],
+    [/^누적 ([\d,]+)P$/, function (p) { return p + "P total"; }],
+    [/^감점으로 다음 메달이 (\d+)P 늦춰져 있어요\. .+$/, function (n) { return "The next medal is delayed by " + n + "P because of a deduction. Points you earn next fill that in first. Medals, items and streaks you already earned stay."; }],
+    [/^오늘 (칭찬|감점|만회) 칸을 모두 썼어요\(하루 (\d+)번\)\. 내일 다시 줄 수 있어요\.$/, function (k, n) { return "You've used all of today's " + ({ "칭찬": "praise", "감점": "deduction", "만회": "make-up" })[k] + " slots (" + n + " a day). You can give again tomorrow."; }],
+    [/^오늘 (칭찬|감점|만회) (\d+)\/(\d+)번 사용 · 한 번에 최대 (\d+)P( · 이번 주 감점 (\d+)\/(\d+)P)?$/, function (k, u, t, m, w, wu, wm) {
+      return "Today: " + u + "/" + t + " " + ({ "칭찬": "praise", "감점": "deduction", "만회": "make-up" })[k] + " used · max " + m + "P at a time" + (w ? " · this week's deductions " + wu + "/" + wm + "P" : "");
+    }],
+    [/^(.+) (칭찬|감점|만회) ([+−])(\d+)P를 보냈어요$/, function (a, k, sg, n) { return a + " " + ({ "칭찬": "Praise", "감점": "Deduction", "만회": "Make-up" })[k] + " " + sg + n + "P sent"; }]
+  ]);
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();

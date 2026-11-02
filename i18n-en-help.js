@@ -147,6 +147,12 @@
       ["Public summary", "This summary is all friends can see. Routine names and detailed records aren't visible."],
       ["Nickname and turning off", "You need a nickname to share. You can stop any time with “Turn off sharing.”"]
     ], see: ["friends", "cheers"] },
+    parentpraise: { t: "Parent praise & deductions", sub: "Bonus or deduction points for a child's account", s: [
+      ["The child opts in first", "On the Friends screen, tap a friend's avatar and turn on 'Recognize this friend as my parent'. Only a friend you recognize that way can give you praise or deductions. You can remove it any time."],
+      ["Praise, make-up, deduction", "A parent taps the child's avatar and opens 'Give praise / deduction'. Praise is 1–20P at a time (6 a day), a deduction is 1–5P (3 a day, up to 10P over the last 7 days), and a make-up gives back 1–10P within what was deducted (3 a day). A reason is required (up to 30 characters)."],
+      ["How points change", "Praise and make-up are simply added to your base points. A deduction lowers your total, but medals, avatar items and streaks you already earned stay; instead the next medal is delayed by that amount (points you earn next fill it in first). Your total never goes below 0."],
+      ["Records and undo", "Every entry is kept with its date, reason and points. The child can read them under 'Praise & deductions received' on the Friends screen (read-only), and a parent can 'Cancel' an entry given by mistake. Cancelling removes it from the points and cannot be undone. A deduction can be partly given back with 'Make up'."]
+    ], see: ["friends", "cheers"] },
     cheers: { t: "Sending cheers", sub: "Preset phrases · your own words", s: [
       ["Sending", "To a connected friend you can send a preset cheer or praise phrase, or a sentence of your own (up to 100 characters)."],
       ["2 a day", "You can send up to 2 per day to one friend. Preset phrases and your own sentences are counted together."],
@@ -232,7 +238,7 @@
     ["Screen guides", ["home", "todo", "todoshortcut", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["Routine & stats rules", ["colors", "streak", "habit", "comeback", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
-    ["Friends & data", ["share", "cheers", "backup", "offline"]]
+    ["Friends & data", ["share", "cheers", "parentpraise", "backup", "offline"]]
   ];
 
   window.MMD_HELP_EN = { topics: T, groups: G };

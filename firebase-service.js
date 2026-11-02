@@ -177,6 +177,44 @@
     // 28차: 보낸 사람이 직접 쓴 응원을 고치기(흔적 없이 문장만 바꿈) / 보낸 응원 지우기
     // (내용을 지우고 deleted 표시만 남겨 양쪽 화면에서 아예 안 보이게 함 → 하루 보낼 수 있는 개수는 그대로)
     cheerEdit: function (id, text) { return updateDoc(doc(db, "cheers", id), { text: text }); },
-    cheerRetract: function (id) { return updateDoc(doc(db, "cheers", id), { deleted: true, text: deleteField() }); }
+    cheerRetract: function (id) { return updateDoc(doc(db, "cheers", id), { deleted: true, text: deleteField() }); },
+
+    // ---- 41차: 부모 칭찬·감점 ----
+    // 자녀가 "이 지인을 부모로 인정"하면 parentGrants/{자녀uid_부모uid} 가 생긴다. 이게 있어야 부모가 칭찬·감점을 줄 수 있다.
+    parentGrantSet: function (childUid, parentUid) {
+      return setDoc(doc(db, "parentGrants", childUid + "_" + parentUid),
+        { child: childUid, parent: parentUid, createdAt: new Date().toISOString() });
+    },
+    parentGrantDelete: function (childUid, parentUid) { return deleteDoc(doc(db, "parentGrants", childUid + "_" + parentUid)); },
+    parentGrantsAsChild: function (uid) {
+      return getDocs(query(collection(db, "parentGrants"), where("child", "==", uid))).then(function (snap) {
+        var out = []; snap.forEach(function (d) { out.push(d.data()); }); return out;
+      });
+    },
+    parentGrantsAsParent: function (uid) {
+      return getDocs(query(collection(db, "parentGrants"), where("parent", "==", uid))).then(function (snap) {
+        var out = []; snap.forEach(function (d) { out.push(d.data()); }); return out;
+      });
+    },
+    // 칭찬·감점·만회 기록. id = 받는사람_보낸사람_날짜_칸(p1~p6 / d1~d3 / r1~r3)
+    praiseSend: function (id, data) { return setDoc(doc(db, "praise", id), data); },
+    praiseVoid: function (id) { return updateDoc(doc(db, "praise", id), { voided: true }); },
+    praiseSeen: function (id) { return updateDoc(doc(db, "praise", id), { seen: true }); },
+    // 내(자녀)가 받은 기록 전부를 실시간으로 지켜본다
+    praiseWatch: function (uid, cb, errcb) {
+      return onSnapshot(query(collection(db, "praise"), where("to", "==", uid)), function (snap) {
+        var out = [];
+        snap.forEach(function (d) { out.push({ id: d.id, data: d.data() }); });
+        cb(out);
+      }, function (err) { if (errcb) errcb(err); });
+    },
+    // 내(부모)가 한 자녀에게 보낸 기록 전부
+    praiseSentTo: function (me, child) {
+      return getDocs(query(collection(db, "praise"), where("from", "==", me), where("to", "==", child))).then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) { out.push({ id: d.id, data: d.data() }); });
+        return out;
+      });
+    }
   };
   window.dispatchEvent(new Event("fb-ready"));

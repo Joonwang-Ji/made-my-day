@@ -1568,3 +1568,34 @@ body.td-typing.td-pin-off .td-pin { display: none; }
 
 /* ===== 습관 목표 일수 직접 입력 ===== */
 .hb-goal-input { text-align: center; font-weight: 800; margin-bottom: 4px; }
+
+  /* 41차: 부모 칭찬 · 감점 · 만회 */
+  #praiseOverlay { z-index: 73; }
+  .pr-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .pr-tab { flex: 1; text-align: center; font-size: 0.8125rem; padding: 9px 4px; border-radius: 12px; border: 1px solid var(--line); color: var(--ink-dim); cursor: pointer; }
+  .pr-tab.on { color: var(--ink); font-weight: 700; border-color: transparent; background: var(--sage-soft); }
+  .pr-tab.on.deduct { background: rgba(120, 140, 170, .22); }
+  .pr-tab.on.restore { background: var(--gold-soft); }
+  .pr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+  .pr-chip { font-size: 0.7188rem; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-dim); cursor: pointer; }
+  .pr-step { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 8px 0; }
+  .pr-stepbtn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 1.375rem; cursor: pointer; user-select: none; }
+  .pr-stepval { min-width: 72px; text-align: center; font-family: 'Fraunces', serif; font-weight: 650; font-size: 1.5rem; }
+  .pr-stepval.deduct, .pr-pts.deduct { color: #6f86a8; }
+  .btn.disabled { opacity: .4; pointer-events: none; }
+  .pr-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .pr-row:last-child { border-bottom: none; }
+  .pr-row.voided { opacity: .45; }
+  .pr-row.voided .pr-why, .pr-row.voided .pr-pts { text-decoration: line-through; }
+  .pr-ico { flex: none; font-size: 1.25rem; }
+  .pr-main { flex: 1; min-width: 0; }
+  .pr-why { font-size: 0.875rem; word-break: break-all; }
+  .pr-meta { font-size: 0.6875rem; color: var(--ink-dim); margin-top: 2px; }
+  .pr-pts { flex: none; font-weight: 700; font-size: 0.9375rem; }
+  .pr-sum { text-align: center; font-size: 1rem; padding: 4px 0 12px; }
+  .pr-debt { font-size: 0.75rem; color: var(--ink-dim); margin-top: 8px; text-align: left; line-height: 1.5; }
+  .pr-cel-list { margin: 0 0 14px; text-align: left; }
+  .pr-cel-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.875rem; }
+  .pr-cel-pts { font-weight: 700; flex: none; }
+  .pr-cel-row.deduct .pr-cel-pts { color: #6f86a8; }
+  .pr-cel-why { color: var(--ink-dim); word-break: break-all; }

@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-10-30-1";
+  var BUILD_VERSION = "2026-11-02-1";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-10-24-1">
+<link rel="stylesheet" href="style.css?v=2026-11-02-1">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -685,6 +685,16 @@ window.addEventListener("beforeinstallprompt", function (e) {
   </div>
 </div>
 
+<div class="tp-overlay hidden" id="praiseOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:340px;">
+    <div class="tp-card-head">
+      <div class="tp-title" id="praiseTitle">칭찬 · 감점</div>
+      <span class="tp-close-x" data-action="praise-close">✕</span>
+    </div>
+    <div class="tp-card-body" id="praiseBody"></div>
+  </div>
+</div>
+
 <div class="tp-overlay hidden" id="bibleShelfOverlay">
   <div class="tp-card tp-card-scroll" style="max-width:340px;">
     <div class="tp-card-head">
@@ -1003,17 +1013,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-10-23-2"></script>
-<script src="i18n.js?v=2026-10-23-2"></script>
-<script src="i18n-en.js?v=2026-10-23-2"></script>
-<script src="bible-medals-data.js?v=2026-10-23-2"></script>
-<script src="avatar-data.js?v=2026-10-23-2"></script>
-<script src="review-data.js?v=2026-10-23-2"></script>
-<script src="i18n-en-help.js?v=2026-10-24-1"></script>
-<script src="i18n-en-review.js?v=2026-10-23-2"></script>
-<script src="i18n-en-bible.js?v=2026-10-23-2"></script>
-<script src="i18n-en-avatar.js?v=2026-10-23-2"></script>
-<script src="i18n-en-extra.js?v=2026-10-24-1"></script>
+<script type="module" src="firebase-service.js?v=2026-11-02-1"></script>
+<script src="i18n.js?v=2026-11-02-1"></script>
+<script src="i18n-en.js?v=2026-11-02-1"></script>
+<script src="bible-medals-data.js?v=2026-11-02-1"></script>
+<script src="avatar-data.js?v=2026-11-02-1"></script>
+<script src="review-data.js?v=2026-11-02-1"></script>
+<script src="i18n-en-help.js?v=2026-11-02-1"></script>
+<script src="i18n-en-review.js?v=2026-11-02-1"></script>
+<script src="i18n-en-bible.js?v=2026-11-02-1"></script>
+<script src="i18n-en-avatar.js?v=2026-11-02-1"></script>
+<script src="i18n-en-extra.js?v=2026-11-02-1"></script>
 <script>
 (function () {
   "use strict";
@@ -1344,9 +1354,14 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var body = document.getElementById("friendsBody"), uid = currentUid;
     if (!friendsData) body.innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">불러오는 중…</div>';
     window.__fb.listLinks(uid).then(function (links) {
-      var fd = { links: links, profiles: {} };
+      var fd = { links: links, profiles: {}, grants: { asChild: {}, asParent: {} } };
       var acc = links.filter(function (l) { return l.data.status === "accepted"; });
-      return Promise.all(acc.map(function (l) {
+      // 41차: 내가 인정한 부모 / 나를 인정한 자녀(규칙이 아직 없으면 조용히 비워 둔다)
+      var gp = Promise.all([
+        window.__fb.parentGrantsAsChild(uid).then(function (a) { a.forEach(function (g) { fd.grants.asChild[g.parent] = true; }); }).catch(function () {}),
+        window.__fb.parentGrantsAsParent(uid).then(function (a) { a.forEach(function (g) { fd.grants.asParent[g.child] = true; }); }).catch(function () {})
+      ]);
+      return gp.then(function () { return Promise.all(acc.map(function (l) {
         var o = otherUid(l.data, uid);
         return window.__fb.getProfile(o).then(function (pr) { fd.profiles[o] = pr; })
           .catch(function () { fd.profiles[o] = null; });
@@ -1359,6 +1374,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
           chatWith.nick = friendNick(chatWith.uid);
           renderChatHead(); renderChatSuggest();
         }
+      });
       });
     }).catch(function (err) {
       body.innerHTML = '<div class="fr-note" style="text-align:center;padding:20px 0;">' +
@@ -1459,11 +1475,18 @@ window.addEventListener("beforeinstallprompt", function (e) {
         } else {
           h += '<div class="fr-stat" style="color:var(--ink-dim);">아직 공개 전이에요</div>';
         }
+        var gr = (friendsData && friendsData.grants) || { asChild: {}, asParent: {} };
+        if (gr.asChild[o]) h += '<div class="fr-stat">👪 내가 부모로 인정한 지인</div>';
+        if (gr.asParent[o]) h += '<div class="fr-stat">👪 나를 부모로 인정한 지인 · 아바타를 눌러 칭찬·감점</div>';
         if (un.length) h += '<div class="fr-prev">💌 ' + escapeHtml(cheerBody(un[0].data)) + '</div>';
         h += '</div>';
         if (un.length) h += '<span class="cheer-dot">' + un.length + '</span>';
         h += '<span class="chev">›</span></div>';
       });
+      var gAny = friendsData && friendsData.grants && Object.keys(friendsData.grants.asChild).length;
+      if (praiseLedger.length || gAny) {
+        h += '<div class="btn" data-action="praise-log-open" style="margin:14px 0 0;">⭐ 받은 칭찬 · 감점 기록' + (praiseLedger.length ? ' (' + praiseLedger.length + ')' : '') + '</div>';
+      }
       if (!forced) {
         h += '<div class="btn" data-action="friends-mgmt-toggle" style="margin:14px 0 0;">' + (friendsMgmtOpen ? '▴ 접기' : '⚙ 공개 설정 · 초대 코드 · 지인 추가') + '</div>';
       }
@@ -1526,6 +1549,18 @@ window.addEventListener("beforeinstallprompt", function (e) {
 
     if (!hasAv) h += '<div class="fr-note" style="text-align:center;">아직 아바타를 공개하지 않았어요.</div>';
     h += '<div class="btn" data-action="friend-av-chat" data-id="' + uid + '" style="margin:10px 0 0;">💌 응원 보내러 가기</div>';
+    // 41차: 부모 칭찬·감점
+    var gr = (friendsData && friendsData.grants) || { asChild: {}, asParent: {} };
+    if (gr.asParent[uid]) {
+      h += '<div class="btn primary" data-action="praise-give-open" data-id="' + uid + '" style="margin:8px 0 0;">⭐ 칭찬 · 감점 주기</div>';
+    }
+    if (accLink(uid)) {
+      h += '<div class="btn" data-action="parent-grant-toggle" data-id="' + uid + '" style="margin:8px 0 0;">' +
+        (gr.asChild[uid] ? '👪 부모 인정 해제하기' : '👪 이 지인을 부모로 인정하기') + '</div>';
+      h += '<div class="fr-note" style="margin-top:6px;">' + (gr.asChild[uid]
+        ? '이 지인은 내게 칭찬·감점 포인트를 줄 수 있어요. 해제하면 더는 줄 수 없어요.'
+        : '내 부모님·보호자일 때만 인정하세요. 인정하면 이 지인이 칭찬·감점 포인트를 줄 수 있어요(감점은 하루·주간 한도가 있어요).') + '</div>';
+    }
 
     document.getElementById("friendAvBody").innerHTML = h;
     document.getElementById("friendAvatarOverlay").classList.remove("hidden");
@@ -1697,8 +1732,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var uid = currentUid;
     if (!uid || !state.approved) return;
     cheerFirstSnap = true;
+    startPraiseWatch();
     try {
-      cheerUnwatch = window.__fb.cheerUnreadWatch(uid, function (list) {
+      cheerUnwatch =window.__fb.cheerUnreadWatch(uid, function (list) {
         if (uid !== currentUid) return;
         list = list.filter(function (c) { return !c.data.deleted; }); // 보낸 사람이 지운 응원은 흔적 없이 빠진다
         var prev = {};
@@ -1723,12 +1759,286 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (cheerUnwatch) { try { cheerUnwatch(); } catch (e) {} cheerUnwatch = null; }
     cheerUnreadList = []; cheerUnread = 0; cheerFirstSnap = true;
     friendsData = null;
+    stopPraiseWatch();
+    if (praiseView) { var po = document.getElementById("praiseOverlay"); if (po) po.classList.add("hidden"); praiseView = null; }
     if (chatWith) closeChat();
     renderCheerBadges();
   }
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible" && chatWith) loadChat(true);
   });
+
+  // ================= 41차: 부모 칭찬 · 감점 · 만회 =================
+  // - 자녀가 지인 화면에서 "이 지인을 부모로 인정"하면 parentGrants 문서가 생기고, 그 부모만 자녀에게 줄 수 있다.
+  // - 기록은 praise 컬렉션(받는사람_보낸사람_날짜_칸)에 남고, 자녀 앱이 실시간으로 받아 기기에도 캐시한다.
+  // - 포인트 반영은 computeGamification 의 '빚' 방식(칭찬·만회는 합산, 감점은 다음 메달만 늦춤).
+  var PRAISE_PRESETS = {
+    praise: ["스스로 알아서 했어", "동생을 잘 챙겼어", "정리정돈을 잘했어", "친절하게 말했어", "끝까지 포기하지 않았어", "감사 인사를 했어"],
+    deduct: ["약속을 지키지 않았어", "거짓말을 했어", "나쁜 말을 했어", "정리를 안 했어", "동생과 다퉜어"],
+    restore: ["사과하고 바로잡았어", "약속을 다시 지켰어", "스스로 고쳤어"]
+  };
+  var PRAISE_LIM = {
+    praise: { max: 20, slots: 6, label: "칭찬", sign: "+", ico: "⭐" },
+    deduct: { max: 5, slots: 3, label: "감점", sign: "−", ico: "🌧️" },
+    restore: { max: 10, slots: 3, label: "만회", sign: "+", ico: "💛" }
+  };
+  var PRAISE_WEEK_DEDUCT_MAX = 10;   // 최근 7일 감점 합계 안내 한도(앱 화면에서만 지키는 부드러운 한도)
+  var praiseLedger = [], praiseUnwatch = null, praiseQueued = {};
+  var praiseView = null;             // 열려 있는 칭찬 창 상태
+
+  function praiseValid(e) {
+    return !!e && typeof e.pts === "number" && e.pts > 0 && typeof e.date === "string" &&
+      (e.kind === "praise" || e.kind === "deduct" || e.kind === "restore");
+  }
+  function praiseNorm(id, d) {
+    d = d || {};
+    return { id: id, from: d.from, to: d.to, kind: d.kind, pts: d.pts, reason: String(d.reason || ""), date: d.date,
+      slot: d.slot, createdAt: String(d.createdAt || ""), seen: d.seen === true, voided: d.voided === true };
+  }
+  function praiseCacheKey() { return "mmd_praise_v1_" + (currentUid || ""); }
+  function praiseCacheLoad() {
+    try { var a = JSON.parse(localStorage.getItem(praiseCacheKey()) || "[]"); return Array.isArray(a) ? a.filter(praiseValid) : []; } catch (e) { return []; }
+  }
+  function praiseCacheSave() { try { localStorage.setItem(praiseCacheKey(), JSON.stringify(praiseLedger)); } catch (e) {} }
+  function praiseNick(uid) { return accLink(uid) ? friendNick(uid) : "보호자"; }
+
+  function startPraiseWatch() {
+    stopPraiseWatch();
+    var uid = currentUid;
+    if (!uid) return;
+    praiseLedger = praiseCacheLoad();
+    try {
+      praiseUnwatch = window.__fb.praiseWatch(uid, function (list) {
+        if (uid !== currentUid) return;
+        var led = list.map(function (x) { return praiseNorm(x.id, x.data); }).filter(praiseValid)
+          .sort(function (a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
+        var changed = JSON.stringify(led) !== JSON.stringify(praiseLedger.slice().sort(function (a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; }));
+        praiseLedger = led;
+        praiseCacheSave();
+        gamifMemo = null;
+        var fresh = led.filter(function (e) { return !e.seen && !e.voided && !praiseQueued[e.id]; })
+          .sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
+        if (changed) afterPraiseChange();
+        if (fresh.length) {
+          fresh.forEach(function (e) { praiseQueued[e.id] = true; });
+          queueCeleb({ type: "praise", items: fresh });
+        }
+      }, function (err) { console.warn("praise watch error", err && err.code); });
+    } catch (e) { console.warn("praise watch failed", e); }
+  }
+  function stopPraiseWatch() {
+    if (praiseUnwatch) { try { praiseUnwatch(); } catch (e) {} praiseUnwatch = null; }
+    praiseLedger = []; gamifMemo = null;   // praiseQueued 는 비우지 않는다(같은 기록 알림이 다시 뜨지 않게)
+  }
+  // 기록이 바뀌면 포인트가 달라졌을 수 있다: 새로 열린 메달·아이템이 있는지 확인하고 화면을 맞춘다.
+  function afterPraiseChange() {
+    if (state && state.approved) { try { checkRewardEvents(); } catch (e) { console.warn(e); } }
+    if (homeIsVisible()) { try { renderHome(); } catch (e) {} }
+    if (praiseView && praiseView.mode === "log") renderPraiseLog();
+  }
+
+  // 알림 창(축하 큐): 새로 받은 칭찬·감점 기록
+  function praiseCelebHtml(ev) {
+    var rows = ev.items.map(function (e) {
+      var L = PRAISE_LIM[e.kind];
+      return '<div class="pr-cel-row ' + e.kind + '"><span class="pr-cel-ico">' + L.ico + '</span>' +
+        '<span class="pr-cel-pts">' + L.sign + e.pts + 'P</span>' +
+        '<span class="pr-cel-why">' + escapeHtml(e.reason) + '</span></div>';
+    }).join("");
+    var onlyDeduct = ev.items.every(function (e) { return e.kind === "deduct"; });
+    var from = praiseNick(ev.items[0].from);
+    return '<div class="tp-card celeb-window"><span class="emoji">' + (onlyDeduct ? "🌱" : "⭐") + '</span>' +
+      '<div class="label">' + escapeHtml(from) + '님이 남긴 기록</div>' +
+      '<div class="sub">' + (onlyDeduct ? "다음엔 더 잘할 수 있어요. 만회할 기회도 있어요." : "받은 기록이 포인트에 반영됐어요.") + '</div>' +
+      '<div class="pr-cel-list">' + rows + '</div>' +
+      '<div class="btn primary" data-action="praise-ok">확인</div></div>';
+  }
+  function praiseCelebOk() {
+    var ev = celebQueue[0];
+    if (ev && ev.type === "praise") {
+      ev.items.forEach(function (e) { try { window.__fb.praiseSeen(e.id).catch(function () {}); } catch (x) {} });
+    }
+    celebNext();
+  }
+
+  // ---- 자녀: 부모 인정 / 해제 ----
+  function toggleParentGrant(uid) {
+    var g = friendsData && friendsData.grants;
+    if (!g) return;
+    var on = !!g.asChild[uid], me = currentUid;
+    var p = on ? window.__fb.parentGrantDelete(me, uid) : window.__fb.parentGrantSet(me, uid);
+    p.then(function () {
+      if (on) delete g.asChild[uid]; else g.asChild[uid] = true;
+      toast(on ? "부모 인정을 해제했어요" : "부모로 인정했어요 · 이제 칭찬·감점을 받을 수 있어요");
+      openFriendAvatar(uid);
+      renderFriends();
+    }).catch(friendError);
+  }
+
+  // ---- 공통: 칭찬 창 ----
+  function openPraiseOverlay() {
+    document.getElementById("praiseOverlay").classList.remove("hidden");
+    var b = document.getElementById("praiseBody"); if (b) b.scrollTop = 0;
+  }
+  function closePraiseOverlay() {
+    document.getElementById("praiseOverlay").classList.add("hidden");
+    praiseView = null;
+  }
+  function praiseDateLabel(dk) {
+    var p = (dk || "").split("-");
+    return p.length === 3 ? (parseInt(p[1], 10) + "/" + parseInt(p[2], 10)) : (dk || "");
+  }
+  function praiseEntryRow(e, extra) {
+    var L = PRAISE_LIM[e.kind];
+    return '<div class="pr-row' + (e.voided ? ' voided' : '') + '">' +
+      '<div class="pr-ico">' + L.ico + '</div>' +
+      '<div class="pr-main"><div class="pr-why">' + escapeHtml(e.reason) + '</div>' +
+      '<div class="pr-meta"><span>' + praiseDateLabel(e.date) + '</span> · <span>' + L.label + '</span>' + (e.voided ? ' · <span>취소됨</span>' : '') + (extra && extra.who ? ' · <span class="pr-who">' + escapeHtml(extra.who) + '</span>' : '') + '</div></div>' +
+      '<div class="pr-pts ' + e.kind + '">' + L.sign + e.pts + 'P</div>' +
+      ((extra && extra.actions) || '') + '</div>';
+  }
+
+  // ---- 자녀: 받은 기록 보기 ----
+  function openPraiseLog() {
+    praiseView = { mode: "log" };
+    renderPraiseLog();
+    openPraiseOverlay();
+  }
+  function renderPraiseLog() {
+    var gam = computeGamification();
+    var list = praiseLedger.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.createdAt < b.createdAt ? 1 : -1); });
+    document.getElementById("praiseTitle").textContent = "⭐ 받은 칭찬 · 감점";
+    var h = '<div class="pr-sum"><div>누적 ' + gam.net + 'P</div>' +
+      (gam.debt > 0 ? '<div class="pr-debt">감점으로 다음 메달이 ' + gam.debt + 'P 늦춰져 있어요. 앞으로 얻는 포인트가 먼저 이만큼을 채워요. 이미 받은 메달·아이템·연속일은 그대로예요.</div>' : '') +
+      '</div>';
+    if (!list.length) h += '<div class="fr-note" style="text-align:center;">아직 받은 기록이 없어요.</div>';
+    list.slice(0, 60).forEach(function (e) { h += praiseEntryRow(e, { who: praiseNick(e.from) }); });
+    if (list.length > 60) h += '<div class="fr-note" style="text-align:center;">최근 60개만 보여요.</div>';
+    document.getElementById("praiseBody").innerHTML = h;
+  }
+
+  // ---- 부모: 칭찬·감점·만회 주기 ----
+  function openPraiseGive(child) {
+    if (!(friendsData && friendsData.grants && friendsData.grants.asParent[child])) { toast("이 지인이 아직 부모로 인정하지 않았어요"); return; }
+    praiseView = { mode: "give", child: child, tab: "praise", pts: 1, reason: "", sent: null, busy: false };
+    renderPraiseGive();
+    openPraiseOverlay();
+    var me = currentUid;
+    window.__fb.praiseSentTo(me, child).then(function (arr) {
+      if (!praiseView || praiseView.child !== child) return;
+      praiseView.sent = arr.map(function (x) { return praiseNorm(x.id, x.data); }).filter(praiseValid);
+      renderPraiseGive();
+    }).catch(function (err) { friendError(err); if (praiseView) { praiseView.sent = []; renderPraiseGive(); } });
+  }
+  function praiseSyncInput() {
+    var el = document.getElementById("praiseReason");
+    if (el && praiseView) praiseView.reason = el.value;
+  }
+  // 이번 주(오늘 포함 7일) 아직 유효한 감점 합계
+  function praiseWeekDeduct(sent) {
+    var from = shiftKey(todayKey(), -6), s = 0;
+    sent.forEach(function (e) { if (e.kind === "deduct" && !e.voided && e.date >= from) s += e.pts; });
+    return s;
+  }
+  // 아직 만회되지 않은 감점 합계(만회는 이 범위까지만)
+  function praiseRestorable(sent) {
+    var d = 0, r = 0;
+    sent.forEach(function (e) { if (e.voided) return; if (e.kind === "deduct") d += e.pts; else if (e.kind === "restore") r += e.pts; });
+    return Math.max(0, d - r);
+  }
+  function praiseFreeSlot(kind) {
+    var v = praiseView, L = PRAISE_LIM[kind], used = {};
+    (v.sent || []).forEach(function (e) { if (e.date === todayKey()) used[e.slot] = true; });
+    for (var i = 1; i <= L.slots; i++) { if (!used[kind[0] + i]) return kind[0] + i; }
+    return null;
+  }
+  function praiseMaxPts(kind, sent) {
+    var L = PRAISE_LIM[kind], m = L.max;
+    if (kind === "deduct") m = Math.min(m, Math.max(0, PRAISE_WEEK_DEDUCT_MAX - praiseWeekDeduct(sent)));
+    if (kind === "restore") m = Math.min(m, praiseRestorable(sent));
+    return m;
+  }
+  function renderPraiseGive() {
+    var v = praiseView; if (!v || v.mode !== "give") return;
+    var nick = praiseNick(v.child), kind = v.tab, L = PRAISE_LIM[kind];
+    document.getElementById("praiseTitle").textContent = "⭐ " + nick + "님께";
+    var sent = v.sent || [];
+    var h = '<div class="pr-tabs">';
+    ["praise", "deduct", "restore"].forEach(function (k) {
+      h += '<span class="pr-tab' + (k === kind ? ' on ' + k : '') + '" data-action="praise-tab" data-id="' + k + '">' + PRAISE_LIM[k].ico + ' ' + PRAISE_LIM[k].label + '</span>';
+    });
+    h += '</div>';
+    var free = v.sent ? praiseFreeSlot(kind) : null;
+    var maxP = v.sent ? praiseMaxPts(kind, sent) : L.max;
+    if (v.pts > maxP) v.pts = Math.max(1, maxP);
+    var note = '';
+    if (!v.sent) note = '불러오는 중…';
+    else if (!free) note = '오늘 ' + L.label + ' 칸을 모두 썼어요(하루 ' + L.slots + '번). 내일 다시 줄 수 있어요.';
+    else if (maxP < 1) note = kind === 'restore' ? '만회할 감점이 없어요.' : '이번 주 감점 한도(' + PRAISE_WEEK_DEDUCT_MAX + 'P)를 모두 썼어요.';
+    else {
+      var usedN = L.slots - (function () { var c = 0; for (var i = 1; i <= L.slots; i++) { if (!sent.some(function (e) { return e.date === todayKey() && e.slot === kind[0] + i; })) c++; } return c; })();
+      note = '오늘 ' + L.label + ' ' + usedN + '/' + L.slots + '번 사용 · 한 번에 최대 ' + maxP + 'P' +
+        (kind === 'deduct' ? ' · 이번 주 감점 ' + praiseWeekDeduct(sent) + '/' + PRAISE_WEEK_DEDUCT_MAX + 'P' : '');
+    }
+    h += '<div class="fr-note">' + note + '</div>';
+    h += '<div class="pr-chips">' + PRAISE_PRESETS[kind].map(function (t, i) {
+      return '<span class="pr-chip" data-action="praise-chip" data-id="' + i + '">' + escapeHtml(t) + '</span>';
+    }).join('') + '</div>';
+    h += '<input class="fr-input" id="praiseReason" maxlength="30" placeholder="이유 (꼭 적어주세요, 30자까지)" value="' + escapeHtml(v.reason || "") + '">';
+    h += '<div class="pr-step"><span class="pr-stepbtn" data-action="praise-pts" data-id="-1">−</span>' +
+      '<span class="pr-stepval ' + kind + '">' + L.sign + v.pts + 'P</span>' +
+      '<span class="pr-stepbtn" data-action="praise-pts" data-id="1">＋</span></div>';
+    h += '<div class="btn primary' + ((free && maxP >= 1 && !v.busy) ? '' : ' disabled') + '" data-action="praise-send" style="margin:6px 0 0;">' +
+      (v.busy ? '보내는 중…' : L.label + ' 보내기') + '</div>';
+    if (kind === 'deduct') h += '<div class="fr-note" style="margin-top:8px;">감점은 누적 포인트를 줄이고 다음 메달을 그만큼 늦춰요. 이미 받은 메달·아이템·연속일은 그대로예요. 자녀가 볼 수 있으니 이유를 다정하게 적어주세요.</div>';
+
+    // 보낸 기록
+    var hist = sent.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.createdAt < b.createdAt ? 1 : -1); });
+    h += '<div class="section-label" style="margin-top:16px;">보낸 기록</div>';
+    if (v.sent && !hist.length) h += '<div class="fr-note">아직 보낸 기록이 없어요.</div>';
+    hist.slice(0, 40).forEach(function (e) {
+      var act = '';
+      if (!e.voided) {
+        if (e.kind === 'deduct') act += '<span class="fr-end" data-action="praise-restore-from" data-id="' + e.id + '">만회</span>';
+        act += '<span class="fr-end" data-action="praise-void" data-id="' + e.id + '">취소</span>';
+      }
+      h += praiseEntryRow(e, { actions: act });
+    });
+    document.getElementById("praiseBody").innerHTML = h;
+  }
+  function sendPraise() {
+    var v = praiseView; if (!v || v.mode !== "give" || v.busy || !v.sent) return;
+    praiseSyncInput();
+    var kind = v.tab, L = PRAISE_LIM[kind], reason = (v.reason || "").trim().replace(/\s+/g, " ");
+    var slot = praiseFreeSlot(kind), maxP = praiseMaxPts(kind, v.sent);
+    if (!slot) { toast("오늘 " + L.label + " 칸을 모두 썼어요"); return; }
+    if (maxP < 1) { toast(kind === "restore" ? "만회할 감점이 없어요" : "이번 주 감점 한도를 모두 썼어요"); return; }
+    if (!reason) { toast("이유를 적어주세요"); return; }
+    if (reason.length > 30) { toast("이유는 30자까지예요"); return; }
+    var pts = Math.min(v.pts, maxP), me = currentUid, child = v.child, date = todayKey();
+    var data = { from: me, to: child, kind: kind, pts: pts, reason: reason, date: date, slot: slot, createdAt: new Date().toISOString(), seen: false };
+    var id = child + "_" + me + "_" + date + "_" + slot;
+    v.busy = true; renderPraiseGive();
+    window.__fb.praiseSend(id, data).then(function () {
+      if (!praiseView || praiseView.child !== child) return;
+      praiseView.sent.push(praiseNorm(id, data));
+      praiseView.busy = false; praiseView.reason = ""; praiseView.pts = 1;
+      toast(L.ico + " " + praiseNick(child) + "님께 " + L.label + " " + L.sign + pts + "P를 보냈어요");
+      renderPraiseGive();
+    }).catch(function (err) {
+      if (praiseView) { praiseView.busy = false; renderPraiseGive(); }
+      if (err && err.code === "permission-denied") toast("보낼 수 없어요 · 자녀가 부모 인정을 해제했거나 규칙이 아직 적용되지 않았을 수 있어요");
+      else friendError(err);
+    });
+  }
+  function voidPraise(id) {
+    var v = praiseView; if (!v || v.mode !== "give") return;
+    window.__fb.praiseVoid(id).then(function () {
+      (v.sent || []).forEach(function (e) { if (e.id === id) e.voided = true; });
+      toast("기록을 취소했어요 · 자녀 포인트에서 빠져요");
+      renderPraiseGive();
+    }).catch(friendError);
+  }
 
   // ---- 대화 화면 ----
   function openChat(uid) {
@@ -2069,7 +2379,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var gam = computeGamification();
     var g = computeGrowth(gam.points);
     var totalEl = document.getElementById("achieveTotalPoints");
-    if (totalEl) totalEl.textContent = "누적 " + gam.points + "P · 성경 " + bibleProgress(gam.points).text;
+    if (totalEl) totalEl.textContent = "누적 " + gam.net + "P · 성경 " + bibleProgress(gam.points).text;
     var lvlEl = document.getElementById("achieveLevelNum");
     lvlEl.innerHTML = bibleIconSVG(g.milestone.icon, 46);
     lvlEl.setAttribute("data-action", "open-milestone-detail");
@@ -5702,25 +6012,53 @@ window.addEventListener("beforeinstallprompt", function (e) {
   var gamifMemo = null;
   function computeGamification() {
     if (gamifMemo) return gamifMemo;
-    var points = 0;
+    var points = 0, daily = {};
     Object.keys(state.history).forEach(function (dateKey) {
       if (commaOn(dateKey)) return;   // 쉼표를 쓴 날은 포인트 0
       var entry = state.history[dateKey];
       var completed = (entry && Array.isArray(entry.completed)) ? entry.completed : [];
-      points += completed.length;
+      var dp = completed.length;
       evalCats().forEach(function (cat) {
         var due = catItemsDueOn(cat, dateKey);
-        if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) points += 3;
+        if (due.length > 0 && due.every(function (it) { return completed.indexOf(it.id) !== -1; })) dp += 3;
       });
+      points += dp;
+      daily[dateKey] = dp;
     });
     points += state.bonusPoints || 0;
+    var net = points, debt = 0;
+    // 41차: 부모의 칭찬(+)·만회(+)·감점(-)을 합산한다. 칭찬은 기본 포인트에 그대로 합쳐지고,
+    // 감점은 '빚'으로 쌓여서 이후에 얻는 포인트가 먼저 빚을 갚는다. 그래서 이미 연 메달·아이템·연속일은 그대로 두고(points는 줄지 않음)
+    // 다음 메달만 감점한 만큼 늦어진다. 화면에 보이는 누적(net)은 0 밑으로 내려가지 않는다.
+    var led = praiseLedger.filter(function (e) { return !e.voided; });
+    if (led.length) {
+      var evs = [];
+      Object.keys(daily).forEach(function (k) { if (daily[k]) evs.push({ d: k, o: 0, t: "", v: daily[k] }); });
+      led.forEach(function (e) {
+        evs.push({ d: e.date, o: e.kind === "deduct" ? 2 : 1, t: e.createdAt || "", v: e.kind === "deduct" ? -e.pts : e.pts });
+      });
+      evs.sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : a.o - b.o || (a.t < b.t ? -1 : a.t > b.t ? 1 : 0); });
+      var bp = state.bonusPoints || 0;
+      if (bp) evs.push({ d: "9999-99-99", o: 0, t: "", v: bp });
+      var growth = 0, total = 0;
+      evs.forEach(function (x) {
+        if (x.v < 0) {
+          var cut = Math.min(-x.v, total);   // 가진 포인트보다 더 깎지는 않는다
+          total -= cut; debt += cut;
+        } else {
+          var pay = Math.min(debt, x.v);
+          debt -= pay; growth += x.v - pay; total += x.v;
+        }
+      });
+      points = growth; net = total;
+    }
     var level = 1, remaining = points, need = pointsNeededForLevel(level);
     while (remaining >= need) {
       remaining -= need;
       level++;
       need = pointsNeededForLevel(level);
     }
-    return { points: points, level: level, ptsIntoLevel: remaining, ptsForNext: need };
+    return { points: points, net: net, debt: debt, level: level, ptsIntoLevel: remaining, ptsForNext: need };
   }
 
 
@@ -6483,11 +6821,18 @@ window.addEventListener("beforeinstallprompt", function (e) {
     }
     return false;
   }
+  // 41차: 카운트다운(실행) 화면이 열려 있는 동안엔 메달·보상 연출을 띄우지 않고 줄을 서서 기다린다.
+  // (카테고리에 남은 항목이 있는데 연출이 끼어들어 카운트다운을 다루기 어려웠다)
+  // 실행 화면을 벗어나면(마지막 항목을 마치고 '홈으로'를 누르거나, 닫거나, 뒤로 가면) 0.4초 안에 순서대로 이어서 띄운다.
+  function celebRunBusy() {
+    var r = document.getElementById("view-run");
+    return !!r && !r.classList.contains("hidden");
+  }
   function showCeleb() {
     var ev = celebQueue[0];
     var st = celebEl();
     if (!ev) { st.classList.add("hidden"); return; }
-    if (celebBootBusy()) {
+    if (celebBootBusy() || celebRunBusy()) {
       st.classList.add("hidden");
       if (!celebWaitTimer) celebWaitTimer = setTimeout(function () { celebWaitTimer = null; if (celebQueue.length) showCeleb(); }, 400);
       return;
@@ -6509,6 +6854,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (ev.type === "restEarn") {
       st.className = "celeb-stage window";
       st.innerHTML = restEarnHtml(ev);
+      return;
+    }
+
+    if (ev.type === "praise") {
+      st.className = "celeb-stage window";
+      st.innerHTML = praiseCelebHtml(ev);
       return;
     }
 
@@ -11049,6 +11400,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["공개용 요약", "지인에게 보이는 건 이 요약뿐이에요. 루틴 이름이나 상세 기록은 보이지 않아요."],
       ["닉네임과 끄기", "공개하려면 닉네임이 필요해요. 언제든 ‘공개 끄기’로 멈출 수 있어요."]
     ], see: ["friends", "cheers"] },
+    parentpraise: { t: "부모 칭찬 · 감점", sub: "자녀 계정에 주는 보너스 · 감점", s: [
+      ["자녀가 먼저 인정해요", "지인 화면에서 지인의 아바타를 누르고 ‘이 지인을 부모로 인정하기’를 켜면, 그 지인(부모)만 내게 칭찬·감점을 줄 수 있어요. 언제든 해제할 수 있고, 인정하지 않은 사람은 줄 수 없어요."],
+      ["칭찬 · 만회 · 감점", "부모는 자녀의 아바타를 눌러 ‘칭찬 · 감점 주기’를 열어요. 칭찬은 한 번에 1~20P(하루 6번), 감점은 1~5P(하루 3번, 최근 7일 합계 10P까지), 만회는 앞서 준 감점 범위 안에서 1~10P(하루 3번)예요. 이유는 꼭 적어야 하고 30자까지예요."],
+      ["포인트는 이렇게 바뀌어요", "칭찬과 만회는 기본 포인트에 그대로 더해져요. 감점은 누적 포인트를 줄이고, 이미 받은 메달·아이템·연속일은 그대로 두는 대신 다음 메달을 감점한 만큼 늦춰요(앞으로 얻는 포인트가 먼저 그만큼을 채워요). 누적 포인트는 0 아래로 내려가지 않아요."],
+      ["기록과 취소", "주고받은 모든 기록은 날짜·이유·점수와 함께 남아요. 자녀는 지인 화면의 ‘받은 칭찬 · 감점 기록’에서 볼 수 있고(읽기만 가능), 부모는 잘못 준 기록을 ‘취소’할 수 있어요. 취소하면 포인트에서 빠지고 되돌릴 수 없어요. 감점은 ‘만회’로 일부를 돌려줄 수 있어요."]
+    ], see: ["friends", "cheers"] },
     cheers: { t: "응원 보내기", sub: "정해진 문구 · 직접 쓴 문장", s: [
       ["보내기", "연결된 지인에게 정해진 응원·칭찬 문구를 고르거나, 직접 쓴 문장(100자 이내)을 보낼 수 있어요."],
       ["하루 2개", "한 지인에게 하루 최대 2개까지 보낼 수 있어요. 정해진 문구와 직접 쓴 문장을 합쳐서 세요."],
@@ -11134,7 +11491,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     ["화면별 안내", ["home", "todo", "todoshortcut", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["루틴 · 통계 규칙", ["colors", "streak", "habit", "comeback", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
-    ["지인 · 데이터", ["share", "cheers", "backup", "offline"]]
+    ["지인 · 데이터", ["share", "cheers", "parentpraise", "backup", "offline"]]
   ];
   if (window.MMD_HELP_EN) { HELP_TOPICS = window.MMD_HELP_EN.topics; HELP_GROUPS = window.MMD_HELP_EN.groups; }   // 영어 모드: i18n-en-help.js
   function openHelp(id) {
@@ -13307,6 +13664,33 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "friend-av") { openFriendAvatar(id); }
     else if (action === "friend-av-close") { closeFriendAvatar(); }
     else if (action === "friend-av-chat") { closeFriendAvatar(); openChat(id); }
+    else if (action === "parent-grant-toggle") { if (friendTwoTap(el, "pg" + id, "한 번 더 눌러 확인")) toggleParentGrant(id); }
+    else if (action === "praise-give-open") { closeFriendAvatar(); openPraiseGive(id); }
+    else if (action === "praise-log-open") { openPraiseLog(); }
+    else if (action === "praise-close") { closePraiseOverlay(); }
+    else if (action === "praise-ok") { praiseCelebOk(); }
+    else if (action === "praise-tab") { praiseSyncInput(); if (praiseView) { praiseView.tab = id; praiseView.pts = 1; praiseView.reason = ""; renderPraiseGive(); } }
+    else if (action === "praise-chip") { if (praiseView) { praiseView.reason = PRAISE_PRESETS[praiseView.tab][parseInt(id, 10)] || ""; renderPraiseGive(); } }
+    else if (action === "praise-pts") {
+      praiseSyncInput();
+      if (praiseView && praiseView.sent) {
+        var pmax = praiseMaxPts(praiseView.tab, praiseView.sent);
+        praiseView.pts = Math.max(1, Math.min(Math.max(1, pmax), praiseView.pts + parseInt(id, 10)));
+        renderPraiseGive();
+      }
+    }
+    else if (action === "praise-send") { sendPraise(); }
+    else if (action === "praise-void") { if (friendTwoTap(el, "pv" + id, "한 번 더")) voidPraise(id); }
+    else if (action === "praise-restore-from") {
+      praiseSyncInput();
+      if (praiseView && praiseView.sent) {
+        var src = praiseView.sent.filter(function (e) { return e.id === id; })[0];
+        praiseView.tab = "restore";
+        praiseView.pts = src ? Math.min(src.pts, PRAISE_LIM.restore.max) : 1;
+        praiseView.reason = "";
+        renderPraiseGive();
+      }
+    }
     else if (action === "chat-open") { openChat(id); }
     else if (action === "chat-close") { closeChat(); }
     else if (action === "chat-refresh") { refreshChat(); }
@@ -13699,7 +14083,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       chatMenuOverlay: "chat-menu-close", cheerPickOverlay: "cheer-pick-close", todayMemoOverlay: "today-memo-cancel",
       titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
       missedOverlay: "missed-close", passOverlay: "pass-close", habitOverlay: "habit-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
-      rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", installOverlay: "install-close", catOverlay: null,
+      rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", praiseOverlay: "praise-close", installOverlay: "install-close", catOverlay: null,
       todoOverlay: "todo-close", todoQuickOverlay: "td-quick-close", tdTpOverlay: "td-tp-cancel"
     };
     function forceDismiss(ov) {
