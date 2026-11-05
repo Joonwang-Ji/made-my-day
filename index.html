@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-11-05-4";
+  var BUILD_VERSION = "2026-11-05-5";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-11-05-4">
+<link rel="stylesheet" href="style.css?v=2026-11-05-5">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -1071,17 +1071,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-11-05-4"></script>
-<script src="i18n.js?v=2026-11-05-4"></script>
-<script src="i18n-en.js?v=2026-11-05-4"></script>
-<script src="bible-medals-data.js?v=2026-11-05-4"></script>
-<script src="avatar-data.js?v=2026-11-05-4"></script>
-<script src="review-data.js?v=2026-11-05-4"></script>
-<script src="i18n-en-help.js?v=2026-11-05-4"></script>
-<script src="i18n-en-review.js?v=2026-11-05-4"></script>
-<script src="i18n-en-bible.js?v=2026-11-05-4"></script>
-<script src="i18n-en-avatar.js?v=2026-11-05-4"></script>
-<script src="i18n-en-extra.js?v=2026-11-05-4"></script>
+<script type="module" src="firebase-service.js?v=2026-11-05-5"></script>
+<script src="i18n.js?v=2026-11-05-5"></script>
+<script src="i18n-en.js?v=2026-11-05-5"></script>
+<script src="bible-medals-data.js?v=2026-11-05-5"></script>
+<script src="avatar-data.js?v=2026-11-05-5"></script>
+<script src="review-data.js?v=2026-11-05-5"></script>
+<script src="i18n-en-help.js?v=2026-11-05-5"></script>
+<script src="i18n-en-review.js?v=2026-11-05-5"></script>
+<script src="i18n-en-bible.js?v=2026-11-05-5"></script>
+<script src="i18n-en-avatar.js?v=2026-11-05-5"></script>
+<script src="i18n-en-extra.js?v=2026-11-05-5"></script>
 <script>
 (function () {
   "use strict";
@@ -6007,7 +6007,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   document.addEventListener("input", function (e) { if (e.target && e.target.id === "rdChMemo") rdChapCount(); });
 
   // ---- 45차: 통독 현황 이미지 — 66권 칸 격자를 A4 세로(1240×1754) 한 장에 그린다 ----
-  //  읽은 장은 초록, 계획 전에 읽은 장은 연초록, 메모가 있는 장은 모서리에 금색 점. 완독한 책은 이름 옆에 ✓와 마지막으로 읽은 날.
+  //  읽은 장은 초록(계획 전에 읽은 장도 같은 색), 칸 안에 장 숫자, 메모가 있는 장은 모서리에 금색 점. 완독한 책은 이름 옆에 ✓와 마지막으로 읽은 날.
   //  책이 많으면 2~3단으로 나누고, 칸 크기는 한 장에 들어가는 가장 큰 크기를 찾는다.
   function rdDrawImage(p) {
     var W = 1240, H = 1754, M = 72, en = rdEn();
@@ -6032,19 +6032,18 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (I.pct > 0) { var bw = Math.max(22, (W - 2 * M) * I.doneCount / (I.N || 1)); rr(M, y, bw, 22, 11); g.fillStyle = C.sage; g.fill(); }
     y += 22 + 44;
     var lx = M;
-    [["on", en ? "Read" : "읽음"], ["pre", en ? "Read before the plan" : "계획 전에 읽음"], ["no", en ? "Not yet" : "아직"], ["memo", en ? "Has a note" : "메모 있음"]].forEach(function (L) {
-      if (L[0] === "pre" && !I.pre) return;
+    [["on", en ? "Read" : "읽음"], ["no", en ? "Not yet" : "아직"], ["memo", en ? "Has a note" : "메모 있음"]].forEach(function (L) {
       if (L[0] === "memo") { g.beginPath(); g.arc(lx + 11, y - 9, 6, 0, 6.2832); g.fillStyle = C.gold; g.fill(); }
-      else { rr(lx, y - 22, 22, 22, 6); g.fillStyle = L[0] === "on" ? C.sage : L[0] === "pre" ? C.soft : "#fff"; g.fill(); g.lineWidth = 2; g.strokeStyle = L[0] === "no" ? C.line : C.sage; g.stroke(); }
+      else { rr(lx, y - 22, 22, 22, 6); g.fillStyle = L[0] === "on" ? C.sage : "#fff"; g.fill(); g.lineWidth = 2; g.strokeStyle = L[0] === "no" ? C.line : C.sage; g.stroke(); }
       txt(L[1], lx + 32, y - 2, "700 22px", C.dim);
       g.font = "700 22px " + fam; lx += 32 + g.measureText(L[1]).width + 30;
     });
-    var top = y + 34, bottom = H - M - 36, areaH = bottom - top, GAPC = 44;
+    var top = y + 34, bottom = H - M - 36, areaH = bottom - top;
     var books = p.books.map(rdBook).filter(Boolean);
     function layout(cols, s) {
-      var gp = Math.max(2, Math.round(s * 0.14)), colW = (W - 2 * M - GAPC * (cols - 1)) / cols, lf = Math.round(Math.max(17, Math.min(26, s * 0.78)));
-      var per = Math.max(1, Math.floor((colW + gp) / (s + gp))), lab = lf + 12, bg = Math.round(Math.max(10, s * 0.55));
-      return { cols: cols, s: s, gp: gp, colW: colW, lf: lf, per: per, lab: lab, hs: books.map(function (b) { return lab + Math.ceil(b.chapters / per) * (s + gp) - gp + bg; }) };
+      var gc = cols >= 4 ? 26 : 44, gp = Math.max(2, Math.round(s * 0.14)), colW = (W - 2 * M - gc * (cols - 1)) / cols, lf = Math.round(Math.max(15, Math.min(26, s * 0.78)));
+      var per = Math.max(1, Math.floor((colW + gp) / (s + gp))), lab = lf + 10, bg = Math.round(Math.max(8, s * 0.5));
+      return { gc: gc, cols: cols, s: s, gp: gp, colW: colW, lf: lf, per: per, lab: lab, hs: books.map(function (b) { return lab + Math.ceil(b.chapters / per) * (s + gp) - gp + bg; }) };
     }
     function pack(L, limit) {
       var groups = [[]], cur = 0;
@@ -6056,15 +6055,15 @@ window.addEventListener("beforeinstallprompt", function (e) {
       return groups;
     }
     var L = null, groups = null, s, k;
-    for (s = 44; s >= 8 && !L; s--) for (k = 1; k <= 3 && !L; k++) { var t = layout(k, s), gr = pack(t, areaH); if (gr && gr.length <= k) { L = t; groups = gr; } }
-    if (!L) { L = layout(3, 8); groups = pack(L, 1e9); }
+    for (s = 44; s >= 8 && !L; s--) for (k = 1; k <= 4 && !L; k++) { var t = layout(k, s), gr = pack(t, areaH); if (gr && gr.length <= k) { L = t; groups = gr; } }
+    if (!L) { L = layout(4, 8); groups = pack(L, 1e9); }
     // 단 높이를 고르게: 들어가는 가장 작은 높이 한도로 다시 나눈다
     var total = 0; L.hs.forEach(function (h) { total += h; });
     var lo = Math.max.apply(null, L.hs.concat([total / L.cols])), hi = areaH;
     while (hi - lo > 4) { var mid = (lo + hi) / 2, pg = pack(L, mid); if (pg && pg.length <= L.cols) hi = mid; else lo = mid; }
     groups = pack(L, hi) || groups;
     groups.forEach(function (idxs, ci) {
-      var x0 = M + ci * (L.colW + GAPC), yy = top;
+      var x0 = M + ci * (L.colW + L.gc), yy = top;
       idxs.forEach(function (bi) {
         var b = books[bi], n = 0, last = "", c;
         for (c = 1; c <= b.chapters; c++) { var dv = p.done[b.id + ":" + c]; if (dv) { n++; if (dv !== "pre" && dv > last) last = dv; } }
@@ -6076,9 +6075,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
         for (c = 1; c <= b.chapters; c++) {
           var col = (c - 1) % L.per, row = Math.floor((c - 1) / L.per), cx = x0 + col * (L.s + L.gp), cyy = cy + row * (L.s + L.gp), key = b.id + ":" + c, v = p.done[key];
           rr(cx, cyy, L.s, L.s, Math.max(2, L.s * 0.2));
-          g.fillStyle = v ? (v === "pre" ? C.soft : C.sage) : "#fff"; g.fill();
+          g.fillStyle = v ? C.sage : "#fff"; g.fill();
           g.lineWidth = Math.max(1, L.s * 0.06); g.strokeStyle = v ? C.sage : C.line; g.stroke();
-          if (L.s >= 20) txt(String(c), cx + L.s / 2, cyy + L.s / 2 + L.s * 0.18, "700 " + Math.round(L.s * 0.46) + "px", v ? (v === "pre" ? C.sage : "#fff") : C.dim, "center");
+          if (L.s >= 15) { var nf = L.s * (c >= 100 ? 0.4 : 0.5); txt(String(c), cx + L.s / 2, cyy + L.s / 2 + nf * 0.36, "700 " + nf.toFixed(1) + "px", v ? "#fff" : C.dim, "center"); }
           if (p.memo && p.memo[key]) { g.beginPath(); g.arc(cx + L.s - Math.max(3, L.s * 0.16), cyy + Math.max(3, L.s * 0.16), Math.max(2.5, L.s * 0.11), 0, 6.2832); g.fillStyle = C.gold; g.fill(); }
         }
         yy += L.hs[bi];
