@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-11-05-3";
+  var BUILD_VERSION = "2026-11-05-4";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-11-05-3">
+<link rel="stylesheet" href="style.css?v=2026-11-05-4">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -940,6 +940,35 @@ window.addEventListener("beforeinstallprompt", function (e) {
     <div class="tp-card-body" id="readingOvBody"></div>
   </div>
 </div>
+<!-- 45차: 통독 장별 메모·읽은 날 수정 -->
+<div class="tp-overlay hidden" id="rdChapterOverlay">
+  <div class="tp-card">
+    <div class="tp-title" id="rdChTitle"></div>
+    <div id="rdChDateRow">
+      <div class="day-ov-label" id="rdChDateLbl"></div>
+      <div class="hb-start-row"><input type="date" id="rdChDate" class="cat-name-input" aria-label="읽은 날"><button type="button" class="date-type-btn" data-action="date-type" data-for="rdChDate" aria-label="날짜 직접 입력" title="날짜 직접 입력">✎</button></div>
+    </div>
+    <div class="day-ov-label" id="rdChMemoLbl"></div>
+    <textarea id="rdChMemo" class="cat-name-input rd-memo-ta" rows="3" maxlength="150"></textarea>
+    <div class="rd-memo-count" id="rdChCount" aria-hidden="true"></div>
+    <div class="tp-actions"><div class="btn" data-action="rd-chap-cancel" id="rdChCancel"></div><div class="btn primary" data-action="rd-chap-save" id="rdChSave"></div></div>
+    <div class="rd-chap-unread" id="rdChUnread" role="button" data-action="rd-chap-unread"></div>
+  </div>
+</div>
+<!-- 45차: 통독 현황 이미지(66권 칸 격자) -->
+<div class="tp-overlay hidden" id="rdImageOverlay">
+  <div class="tp-card tp-card-scroll" style="max-width:380px;">
+    <div class="tp-card-head">
+      <div class="tp-title" id="rdImgTitle"></div>
+      <span class="tp-close-x" data-action="rd-img-close" role="button" aria-label="닫기">✕</span>
+    </div>
+    <div class="tp-card-body">
+      <div id="rdImgBox" class="rd-img-box"></div>
+      <div class="rd-img-hint" id="rdImgHint"></div>
+      <div class="tp-actions"><div class="btn" data-action="rd-img-close" id="rdImgClose"></div><div class="btn primary" data-action="rd-img-save" id="rdImgSave"></div></div>
+    </div>
+  </div>
+</div>
 <!-- 44차: 날짜 직접 입력(달력·휠은 그대로 두고, ✎로 숫자를 쳐서 넣는 창) -->
 <div class="tp-overlay hidden" id="dateTypeOverlay">
   <div class="tp-card">
@@ -1042,17 +1071,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-11-05-3"></script>
-<script src="i18n.js?v=2026-11-05-3"></script>
-<script src="i18n-en.js?v=2026-11-05-3"></script>
-<script src="bible-medals-data.js?v=2026-11-05-3"></script>
-<script src="avatar-data.js?v=2026-11-05-3"></script>
-<script src="review-data.js?v=2026-11-05-3"></script>
-<script src="i18n-en-help.js?v=2026-11-05-3"></script>
-<script src="i18n-en-review.js?v=2026-11-05-3"></script>
-<script src="i18n-en-bible.js?v=2026-11-05-3"></script>
-<script src="i18n-en-avatar.js?v=2026-11-05-3"></script>
-<script src="i18n-en-extra.js?v=2026-11-05-3"></script>
+<script type="module" src="firebase-service.js?v=2026-11-05-4"></script>
+<script src="i18n.js?v=2026-11-05-4"></script>
+<script src="i18n-en.js?v=2026-11-05-4"></script>
+<script src="bible-medals-data.js?v=2026-11-05-4"></script>
+<script src="avatar-data.js?v=2026-11-05-4"></script>
+<script src="review-data.js?v=2026-11-05-4"></script>
+<script src="i18n-en-help.js?v=2026-11-05-4"></script>
+<script src="i18n-en-review.js?v=2026-11-05-4"></script>
+<script src="i18n-en-bible.js?v=2026-11-05-4"></script>
+<script src="i18n-en-avatar.js?v=2026-11-05-4"></script>
+<script src="i18n-en-extra.js?v=2026-11-05-4"></script>
 <script>
 (function () {
   "use strict";
@@ -5379,11 +5408,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
   }
   // ---- 44차: 성경 통독 ----
   // 통독표(플랜)를 여러 개 만들어 읽은 장을 체크한다. 스트릭·포인트·메달과는 별개로 기록한다(1차).
-  //  · state.readingPlans = [{ id, name, books:[책 id…(성경 순서)], start, end:"YYYY-MM-DD", skipSun, audio, cu:"mix"|"sep"(밀렸을 때: 오늘 분량에 합치기 / 진도대로+밀린 장 따로), made, done:{ "gen:1": "YYYY-MM-DD" | "pre" } }]
+  //  · state.readingPlans = [{ id, name, books:[책 id…(성경 순서)], start, end:"YYYY-MM-DD", skipSun, cu:"mix"|"sep"(밀렸을 때: 오늘 분량에 합치기 / 진도대로+밀린 장 따로), made, done:{ "gen:1": "YYYY-MM-DD" | "pre" }, memo:{ "gen:1": "한 줄 메모(150자)" } }]   // 45차: memo 추가, audio(들은 것도 인정) 삭제
   //  · done 값: 읽은 날짜, 또는 "pre" = 통독표를 만들기 전에 이미 읽은 곳(계획 분량에서 빼고 진도에만 넣는다)
   //  · 진도는 날짜가 아니라 "읽은 장" 기준. 오늘 분량 = 오늘 아침 기준 남은 장 ÷ 오늘 포함 남은 읽는 날(올림) → 밀리면 자동으로 늘어난다.
   //  · 본문은 앱에 넣지 않는다(번역본 저작권). 성경 앱에서 읽고 여기서 체크한다.
-  var RD_MAX = 12;
+  var RD_MAX = 12, RD_MEMO_MAX = 150;
+  function rdT(ko, en) { return rdEn() ? en : ko; }
   // 영어 모드: 숫자가 섞인 문구는 번역 사전으로 못 바꾸므로 여기서 직접 영어로 만든다(고정 문구는 i18n-en-extra.js)
   function rdEn() { return !!(window.MMD_I18N && window.MMD_I18N.lang === "en"); }
   function rdCh(from, to) { return rdEn() ? "ch. " + from + (to > from ? "–" + to : "") : (to > from ? from + "~" + to + "장" : from + "장"); }
@@ -5410,8 +5440,16 @@ window.addEventListener("beforeinstallprompt", function (e) {
         if (c < 1 || c > bk.chapters) return;
         if (v === "pre" || (typeof v === "string" && re.test(v))) done[k] = v;
       });
+      var memo = {};
+      if (p.memo && typeof p.memo === "object" && !Array.isArray(p.memo)) Object.keys(p.memo).forEach(function (k) {
+        var m = k.match(/^([0-9a-z]{3}):(\d{1,3})$/), v = p.memo[k];
+        if (!m || books.indexOf(m[1]) === -1 || typeof v !== "string") return;
+        var bk = rdBook(m[1]), c = +m[2], t = v.trim().slice(0, RD_MEMO_MAX);
+        if (c < 1 || c > bk.chapters || !t) return;
+        memo[k] = t;
+      });
       out.push({ id: p.id, name: typeof p.name === "string" ? p.name.slice(0, 20) : "", books: books, start: start, end: end,
-        skipSun: p.skipSun === true, audio: p.audio !== false, cu: p.cu === "sep" ? "sep" : "mix", made: (typeof p.made === "string" && re.test(p.made)) ? p.made : start, done: done });
+        skipSun: p.skipSun === true, cu: p.cu === "sep" ? "sep" : "mix", made: (typeof p.made === "string" && re.test(p.made)) ? p.made : start, done: done, memo: memo });
     });
     return out.slice(0, 12);
   }
@@ -5426,7 +5464,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (!lp) { if (!bp && sp) out.push(sp); return; }                      // 내가 지움 → 지움 / 서버에서 새로 생김 → 가져옴
       if (!sp) { if (bp && canon(lp) === canon(bp)) return; out.push(lp); return; }   // 서버에서 지워짐: 내가 안 건드렸으면 지움, 건드렸으면 살림
       var m = { id: id };
-      ["name", "books", "start", "end", "skipSun", "audio", "cu", "made"].forEach(function (k) {
+      ["name", "books", "start", "end", "skipSun", "cu", "made"].forEach(function (k) {
         m[k] = (canon(lp[k]) !== canon(bp ? bp[k] : undefined)) ? lp[k] : sp[k];
       });
       var d = {}, bd = (bp && bp.done) || {}, ld = lp.done || {}, sd = sp.done || {};
@@ -5434,6 +5472,12 @@ window.addEventListener("beforeinstallprompt", function (e) {
       Object.keys(ld).forEach(function (k) { if (bd[k] !== ld[k]) d[k] = ld[k]; });      // 내가 체크했거나 날짜를 바꾼 장
       Object.keys(bd).forEach(function (k) { if (ld[k] === undefined) delete d[k]; });   // 내가 해제한 장
       m.done = d;
+      // 45차 메모: 장 단위 3방향 합치기(내가 쓰거나 고친 메모는 내 것, 내가 지운 메모는 지움, 나머지는 서버 것)
+      var md = {}, bm = (bp && bp.memo) || {}, lm = lp.memo || {}, sm = sp.memo || {};
+      Object.keys(sm).forEach(function (k) { md[k] = sm[k]; });
+      Object.keys(lm).forEach(function (k) { if (bm[k] !== lm[k]) md[k] = lm[k]; });
+      Object.keys(bm).forEach(function (k) { if (lm[k] === undefined) delete md[k]; });
+      m.memo = md;
       out.push(m);
     });
     return out;
@@ -5555,6 +5599,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var nx = rdNextKey(p, I.todayKeys.concat(I.backlog));
       if (nx) h += '<div class="rd-more" data-action="rd-more" data-id="' + p.id + '">＋ ' + (I.target > 0 ? '다음 장 더 읽기' : '다음 장 읽기') + ' <span class="rd-more-t">' + rdKeyHtml(nx) + '</span></div>';
     }
+    if (rdLast && rdLast.pid === p.id && p.done[rdLast.key] && p.done[rdLast.key] !== "pre" && Date.now() - rdLast.at < 600000) {
+      h += '<div class="rd-memo-last" role="button" data-action="rd-memo" data-id="' + p.id + '" data-key="' + rdLast.key + '">✎ ' + rdKeyHtml(rdLast.key) + ' ' + (p.memo && p.memo[rdLast.key] ? rdT('메모 고치기', 'edit note') : rdT('한 줄 메모 남기기', 'add a note')) + '</div>';
+    }
     h += '<div class="rd-bar" aria-hidden="true"><i style="width:' + I.pct + '%"></i></div>' +
       '<div class="rd-sub"><span>' + I.doneCount + ' / ' + (rdEn() ? I.N + ' ch.' : I.N + '장') + ' · ' + I.pct + '%</span><span>' + (I.finished ? '' : (rdEn() ? I.remaining + ' left' : '남은 ' + I.remaining + '장') + (I.over ? '' : ' · ' + rdDateLabel(p.end) + ' · D-' + I.daysLeft)) + '</span></div></div>';
     return h;
@@ -5575,9 +5622,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
   function rdToggleKey(pid, key) {
     var p = rdById(pid);
     if (!p || !/^[0-9a-z]{3}:\d{1,3}$/.test(key || "")) return;
-    if (p.done[key]) delete p.done[key]; else p.done[key] = todayKey();
+    if (p.done[key]) { delete p.done[key]; if (rdLast && rdLast.pid === pid && rdLast.key === key) rdLast = null; }
+    else { p.done[key] = todayKey(); rdLast = { pid: pid, key: key, at: Date.now() }; }   // 45차: 방금 체크한 장에 한 줄 메모를 바로 남길 수 있게 카드에 안내
     rdAfterChange();
   }
+  var rdLast = null;   // { pid, key, at } 방금 체크한 장(기기에 저장 안 함)
 
   // ---- 통독 창(목록 · 상세 · 만들기/편집) ----
   var rdView = null;   // { mode: "list"|"detail"|"edit", id, form?, open:{ bookId:true } }
@@ -5597,9 +5646,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
   }
   function rdNewForm(id) {
     var p = id ? rdById(id) : null, t = todayKey(), e = parseKeyToDate(t);
-    if (p) return { id: p.id, name: p.name, nameAuto: false, scope: "keep", books: p.books.slice(), start: p.start, end: p.end, skipSun: p.skipSun, audio: p.audio, cu: p.cu === "sep" ? "sep" : "mix", preBook: "", preCh: "" };
+    if (p) return { id: p.id, name: p.name, nameAuto: false, scope: "keep", books: p.books.slice(), start: p.start, end: p.end, skipSun: p.skipSun, cu: p.cu === "sep" ? "sep" : "mix", preBook: "", preCh: "" };
     e.setMonth(11, 31); if (keyFor(e) < t) e.setFullYear(e.getFullYear() + 1);
-    return { id: null, name: rdScopeName("all"), nameAuto: true, scope: "all", books: rdAllBookIds(), start: t, end: keyFor(e), skipSun: false, audio: true, cu: "mix", preBook: "", preCh: "" };
+    return { id: null, name: rdScopeName("all"), nameAuto: true, scope: "all", books: rdAllBookIds(), start: t, end: keyFor(e), skipSun: false, cu: "mix", preBook: "", preCh: "" };
   }
   function rdFormSync() {
     if (!rdView || !rdView.form) return;
@@ -5625,7 +5674,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
   function rdFormTotal(f) { var n = 0; f.books.forEach(function (id) { var b = rdBook(id); if (b) n += b.chapters; }); return n; }
   function rdFormInfoText(f) {
     var plan = { start: f.start, end: f.end, skipSun: f.skipSun }, D = f.end >= f.start ? rdDays(plan).length : 0;
-    var N = rdFormTotal(f), pre = f.id ? 0 : rdPreKeys(f).length, rest = N - pre;
+    var N = rdFormTotal(f), pre = rdPreKeys(f).length, rest = N - pre;
+    if (f.id) {   // 기존 통독표: 이미 체크한 장 + 새로 '여기까지' 표시할 장
+      var ep = rdById(f.id), seen = {};
+      if (ep) { Object.keys(ep.done).forEach(function (k) { seen[k] = 1; }); rdPreKeys(f).forEach(function (k) { seen[k] = 1; }); pre = Object.keys(seen).length; rest = N - pre; }
+    }
     if (!D) return rdEn() ? "The end date can't be before the start date" : "끝나는 날이 시작일보다 빠를 수 없어요";
     var per = Math.ceil(Math.max(0, rest) / D);
     if (rdEn()) return "Total " + N + " ch." + (pre ? " · already read " + pre : "") + " · " + D + " reading days → about " + per + " a day";
@@ -5651,17 +5704,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
       '<span class="tp-chip hb-start-today' + (f.start === t ? ' on' : '') + '" data-action="rd-start-today">오늘</span></div>' +
       '<div class="day-ov-label">끝나는 날</div><div class="hb-start-row"><input type="date" id="rdEnd" class="cat-name-input" value="' + f.end + '" max="' + keyFor(maxD) + '" aria-label="끝나는 날">' + dtBtn("rdEnd") + '</div>';
     h += '<div class="theme-option' + (f.skipSun ? ' active' : '') + '" data-action="rd-toggle" data-id="skipSun"><span>주일은 쉬기</span><span class="dot"></span></div>' +
-      '<div class="theme-option' + (f.audio ? ' active' : '') + '" data-action="rd-toggle" data-id="audio"><span>들은 것도 읽은 것으로 쳐요</span><span class="dot"></span></div>' +
       '<div class="day-ov-label">밀렸을 때</div>' +
       '<div class="theme-option' + (f.cu !== "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="mix"><span>오늘 분량에 합치기<small class="rd-opt-sub">밀린 장을 오늘 범위에 더하고, 하루 분량을 다시 나눠요.</small></span><span class="dot"></span></div>' +
       '<div class="theme-option' + (f.cu === "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="sep"><span>진도대로 읽고, 밀린 건 따로<small class="rd-opt-sub">오늘 범위는 일정 그대로, 밀린 장은 \'밀린 장\' 줄에 따로 모아요.</small></span><span class="dot"></span></div>';
-    if (isNew) {
-      h += '<div class="day-ov-label">이미 읽은 곳 <span class="hb-count">여기까지 읽었어요</span></div><div class="rd-pre-row">' +
+    {
+      h += '<div class="day-ov-label">' + (isNew ? '이미 읽은 곳' : rdT('여기까지 읽은 것으로 표시', 'Mark as read up to here')) + ' <span class="hb-count">' + (isNew ? '여기까지 읽었어요' : '') + '</span></div><div class="rd-pre-row">' +
         '<select id="rdPreBook" class="cat-name-input" aria-label="이미 읽은 책"><option value="">없음 (처음부터)</option>' +
         f.books.map(function (id) { var b = rdBook(id); return '<option value="' + id + '"' + (f.preBook === id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>'; }).join("") + '</select>' +
         '<input type="text" id="rdPreCh" class="cat-name-input" inputmode="numeric" maxlength="3" placeholder="장" aria-label="이미 읽은 장" value="' + escapeHtml(f.preCh) + '"></div>' +
-        '<div class="hb-pick-note">고른 책·장까지(포함) 읽은 것으로 시작해요. 예: 여호수아 15장</div>';
-    } else h += '<div class="hb-pick-note">읽을 범위와 읽은 기록은 여기서 바꾸지 않아요.</div>';
+        '<div class="hb-pick-note">' + (isNew ? '고른 책·장까지(포함) 읽은 것으로 시작해요. 예: 여호수아 15장'
+          : rdT('고른 책·장까지(포함) 아직 체크 안 된 장을 \'계획 전에 읽음\'으로 표시해요. 이미 체크한 날짜는 그대로예요. 읽을 범위는 여기서 바꾸지 않아요.', 'Chapters up to and including your pick that aren\'t checked yet are marked \'read before the plan\'. Dates already logged stay. The range can\'t be changed here.')) + '</div>';
+    }
     h += '<div class="rd-info" id="rdFormInfo" aria-live="polite">' + escapeHtml(rdFormInfoText(f)) + '</div>' +
       '<div class="tp-actions"><div class="btn" data-action="rd-cancel">취소</div><div class="btn primary" data-action="rd-save">' + (isNew ? '만들기' : '저장') + '</div></div>';
     return h;
@@ -5675,7 +5728,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (f.id) {
       var p = rdById(f.id);
       if (!p) { rdCloseOverlay(); return; }
-      p.name = name.slice(0, 20); p.start = f.start; p.end = f.end; p.skipSun = f.skipSun; p.audio = f.audio; p.cu = f.cu === "sep" ? "sep" : "mix";
+      p.name = name.slice(0, 20); p.start = f.start; p.end = f.end; p.skipSun = f.skipSun; p.cu = f.cu === "sep" ? "sep" : "mix";
+      rdPreKeys(f).forEach(function (k) { if (!p.done[k]) p.done[k] = "pre"; });   // 45차: 기존 통독표에도 '여기까지 읽었어요' 일괄 표시(이미 체크한 장은 그대로)
       rdAfterChange();
       rdView = { mode: "detail", id: p.id, open: {} };
       rdRender();
@@ -5684,7 +5738,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (rdList().length >= RD_MAX) { toast(rdEn() ? "You can make up to " + RD_MAX + " plans" : "통독표는 " + RD_MAX + "개까지 만들 수 있어요"); return; }
     var done = {};
     rdPreKeys(f).forEach(function (k) { done[k] = "pre"; });
-    var np = { id: uid(), name: name.slice(0, 20), books: f.books.slice(), start: f.start, end: f.end, skipSun: f.skipSun, audio: f.audio, cu: f.cu === "sep" ? "sep" : "mix", made: today, done: done };
+    var np = { id: uid(), name: name.slice(0, 20), books: f.books.slice(), start: f.start, end: f.end, skipSun: f.skipSun, cu: f.cu === "sep" ? "sep" : "mix", made: today, done: done, memo: {} };
     np = normalizeReadingPlans([np])[0];
     if (!Array.isArray(state.readingPlans)) state.readingPlans = [];
     state.readingPlans.push(np);
@@ -5709,7 +5763,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         for (var c2 = 1; c2 <= b.chapters; c2++) {
           var v = p.done[id + ":" + c2];
           var kk = id + ":" + c2;
-          h += '<span class="rd-cell' + (v ? (v === "pre" ? ' pre' : ' on') : '') + (!v && todaySet[kk] ? ' today' : '') + (!v && lateSet[kk] ? ' late' : '') + '" role="button" aria-pressed="' + !!v + '" data-action="rd-cell" data-id="' + p.id + '" data-key="' + id + ':' + c2 + '"' + (v && v !== "pre" ? ' title="' + rdDateLabel(v) + '"' : '') + '>' + c2 + '</span>';
+          h += '<span class="rd-cell' + (v ? (v === "pre" ? ' pre' : ' on') : '') + (!v && todaySet[kk] ? ' today' : '') + (!v && lateSet[kk] ? ' late' : '') + (p.memo && p.memo[kk] ? ' hasmemo' : '') + '" role="button" aria-pressed="' + !!v + '" data-action="rd-cell" data-id="' + p.id + '" data-key="' + id + ':' + c2 + '"' + (v && v !== "pre" ? ' title="' + rdDateLabel(v) + '"' : '') + '>' + c2 + '</span>';
         }
         h += '</div><div class="rd-book-act">' +
           (n > 0 ? '<span class="rd-pill ghost" role="button" data-action="rd-book-all" data-id="' + id + '" data-val="0">전부 해제</span>' : '') +
@@ -5732,10 +5786,60 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var en = rdEn();
     h += '<div class="rd-tags"><span class="rd-tag">📅 ' + rdDateLabel(p.start) + ' ~ ' + rdDateLabel(p.end) + '</span>' +
       (p.skipSun ? '<span class="rd-tag">' + (en ? 'Sundays off' : '주일 쉬기') + '</span>' : '') +
-      (p.audio ? '<span class="rd-tag">' + (en ? 'Listening counts' : '듣기도 인정') + '</span>' : '') +
       '<span class="rd-tag">' + (p.cu === 'sep' ? (en ? 'Behind kept separate' : '밀린 건 따로') : (en ? 'Behind merged into today' : '밀린 건 합치기')) + '</span></div>' +
-      '<div class="rd-acts"><span class="rd-pill" role="button" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="rd-pill danger" role="button" data-action="rd-del" data-id="' + p.id + '">지우기</span></div>';
-    return h + rdBooksHtml(p);
+      '<div class="rd-acts"><span class="rd-pill" role="button" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="rd-pill" role="button" data-action="rd-image" data-id="' + p.id + '">🖼 ' + rdT('이미지로 저장', 'Save as image') + '</span><span class="rd-pill danger" role="button" data-action="rd-del" data-id="' + p.id + '">지우기</span></div>';
+    var tab = rdView && rdView.tab === "log" ? "log" : "books";
+    h += '<div class="rd-tabs" role="tablist"><span class="tp-chip' + (tab === "books" ? ' on' : '') + '" role="tab" aria-selected="' + (tab === "books") + '" data-action="rd-tab" data-id="books">' + rdT('책별 진도', 'By book') + '</span>' +
+      '<span class="tp-chip' + (tab === "log" ? ' on' : '') + '" role="tab" aria-selected="' + (tab === "log") + '" data-action="rd-tab" data-id="log">' + rdT('읽은 기록', 'Reading log') + '</span></div>';
+    return h + (tab === "log" ? rdLogHtml(p) : rdBooksHtml(p));
+  }
+  // 45차: 읽은 날짜 기록 — 날짜별로 묶어 보여 주고, 장을 누르면 날짜·메모를 고칠 수 있다
+  function rdDow(k) { return (rdEn() ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] : ["일", "월", "화", "수", "목", "금", "토"])[parseKeyToDate(k).getDay()]; }
+  function rdLogHtml(p) {
+    var keys = rdKeys(p), byDate = {}, dates = [], preKeys = [], memoN = 0, i;
+    for (i = 0; i < keys.length; i++) {
+      var v = p.done[keys[i]];
+      if (p.memo && p.memo[keys[i]]) memoN++;
+      if (!v) continue;
+      if (v === "pre") { preKeys.push(keys[i]); continue; }
+      if (!byDate[v]) { byDate[v] = []; dates.push(v); }
+      byDate[v].push(keys[i]);
+    }
+    dates.sort(function (a, b) { return a < b ? 1 : a > b ? -1 : 0; });
+    var asc = dates.slice().reverse(), best = 0, run = 0;
+    for (i = 0; i < asc.length; i++) {
+      run = (i > 0 && Math.round((parseKeyToDate(asc[i]) - parseKeyToDate(asc[i - 1])) / 86400000) === 1) ? run + 1 : 1;
+      if (run > best) best = run;
+    }
+    var memoOnly = !!(rdView && rdView.memoOnly), en = rdEn();
+    var h = '<div class="rd-log-sum"><span>' + (en ? 'Days read ' + dates.length : '읽은 날 ' + dates.length + '일') + '</span><span>' + (en ? 'Longest streak ' + best : '연속 최고 ' + best + '일') + '</span><span>' + (en ? 'Notes ' + memoN : '메모 ' + memoN + '개') + '</span></div>';
+    if (memoN > 0) h += '<div class="rd-log-filter"><span class="tp-chip' + (memoOnly ? ' on' : '') + '" role="button" aria-pressed="' + memoOnly + '" data-action="rd-memo-only">' + rdT('메모 있는 것만', 'With notes only') + '</span></div>';
+    if (!dates.length && !preKeys.length) return h + '<div class="hb-empty">' + rdT('아직 읽은 기록이 없어요. 장을 체크하면 날짜별로 여기에 쌓여요.', 'Nothing logged yet. Chapters you check will collect here by date.') + '</div>';
+    var shown = 0;
+    dates.forEach(function (d) {
+      var ks = byDate[d];
+      if (memoOnly) ks = ks.filter(function (k) { return p.memo && p.memo[k]; });
+      if (!ks.length) return;
+      shown++;
+      h += '<div class="rd-log-day"><div class="rd-log-dh"><span class="rd-log-d">' + rdDateLabel(d) + ' (' + rdDow(d) + ')</span><span class="rd-log-n">' + rdN(byDate[d].length) + '</span></div><div class="rd-log-chips">';
+      rdSegs(ks).forEach(function (sg) {
+        var bk = rdBook(sg.id);
+        h += '<span class="rd-seg"><span class="rd-segname">' + escapeHtml(bk ? bk.name : "") + '</span>';
+        for (var c = sg.from; c <= sg.to; c++) {
+          var k = sg.id + ":" + c;
+          h += '<span class="rd-chip on rd-lc' + (p.memo && p.memo[k] ? ' hasmemo' : '') + '" role="button" data-action="rd-memo" data-id="' + p.id + '" data-key="' + k + '">' + c + '</span>';
+        }
+        h += '</span>';
+      });
+      h += '</div>';
+      ks.forEach(function (k) {
+        if (p.memo && p.memo[k]) h += '<div class="rd-log-memo" role="button" data-action="rd-memo" data-id="' + p.id + '" data-key="' + k + '"><b>' + rdKeyHtml(k) + '</b> ' + escapeHtml(p.memo[k]) + '</div>';
+      });
+      h += '</div>';
+    });
+    if (memoOnly && !shown) h += '<div class="hb-empty">' + rdT('메모를 남긴 읽은 기록이 없어요.', 'No notes on logged chapters.') + '</div>';
+    if (!memoOnly && preKeys.length) h += '<div class="rd-log-day rd-log-pre"><div class="rd-log-dh"><span class="rd-log-d">' + rdT('계획 전에 읽음', 'Read before the plan') + '</span><span class="rd-log-n">' + rdN(preKeys.length) + '</span></div><div class="rd-log-pre-r">' + rdRangeHtml(preKeys.slice(0, 400)) + '</div></div>';
+    return h;
   }
   function rdListHtml() {
     var all = rdList(), act = all.filter(function (p) { return !rdInfo(p).finished; }), fin = all.filter(function (p) { return rdInfo(p).finished; });
@@ -5780,6 +5884,15 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "rd-save") { rdSave(); }
     else if (action === "rd-chip") { rdToggleKey(id, key); }
     else if (action === "rd-cell") { rdToggleKey(id, key); }
+    else if (action === "rd-tab") { if (rdView) { rdView.tab = id === "log" ? "log" : "books"; rdRender(); } }
+    else if (action === "rd-memo-only") { if (rdView) { rdView.memoOnly = !rdView.memoOnly; rdRender(); } }
+    else if (action === "rd-memo") { rdChapOpen(id, key, el.classList.contains("rd-memo-last")); }
+    else if (action === "rd-chap-cancel") { rdChapClose(); }
+    else if (action === "rd-chap-save") { rdChapSave(); }
+    else if (action === "rd-chap-unread") { rdChapUnread(); }
+    else if (action === "rd-image") { rdImageOpen(id); }
+    else if (action === "rd-img-close") { rdImageClose(); }
+    else if (action === "rd-img-save") { rdImageSave(); }
     else if (action === "rd-more") { var pm = rdById(id), nk = pm && rdNextKey(pm, rdInfo(pm).todayKeys.concat(rdInfo(pm).backlog)); if (nk) rdToggleKey(id, nk); }   // 카드에 보이는 "다음 장"(오늘 분량 다음)과 같은 곳
     else if (action === "rd-book") { if (rdView) { rdView.open[id] = !rdView.open[id]; rdRender(); } }
     else if (action === "rd-book-all") {
@@ -5826,6 +5939,194 @@ window.addEventListener("beforeinstallprompt", function (e) {
   }
   document.addEventListener("input", function (e) { var t = e.target; if (t && (t.id === "rdPreCh" || t.id === "rdName")) rdUpdateInfo(); });
   document.addEventListener("change", function (e) { var t = e.target; if (t && (t.id === "rdStart" || t.id === "rdEnd" || t.id === "rdPreBook")) rdUpdateInfo(); });
+
+
+  // ---- 45차: 장별 메모·읽은 날 수정 창 ----
+  var rdChap = null;   // { pid, key }
+  function rdChapOpen(pid, key, focusMemo) {
+    var p = rdById(pid);
+    if (!p || !/^[0-9a-z]{3}:\d{1,3}$/.test(key || "")) return;
+    var v = p.done[key], read = !!v && v !== "pre", m = key.split(":"), bk = rdBook(m[0]);
+    if (!bk) return;
+    rdChap = { pid: pid, key: key };
+    document.getElementById("rdChTitle").textContent = bk.name + " " + rdCh(+m[1], +m[1]);
+    document.getElementById("rdChDateLbl").textContent = rdT("읽은 날", "Date read");
+    document.getElementById("rdChMemoLbl").textContent = rdT("한 줄 메모", "Note");
+    document.getElementById("rdChCancel").textContent = rdT("취소", "Cancel");
+    document.getElementById("rdChSave").textContent = rdT("저장", "Save");
+    var un = document.getElementById("rdChUnread");
+    un.textContent = rdT("읽음 표시 해제", "Unmark as read"); un.classList.toggle("hidden", !read);
+    document.getElementById("rdChDateRow").classList.toggle("hidden", !read);
+    var di = document.getElementById("rdChDate"); di.max = todayKey(); di.value = read ? v : "";
+    var ta = document.getElementById("rdChMemo");
+    ta.placeholder = rdT("은혜받은 말씀, 느낀 점, 기도제목 한 줄", "A verse, a thought, a prayer — one line");
+    ta.value = (p.memo && p.memo[key]) || "";
+    rdChapCount();
+    document.getElementById("rdChapterOverlay").classList.remove("hidden");
+    if (focusMemo) { try { ta.focus(); } catch (e) {} }
+  }
+  function rdChapCount() {
+    var ta = document.getElementById("rdChMemo"), c = document.getElementById("rdChCount");
+    if (ta && c) c.textContent = ta.value.length + " / " + RD_MEMO_MAX;
+  }
+  function rdChapClose() {
+    document.getElementById("rdChapterOverlay").classList.add("hidden");
+    rdChap = null;
+    try { document.getElementById("rdChMemo").blur(); } catch (e) {}
+  }
+  function rdChapSave() {
+    if (!rdChap) return;
+    var p = rdById(rdChap.pid);
+    if (!p) { rdChapClose(); return; }
+    var key = rdChap.key, v = p.done[key];
+    if (v && v !== "pre") {
+      var d = document.getElementById("rdChDate").value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { toast(rdT("읽은 날을 확인해 주세요", "Please check the date")); return; }
+      if (d > todayKey()) { toast(rdT("오늘 이후 날짜는 고를 수 없어요", "You can't pick a future date")); return; }
+      p.done[key] = d;
+    }
+    var t = document.getElementById("rdChMemo").value.trim().slice(0, RD_MEMO_MAX);
+    if (!p.memo) p.memo = {};
+    if (t) p.memo[key] = t; else delete p.memo[key];
+    if (rdLast && rdLast.pid === p.id && rdLast.key === key) rdLast = null;
+    rdChapClose();
+    rdAfterChange();
+    toast(rdT("저장했어요", "Saved"));
+  }
+  function rdChapUnread() {
+    if (!rdChap) return;
+    var p = rdById(rdChap.pid);
+    if (p) {
+      delete p.done[rdChap.key];
+      if (rdLast && rdLast.pid === p.id && rdLast.key === rdChap.key) rdLast = null;
+    }
+    rdChapClose();
+    rdAfterChange();
+    toast(rdT("읽음 표시를 해제했어요(메모는 남아 있어요)", "Unmarked (the note is kept)"));
+  }
+  document.addEventListener("input", function (e) { if (e.target && e.target.id === "rdChMemo") rdChapCount(); });
+
+  // ---- 45차: 통독 현황 이미지 — 66권 칸 격자를 A4 세로(1240×1754) 한 장에 그린다 ----
+  //  읽은 장은 초록, 계획 전에 읽은 장은 연초록, 메모가 있는 장은 모서리에 금색 점. 완독한 책은 이름 옆에 ✓와 마지막으로 읽은 날.
+  //  책이 많으면 2~3단으로 나누고, 칸 크기는 한 장에 들어가는 가장 큰 크기를 찾는다.
+  function rdDrawImage(p) {
+    var W = 1240, H = 1754, M = 72, en = rdEn();
+    var cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    var g = cv.getContext("2d"), fam = getComputedStyle(document.body).fontFamily || "sans-serif";
+    var C = { ink: "#23302A", dim: "#5C6A5F", sage: "#5B7A5E", soft: "#DCE6D6", line: "#C9C2A6", gold: "#B4841E", track: "#E6E0CC" };
+    function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+    function txt(t, x, y, font, color, align) { g.font = font + " " + fam; g.fillStyle = color; g.textAlign = align || "left"; g.fillText(t, x, y); }
+    g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+    var I = rdInfo(p), y = M + 50, name = p.name || rdT("성경 통독", "Bible reading"), fs = 56;
+    g.font = "800 " + fs + "px " + fam;
+    while (fs > 30 && g.measureText(name).width > W - 2 * M) { fs -= 2; g.font = "800 " + fs + "px " + fam; }
+    txt(name, M, y, "800 " + fs + "px", C.ink);
+    y += 42;
+    txt(rdDateLabel(p.start) + " ~ " + rdDateLabel(p.end) + (p.skipSun ? (en ? " · Sundays off" : " · 주일 쉼") : ""), M, y, "700 26px", C.dim);
+    txt((en ? "Printed " : "출력 ") + rdDateLabel(todayKey()), W - M, y, "700 26px", C.dim, "right");
+    y += 62;
+    txt(I.doneCount + " / " + I.N + (en ? " ch." : "장") + " · " + I.pct + "%", M, y, "800 38px", C.ink);
+    txt(I.finished ? (en ? "Finished 🎉" : "완독 🎉") : (en ? I.remaining + " left" : "남은 " + I.remaining + "장") + (I.over ? "" : " · D-" + I.daysLeft), W - M, y, "800 30px", I.finished ? C.sage : C.dim, "right");
+    y += 22;
+    rr(M, y, W - 2 * M, 22, 11); g.fillStyle = C.track; g.fill();
+    if (I.pct > 0) { var bw = Math.max(22, (W - 2 * M) * I.doneCount / (I.N || 1)); rr(M, y, bw, 22, 11); g.fillStyle = C.sage; g.fill(); }
+    y += 22 + 44;
+    var lx = M;
+    [["on", en ? "Read" : "읽음"], ["pre", en ? "Read before the plan" : "계획 전에 읽음"], ["no", en ? "Not yet" : "아직"], ["memo", en ? "Has a note" : "메모 있음"]].forEach(function (L) {
+      if (L[0] === "pre" && !I.pre) return;
+      if (L[0] === "memo") { g.beginPath(); g.arc(lx + 11, y - 9, 6, 0, 6.2832); g.fillStyle = C.gold; g.fill(); }
+      else { rr(lx, y - 22, 22, 22, 6); g.fillStyle = L[0] === "on" ? C.sage : L[0] === "pre" ? C.soft : "#fff"; g.fill(); g.lineWidth = 2; g.strokeStyle = L[0] === "no" ? C.line : C.sage; g.stroke(); }
+      txt(L[1], lx + 32, y - 2, "700 22px", C.dim);
+      g.font = "700 22px " + fam; lx += 32 + g.measureText(L[1]).width + 30;
+    });
+    var top = y + 34, bottom = H - M - 36, areaH = bottom - top, GAPC = 44;
+    var books = p.books.map(rdBook).filter(Boolean);
+    function layout(cols, s) {
+      var gp = Math.max(2, Math.round(s * 0.14)), colW = (W - 2 * M - GAPC * (cols - 1)) / cols, lf = Math.round(Math.max(17, Math.min(26, s * 0.78)));
+      var per = Math.max(1, Math.floor((colW + gp) / (s + gp))), lab = lf + 12, bg = Math.round(Math.max(10, s * 0.55));
+      return { cols: cols, s: s, gp: gp, colW: colW, lf: lf, per: per, lab: lab, hs: books.map(function (b) { return lab + Math.ceil(b.chapters / per) * (s + gp) - gp + bg; }) };
+    }
+    function pack(L, limit) {
+      var groups = [[]], cur = 0;
+      for (var i = 0; i < L.hs.length; i++) {
+        if (L.hs[i] > limit) return null;
+        if (cur + L.hs[i] > limit && groups[groups.length - 1].length) { groups.push([]); cur = 0; }
+        groups[groups.length - 1].push(i); cur += L.hs[i];
+      }
+      return groups;
+    }
+    var L = null, groups = null, s, k;
+    for (s = 44; s >= 8 && !L; s--) for (k = 1; k <= 3 && !L; k++) { var t = layout(k, s), gr = pack(t, areaH); if (gr && gr.length <= k) { L = t; groups = gr; } }
+    if (!L) { L = layout(3, 8); groups = pack(L, 1e9); }
+    // 단 높이를 고르게: 들어가는 가장 작은 높이 한도로 다시 나눈다
+    var total = 0; L.hs.forEach(function (h) { total += h; });
+    var lo = Math.max.apply(null, L.hs.concat([total / L.cols])), hi = areaH;
+    while (hi - lo > 4) { var mid = (lo + hi) / 2, pg = pack(L, mid); if (pg && pg.length <= L.cols) hi = mid; else lo = mid; }
+    groups = pack(L, hi) || groups;
+    groups.forEach(function (idxs, ci) {
+      var x0 = M + ci * (L.colW + GAPC), yy = top;
+      idxs.forEach(function (bi) {
+        var b = books[bi], n = 0, last = "", c;
+        for (c = 1; c <= b.chapters; c++) { var dv = p.done[b.id + ":" + c]; if (dv) { n++; if (dv !== "pre" && dv > last) last = dv; } }
+        var full = n === b.chapters;
+        txt(b.name, x0, yy + L.lf, "800 " + L.lf + "px", full ? C.sage : C.ink);
+        var rt = full ? "✓" + (last ? " " + parseInt(last.slice(5, 7), 10) + "." + parseInt(last.slice(8), 10) : "") : n + "/" + b.chapters;
+        txt(rt, x0 + L.colW, yy + L.lf, (full ? "800 " : "700 ") + Math.round(L.lf * 0.8) + "px", full ? C.sage : C.dim, "right");
+        var cy = yy + L.lab;
+        for (c = 1; c <= b.chapters; c++) {
+          var col = (c - 1) % L.per, row = Math.floor((c - 1) / L.per), cx = x0 + col * (L.s + L.gp), cyy = cy + row * (L.s + L.gp), key = b.id + ":" + c, v = p.done[key];
+          rr(cx, cyy, L.s, L.s, Math.max(2, L.s * 0.2));
+          g.fillStyle = v ? (v === "pre" ? C.soft : C.sage) : "#fff"; g.fill();
+          g.lineWidth = Math.max(1, L.s * 0.06); g.strokeStyle = v ? C.sage : C.line; g.stroke();
+          if (L.s >= 20) txt(String(c), cx + L.s / 2, cyy + L.s / 2 + L.s * 0.18, "700 " + Math.round(L.s * 0.46) + "px", v ? (v === "pre" ? C.sage : "#fff") : C.dim, "center");
+          if (p.memo && p.memo[key]) { g.beginPath(); g.arc(cx + L.s - Math.max(3, L.s * 0.16), cyy + Math.max(3, L.s * 0.16), Math.max(2.5, L.s * 0.11), 0, 6.2832); g.fillStyle = C.gold; g.fill(); }
+        }
+        yy += L.hs[bi];
+      });
+    });
+    txt("Made My Day", M, H - M + 8, "800 22px", C.dim);
+    txt(rdT("성경 통독 현황", "Bible reading progress"), W - M, H - M + 8, "700 22px", C.dim, "right");
+    return cv;
+  }
+  var rdImg = null, rdImgTok = 0;   // { url, blob, name }
+  function rdImageOpen(pid) {
+    var p = rdById(pid);
+    if (!p) return;
+    rdImageRelease();
+    var tok = ++rdImgTok, box = document.getElementById("rdImgBox");
+    document.getElementById("rdImgTitle").textContent = rdT("통독 현황 이미지", "Reading progress image");
+    document.getElementById("rdImgHint").textContent = rdT("아이폰은 이미지를 길게 눌러 '사진에 저장'도 돼요.", "On iPhone you can also long-press the image and choose Save to Photos.");
+    document.getElementById("rdImgClose").textContent = rdT("닫기", "Close");
+    document.getElementById("rdImgSave").textContent = rdT("저장·공유", "Save / share");
+    box.innerHTML = '<div class="rd-img-wait">' + rdT("그리는 중…", "Drawing…") + '</div>';
+    document.getElementById("rdImageOverlay").classList.remove("hidden");
+    function go() {
+      if (tok !== rdImgTok) return;
+      var cv;
+      try { cv = rdDrawImage(p); } catch (e) { box.innerHTML = '<div class="rd-img-wait">' + rdT("이미지를 만들지 못했어요", "Couldn't make the image") + '</div>'; return; }
+      cv.toBlob(function (blob) {
+        if (tok !== rdImgTok) return;
+        if (!blob) { box.innerHTML = '<div class="rd-img-wait">' + rdT("이미지를 만들지 못했어요", "Couldn't make the image") + '</div>'; return; }
+        var url = URL.createObjectURL(blob), d = todayKey().replace(/-/g, "");
+        rdImg = { url: url, blob: blob, name: "made-my-day-reading-" + d + ".png" };
+        box.innerHTML = '<img class="rd-img-prev" src="' + url + '" alt="' + escapeHtml(rdT("통독 현황 이미지", "Reading progress image")) + '">';
+      }, "image/png");
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(go, go); else go();
+  }
+  function rdImageRelease() { if (rdImg) { try { URL.revokeObjectURL(rdImg.url); } catch (e) {} rdImg = null; } }
+  function rdImageClose() { rdImgTok++; rdImageRelease(); document.getElementById("rdImageOverlay").classList.add("hidden"); document.getElementById("rdImgBox").innerHTML = ""; }
+  function rdImageSave() {
+    if (!rdImg) { toast(rdT("아직 그리는 중이에요", "Still drawing")); return; }
+    var img = rdImg, file = null;
+    try { file = new File([img.blob], img.name, { type: "image/png" }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      navigator.share({ files: [file], title: rdT("성경 통독 현황", "Bible reading progress") }).catch(function () {});
+      return;
+    }
+    var a = document.createElement("a"); a.href = img.url; a.download = img.name; document.body.appendChild(a); a.click(); a.remove();
+    toast(rdT("이미지를 저장했어요", "Image saved"));
+  }
 
 
   // ---- 27차: 습관 만들기 ----
@@ -14743,7 +15044,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       titleEditOverlay: "title-edit-cancel", holidayPickerOverlay: "close-holiday-picker", approvalOverlay: "approval-close",
       missedOverlay: "missed-close", passOverlay: "pass-close", habitOverlay: "habit-close", helpOverlay: "help-close", pendingRewardsOverlay: "pending-rewards-close",
       rewardClaimOverlay: "reward-claim-cancel", reviewOverlay: "review-close", reviewTimeOverlay: "rv-time-cancel", avatarOverlay: "avatar-close", friendAvatarOverlay: "friend-av-close", praiseOverlay: "praise-close", installOverlay: "install-close", catOverlay: null,
-      todoOverlay: "todo-close", todoQuickOverlay: "td-quick-close", tdTpOverlay: "td-tp-cancel", dateTypeOverlay: "dt-cancel", readingOverlay: "rd-close"
+      todoOverlay: "todo-close", todoQuickOverlay: "td-quick-close", tdTpOverlay: "td-tp-cancel", dateTypeOverlay: "dt-cancel", readingOverlay: "rd-close", rdChapterOverlay: "rd-chap-cancel", rdImageOverlay: "rd-img-close"
     };
     function forceDismiss(ov) {
       var act = CLOSE_ACTION[ov.id];
@@ -14751,7 +15052,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (btn) btn.click(); else ov.classList.add("hidden");
     }
     // 입력창이 있는 창은 글을 쓰기 시작했으면(입력 이벤트 발생) 닫기 전에 저장하지 않고 닫을지 물어본다
-    var TEXT_OVERLAYS = { changePwOverlay: 1, todayMemoOverlay: 1, titleEditOverlay: 1, catOverlay: 1, rewardClaimOverlay: 1, tagOverlay: 1, habitOverlay: 1 };   // 32차 할 일 창은 닫아도 글이 사라지지 않아 제외
+    var TEXT_OVERLAYS = { changePwOverlay: 1, todayMemoOverlay: 1, titleEditOverlay: 1, catOverlay: 1, rewardClaimOverlay: 1, tagOverlay: 1, habitOverlay: 1, rdChapterOverlay: 1 };   // 32차 할 일 창은 닫아도 글이 사라지지 않아 제외
     var dirty = {};
     document.addEventListener("input", function (e) {
       var ov = e.target && e.target.closest ? e.target.closest(".tp-overlay") : null;
