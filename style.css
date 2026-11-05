@@ -1745,6 +1745,6 @@ body.td-typing.td-pin-off .td-pin { display: none; }
 .rd-memo-count { text-align: right; font-size: 0.6875rem; font-weight: 700; color: var(--ink-dim); }
 .rd-chap-unread { margin-top: 14px; text-align: center; font-size: 0.75rem; font-weight: 800; color: var(--danger); cursor: pointer; padding: 6px; }
 .rd-img-box { display: flex; justify-content: center; min-height: 6rem; overflow: hidden; border-radius: 10px; -webkit-touch-callout: default; }
-.rd-img-prev { width: 100%; height: auto; transform-origin: center center; -webkit-user-drag: none; border: 1px solid var(--line); border-radius: 10px; background: #fff; -webkit-touch-callout: default; user-select: auto; }
+.rd-img-prev { width: 100%; height: auto; transform-origin: center center; will-change: transform; backface-visibility: hidden; -webkit-user-drag: none; border: 1px solid var(--line); border-radius: 10px; background: #fff; -webkit-touch-callout: default; user-select: auto; }
 .rd-img-wait { align-self: center; padding: 28px 0; font-size: 0.8125rem; font-weight: 700; color: var(--ink-dim); }
 .rd-img-hint { margin-top: 10px; font-size: 0.6875rem; font-weight: 600; line-height: 1.5; color: var(--ink-dim); text-align: center; word-break: keep-all; }
