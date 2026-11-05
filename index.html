@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-11-05-2";
+  var BUILD_VERSION = "2026-11-05-3";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-11-05-2">
+<link rel="stylesheet" href="style.css?v=2026-11-05-3">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -1042,17 +1042,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-11-05-2"></script>
-<script src="i18n.js?v=2026-11-05-2"></script>
-<script src="i18n-en.js?v=2026-11-05-2"></script>
-<script src="bible-medals-data.js?v=2026-11-05-2"></script>
-<script src="avatar-data.js?v=2026-11-05-2"></script>
-<script src="review-data.js?v=2026-11-05-2"></script>
-<script src="i18n-en-help.js?v=2026-11-05-2"></script>
-<script src="i18n-en-review.js?v=2026-11-05-2"></script>
-<script src="i18n-en-bible.js?v=2026-11-05-2"></script>
-<script src="i18n-en-avatar.js?v=2026-11-05-2"></script>
-<script src="i18n-en-extra.js?v=2026-11-05-2"></script>
+<script type="module" src="firebase-service.js?v=2026-11-05-3"></script>
+<script src="i18n.js?v=2026-11-05-3"></script>
+<script src="i18n-en.js?v=2026-11-05-3"></script>
+<script src="bible-medals-data.js?v=2026-11-05-3"></script>
+<script src="avatar-data.js?v=2026-11-05-3"></script>
+<script src="review-data.js?v=2026-11-05-3"></script>
+<script src="i18n-en-help.js?v=2026-11-05-3"></script>
+<script src="i18n-en-review.js?v=2026-11-05-3"></script>
+<script src="i18n-en-bible.js?v=2026-11-05-3"></script>
+<script src="i18n-en-avatar.js?v=2026-11-05-3"></script>
+<script src="i18n-en-extra.js?v=2026-11-05-3"></script>
 <script>
 (function () {
   "use strict";
@@ -5546,6 +5546,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         h += '<div class="rd-today"><span class="rd-today-l">오늘</span><span class="rd-range">' + rdRangeHtml(I.todayKeys) + '</span><span class="rd-cnt">' + rdN(I.target) + '</span></div>' +
           '<div class="rd-chips">' + rdChipsHtml(p, I.todayKeys) + '</div>';
       } else h += '<div class="rd-msg">' + (I.over ? (rdEn() ? 'Past due · ' + I.remaining + ' left' : '기간이 지났어요 · ' + I.remaining + '장 남았어요') : '오늘은 쉬는 날이에요') + '</div>';
+      if (I.target > 0 && I.todayKeys.every(function (k) { return !!p.done[k]; })) h += '<div class="rd-extra rd-ok">✓ ' + (rdEn() ? "Today's reading is done" : '오늘 분량을 다 읽었어요') + (I.backlogLeft > 0 ? (rdEn() ? ' · ' + I.backlogLeft + ' behind left' : ' · 밀린 ' + I.backlogLeft + '장 남음') : '') + '</div>';
       if (I.extra > 0) h += '<div class="rd-extra">' + (rdEn() ? 'Extra read +' + I.extra + ' 🙌' : '더 읽은 장 +' + I.extra + '장 🙌') + '</div>';
       if (I.backlog.length) {
         h += '<div class="rd-today rd-bl"><span class="rd-today-l">' + (rdEn() ? 'Behind' : '밀린 장') + '</span><span class="rd-range">' + rdRangeHtml(I.backlog.filter(function (k) { return !p.done[k]; }).slice(0, 40)) + (I.backlogLeft > 40 ? '<span class="rd-dot"> …</span>' : '') + '</span><span class="rd-cnt">' + rdN(I.backlogLeft) + '</span></div>' +
@@ -5652,8 +5653,8 @@ window.addEventListener("beforeinstallprompt", function (e) {
     h += '<div class="theme-option' + (f.skipSun ? ' active' : '') + '" data-action="rd-toggle" data-id="skipSun"><span>주일은 쉬기</span><span class="dot"></span></div>' +
       '<div class="theme-option' + (f.audio ? ' active' : '') + '" data-action="rd-toggle" data-id="audio"><span>들은 것도 읽은 것으로 쳐요</span><span class="dot"></span></div>' +
       '<div class="day-ov-label">밀렸을 때</div>' +
-      '<div class="theme-option' + (f.cu !== "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="mix"><span>오늘 분량에 합치기<small class="rd-opt-sub">밀린 장이 오늘 읽을 범위에 합쳐져요. 남은 기간으로 하루 분량을 다시 나눠요.</small></span><span class="dot"></span></div>' +
-      '<div class="theme-option' + (f.cu === "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="sep"><span>진도대로 읽고, 밀린 건 따로<small class="rd-opt-sub">오늘 범위는 원래 일정 그대로예요. 밀린 장은 \'밀린 장\' 줄에 모여서 찾아가 체크하거나 몰아 읽을 수 있어요.</small></span><span class="dot"></span></div>';
+      '<div class="theme-option' + (f.cu !== "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="mix"><span>오늘 분량에 합치기<small class="rd-opt-sub">밀린 장을 오늘 범위에 더하고, 하루 분량을 다시 나눠요.</small></span><span class="dot"></span></div>' +
+      '<div class="theme-option' + (f.cu === "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="sep"><span>진도대로 읽고, 밀린 건 따로<small class="rd-opt-sub">오늘 범위는 일정 그대로, 밀린 장은 \'밀린 장\' 줄에 따로 모아요.</small></span><span class="dot"></span></div>';
     if (isNew) {
       h += '<div class="day-ov-label">이미 읽은 곳 <span class="hb-count">여기까지 읽었어요</span></div><div class="rd-pre-row">' +
         '<select id="rdPreBook" class="cat-name-input" aria-label="이미 읽은 책"><option value="">없음 (처음부터)</option>' +
@@ -5694,6 +5695,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     toast("통독표를 만들었어요");
   }
   function rdBooksHtml(p) {
+    var RI = rdInfo(p), todaySet = {}, lateSet = {};
+    RI.todayKeys.forEach(function (k) { todaySet[k] = 1; });
+    RI.backlog.forEach(function (k) { lateSet[k] = 1; });
     function row(id) {
       var b = rdBook(id), n = 0, open = !!rdView.open[id];
       for (var c = 1; c <= b.chapters; c++) if (p.done[id + ":" + c]) n++;
@@ -5704,22 +5708,33 @@ window.addEventListener("beforeinstallprompt", function (e) {
         h += '<div class="rd-grid">';
         for (var c2 = 1; c2 <= b.chapters; c2++) {
           var v = p.done[id + ":" + c2];
-          h += '<span class="rd-cell' + (v ? (v === "pre" ? ' pre' : ' on') : '') + '" role="button" aria-pressed="' + !!v + '" data-action="rd-cell" data-id="' + p.id + '" data-key="' + id + ':' + c2 + '"' + (v && v !== "pre" ? ' title="' + rdDateLabel(v) + '"' : '') + '>' + c2 + '</span>';
+          var kk = id + ":" + c2;
+          h += '<span class="rd-cell' + (v ? (v === "pre" ? ' pre' : ' on') : '') + (!v && todaySet[kk] ? ' today' : '') + (!v && lateSet[kk] ? ' late' : '') + '" role="button" aria-pressed="' + !!v + '" data-action="rd-cell" data-id="' + p.id + '" data-key="' + id + ':' + c2 + '"' + (v && v !== "pre" ? ' title="' + rdDateLabel(v) + '"' : '') + '>' + c2 + '</span>';
         }
-        h += '</div><div class="rd-book-act"><span class="td-link" data-action="rd-book-all" data-id="' + id + '" data-val="1">이 책 전부 읽음</span><span class="td-link" data-action="rd-book-all" data-id="' + id + '" data-val="0">전부 해제</span></div>';
+        h += '</div><div class="rd-book-act">' +
+          (n > 0 ? '<span class="rd-pill ghost" role="button" data-action="rd-book-all" data-id="' + id + '" data-val="0">전부 해제</span>' : '') +
+          (n < b.chapters ? '<span class="rd-pill ok" role="button" data-action="rd-book-all" data-id="' + id + '" data-val="1">이 책 전부 읽음</span>' : '') + '</div>';
       }
       return h + '</div>';
     }
     var ot = p.books.filter(function (id) { return rdBook(id).testament === "OT"; }), nt = p.books.filter(function (id) { return rdBook(id).testament === "NT"; });
-    var html = '<div class="section-label" style="margin-top:14px;">책별 진도</div>';
+    var en = rdEn(), lg = '<span class="rd-lg"><i class="rd-lgc on"></i>' + (en ? 'Read' : '읽음') + '</span>';
+    if (RI.pre > 0) lg += '<span class="rd-lg"><i class="rd-lgc pre"></i>' + (en ? 'Read before the plan' : '계획 전에 읽음') + '</span>';
+    if (RI.todayKeys.length) lg += '<span class="rd-lg"><i class="rd-lgc today"></i>' + (en ? "Today" : '오늘 범위') + '</span>';
+    if (RI.backlogLeft > 0) lg += '<span class="rd-lg"><i class="rd-lgc late"></i>' + (en ? 'Behind' : '밀린 장') + '</span>';
+    var html = '<div class="section-label" style="margin-top:14px;">책별 진도</div><div class="rd-legend">' + lg + '</div>';
     if (ot.length) html += (nt.length ? '<div class="rd-test">구약</div>' : '') + ot.map(row).join("");
     if (nt.length) html += (ot.length ? '<div class="rd-test">신약</div>' : '') + nt.map(row).join("");
     return html;
   }
   function rdDetailHtml(p) {
     var h = '<div class="rd-back" data-action="rd-list">‹ 통독표 목록</div>' + rdCardHtml(p);
-    h += '<div class="rd-meta">' + rdDateLabel(p.start) + ' ~ ' + rdDateLabel(p.end) + (p.skipSun ? (rdEn() ? ' · Sundays off' : ' · 주일 쉬기') : '') + (p.audio ? (rdEn() ? ' · listening counts' : ' · 듣기도 인정') : '') + (p.cu === 'sep' ? (rdEn() ? ' · behind kept separate' : ' · 밀린 건 따로') : (rdEn() ? ' · behind merged into today' : ' · 밀린 건 합치기')) + '</div>' +
-      '<div class="rd-acts"><span class="td-link" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="td-link" data-action="rd-del" data-id="' + p.id + '">지우기</span></div>';
+    var en = rdEn();
+    h += '<div class="rd-tags"><span class="rd-tag">📅 ' + rdDateLabel(p.start) + ' ~ ' + rdDateLabel(p.end) + '</span>' +
+      (p.skipSun ? '<span class="rd-tag">' + (en ? 'Sundays off' : '주일 쉬기') + '</span>' : '') +
+      (p.audio ? '<span class="rd-tag">' + (en ? 'Listening counts' : '듣기도 인정') + '</span>' : '') +
+      '<span class="rd-tag">' + (p.cu === 'sep' ? (en ? 'Behind kept separate' : '밀린 건 따로') : (en ? 'Behind merged into today' : '밀린 건 합치기')) + '</span></div>' +
+      '<div class="rd-acts"><span class="rd-pill" role="button" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="rd-pill danger" role="button" data-action="rd-del" data-id="' + p.id + '">지우기</span></div>';
     return h + rdBooksHtml(p);
   }
   function rdListHtml() {
@@ -5770,8 +5785,15 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "rd-book-all") {
       var pb = rdView && rdById(rdView.id), bk = rdBook(id);
       if (!pb || !bk) return;
-      for (var c = 1; c <= bk.chapters; c++) { var k2 = id + ":" + c; if (val === "1") { if (!pb.done[k2]) pb.done[k2] = todayKey(); } else delete pb.done[k2]; }
-      rdAfterChange();
+      var nRead = 0, c;
+      for (c = 1; c <= bk.chapters; c++) if (pb.done[id + ":" + c]) nRead++;
+      function applyAll() {
+        for (var c3 = 1; c3 <= bk.chapters; c3++) { var k2 = id + ":" + c3; if (val === "1") { if (!pb.done[k2]) pb.done[k2] = todayKey(); } else delete pb.done[k2]; }
+        rdAfterChange();
+      }
+      if (val === "1" || !nRead) { applyAll(); return; }
+      askConfirm(rdEn() ? "Clear all marks for " + bk.name + "?" : bk.name + "의 읽은 표시를 모두 해제할까요?",
+        rdEn() ? nRead + " chapters will be unmarked." : nRead + "장의 기록이 사라져요.", rdEn() ? "Clear" : "해제", applyAll);
     }
     else if (action === "rd-del") {
       var pd = rdById(id);

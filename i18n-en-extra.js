@@ -880,9 +880,9 @@
   I.register({
     "밀렸을 때": "When I fall behind", "밀린 장": "Behind",
     "오늘 분량에 합치기": "Fold into today",
-    "밀린 장이 오늘 읽을 범위에 합쳐져요. 남은 기간으로 하루 분량을 다시 나눠요.": "Missed chapters are added to today's reading. The daily amount is recalculated over the remaining days.",
+    "밀린 장을 오늘 범위에 더하고, 하루 분량을 다시 나눠요.": "Add missed chapters to today's reading and recalculate the daily amount.",
     "진도대로 읽고, 밀린 건 따로": "Stay on schedule, keep missed ones separate",
-    "오늘 범위는 원래 일정 그대로예요. 밀린 장은 '밀린 장' 줄에 모여서 찾아가 체크하거나 몰아 읽을 수 있어요.": "Today's range stays as originally planned. Missed chapters are gathered in a 'Behind' row, so you can check them off later or read them in bulk."
+    "오늘 범위는 일정 그대로, 밀린 장은 '밀린 장' 줄에 따로 모아요.": "Today's range stays on schedule; missed chapters are gathered in a 'Behind' row."
   });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
