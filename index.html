@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-11-05-11";
+  var BUILD_VERSION = "2026-11-05-12";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -60,7 +60,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   if (window.__mmdOnInstallPrompt) window.__mmdOnInstallPrompt();
 });
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <!-- 홈 화면 앱 설정(2026-10-12): 아이콘·이름·상태 표시줄. 이미 추가해 둔 아이콘은 지웠다가 다시 추가해야 새 아이콘이 보인다. 아이콘 PNG는 저장소 맨 위(루트)에 둔다. -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -6202,7 +6202,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     rdImageRelease();
     var tok = ++rdImgTok, box = document.getElementById("rdImgBox");
     document.getElementById("rdImgTitle").textContent = rdT("통독 현황 이미지", "Reading progress image");
-    document.getElementById("rdImgHint").textContent = rdT("아이폰은 이미지를 길게 눌러 '사진에 저장'도 돼요.", "On iPhone you can also long-press the image and choose Save to Photos.");
+    document.getElementById("rdImgHint").textContent = rdT("두 손가락으로 확대하고, 아이폰은 이미지를 길게 눌러 '사진에 저장'도 돼요.", "Pinch to zoom. On iPhone you can also long-press the image and choose Save to Photos.");
     document.getElementById("rdImgClose").textContent = rdT("닫기", "Close");
     document.getElementById("rdImgSave").textContent = rdT("저장·공유", "Save / share");
     box.innerHTML = '<div class="rd-img-wait">' + rdT("그리는 중…", "Drawing…") + '</div>';
@@ -6217,14 +6217,65 @@ window.addEventListener("beforeinstallprompt", function (e) {
         if (!blob) { fail(); return; }
         var url = URL.createObjectURL(blob), d = todayKey().replace(/-/g, "");
         rdImg = { url: url, blob: blob, name: "made-my-day-reading-" + d + ".png" };
-        box.innerHTML = '<img class="rd-img-prev" src="' + url + '" alt="' + escapeHtml(rdT("통독 현황 이미지", "Reading progress image")) + '">';
+        // 50차: 화면에 보이는 이미지는 data 주소로 — 아이폰 길게 누르기 저장이 blob 주소에서 안 뜨는 경우가 있어서
+        var shown = url;
+        try { shown = cv.toDataURL("image/png"); } catch (e2) {}
+        box.innerHTML = '<img class="rd-img-prev" id="rdImgEl" draggable="false" src="' + shown + '" alt="' + escapeHtml(rdT("통독 현황 이미지", "Reading progress image")) + '">';
+        rdZoomReset();
       }, "image/png");
     }
     function start() { go(2); }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(start, start); else start();
   }
+  // 50차: iOS는 user-scalable=no를 무시하므로 gesturestart로 앱 전체 핀치 확대를 막는다(통독 이미지 창은 예외)
+  ["gesturestart", "gesturechange", "gestureend"].forEach(function (n) {
+    document.addEventListener(n, function (e) { if (!(e.target && e.target.closest && e.target.closest("#rdImgBox"))) e.preventDefault(); }, { passive: false });
+  });
+  // ---- 50차: 통독 이미지 확대 — 앱 전체는 줌을 막아 두고, 이 창의 이미지만 두 손가락으로 확대·이동 ----
+  //  한 손가락 길게 누르기는 건드리지 않아(preventDefault 안 함) 아이폰 '사진에 저장'이 그대로 뜬다.
+  var rdZ = { s: 1, x: 0, y: 0 };
+  function rdZoomApply() {
+    var el = document.getElementById("rdImgEl");
+    if (el) el.style.transform = "translate(" + rdZ.x + "px," + rdZ.y + "px) scale(" + rdZ.s + ")";
+  }
+  function rdZoomReset() { rdZ.s = 1; rdZ.x = 0; rdZ.y = 0; rdZoomApply(); }
+  (function () {
+    var box = document.getElementById("rdImgBox");
+    if (!box) return;
+    var pts = null, start = null, lastTap = 0;
+    function dist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx * dx + dy * dy); }
+    function clamp() {
+      var r = box.getBoundingClientRect(), mx = r.width * (rdZ.s - 1) / 2, my = r.height * (rdZ.s - 1) / 2;
+      rdZ.x = Math.max(-mx, Math.min(mx, rdZ.x)); rdZ.y = Math.max(-my, Math.min(my, rdZ.y));
+    }
+    box.addEventListener("touchstart", function (e) {
+      if (!document.getElementById("rdImgEl")) return;
+      if (e.touches.length === 2) {
+        start = { d: dist(e.touches), s: rdZ.s, x: rdZ.x, y: rdZ.y, cx: (e.touches[0].clientX + e.touches[1].clientX) / 2, cy: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+      } else if (e.touches.length === 1) {
+        start = rdZ.s > 1 ? { pan: true, sx: e.touches[0].clientX, sy: e.touches[0].clientY, x: rdZ.x, y: rdZ.y } : null;
+        var now = Date.now();
+        if (now - lastTap < 280) { if (rdZ.s > 1) rdZoomReset(); else { rdZ.s = 2.5; rdZoomApply(); } lastTap = 0; } else lastTap = now;
+      }
+    }, { passive: true });
+    box.addEventListener("touchmove", function (e) {
+      if (!start) return;
+      if (e.touches.length === 2 && start.d) {
+        e.preventDefault();
+        rdZ.s = Math.max(1, Math.min(5, start.s * dist(e.touches) / start.d));
+        var cx = (e.touches[0].clientX + e.touches[1].clientX) / 2, cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        rdZ.x = start.x + (cx - start.cx); rdZ.y = start.y + (cy - start.cy);
+        clamp(); rdZoomApply();
+      } else if (e.touches.length === 1 && start.pan && rdZ.s > 1) {
+        e.preventDefault();
+        rdZ.x = start.x + (e.touches[0].clientX - start.sx); rdZ.y = start.y + (e.touches[0].clientY - start.sy);
+        clamp(); rdZoomApply();
+      }
+    }, { passive: false });
+    box.addEventListener("touchend", function (e) { if (e.touches.length === 0) { start = null; if (rdZ.s < 1.02) rdZoomReset(); } else if (e.touches.length === 1 && rdZ.s > 1) start = { pan: true, sx: e.touches[0].clientX, sy: e.touches[0].clientY, x: rdZ.x, y: rdZ.y }; }, { passive: true });
+  })();
   function rdImageRelease() { if (rdImg) { try { URL.revokeObjectURL(rdImg.url); } catch (e) {} rdImg = null; } }
-  function rdImageClose() { rdImgTok++; rdImageRelease(); document.getElementById("rdImageOverlay").classList.add("hidden"); document.getElementById("rdImgBox").innerHTML = ""; }
+  function rdImageClose() { rdImgTok++; rdZoomReset(); rdImageRelease(); document.getElementById("rdImageOverlay").classList.add("hidden"); document.getElementById("rdImgBox").innerHTML = ""; }
   function rdImageSave() {
     if (!rdImg) { toast(rdT("아직 그리는 중이에요", "Still drawing")); return; }
     var img = rdImg, file = null;
