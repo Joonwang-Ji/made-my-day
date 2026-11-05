@@ -1599,3 +1599,83 @@ body.td-typing.td-pin-off .td-pin { display: none; }
   .pr-cel-pts { font-weight: 700; flex: none; }
   .pr-cel-row.deduct .pr-cel-pts { color: #6f86a8; }
   .pr-cel-why { color: var(--ink-dim); word-break: break-all; }
+
+/* 44차: 날짜·시간 직접 입력 */
+.tp-type-wrap { margin-top: 14px; }
+.tp-type { text-align: center; font-size: 16px; letter-spacing: 0.04em; margin-bottom: 0; }
+.tp-type-wrap .tp-type { margin-top: 0; }
+.tp-type.bad { border-color: var(--danger); }
+.tp-type-pv { min-height: 1.3em; margin-top: 8px; text-align: center; font-size: 0.8125rem; font-weight: 700; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.tp-type-pv.bad { color: var(--danger); }
+#dateTypeOverlay { z-index: 74; }
+#dateTypeOverlay .tp-title { margin-bottom: 12px; }
+.date-type-btn { flex: none; min-width: 2rem; height: 2.25rem; padding: 0 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-soft); color: var(--ink-dim);
+  font-family: inherit; font-size: 0.9375rem; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.date-type-btn:active { background: var(--ring-track); }
+.td-pick .date-type-btn { background: var(--card); }
+
+/* 44차: 성경 통독 */
+#readingCards { margin: 0 0 12px; display: flex; flex-direction: column; gap: 10px; }
+.rd-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px 12px; }
+.rd-head { display: flex; align-items: center; gap: 8px; cursor: pointer; min-height: 1.75rem; }
+.rd-ico { font-size: 1rem; }
+.rd-name { flex: 1; min-width: 0; font-weight: 800; font-size: 0.9375rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-pace { flex: none; font-size: 0.6875rem; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--bg-soft); color: var(--ink-dim); }
+.rd-pace.ok { background: var(--sage-soft); color: var(--sage); }
+.rd-pace.bad { background: var(--rest-soft); color: var(--danger); }
+.rd-pace.na { color: var(--ink-dim); }
+.rd-chev { color: var(--ink-dim); font-size: 1.125rem; line-height: 1; }
+.rd-today { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.rd-today-l { font-size: 0.6875rem; font-weight: 800; color: var(--sage); letter-spacing: 0.02em; }
+.rd-range { flex: 1; min-width: 0; font-weight: 800; font-size: 1rem; color: var(--ink); }
+.rd-bk { color: var(--ink); } .rd-ch { color: var(--ink); } .rd-dot { color: var(--ink-dim); font-weight: 600; }
+.rd-cnt { font-size: 0.75rem; font-weight: 700; color: var(--ink-dim); }
+.rd-chips { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; }
+.rd-seg { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.rd-segname { font-size: 0.6875rem; font-weight: 700; color: var(--ink-dim); margin-right: 1px; }
+.rd-chip { min-width: 2.125rem; height: 2.125rem; padding: 0 6px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink);
+  font-size: 0.875rem; font-weight: 800; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.rd-chip.on { background: var(--sage); border-color: var(--sage); color: #fff; }
+.rd-msg { margin-top: 8px; font-size: 0.8125rem; font-weight: 700; color: var(--ink-dim); line-height: 1.5; }
+.rd-extra { margin-top: 8px; font-size: 0.75rem; font-weight: 800; color: var(--sage); }
+.rd-more { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 800; color: var(--sage); cursor: pointer; flex-wrap: wrap; }
+.rd-more-t { font-weight: 600; color: var(--ink-dim); }
+.rd-bar { height: 6px; border-radius: 999px; background: var(--ring-track); margin-top: 12px; overflow: hidden; }
+.rd-bar i { display: block; height: 100%; background: var(--sage); border-radius: 999px; }
+.rd-sub { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 0.6875rem; font-weight: 700; color: var(--ink-dim); font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+.rd-all { text-align: center; font-size: 0.75rem; font-weight: 800; color: var(--ink-dim); padding: 4px; cursor: pointer; }
+.rd-sec { margin: 14px 0 8px; font-size: 0.75rem; font-weight: 800; color: var(--ink-dim); }
+#readingOvBody .rd-card { margin-bottom: 10px; background: var(--bg-soft); }
+.rd-back { display: inline-block; margin: 0 0 10px; font-size: 0.8125rem; font-weight: 800; color: var(--ink-dim); cursor: pointer; }
+.rd-meta { margin-top: 10px; font-size: 0.75rem; font-weight: 700; color: var(--ink-dim); }
+.rd-acts { display: flex; gap: 14px; margin-top: 6px; }
+.rd-test { margin: 12px 0 6px; font-size: 0.6875rem; font-weight: 800; color: var(--ink-dim); letter-spacing: 0.04em; }
+.rd-book { border: 1px solid var(--line); border-radius: 12px; margin-bottom: 6px; background: var(--card); }
+.rd-book-h { display: flex; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer; }
+.rd-book-n { flex: none; min-width: 4.5rem; font-weight: 800; font-size: 0.8125rem; color: var(--ink); }
+.rd-book-c { flex: none; font-size: 0.6875rem; font-weight: 700; color: var(--ink-dim); font-variant-numeric: tabular-nums; min-width: 2.75rem; }
+.rd-book-bar { flex: 1; height: 5px; border-radius: 999px; background: var(--ring-track); overflow: hidden; }
+.rd-book-bar i { display: block; height: 100%; background: var(--sage); }
+.rd-book.full .rd-book-n { color: var(--sage); }
+.rd-grid { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 12px 8px; }
+.rd-cell { width: 2rem; height: 2rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink); font-size: 0.75rem; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-variant-numeric: tabular-nums; user-select: none; -webkit-user-select: none; }
+.rd-cell.on { background: var(--sage); border-color: var(--sage); color: #fff; }
+.rd-cell.pre { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
+.rd-book-act { display: flex; gap: 14px; padding: 0 12px 10px; }
+.rd-pick { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.rd-pk { padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg-soft); font-size: 0.75rem; font-weight: 700; color: var(--ink-dim); cursor: pointer; }
+.rd-pk.on { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
+.rd-pre-row { display: flex; gap: 8px; }
+.rd-pre-row select { flex: 1; min-width: 0; margin-bottom: 0; }
+.rd-pre-row input { width: 4.5rem; flex: none; margin-bottom: 0; text-align: center; font-size: 16px; }
+.rd-info { margin: 14px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--sage-soft); color: var(--ink); font-size: 0.8125rem; font-weight: 700; line-height: 1.5; text-align: center; }
+#readingOvBody .hb-start-row { margin-bottom: 12px; }
+#readingOvBody .hb-start-row .date-type-btn { align-self: stretch; height: auto; }
+#readingOvBody .hb-goals { display: flex; flex-wrap: wrap; gap: 6px; }
+#readingOvBody .hb-goals .tp-chip { flex: none; white-space: nowrap; }
+
+/* 44차 보완: 밀렸을 때 */
+.rd-bl { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border, rgba(0,0,0,.12)); }
+.rd-bl .rd-today-l { color: var(--gold, #b8860b); }
+.rd-opt-sub { display: block; margin-top: 3px; font-size: 0.75rem; font-weight: 500; line-height: 1.4; opacity: .7; white-space: normal; }

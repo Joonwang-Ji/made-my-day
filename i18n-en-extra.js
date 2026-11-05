@@ -10,6 +10,11 @@
   function plural(n, a, b) { return n + " " + (+n === 1 ? a : b); }
 
   var D = {
+    // ---- 44차: 날짜·시간 직접 입력 ----
+    "날짜 직접 입력": "Type a date", "직접 입력": "Type it",
+    "직접 입력 (예: 2530)": "Type it (e.g. 2530)", "직접 입력 (예: 1930)": "Type it (e.g. 1930)", "직접 입력 (예: 0730)": "Type it (e.g. 0730)",
+    "예: 20261231": "e.g. 20261231", "직접 입력한 값을 확인해 주세요": "Please check the value you typed",
+    "날짜를 확인해 주세요 (예: 20261231)": "Please check the date (e.g. 20261231)", "고를 수 없는 날짜예요": "That date can't be chosen",
     // ---- 리뷰 ----
     "주간 리뷰": "Weekly review", "월간 리뷰": "Monthly review",
     "이번 주 한 줄": "This week in a line", "이번 달 한 줄": "This month in a line", "올해 한 줄": "This year in a line",
@@ -851,6 +856,34 @@
     }],
     [/^(.+) (칭찬|감점|만회) ([+−])(\d+)P를 보냈어요$/, function (a, k, sg, n) { return a + " " + ({ "칭찬": "Praise", "감점": "Deduction", "만회": "Make-up" })[k] + " " + sg + n + "P sent"; }]
   ]);
+  // ---- 44차: 성경 통독 (숫자가 섞인 문구는 index.html에서 영어로 직접 만든다) ----
+  I.register({
+    "성경 통독": "Bible reading", "통독표 만들기 · 읽은 장 기록": "Make a plan · log chapters read",
+    "‹ 통독표 목록": "‹ All plans", "진행 중": "In progress", "완독한 통독표": "Finished plans", "새 통독표 만들기": "New reading plan",
+    "통독표를 만들면 하루 분량이 자동으로 나뉘고, 읽은 장을 눌러 기록할 수 있어요. 여러 개를 동시에 만들 수도 있어요.": "Make a plan and your daily portion is worked out for you. Tap each chapter you read to log it. You can run several plans at once.",
+    "신구약 1독": "Whole Bible", "구약 1독": "Old Testament", "신약 1독": "New Testament",
+    "책별 진도": "Progress by book",
+    "이 책 전부 읽음": "Mark whole book read", "전부 해제": "Clear all", "✎ 편집": "✎ Edit",
+    "새 통독표": "New reading plan", "통독표 편집": "Edit reading plan", "읽을 범위": "What to read",
+    "신구약 전체": "Whole Bible", "책 고르기": "Pick books", "시작일": "Start date", "끝나는 날": "End date",
+    "주일은 쉬기": "Take Sundays off", "들은 것도 읽은 것으로 쳐요": "Count listening as reading",
+    "이미 읽은 곳": "Already read", "여기까지 읽었어요": "up to this chapter", "없음 (처음부터)": "None (from the start)",
+    "고른 책·장까지(포함) 읽은 것으로 시작해요. 예: 여호수아 15장": "Everything up to and including the chapter you pick counts as read. e.g. Joshua 15",
+    "읽을 범위와 읽은 기록은 여기서 바꾸지 않아요.": "The range and reading log aren't changed here.",
+    "만들기": "Create", "예: 신구약 1독": "e.g. Whole Bible", "장": "Ch.", "이미 읽은 책": "Book already read", "이미 읽은 장": "Chapter already read",
+    "＋ 다음 장 더 읽기": "＋ Read the next chapter too", "＋ 다음 장 읽기": "＋ Read the next chapter", "오늘은 쉬는 날이에요": "Today is a rest day",
+    "완독 🎉": "Finished 🎉", "계획대로": "On track", "기간 지남": "Past due",
+    "통독표를 지울까요?": "Delete this reading plan?", "읽을 책을 하나 이상 골라 주세요": "Pick at least one book",
+    "끝나는 날이 시작일보다 빠를 수 없어요": "The end date can't be before the start date", "통독표를 만들었어요": "Reading plan created"
+  });
+  // 44차 보완: 밀렸을 때 읽는 방법
+  I.register({
+    "밀렸을 때": "When I fall behind", "밀린 장": "Behind",
+    "오늘 분량에 합치기": "Fold into today",
+    "밀린 장이 오늘 읽을 범위에 합쳐져요. 남은 기간으로 하루 분량을 다시 나눠요.": "Missed chapters are added to today's reading. The daily amount is recalculated over the remaining days.",
+    "진도대로 읽고, 밀린 건 따로": "Stay on schedule, keep missed ones separate",
+    "오늘 범위는 원래 일정 그대로예요. 밀린 장은 '밀린 장' 줄에 모여서 찾아가 체크하거나 몰아 읽을 수 있어요.": "Today's range stays as originally planned. Missed chapters are gathered in a 'Behind' row, so you can check them off later or read them in bulk."
+  });
   // 이 파일에서 추가한 문구가 처음부터 화면에 있는 마크업(정적 텍스트)에도 적용되도록 한 번 더 훑는다
   if (document.body) I.translateTree(document.body);
 })();
