@@ -695,6 +695,12 @@
   .fav-sub { text-align: center; font-size: 0.75rem; color: var(--ink-dim); margin-bottom: 4px; }
   .fav-stats { text-align: center; font-size: 0.8125rem; font-weight: 700; color: var(--ink); line-height: 1.5; }
   .fav-stats.dim { font-weight: 400; font-size: 0.75rem; color: var(--ink-dim); }
+.fav-read { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-soft); }
+.fav-read-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.fav-read-n { font-size: 0.8125rem; font-weight: 800; color: var(--ink); min-width: 0; overflow-wrap: anywhere; word-break: keep-all; }
+.fav-read-t { font-size: 0.75rem; font-weight: 800; color: var(--sage); white-space: nowrap; }
+.fav-read-t.dim { color: var(--ink-dim); }
+.fav-read-s { margin-top: 6px; font-size: 0.6875rem; color: var(--ink-dim); text-align: right; }
   .av-mini { width: 34px; height: 34px; flex: none; line-height: 0; }
   .av-ach { width: 72px; height: 72px; margin: 0 auto 4px; cursor: pointer; line-height: 0; }
   .av-ach-cap { text-align: center; font-size: 0.6875rem; color: var(--ink-dim); margin-bottom: 10px; }

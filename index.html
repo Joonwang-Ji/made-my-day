@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-11-05-5";
+  var BUILD_VERSION = "2026-11-05-6";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-11-05-5">
+<link rel="stylesheet" href="style.css?v=2026-11-05-6">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -1071,17 +1071,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-11-05-5"></script>
-<script src="i18n.js?v=2026-11-05-5"></script>
-<script src="i18n-en.js?v=2026-11-05-5"></script>
-<script src="bible-medals-data.js?v=2026-11-05-5"></script>
-<script src="avatar-data.js?v=2026-11-05-5"></script>
-<script src="review-data.js?v=2026-11-05-5"></script>
-<script src="i18n-en-help.js?v=2026-11-05-5"></script>
-<script src="i18n-en-review.js?v=2026-11-05-5"></script>
-<script src="i18n-en-bible.js?v=2026-11-05-5"></script>
-<script src="i18n-en-avatar.js?v=2026-11-05-5"></script>
-<script src="i18n-en-extra.js?v=2026-11-05-5"></script>
+<script type="module" src="firebase-service.js?v=2026-11-05-6"></script>
+<script src="i18n.js?v=2026-11-05-6"></script>
+<script src="i18n-en.js?v=2026-11-05-6"></script>
+<script src="bible-medals-data.js?v=2026-11-05-6"></script>
+<script src="avatar-data.js?v=2026-11-05-6"></script>
+<script src="review-data.js?v=2026-11-05-6"></script>
+<script src="i18n-en-help.js?v=2026-11-05-6"></script>
+<script src="i18n-en-review.js?v=2026-11-05-6"></script>
+<script src="i18n-en-bible.js?v=2026-11-05-6"></script>
+<script src="i18n-en-avatar.js?v=2026-11-05-6"></script>
+<script src="i18n-en-extra.js?v=2026-11-05-6"></script>
 <script>
 (function () {
   "use strict";
@@ -1339,6 +1339,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
       showCount: !!sc.showCount, routineCount: sc.showCount ? rc : null,
       dateKey: tk
     };
+    // 46차: 지인 공개를 켠 통독표의 진행 요약(이름·진행률·읽은 장 수·앞섬/밀림). 읽은 장 목록·메모는 싣지 않는다.
+    try {
+      var rl = [];
+      rdList().filter(function (pl) { return pl.pub === true; }).forEach(function (pl) {
+        var I = rdInfo(pl, tk);
+        rl.push({ n: (pl.name || "").slice(0, 20), p: I.pct, d: I.doneCount, t: I.N,
+          s: I.finished ? "fin" : I.before ? "bef" : I.over ? "over" : "ing", f: (I.finished || I.before || I.over) ? 0 : I.diff, e: I.finished ? (I.finishedAt || "") : "" });
+      });
+      rl.sort(function (a, b) { return (a.s === "fin") - (b.s === "fin"); });
+      if (rl.length) out.reading = rl.slice(0, 3);
+    } catch (e) {}
     if (!avPubBlocked) out.avatar = avOwn();
     return out;
   }
@@ -1605,6 +1616,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
     h += '<div class="fav-stats">성경 ' + bibleProgress(pts).text + ' · ' + pts.toLocaleString() + 'P · 🔥 ' + (pr.streak || 0) + '일</div>';
     h += '<div class="fav-stats dim">' + escapeHtml((pr.bookIcon ? pr.bookIcon + " " : "") + (pr.bookName || "") + (pr.milestoneTitle ? " · " + pr.milestoneTitle : "")) + '</div>';
 
+    // 46차: 지인이 공개한 통독 진행 요약
+    if (Array.isArray(pr.reading)) pr.reading.slice(0, 3).forEach(function (r) {
+      if (!r || typeof r !== "object") return;
+      var pc = Math.max(0, Math.min(100, Math.floor(+r.p) || 0)), df = Math.round(+r.f) || 0, st = r.s;
+      var tag = st === "fin" ? rdT("완독 🎉", "Finished 🎉") + (/^\d{4}-\d{2}-\d{2}$/.test(r.e || "") ? " " + rdDateLabel(r.e) : "")
+        : st === "bef" ? rdT("시작 전", "Not started") : st === "over" ? rdT("기간 지남", "Past due")
+        : df > 0 ? (rdEn() ? "+" + df + " ahead" : "+" + df + "장 앞섬") : df < 0 ? (rdEn() ? (-df) + " behind" : (-df) + "장 밀림") : rdT("계획대로", "On plan");
+      h += '<div class="fav-read"><div class="fav-read-h"><span class="fav-read-n">📖 ' + escapeHtml(String(r.n || rdT("성경 통독", "Bible reading")).slice(0, 20)) + '</span><span class="fav-read-t' + ((st === "fin" || (st === "ing" && df > 0)) ? '' : ' dim') + '">' + tag + '</span></div>' +
+        '<div class="rd-bar" aria-hidden="true"><i style="width:' + pc + '%"></i></div>' +
+        '<div class="fav-read-s">' + (Math.floor(+r.d) || 0) + ' / ' + (rdEn() ? (Math.floor(+r.t) || 0) + ' ch.' : (Math.floor(+r.t) || 0) + '장') + ' · ' + pc + '%</div></div>';
+    });
     if (!hasAv) h += '<div class="fr-note" style="text-align:center;">아직 아바타를 공개하지 않았어요.</div>';
     h += '<div class="btn" data-action="friend-av-chat" data-id="' + uid + '" style="margin:10px 0 0;">💌 응원 보내러 가기</div>';
     // 41차: 부모 칭찬·감점
@@ -5449,7 +5471,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
         memo[k] = t;
       });
       out.push({ id: p.id, name: typeof p.name === "string" ? p.name.slice(0, 20) : "", books: books, start: start, end: end,
-        skipSun: p.skipSun === true, cu: p.cu === "sep" ? "sep" : "mix", made: (typeof p.made === "string" && re.test(p.made)) ? p.made : start, done: done, memo: memo });
+        skipSun: p.skipSun === true, cu: p.cu === "sep" ? "sep" : "mix", pub: p.pub === true, made: (typeof p.made === "string" && re.test(p.made)) ? p.made : start, done: done, memo: memo });
     });
     return out.slice(0, 12);
   }
@@ -5464,7 +5486,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       if (!lp) { if (!bp && sp) out.push(sp); return; }                      // 내가 지움 → 지움 / 서버에서 새로 생김 → 가져옴
       if (!sp) { if (bp && canon(lp) === canon(bp)) return; out.push(lp); return; }   // 서버에서 지워짐: 내가 안 건드렸으면 지움, 건드렸으면 살림
       var m = { id: id };
-      ["name", "books", "start", "end", "skipSun", "cu", "made"].forEach(function (k) {
+      ["name", "books", "start", "end", "skipSun", "cu", "pub", "made"].forEach(function (k) {
         m[k] = (canon(lp[k]) !== canon(bp ? bp[k] : undefined)) ? lp[k] : sp[k];
       });
       var d = {}, bd = (bp && bp.done) || {}, ld = lp.done || {}, sd = sp.done || {};
@@ -5619,6 +5641,19 @@ window.addEventListener("beforeinstallprompt", function (e) {
     try { renderReadingCards(); } catch (e) {}
     if (rdView && !document.getElementById("readingOverlay").classList.contains("hidden") && rdView.mode !== "edit") rdRender();
   }
+  // 46차: 지인 공개 — 통독표마다 켜고 끈다. 공개 요약(profiles/{uid})의 reading에 진행 요약만 실린다.
+  function rdPubNotice() {
+    if (!(state.social && state.social.shareOn)) toast(rdT("지인 탭에서 '공개'를 켜면 지인에게 보여요", "Turn on sharing in the Friends tab so friends can see it"));
+    else toast(rdT("지인에게 진행 요약이 보여요", "Friends can now see your progress summary"));
+  }
+  function rdTogglePub(pid) {
+    var p = rdById(pid);
+    if (!p) return;
+    p.pub = !p.pub;
+    rdAfterChange();
+    if (p.pub) rdPubNotice(); else toast(rdT("공개를 껐어요", "Stopped sharing"));
+    schedulePublish(2000);
+  }
   function rdToggleKey(pid, key) {
     var p = rdById(pid);
     if (!p || !/^[0-9a-z]{3}:\d{1,3}$/.test(key || "")) return;
@@ -5646,9 +5681,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
   }
   function rdNewForm(id) {
     var p = id ? rdById(id) : null, t = todayKey(), e = parseKeyToDate(t);
-    if (p) return { id: p.id, name: p.name, nameAuto: false, scope: "keep", books: p.books.slice(), start: p.start, end: p.end, skipSun: p.skipSun, cu: p.cu === "sep" ? "sep" : "mix", preBook: "", preCh: "" };
+    if (p) return { id: p.id, name: p.name, nameAuto: false, scope: "keep", books: p.books.slice(), start: p.start, end: p.end, skipSun: p.skipSun, cu: p.cu === "sep" ? "sep" : "mix", pub: p.pub === true, preBook: "", preCh: "" };
     e.setMonth(11, 31); if (keyFor(e) < t) e.setFullYear(e.getFullYear() + 1);
-    return { id: null, name: rdScopeName("all"), nameAuto: true, scope: "all", books: rdAllBookIds(), start: t, end: keyFor(e), skipSun: false, cu: "mix", preBook: "", preCh: "" };
+    return { id: null, name: rdScopeName("all"), nameAuto: true, scope: "all", books: rdAllBookIds(), start: t, end: keyFor(e), skipSun: false, cu: "mix", pub: false, preBook: "", preCh: "" };
   }
   function rdFormSync() {
     if (!rdView || !rdView.form) return;
@@ -5707,6 +5742,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
       '<div class="day-ov-label">밀렸을 때</div>' +
       '<div class="theme-option' + (f.cu !== "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="mix"><span>오늘 분량에 합치기<small class="rd-opt-sub">밀린 장을 오늘 범위에 더하고, 하루 분량을 다시 나눠요.</small></span><span class="dot"></span></div>' +
       '<div class="theme-option' + (f.cu === "sep" ? ' active' : '') + '" data-action="rd-cu" data-id="sep"><span>진도대로 읽고, 밀린 건 따로<small class="rd-opt-sub">오늘 범위는 일정 그대로, 밀린 장은 \'밀린 장\' 줄에 따로 모아요.</small></span><span class="dot"></span></div>';
+    h += '<div class="day-ov-label">' + rdT('지인에게 보여주기', 'Show to friends') + '</div>' +
+      '<div class="theme-option' + (f.pub ? ' active' : '') + '" data-action="rd-toggle" data-id="pub"><span>' + rdT('진행 요약을 지인에게 공개', 'Share progress summary with friends') + '<small class="rd-opt-sub">' +
+      rdT('통독표 이름 · 진행률 · 읽은 장 수 · 앞섬/밀림만 보여요. 어느 장을 읽었는지와 메모는 공개되지 않아요.', 'Friends see only the plan name, progress %, chapters read, and ahead/behind. Which chapters you read and your notes stay private.') + '</small></span><span class="dot"></span></div>';
     {
       h += '<div class="day-ov-label">' + (isNew ? '이미 읽은 곳' : rdT('여기까지 읽은 것으로 표시', 'Mark as read up to here')) + ' <span class="hb-count">' + (isNew ? '여기까지 읽었어요' : '') + '</span></div><div class="rd-pre-row">' +
         '<select id="rdPreBook" class="cat-name-input" aria-label="이미 읽은 책"><option value="">없음 (처음부터)</option>' +
@@ -5728,7 +5766,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (f.id) {
       var p = rdById(f.id);
       if (!p) { rdCloseOverlay(); return; }
-      p.name = name.slice(0, 20); p.start = f.start; p.end = f.end; p.skipSun = f.skipSun; p.cu = f.cu === "sep" ? "sep" : "mix";
+      p.name = name.slice(0, 20); p.start = f.start; p.end = f.end; p.skipSun = f.skipSun; p.cu = f.cu === "sep" ? "sep" : "mix"; p.pub = f.pub === true;
       rdPreKeys(f).forEach(function (k) { if (!p.done[k]) p.done[k] = "pre"; });   // 45차: 기존 통독표에도 '여기까지 읽었어요' 일괄 표시(이미 체크한 장은 그대로)
       rdAfterChange();
       rdView = { mode: "detail", id: p.id, open: {} };
@@ -5738,11 +5776,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
     if (rdList().length >= RD_MAX) { toast(rdEn() ? "You can make up to " + RD_MAX + " plans" : "통독표는 " + RD_MAX + "개까지 만들 수 있어요"); return; }
     var done = {};
     rdPreKeys(f).forEach(function (k) { done[k] = "pre"; });
-    var np = { id: uid(), name: name.slice(0, 20), books: f.books.slice(), start: f.start, end: f.end, skipSun: f.skipSun, cu: f.cu === "sep" ? "sep" : "mix", made: today, done: done, memo: {} };
+    var np = { id: uid(), name: name.slice(0, 20), books: f.books.slice(), start: f.start, end: f.end, skipSun: f.skipSun, cu: f.cu === "sep" ? "sep" : "mix", pub: f.pub === true, made: today, done: done, memo: {} };
     np = normalizeReadingPlans([np])[0];
     if (!Array.isArray(state.readingPlans)) state.readingPlans = [];
     state.readingPlans.push(np);
-    rdAfterChange();
+    rdAfterChange(); if (np.pub) rdPubNotice();
     rdView = { mode: "detail", id: np.id, open: {} };
     var nk = rdNextKey(np); if (nk) rdView.open[nk.split(":")[0]] = true;
     rdRender();
@@ -5786,8 +5824,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var en = rdEn();
     h += '<div class="rd-tags"><span class="rd-tag">📅 ' + rdDateLabel(p.start) + ' ~ ' + rdDateLabel(p.end) + '</span>' +
       (p.skipSun ? '<span class="rd-tag">' + (en ? 'Sundays off' : '주일 쉬기') + '</span>' : '') +
+      (p.pub ? '<span class="rd-tag">👥 ' + rdT('지인에게 공개 중', 'Shared with friends') + '</span>' : '') +
       '<span class="rd-tag">' + (p.cu === 'sep' ? (en ? 'Behind kept separate' : '밀린 건 따로') : (en ? 'Behind merged into today' : '밀린 건 합치기')) + '</span></div>' +
-      '<div class="rd-acts"><span class="rd-pill" role="button" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="rd-pill" role="button" data-action="rd-image" data-id="' + p.id + '">🖼 ' + rdT('이미지로 저장', 'Save as image') + '</span><span class="rd-pill danger" role="button" data-action="rd-del" data-id="' + p.id + '">지우기</span></div>';
+      '<div class="rd-acts"><span class="rd-pill" role="button" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="rd-pill" role="button" data-action="rd-pub" data-id="' + p.id + '">👥 ' + (p.pub ? rdT('공개 끄기', 'Stop sharing') : rdT('지인에게 공개', 'Share')) + '</span><span class="rd-pill" role="button" data-action="rd-image" data-id="' + p.id + '">🖼 ' + rdT('이미지로 저장', 'Save as image') + '</span><span class="rd-pill danger" role="button" data-action="rd-del" data-id="' + p.id + '">지우기</span></div>';
     var tab = rdView && rdView.tab === "log" ? "log" : "books";
     h += '<div class="rd-tabs" role="tablist"><span class="tp-chip' + (tab === "books" ? ' on' : '') + '" role="tab" aria-selected="' + (tab === "books") + '" data-action="rd-tab" data-id="books">' + rdT('책별 진도', 'By book') + '</span>' +
       '<span class="tp-chip' + (tab === "log" ? ' on' : '') + '" role="tab" aria-selected="' + (tab === "log") + '" data-action="rd-tab" data-id="log">' + rdT('읽은 기록', 'Reading log') + '</span></div>';
@@ -5882,6 +5921,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "rd-edit") { rdOpenOverlay("edit", id); }
     else if (action === "rd-cancel") { if (rdView && rdView.form && rdView.form.id) { rdView = { mode: "detail", id: rdView.form.id, open: {} }; rdRender(); } else { rdView = { mode: "list", id: null, open: {} }; rdRender(); } }
     else if (action === "rd-save") { rdSave(); }
+    else if (action === "rd-pub") { rdTogglePub(id); }
     else if (action === "rd-chip") { rdToggleKey(id, key); }
     else if (action === "rd-cell") { rdToggleKey(id, key); }
     else if (action === "rd-tab") { if (rdView) { rdView.tab = id === "log" ? "log" : "books"; rdRender(); } }
