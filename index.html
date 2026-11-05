@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-11-05-8";
+  var BUILD_VERSION = "2026-11-05-9";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-11-05-8">
+<link rel="stylesheet" href="style.css?v=2026-11-05-9">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -1071,17 +1071,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-11-05-8"></script>
-<script src="i18n.js?v=2026-11-05-8"></script>
-<script src="i18n-en.js?v=2026-11-05-8"></script>
-<script src="bible-medals-data.js?v=2026-11-05-8"></script>
-<script src="avatar-data.js?v=2026-11-05-8"></script>
-<script src="review-data.js?v=2026-11-05-8"></script>
-<script src="i18n-en-help.js?v=2026-11-05-8"></script>
-<script src="i18n-en-review.js?v=2026-11-05-8"></script>
-<script src="i18n-en-bible.js?v=2026-11-05-8"></script>
-<script src="i18n-en-avatar.js?v=2026-11-05-8"></script>
-<script src="i18n-en-extra.js?v=2026-11-05-8"></script>
+<script type="module" src="firebase-service.js?v=2026-11-05-9"></script>
+<script src="i18n.js?v=2026-11-05-9"></script>
+<script src="i18n-en.js?v=2026-11-05-9"></script>
+<script src="bible-medals-data.js?v=2026-11-05-9"></script>
+<script src="avatar-data.js?v=2026-11-05-9"></script>
+<script src="review-data.js?v=2026-11-05-9"></script>
+<script src="i18n-en-help.js?v=2026-11-05-9"></script>
+<script src="i18n-en-review.js?v=2026-11-05-9"></script>
+<script src="i18n-en-bible.js?v=2026-11-05-9"></script>
+<script src="i18n-en-avatar.js?v=2026-11-05-9"></script>
+<script src="i18n-en-extra.js?v=2026-11-05-9"></script>
 <script>
 (function () {
   "use strict";
@@ -5633,8 +5633,11 @@ window.addEventListener("beforeinstallprompt", function (e) {
     var el = document.getElementById("readingCards");
     if (!el) return;
     var act = rdActive(), show = act.slice(0, 2);
-    el.innerHTML = show.map(rdCardHtml).join("") + (act.length > 2 ? '<div class="rd-all" data-action="rd-open-list">' + (rdEn() ? 'All ' + act.length + ' active plans ›' : '진행 중인 통독표 ' + act.length + '개 모두 보기 ›') + '</div>' : "");
-    el.classList.toggle("hidden", !show.length);
+    // 48차: 통독표가 아예 없을 때만 시작 줄을 보여 줌(다 완독해서 진행 중이 없는 경우는 숨김 그대로). '홈 화면 구성'에서 통독을 끄면 hl-off로 함께 숨음
+    var none = !rdList().length;
+    el.innerHTML = none ? '<div class="rd-start" role="button" data-action="rd-start-home"><span class="rd-ico" aria-hidden="true">📖</span><span class="rd-start-t">' + rdT('성경 통독 시작하기', 'Start a Bible reading plan') + '</span><span class="rd-chev" aria-hidden="true">›</span></div>'
+      : show.map(rdCardHtml).join("") + (act.length > 2 ? '<div class="rd-all" data-action="rd-open-list">' + (rdEn() ? 'All ' + act.length + ' active plans ›' : '진행 중인 통독표 ' + act.length + '개 모두 보기 ›') + '</div>' : "");
+    el.classList.toggle("hidden", !show.length && !none);
   }
   function rdAfterChange() {
     saveState();
@@ -5657,9 +5660,24 @@ window.addEventListener("beforeinstallprompt", function (e) {
   function rdToggleKey(pid, key) {
     var p = rdById(pid);
     if (!p || !/^[0-9a-z]{3}:\d{1,3}$/.test(key || "")) return;
-    if (p.done[key]) { delete p.done[key]; if (rdLast && rdLast.pid === pid && rdLast.key === key) rdLast = null; }
-    else { p.done[key] = todayKey(); rdLast = { pid: pid, key: key, at: Date.now() }; }   // 45차: 방금 체크한 장에 한 줄 메모를 바로 남길 수 있게 카드에 안내
+    if (p.done[key]) {
+      var prev = p.done[key];   // 48차: 읽은 날짜가 지워지므로 되돌리기 막대로 복구할 수 있게(확인창은 흐름을 끊어서 안 넣음)
+      delete p.done[key]; if (rdLast && rdLast.pid === pid && rdLast.key === key) rdLast = null;
+      rdAfterChange();
+      rdUndoUnmark(pid, key, prev);
+      return;
+    }
+    p.done[key] = todayKey(); rdLast = { pid: pid, key: key, at: Date.now() };   // 45차: 방금 체크한 장에 한 줄 메모를 바로 남길 수 있게 카드에 안내
     rdAfterChange();
+  }
+  function rdUndoUnmark(pid, key, prev) {
+    var m = key.split(":"), bk = rdBook(m[0]), nm = bk ? bk.name + " " + rdCh(+m[1], +m[1]) : key;
+    showUndo(rdT(nm + " 읽음을 해제했어요", "Unmarked " + nm), function () {
+      var p2 = rdById(pid);
+      if (!p2 || p2.done[key]) return;   // 그 사이 통독표가 지워졌거나 다시 체크했으면 그대로 둠
+      p2.done[key] = prev;
+      rdAfterChange();
+    });
   }
   var rdLast = null;   // { pid, key, at } 방금 체크한 장(기기에 저장 안 함)
 
@@ -5681,7 +5699,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   }
   function rdNewForm(id) {
     var p = id ? rdById(id) : null, t = todayKey(), e = parseKeyToDate(t);
-    if (p) return { id: p.id, name: p.name, nameAuto: false, scope: "keep", books: p.books.slice(), start: p.start, end: p.end, skipSun: p.skipSun, cu: p.cu === "sep" ? "sep" : "mix", pub: p.pub === true, preBook: "", preCh: "" };
+    if (p) return { id: p.id, name: p.name, nameAuto: false, scope: "keep", books: p.books.slice(), orig: p.books.slice(), addOpen: false, start: p.start, end: p.end, skipSun: p.skipSun, cu: p.cu === "sep" ? "sep" : "mix", pub: p.pub === true, preBook: "", preCh: "" };
     e.setMonth(11, 31); if (keyFor(e) < t) e.setFullYear(e.getFullYear() + 1);
     return { id: null, name: rdScopeName("all"), nameAuto: true, scope: "all", books: rdAllBookIds(), start: t, end: keyFor(e), skipSun: false, cu: "mix", pub: false, preBook: "", preCh: "" };
   }
@@ -5734,6 +5752,25 @@ window.addEventListener("beforeinstallprompt", function (e) {
         }).join("") + '</div>';
       }
     }
+    if (!isNew) {   // 48차: 기존 통독표는 읽을 책을 '더하는 것만' 가능(빼면 읽은 기록이 사라져서 막음)
+      var missing = BIBLE_BOOKS.filter(function (b) { return f.orig.indexOf(b.id) === -1; }), added = f.books.length - f.orig.length;
+      h += '<div class="day-ov-label">' + rdT('읽을 범위', 'Books to read') + ' <span class="hb-count">' + rdT(f.orig.length + '권', f.orig.length + ' books') + (added > 0 ? rdT(' + ' + added + '권 더함', ' + ' + added + ' added') : '') + '</span></div>';
+      if (missing.length) {
+        h += '<div class="theme-option' + (f.addOpen || added > 0 ? ' active' : '') + '" data-action="rd-add-open"><span>' + rdT('읽을 책 더하기', 'Add books to read') +
+          '<small class="rd-opt-sub">' + rdT('더한 책의 장은 아직 안 읽은 것으로 들어가고, 하루 분량이 다시 계산돼요. 이미 정한 책은 읽은 기록 때문에 뺄 수 없어요.', 'Added chapters start as unread and the daily amount is recalculated. Books already in the plan can\'t be removed because of your reading log.') + '</small></span><span class="dot"></span></div>';
+        if (f.addOpen || added > 0) {
+          h += '<div class="rd-pick-sets">' +
+            [["OT", rdT("구약 모두 더하기", "Add whole Old Testament")], ["NT", rdT("신약 모두 더하기", "Add whole New Testament")]].map(function (x) {
+              var any = missing.some(function (b) { return b.testament === x[0]; });
+              return any ? '<span class="rd-pk set" role="button" data-action="rd-add-test" data-id="' + x[0] + '">＋ ' + x[1] + '</span>' : '';
+            }).join("") + '</div>' +
+            '<div class="rd-pick">' + missing.map(function (b) {
+              var on = f.books.indexOf(b.id) !== -1;
+              return '<span class="rd-pk' + (on ? ' on' : '') + '" role="button" aria-pressed="' + on + '" data-action="rd-pick-book" data-id="' + b.id + '">' + escapeHtml(b.name) + '</span>';
+            }).join("") + '</div>';
+        }
+      }
+    }
     var maxD = parseKeyToDate(t); maxD.setFullYear(maxD.getFullYear() + 3);
     h += '<div class="day-ov-label">시작일</div><div class="hb-start-row"><input type="date" id="rdStart" class="cat-name-input" value="' + f.start + '" max="' + keyFor(maxD) + '" aria-label="시작일">' + dtBtn("rdStart") +
       '<span class="tp-chip hb-start-today' + (f.start === t ? ' on' : '') + '" data-action="rd-start-today">오늘</span></div>' +
@@ -5753,8 +5790,10 @@ window.addEventListener("beforeinstallprompt", function (e) {
         '<div class="hb-pick-note">' + (isNew ? '고른 책·장까지(포함) 읽은 것으로 시작해요. 예: 여호수아 15장'
           : rdT('고른 책·장까지(포함) 아직 체크 안 된 장을 \'계획 전에 읽음\'으로 표시해요. 이미 체크한 날짜는 그대로예요. 읽을 범위는 여기서 바꾸지 않아요.', 'Chapters up to and including your pick that aren\'t checked yet are marked \'read before the plan\'. Dates already logged stay. The range can\'t be changed here.')) + '</div>';
     }
-    h += '<div class="rd-info" id="rdFormInfo" aria-live="polite">' + escapeHtml(rdFormInfoText(f)) + '</div>' +
-      '<div class="tp-actions"><div class="btn" data-action="rd-cancel">취소</div><div class="btn primary" data-action="rd-save">' + (isNew ? '만들기' : '저장') + '</div></div>';
+    h += '<div class="rd-info" id="rdFormInfo" aria-live="polite">' + escapeHtml(rdFormInfoText(f)) + '</div>';
+    // 48차: 지우기는 상세 버튼 줄이 아니라 편집 화면 맨 아래(저장 위)로 — 실수로 누르기 어렵게(기존 통독표일 때만)
+    if (!isNew) h += '<div class="rd-del-row"><span class="rd-del-link" role="button" data-action="rd-del" data-id="' + f.id + '">' + rdT('이 통독표 지우기', 'Delete this reading plan') + '</span></div>';
+    h += '<div class="tp-actions"><div class="btn" data-action="rd-cancel">취소</div><div class="btn primary" data-action="rd-save">' + (isNew ? '만들기' : '저장') + '</div></div>';
     return h;
   }
   function rdSave() {
@@ -5767,8 +5806,13 @@ window.addEventListener("beforeinstallprompt", function (e) {
       var p = rdById(f.id);
       if (!p) { rdCloseOverlay(); return; }
       p.name = name.slice(0, 20); p.start = f.start; p.end = f.end; p.skipSun = f.skipSun; p.cu = f.cu === "sep" ? "sep" : "mix"; p.pub = f.pub === true;
+      // 48차: 책 더하기 — 원래 있던 책은 그대로 두고 더한 책만 합침(성경 순서로 정렬). 더한 책의 장은 done에 없으니 '안 읽음'으로 들어감
+      var addedIds = f.books.filter(function (id) { return p.books.indexOf(id) === -1 && rdBook(id); });
+      if (addedIds.length) p.books = p.books.concat(addedIds).sort(function (a, b) { return rdBookIndex(a) - rdBookIndex(b); });
       rdPreKeys(f).forEach(function (k) { if (!p.done[k]) p.done[k] = "pre"; });   // 45차: 기존 통독표에도 '여기까지 읽었어요' 일괄 표시(이미 체크한 장은 그대로)
       rdAfterChange();
+      if (p.pub && addedIds.length) schedulePublish(2000);   // 전체 장 수·진행률이 바뀌니 지인 공개 요약도 갱신
+      if (addedIds.length) toast(rdT(addedIds.length + "권을 읽을 범위에 더했어요", addedIds.length + (addedIds.length > 1 ? " books" : " book") + " added"));
       rdView = { mode: "detail", id: p.id, open: {} };
       rdRender();
       return;
@@ -5826,7 +5870,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
       (p.skipSun ? '<span class="rd-tag">' + (en ? 'Sundays off' : '주일 쉬기') + '</span>' : '') +
       (p.pub ? '<span class="rd-tag">👥 ' + rdT('지인에게 공개 중', 'Shared with friends') + '</span>' : '') +
       '<span class="rd-tag">' + (p.cu === 'sep' ? (en ? 'Behind kept separate' : '밀린 건 따로') : (en ? 'Behind merged into today' : '밀린 건 합치기')) + '</span></div>' +
-      '<div class="rd-acts"><span class="rd-pill" role="button" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="rd-pill" role="button" data-action="rd-pub" data-id="' + p.id + '">👥 ' + (p.pub ? rdT('공개 끄기', 'Stop sharing') : rdT('지인에게 공개', 'Share')) + '</span><span class="rd-pill" role="button" data-action="rd-image" data-id="' + p.id + '">🖼 ' + rdT('이미지로 저장', 'Save as image') + '</span><span class="rd-pill danger" role="button" data-action="rd-del" data-id="' + p.id + '">지우기</span></div>';
+      '<div class="rd-acts"><span class="rd-pill" role="button" data-action="rd-edit" data-id="' + p.id + '">✎ 편집</span><span class="rd-pill" role="button" data-action="rd-pub" data-id="' + p.id + '">👥 ' + (p.pub ? rdT('공개 끄기', 'Stop sharing') : rdT('지인에게 공개', 'Share')) + '</span><span class="rd-pill" role="button" data-action="rd-image" data-id="' + p.id + '">🖼 ' + rdT('이미지로 저장', 'Save as image') + '</span></div>';
     var tab = rdView && rdView.tab === "log" ? "log" : "books";
     h += '<div class="rd-tabs" role="tablist"><span class="tp-chip' + (tab === "books" ? ' on' : '') + '" role="tab" aria-selected="' + (tab === "books") + '" data-action="rd-tab" data-id="books">' + rdT('책별 진도', 'By book') + '</span>' +
       '<span class="tp-chip' + (tab === "log" ? ' on' : '') + '" role="tab" aria-selected="' + (tab === "log") + '" data-action="rd-tab" data-id="log">' + rdT('읽은 기록', 'Reading log') + '</span></div>';
@@ -5902,7 +5946,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
       rdView.mode = "list"; title.textContent = "성경 통독";
       body.innerHTML = rdListHtml();
     }
-    body.scrollTop = rdView.mode === "edit" ? 0 : sc;
+    // 48차: 편집 화면은 처음 열 때만 맨 위로, 그 안에서 칩을 눌러 다시 그릴 땐 보던 자리를 유지(책 더하기 칩이 화면 중간에 있음)
+    if (rdView.mode === "edit") { body.scrollTop = rdView.formShown ? sc : 0; rdView.formShown = true; }
+    else body.scrollTop = sc;
   }
   function rdUpdateInfo() {
     if (!rdView || rdView.mode !== "edit") return;
@@ -5918,8 +5964,9 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "rd-close") { rdCloseOverlay(); }
     else if (action === "rd-list") { rdView = { mode: "list", id: null, open: {} }; rdRender(); }
     else if (action === "rd-new") { rdOpenOverlay("edit", null); }
+    else if (action === "rd-start-home") { rdOpenOverlay("edit", null); if (rdView) rdView.fromHome = true; }   // 48차: 홈 시작 줄 → 바로 새 통독표 만들기(취소하면 홈으로)
     else if (action === "rd-edit") { rdOpenOverlay("edit", id); }
-    else if (action === "rd-cancel") { if (rdView && rdView.form && rdView.form.id) { rdView = { mode: "detail", id: rdView.form.id, open: {} }; rdRender(); } else { rdView = { mode: "list", id: null, open: {} }; rdRender(); } }
+    else if (action === "rd-cancel") { if (rdView && rdView.fromHome && !(rdView.form && rdView.form.id)) { rdCloseOverlay(); } else if (rdView && rdView.form && rdView.form.id) { rdView = { mode: "detail", id: rdView.form.id, open: {} }; rdRender(); } else { rdView = { mode: "list", id: null, open: {} }; rdRender(); } }
     else if (action === "rd-save") { rdSave(); }
     else if (action === "rd-pub") { rdTogglePub(id); }
     else if (action === "rd-chip") { rdToggleKey(id, key); }
@@ -5951,7 +5998,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     else if (action === "rd-del") {
       var pd = rdById(id);
       if (!pd) return;
-      askConfirm("통독표를 지울까요?", rdEn() ? "'" + (pd.name || "Bible reading") + "' and its reading log will be deleted." : "'" + (pd.name || "성경 통독") + "'과 읽은 기록이 함께 지워져요.", "지우기", function () {
+      askConfirm(rdT("통독표를 지울까요?", "Delete this reading plan?"), rdEn() ? "'" + (pd.name || "Bible reading") + "', its reading log and notes will be deleted. Save it as an image first if you want to keep a copy." : "'" + (pd.name || "성경 통독") + "'과 읽은 기록, 메모가 함께 지워져요. 남겨 두고 싶다면 먼저 이미지로 저장해 두세요.", rdT("지우기", "Delete"), function () {
         state.readingPlans = rdList().filter(function (x) { return x.id !== id; });
         rdView = { mode: "list", id: null, open: {} };
         rdAfterChange(); rdRender();
@@ -5965,8 +6012,16 @@ window.addEventListener("beforeinstallprompt", function (e) {
       f.preBook = ""; f.preCh = "";
       rdRender();
     }
+    else if (f && action === "rd-add-open") { rdFormSync(); f.addOpen = !f.addOpen; rdRender(); }
+    else if (f && action === "rd-add-test") {   // 48차: 기존 통독표 편집 — 구약/신약 빠진 책을 한꺼번에 더하기
+      rdFormSync();
+      rdAllBookIds(id).forEach(function (bid) { if (f.books.indexOf(bid) === -1) f.books.push(bid); });
+      f.books.sort(function (a, b) { return rdBookIndex(a) - rdBookIndex(b); });
+      rdRender();
+    }
     else if (f && action === "rd-pick-book") {
       rdFormSync();
+      if (f.id && f.orig && f.orig.indexOf(id) !== -1) return;   // 48차: 기존 통독표의 원래 책은 뺄 수 없음
       var ix = f.books.indexOf(id);
       if (ix === -1) { f.books.push(id); f.books.sort(function (a, b) { return rdBookIndex(a) - rdBookIndex(b); }); } else f.books.splice(ix, 1);
       if (f.preBook && f.books.indexOf(f.preBook) === -1) { f.preBook = ""; f.preCh = ""; }
@@ -6035,14 +6090,15 @@ window.addEventListener("beforeinstallprompt", function (e) {
   }
   function rdChapUnread() {
     if (!rdChap) return;
-    var p = rdById(rdChap.pid);
+    var p = rdById(rdChap.pid), uk = rdChap.key, prev = p && p.done[uk];
     if (p) {
-      delete p.done[rdChap.key];
-      if (rdLast && rdLast.pid === p.id && rdLast.key === rdChap.key) rdLast = null;
+      delete p.done[uk];
+      if (rdLast && rdLast.pid === p.id && rdLast.key === uk) rdLast = null;
     }
     rdChapClose();
     rdAfterChange();
-    toast(rdT("읽음 표시를 해제했어요(메모는 남아 있어요)", "Unmarked (the note is kept)"));
+    if (p && prev) rdUndoUnmark(p.id, uk, prev);   // 48차: 여기서도 되돌릴 수 있게(메모는 원래부터 남아 있음)
+    else toast(rdT("읽음 표시를 해제했어요(메모는 남아 있어요)", "Unmarked (the note is kept)"));
   }
   document.addEventListener("input", function (e) { if (e.target && e.target.id === "rdChMemo") rdChapCount(); });
 
@@ -12427,14 +12483,14 @@ window.addEventListener("beforeinstallprompt", function (e) {
     ], see: ["settings", "offline"] },
     reading: { t: "성경 통독", sub: "통독표 · 오늘 분량 · 메모 · 이미지 · 지인 공개", s: [
       ["무엇인가요", "통독표(읽기 계획)를 만들어 읽은 장을 체크하는 기능이에요. 통독표는 12개까지 만들 수 있고, 스트릭·포인트·메달과는 따로 기록돼요. 성경 본문은 앱에 없어요 — 성경 앱에서 읽고 여기서 체크하세요."],
-      ["통독표 만들기", "<b>설정 → 성경 통독 → 새 통독표 만들기</b>에서 이름, 범위(신구약 · 구약 · 신약 · 책 고르기), 시작일, 끝나는 날, 주일 쉬기를 정해요. 시작일은 지난 날짜도 돼요. 이미 읽은 곳이 있으면 ‘이미 읽은 곳’(편집할 때는 ‘여기까지 읽은 것으로 표시’)에서 책과 장을 고르세요. 그 앞은 ‘계획 전에 읽음’으로 시작해요."],
-      ["오늘 분량과 체크", "오늘 읽을 범위는 <b>오늘 아침 기준 남은 장 ÷ 오늘 포함 남은 읽는 날</b>로 나눠요(올림). 진도는 날짜가 아니라 읽은 장 기준이라, 못 읽으면 남은 날의 분량이 자동으로 늘어요. 홈에는 진행 중인 통독표가 2개까지 카드로 뜨고, 장 숫자 칩을 누르면 읽음, 다시 누르면 해제돼요. ‘다음 장 더 읽기’로 오늘 분량 다음 장도 바로 체크할 수 있어요."],
+      ["통독표 만들기", "<b>설정 → 성경 통독 → 새 통독표 만들기</b>에서 이름, 범위(신구약 · 구약 · 신약 · 책 고르기), 시작일, 끝나는 날, 주일 쉬기를 정해요. 시작일은 지난 날짜도 돼요. 이미 읽은 곳이 있으면 ‘이미 읽은 곳’(편집할 때는 ‘여기까지 읽은 것으로 표시’)에서 책과 장을 고르세요. 그 앞은 ‘계획 전에 읽음’으로 시작해요. 통독표가 하나도 없으면 홈에 <b>📖 성경 통독 시작하기</b> 줄이 떠서 바로 만들 수 있어요. 만든 뒤에도 편집 화면의 <b>읽을 책 더하기</b>로 책을 더할 수 있어요(더한 책은 안 읽은 것으로 들어가고 하루 분량이 다시 계산돼요). 이미 정한 책은 읽은 기록 때문에 뺄 수 없어요."],
+      ["오늘 분량과 체크", "오늘 읽을 범위는 <b>오늘 아침 기준 남은 장 ÷ 오늘 포함 남은 읽는 날</b>로 나눠요(올림). 진도는 날짜가 아니라 읽은 장 기준이라, 못 읽으면 남은 날의 분량이 자동으로 늘어요. 홈에는 진행 중인 통독표가 2개까지 카드로 뜨고, 장 숫자 칩을 누르면 읽음, 다시 누르면 해제돼요(해제하면 ‘되돌리기’ 막대가 잠깐 떠요). ‘다음 장 더 읽기’로 오늘 분량 다음 장도 바로 체크할 수 있어요."],
       ["밀렸을 때", "통독표마다 하나를 골라요. <b>오늘 분량에 합치기</b>는 밀린 장을 오늘 범위에 더해 하루 분량을 다시 나눠요. <b>진도대로 읽고, 밀린 건 따로</b>는 오늘 범위는 원래 일정 그대로 두고 밀린 장을 ‘밀린 장’ 줄에 따로 모아요. 카드 오른쪽 위에 ‘3장 앞섬’ · ‘4장 밀림’처럼 계획과 비교한 결과가 나와요."],
       ["책별 진도 · 읽은 기록", "통독표 이름을 누르면 상세 화면이 열려요. <b>책별 진도</b>에서 책을 열면 장 격자가 나오고, 장을 눌러 읽음을 바꾸거나 ‘이 책 전부 읽음’ · ‘전부 해제’(확인함)를 쓸 수 있어요. <b>읽은 기록</b>은 날짜별(요일)로 읽은 장을 묶어 보여 주고, 읽은 날 · 연속 최고 · 메모 수와 ‘메모 있는 것만’ 보기가 있어요."],
       ["장 메모", "장을 체크하면 10분 동안 카드에 ‘✎ 한 줄 메모 남기기’가 떠요(150자). 나중에는 읽은 기록에서 장을 눌러 메모와 읽은 날짜를 고치거나 ‘읽음 표시 해제’를 할 수 있어요(메모는 남아요). 메모가 있는 장은 금색 점이 붙어요."],
       ["이미지로 저장", "상세 화면의 <b>🖼 이미지로 저장</b>을 누르면 읽은 장을 칸으로 보여 주는 A4 세로 한 장 이미지가 만들어져요(읽음 초록 · 아직 흰색 · 메모 금색 점 · 완독한 책은 ✓와 마지막 날짜). 공유 시트로 보내거나 저장할 수 있고, 안 되면 다운로드돼요. 이미지를 길게 눌러 사진에 저장해도 돼요."],
       ["지인에게 공개", "통독표마다 <b>지인에게 공개</b>를 켤 수 있어요(처음엔 꺼져 있어요). 켜면 지인이 내 아바타를 눌렀을 때 나오는 화면에서 통독표 이름 · 진행률 · 읽은 장 수 · 앞섬/밀림만 보여요. 어느 장을 읽었는지와 메모는 공개되지 않아요. 지인 탭에서 ‘공개’가 켜져 있어야 하고, 공개한 통독표는 최대 3개까지 보여요. 공개 스위치는 통독표 편집 화면이나 상세 화면의 ‘👥 지인에게 공개’에서 바꿔요."],
-      ["기기 · 지우기", "여러 기기에서 따로 체크해도 장 단위로 합쳐져 둘 다 남아요. 통독표를 지우면 그 통독표의 읽은 기록과 메모도 함께 지워지니 조심하세요. 백업 파일에도 통독 기록이 들어 있어요. 홈 화면에서 통독 카드를 숨기려면 ‘홈 화면 구성’에서 끌 수 있어요."]
+      ["기기 · 지우기", "여러 기기에서 따로 체크해도 장 단위로 합쳐져 둘 다 남아요. 통독표 지우기는 <b>편집 화면 맨 아래의 ‘이 통독표 지우기’</b>에서 해요. 지우면 읽은 기록과 메모도 함께 지워지니, 남겨 두려면 먼저 이미지로 저장하세요. 백업 파일에도 통독 기록이 들어 있어요. 홈 화면에서 통독 카드를 숨기려면 ‘홈 화면 구성’에서 끌 수 있어요."]
     ], see: ["homelayout", "share", "backup"] },
     habit: { t: "습관 만들기", sub: "항목을 묶어 따로 세는 연속일", s: [
       ["무엇인가요", "새 습관을 위해 항목 몇 개를 묶어, 그 묶음만의 연속일을 전체 스트릭과 따로 세요. 예: 아침예배 40분 + 저녁예배 20분 → ‘예배 1시간’."],
