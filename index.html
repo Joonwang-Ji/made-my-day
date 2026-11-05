@@ -22,7 +22,7 @@
 // 그래서 열릴 때마다 캐시를 무시하고 최신 파일을 직접 확인해서, 지금 보여지고 있는
 // 버전과 다르면 캐시버스팅 쿼리를 붙여 한 번 강제로 새로 불러온다.
 (function () {
-  var BUILD_VERSION = "2026-11-05-6";
+  var BUILD_VERSION = "2026-11-05-8";
   window.__mmdBuild = BUILD_VERSION;   // 26차: 설정 > 데이터 > 오프라인 준비 상태에 보여 준다
   try {
     fetch(location.pathname, { cache: "no-store" })
@@ -76,7 +76,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <!-- 2026-10-14: 글꼴 파일이 늦거나 오프라인이어도 화면 그리기를 막지 않도록 비동기로 불러온다(없으면 기본 글꼴) -->
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=2026-11-05-6">
+<link rel="stylesheet" href="style.css?v=2026-11-05-8">
 </head>
 <body>
 <!-- <<MEDAL DEFS>> -->
@@ -935,7 +935,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
   <div class="tp-card tp-card-scroll" style="max-width:380px;">
     <div class="tp-card-head">
       <div class="tp-title" id="readingOvTitle">성경 통독</div>
-      <span class="tp-close-x" data-action="rd-close" role="button" aria-label="닫기">✕</span>
+      <span class="help-q" data-action="help" data-id="reading" style="margin:0 10px 0 0;">?</span><span class="tp-close-x" data-action="rd-close" role="button" aria-label="닫기">✕</span>
     </div>
     <div class="tp-card-body" id="readingOvBody"></div>
   </div>
@@ -1071,17 +1071,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
 <div class="offline-pill hidden" id="offlinePill" role="status" aria-live="polite"><span aria-hidden="true">📴</span><span id="offlinePillText">오프라인 · 연결되면 합쳐서 저장해요</span></div>
 <div class="undo-bar hidden" id="undoBar"><span id="undoMsg"></span><button class="undo-btn" data-action="undo-do">되돌리기</button></div>
 
-<script type="module" src="firebase-service.js?v=2026-11-05-6"></script>
-<script src="i18n.js?v=2026-11-05-6"></script>
-<script src="i18n-en.js?v=2026-11-05-6"></script>
-<script src="bible-medals-data.js?v=2026-11-05-6"></script>
-<script src="avatar-data.js?v=2026-11-05-6"></script>
-<script src="review-data.js?v=2026-11-05-6"></script>
-<script src="i18n-en-help.js?v=2026-11-05-6"></script>
-<script src="i18n-en-review.js?v=2026-11-05-6"></script>
-<script src="i18n-en-bible.js?v=2026-11-05-6"></script>
-<script src="i18n-en-avatar.js?v=2026-11-05-6"></script>
-<script src="i18n-en-extra.js?v=2026-11-05-6"></script>
+<script type="module" src="firebase-service.js?v=2026-11-05-8"></script>
+<script src="i18n.js?v=2026-11-05-8"></script>
+<script src="i18n-en.js?v=2026-11-05-8"></script>
+<script src="bible-medals-data.js?v=2026-11-05-8"></script>
+<script src="avatar-data.js?v=2026-11-05-8"></script>
+<script src="review-data.js?v=2026-11-05-8"></script>
+<script src="i18n-en-help.js?v=2026-11-05-8"></script>
+<script src="i18n-en-review.js?v=2026-11-05-8"></script>
+<script src="i18n-en-bible.js?v=2026-11-05-8"></script>
+<script src="i18n-en-avatar.js?v=2026-11-05-8"></script>
+<script src="i18n-en-extra.js?v=2026-11-05-8"></script>
 <script>
 (function () {
   "use strict";
@@ -12425,6 +12425,17 @@ window.addEventListener("beforeinstallprompt", function (e) {
       ["텍스트로", "텍스트로 복사해 두거나, 붙여넣어 가져올 수도 있어요. 텍스트는 Claude 대화에 붙여넣어 보여줄 때 편해요."],
       ["가져오기 전에", "가져오기 전에 현재 상태를 먼저 백업해 두면 안전해요."]
     ], see: ["settings", "offline"] },
+    reading: { t: "성경 통독", sub: "통독표 · 오늘 분량 · 메모 · 이미지 · 지인 공개", s: [
+      ["무엇인가요", "통독표(읽기 계획)를 만들어 읽은 장을 체크하는 기능이에요. 통독표는 12개까지 만들 수 있고, 스트릭·포인트·메달과는 따로 기록돼요. 성경 본문은 앱에 없어요 — 성경 앱에서 읽고 여기서 체크하세요."],
+      ["통독표 만들기", "<b>설정 → 성경 통독 → 새 통독표 만들기</b>에서 이름, 범위(신구약 · 구약 · 신약 · 책 고르기), 시작일, 끝나는 날, 주일 쉬기를 정해요. 시작일은 지난 날짜도 돼요. 이미 읽은 곳이 있으면 ‘이미 읽은 곳’(편집할 때는 ‘여기까지 읽은 것으로 표시’)에서 책과 장을 고르세요. 그 앞은 ‘계획 전에 읽음’으로 시작해요."],
+      ["오늘 분량과 체크", "오늘 읽을 범위는 <b>오늘 아침 기준 남은 장 ÷ 오늘 포함 남은 읽는 날</b>로 나눠요(올림). 진도는 날짜가 아니라 읽은 장 기준이라, 못 읽으면 남은 날의 분량이 자동으로 늘어요. 홈에는 진행 중인 통독표가 2개까지 카드로 뜨고, 장 숫자 칩을 누르면 읽음, 다시 누르면 해제돼요. ‘다음 장 더 읽기’로 오늘 분량 다음 장도 바로 체크할 수 있어요."],
+      ["밀렸을 때", "통독표마다 하나를 골라요. <b>오늘 분량에 합치기</b>는 밀린 장을 오늘 범위에 더해 하루 분량을 다시 나눠요. <b>진도대로 읽고, 밀린 건 따로</b>는 오늘 범위는 원래 일정 그대로 두고 밀린 장을 ‘밀린 장’ 줄에 따로 모아요. 카드 오른쪽 위에 ‘3장 앞섬’ · ‘4장 밀림’처럼 계획과 비교한 결과가 나와요."],
+      ["책별 진도 · 읽은 기록", "통독표 이름을 누르면 상세 화면이 열려요. <b>책별 진도</b>에서 책을 열면 장 격자가 나오고, 장을 눌러 읽음을 바꾸거나 ‘이 책 전부 읽음’ · ‘전부 해제’(확인함)를 쓸 수 있어요. <b>읽은 기록</b>은 날짜별(요일)로 읽은 장을 묶어 보여 주고, 읽은 날 · 연속 최고 · 메모 수와 ‘메모 있는 것만’ 보기가 있어요."],
+      ["장 메모", "장을 체크하면 10분 동안 카드에 ‘✎ 한 줄 메모 남기기’가 떠요(150자). 나중에는 읽은 기록에서 장을 눌러 메모와 읽은 날짜를 고치거나 ‘읽음 표시 해제’를 할 수 있어요(메모는 남아요). 메모가 있는 장은 금색 점이 붙어요."],
+      ["이미지로 저장", "상세 화면의 <b>🖼 이미지로 저장</b>을 누르면 읽은 장을 칸으로 보여 주는 A4 세로 한 장 이미지가 만들어져요(읽음 초록 · 아직 흰색 · 메모 금색 점 · 완독한 책은 ✓와 마지막 날짜). 공유 시트로 보내거나 저장할 수 있고, 안 되면 다운로드돼요. 이미지를 길게 눌러 사진에 저장해도 돼요."],
+      ["지인에게 공개", "통독표마다 <b>지인에게 공개</b>를 켤 수 있어요(처음엔 꺼져 있어요). 켜면 지인이 내 아바타를 눌렀을 때 나오는 화면에서 통독표 이름 · 진행률 · 읽은 장 수 · 앞섬/밀림만 보여요. 어느 장을 읽었는지와 메모는 공개되지 않아요. 지인 탭에서 ‘공개’가 켜져 있어야 하고, 공개한 통독표는 최대 3개까지 보여요. 공개 스위치는 통독표 편집 화면이나 상세 화면의 ‘👥 지인에게 공개’에서 바꿔요."],
+      ["기기 · 지우기", "여러 기기에서 따로 체크해도 장 단위로 합쳐져 둘 다 남아요. 통독표를 지우면 그 통독표의 읽은 기록과 메모도 함께 지워지니 조심하세요. 백업 파일에도 통독 기록이 들어 있어요. 홈 화면에서 통독 카드를 숨기려면 ‘홈 화면 구성’에서 끌 수 있어요."]
+    ], see: ["homelayout", "share", "backup"] },
     habit: { t: "습관 만들기", sub: "항목을 묶어 따로 세는 연속일", s: [
       ["무엇인가요", "새 습관을 위해 항목 몇 개를 묶어, 그 묶음만의 연속일을 전체 스트릭과 따로 세요. 예: 아침예배 40분 + 저녁예배 20분 → ‘예배 1시간’."],
       ["성공한 날", "그날 해당되는 묶음 항목을 <b>모두</b> 완료하면 성공이에요. 요일이 아닌 항목은 그날 빼고 봐요. 전체 스트릭의 기준(%)과는 상관없어요."],
@@ -12481,7 +12492,7 @@ window.addEventListener("beforeinstallprompt", function (e) {
     ], see: ["backup", "streak"] }
   };
   var HELP_GROUPS = [
-    ["화면별 안내", ["home", "todo", "todoshortcut", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
+    ["화면별 안내", ["home", "todo", "todoshortcut", "reading", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["루틴 · 통계 규칙", ["colors", "streak", "habit", "comeback", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["포인트 · 보상", ["points", "rewards", "badges", "avatar"]],
     ["지인 · 데이터", ["share", "cheers", "parentpraise", "backup", "offline"]]

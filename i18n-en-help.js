@@ -179,6 +179,17 @@
       ["When a window opens", "Focus moves into the window, and Tab stays inside it. When you close it, focus returns to where you were."],
       ["See this again", "Press <b>?</b> anytime to open this guide. Shortcuts don't work while you're typing."]
     ], see: ["home", "settings"] },
+    reading: { t: "Bible reading", sub: "Plans · today's reading · notes · image · sharing", s: [
+      ["What is it?", "Make a reading plan and check off the chapters you read. You can have up to 12 plans, and they're tracked separately from streaks, points and medals. The app has no Bible text — read in your Bible app and check off here."],
+      ["Making a plan", "Go to <b>Settings → Bible reading → New reading plan</b> and set a name, range (whole Bible · OT · NT · pick books), start date, end date, and Sundays off. The start date can be in the past. If you've already read part of it, pick a book and chapter under “Already read” (when editing, “Mark as read up to here”); everything before it starts as “read before the plan”."],
+      ["Today's reading and checking", "Today's range is <b>chapters left as of this morning ÷ reading days left including today</b>, rounded up. Progress counts chapters you've read, not dates, so if you fall behind the daily amount grows automatically. Home shows up to 2 active plans as cards: tap a chapter chip to mark it read, and tap again to undo. “Read the next chapter too” lets you check the chapter after today's range."],
+      ["When you fall behind", "Choose one per plan. <b>Merge into today</b> adds the missed chapters to today's range and re-divides the daily amount. <b>Follow the schedule, keep missed separate</b> leaves today's range as planned and collects missed chapters in a “Behind” row. The top right of the card compares you to the plan, like “3 ahead” or “4 behind”."],
+      ["By book · Reading log", "Tap a plan's name to open its detail screen. Under <b>By book</b>, open a book to see its chapter grid; tap a chapter to toggle it, or use “Mark whole book read” / “Clear all” (asks first). The <b>Reading log</b> groups chapters by date (with weekday) and shows days read, longest streak, number of notes, and a “With notes only” filter."],
+      ["Chapter notes", "After you check a chapter, an “add a note” line appears on the card for 10 minutes (up to 150 characters). Later, tap a chapter in the Reading log to edit its note and date, or to clear its read mark (the note stays). Chapters with a note get a small gold dot."],
+      ["Save as image", "Tap <b>🖼 Save as image</b> on the detail screen to make a one-page A4 portrait picture of your chapters as cells (read = green, not yet = white, note = gold dot, finished books get a ✓ and the last date). Share it from the share sheet or save it; if that isn't available it downloads. You can also long-press the image to save it to Photos."],
+      ["Sharing with friends", "Turn on <b>Share with friends</b> for any plan (off by default). Friends see only the plan name, progress %, chapters read, and ahead/behind, on the screen that opens when they tap your avatar. Which chapters you read and your notes stay private. Sharing must be on in the Friends tab, and up to 3 shared plans show. Switch it in the plan's edit screen or with “👥 Share” on the detail screen."],
+      ["Devices · Deleting", "If you check chapters on different devices, they're merged chapter by chapter and both are kept. Deleting a plan also deletes its reading log and notes, so be careful. Backup files include your reading records. To hide the reading card on Home, turn it off in “Home layout”."]
+    ], see: ["homelayout", "share", "backup"] },
     habit: { t: "Build a Habit", sub: "A separate streak for a group of items", s: [
       ["What is it?", "For a new habit, group a few items and count a streak just for that group, separate from your overall streak. e.g. Morning worship 40 min + Evening worship 20 min → “Worship 1 hour”."],
       ["A successful day", "A day counts when <b>all</b> of the group's items scheduled that day are done. Items not scheduled that day are left out. Your overall streak threshold (%) doesn't apply."],
@@ -235,7 +246,7 @@
   };
 
   var G = [
-    ["Screen guides", ["home", "todo", "todoshortcut", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
+    ["Screen guides", ["home", "todo", "todoshortcut", "reading", "homelayout", "edit", "stats", "backfill", "friends", "achieve", "settings", "keys"]],
     ["Routine & stats rules", ["colors", "streak", "habit", "comeback", "pass", "days", "notstarted", "review", "keeprest", "rest", "timesuggest", "alarm", "grace"]],
     ["Points & rewards", ["points", "rewards", "badges", "avatar"]],
     ["Friends & data", ["share", "cheers", "parentpraise", "backup", "offline"]]
